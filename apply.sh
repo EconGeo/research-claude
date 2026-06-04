@@ -13,6 +13,7 @@
 #                      .claude/agents/humanize-auditor.md, .claude/agents/claim-verifier.md
 #                      .claude/rules/ai-disclosure.md
 #   From zotpilot:     .claude/skills/ztp-*/
+#   From research-claude (own): .claude/skills/seed-papers/
 #
 # What this does NOT install:
 #   ZotPilot Python env (requires user judgment about paths — see Step 7 in README)
@@ -59,6 +60,9 @@ if [[ "$LIST_MODE" == true ]]; then
   echo "  .claude/skills/ztp-setup/"
   echo "  .claude/skills/ztp-profile/"
   echo "  .claude/skills/ztp-tutor/"
+  echo ""
+  echo "From research-claude (own skills — bridges submodule tools):"
+  echo "  .claude/skills/seed-papers/  — pre-search Zotero before /discover lit"
   echo ""
   if [[ "$WITH_DIGEST" == true ]]; then
     echo "With --with-digest:"
@@ -141,7 +145,16 @@ if [[ "$WITH_DIGEST" == true ]]; then
   echo "    Then edit journal-digest/config.py with your Zotero paths and keywords."
 fi
 
-# ── 5. research-claude own rules (quarto-pdf, quarto-word) ───────────────────
+# ── 5. research-claude own skills (bridge skills) ────────────────────────────
+# Skills that live in research-claude itself — bridge ZotPilot, clo-author, and
+# other submodule tools without modifying upstream repos.
+RC_SKILLS="$SCRIPT_DIR/skills"
+if [[ -d "$RC_SKILLS" ]]; then
+  echo "→ Installing research-claude bridge skills (seed-papers, etc.)..."
+  cp -r "$RC_SKILLS/"* "$PROJECT_DIR/.claude/skills/" 2>/dev/null || true
+fi
+
+# ── 6. research-claude own rules (quarto-pdf, quarto-word) ───────────────────
 RC_RULES="$SCRIPT_DIR/rules"
 if [[ -d "$RC_RULES" ]]; then
   echo "→ Installing research-claude rules (quarto-pdf, quarto-word)..."
