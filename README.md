@@ -106,14 +106,39 @@ ZotPilot lets Claude search your Zotero library, ingest new papers with PDFs, an
 
 > **Tip:** Once you've done this setup once, you can ask Claude to walk you through it interactively: open Claude Code in your project and say "help me set up ZotPilot."
 
-### API keys you need before starting
+### Embedding options
 
-| Key | Where to get it | What it's used for |
-|-----|----------------|-------------------|
-| **Gemini API key** | [aistudio.google.com](https://aistudio.google.com/) → "Get API key" | Library indexing (semantic embeddings). Free tier: 100 req/min; indexer retries automatically. |
-| **Zotero API key + user ID** | [zotero.org/settings/keys](https://www.zotero.org/settings/keys) → "Create new private key" | Write operations: ingesting papers, adding notes/tags. Your user ID is on the same page. |
+ZotPilot needs an embedding model to build the semantic index. **Ollama is the recommended option** — it runs fully locally with no API key and no data leaving your machine.
 
-Both keys go in `~/.config/zotpilot/config.json` — **never commit them**.
+| Option | Setup | Privacy | Cost |
+|--------|-------|---------|------|
+| **Ollama** *(recommended)* | Install Ollama + pull a model | Fully local | Free |
+| Gemini API | API key from Google AI Studio | Cloud | Free tier: 100 req/min |
+
+**Ollama setup (do this before Step 7):**
+```bash
+# Install Ollama
+brew install ollama          # macOS
+# or download from https://ollama.com
+
+# Start the Ollama server (runs in background)
+ollama serve &
+
+# Pull an embedding model
+ollama pull nomic-embed-text   # fast, 274MB, good general-purpose embeddings
+# alternative: ollama pull mxbai-embed-large  (higher quality, 670MB)
+
+# Verify
+ollama list   # should show nomic-embed-text
+```
+
+**Gemini API key** (only needed if using Gemini instead of Ollama):
+Get a key at [aistudio.google.com](https://aistudio.google.com/) → "Get API key".
+
+**Zotero API key + user ID** (needed for write operations — ingesting papers, adding notes/tags):
+Create at [zotero.org/settings/keys](https://www.zotero.org/settings/keys). Your user ID is shown on the same page.
+
+API keys go in `~/.config/zotpilot/config.json` — **never commit them**.
 
 ### Step 7 — Install and configure ZotPilot
 
@@ -130,13 +155,23 @@ which zotpilot
 # → /Users/YOUR_USERNAME/micromamba/envs/zotpilot/bin/zotpilot
 ```
 
-Configure your paths and keys:
+Configure with **Ollama** (recommended):
 ```bash
 zotpilot config set zotero_data_dir /path/to/Zotero    # e.g. ~/Library/CloudStorage/.../Zotero
+zotpilot config set embedding_provider ollama
+zotpilot config set ollama_model nomic-embed-text
+zotpilot config set ollama_base_url http://localhost:11434
+zotpilot config set zotero_api_key YOUR_ZOTERO_KEY      # for write operations
+zotpilot config set zotero_user_id YOUR_ZOTERO_USER_ID
+```
+
+Configure with **Gemini** (cloud alternative):
+```bash
+zotpilot config set zotero_data_dir /path/to/Zotero
 zotpilot config set embedding_provider gemini
 zotpilot config set gemini_api_key YOUR_GEMINI_KEY
-zotpilot config set zotero_api_key YOUR_ZOTERO_KEY      # for write operations
-zotpilot config set zotero_user_id YOUR_ZOTERO_USER_ID  # shown on zotero.org/settings/keys
+zotpilot config set zotero_api_key YOUR_ZOTERO_KEY
+zotpilot config set zotero_user_id YOUR_ZOTERO_USER_ID
 ```
 
 Finding your Zotero data directory:
@@ -173,12 +208,33 @@ Restart Claude Code. The `mcp__zotpilot__*` tools should appear in the tool list
 
 ## Step 8 — Index your Zotero library
 
+> **Do this immediately after the MCP server is confirmed working.** The semantic search that powers the literature review workflow only works after indexing — Claude cannot search papers that haven't been embedded yet. Index once, then keep Ollama running when you work.
+
 ```bash
+# Make sure Ollama is running (if using Ollama embedding)
+ollama serve &
+
 # Index your personal library
 micromamba run -n zotpilot zotpilot index
 
-# This takes ~6 seconds per paper. 200 papers ≈ 20 minutes.
-# Gemini free tier: 100 req/min. The indexer retries automatically on rate-limit errors.
+# With Ollama: speed depends on your machine; ~2–4 sec/paper is typical.
+# With Gemini: free tier is 100 req/min; the indexer retries automatically.
+# 200 papers ≈ 10–20 minutes either way.
+```
+
+Verify the index:
+```bash
+micromamba run -n zotpilot zotpilot stats
+# Should report: N papers indexed, embedding provider, index size
+```
+
+### Keeping the index current
+
+The index does not auto-update. Re-run `zotpilot index` after adding a batch of new papers to Zotero, or set a weekly cron job:
+
+```bash
+# Add to crontab (runs every Sunday at 9am)
+0 9 * * 0 /path/to/micromamba run -n zotpilot zotpilot index >> ~/.zotpilot-index.log 2>&1
 ```
 
 ### Group library indexing (advanced)
@@ -228,6 +284,7 @@ After all steps, check:
 
 - [ ] Claude Code opens in your project
 - [ ] `mcp__zotpilot__*` tools appear in tool list (Settings → Tools or type `/tools`)
+- [ ] `zotpilot stats` shows papers indexed
 - [ ] `/ztp-research` skill invocable (type `/ztp` in Claude Code)
 - [ ] `/humanize` and `/verify-claims` skills available
 - [ ] `quarto render` produces output from a test `.qmd` file
@@ -252,6 +309,59 @@ Once installed, the main entry points are:
 | `/data-analysis` | End-to-end R analysis |
 
 See [clo-author](https://github.com/hugosantanna/clo-author) for the full skill and agent reference.
+
+---
+
+## How your Zotero library feeds the research pipeline
+
+> **Once the ZotPilot MCP server is confirmed working, the first thing to do is index your Zotero library with Ollama** (Step 8). The semantic search that powers every literature review only works after indexing. Papers added to Zotero after the last index run won't be searchable until you re-index.
+
+Once indexed, your library becomes the *starting point* for every literature search — not an afterthought.
+
+### At project start (`/new-project`)
+
+When you kick off a new project, Claude will ask:
+
+> *"Do you want to set up ZotPilot to make your Zotero library searchable? This embeds your papers into a local ChromaDB vector store so I can search them semantically before running any web-based literature search."*
+
+If ZotPilot is already indexed, Claude records the status in your project `CLAUDE.md` and moves on. If not, it walks you through `/ztp-setup` before starting the Discovery phase.
+
+### At literature search (`/discover lit`)
+
+Before dispatching the librarian agent to search the web, Claude will ask:
+
+> *"Do you want me to search your Zotero library first for papers you already have on this topic? This seeds the bibliography with your existing anchors and tells the librarian what's already covered."*
+
+If yes, the workflow is:
+
+```
+1. Claude searches ChromaDB via ZotPilot MCP for the core topic
+2. Shows you a ranked candidate table — title, year, journal, relevance
+3. You confirm which papers to include
+4. Claude exports BibTeX entries → bibliography_base.bib
+5. Claude writes annotation summaries → quality_reports/literature/{project}/zotero_seed.md
+6. Librarian agent reads those files, sees what's covered, extends outward via web search
+```
+
+**No PDFs are copied.** Papers stay indexed in ChromaDB/Zotero. The `bibliography_base.bib` file is the handoff — it tells the librarian what anchor papers already exist so it fills genuine gaps rather than re-discovering what you already have.
+
+### Why the librarian can't query ChromaDB directly
+
+The librarian agent's tools are `Read, Write, Grep, Glob, WebSearch, WebFetch` — it has no MCP access and cannot query ChromaDB. Only the main Claude session (the one you're talking to) can hit ZotPilot. The `bibliography_base.bib` + `zotero_seed.md` files are the bridge:
+
+```
+ChromaDB / Ollama embeddings
+    ↓  main session queries via ZotPilot MCP
+bibliography_base.bib  +  zotero_seed.md   ← written before librarian runs
+    ↓  librarian reads via Read tool
+Web search extends outward from known anchors
+    ↓
+quality_reports/literature/{project}/annotated_bibliography.md
+```
+
+### What `master_supporting_docs/` is for
+
+The `master_supporting_docs/` folder exists for papers **not in your Zotero library** — manually downloaded PDFs, unpublished working papers, draft manuscripts a colleague sent you. The librarian can read these as full text. For anything already indexed in ChromaDB, `bibliography_base.bib` is the right path and no files need to move.
 
 ---
 
