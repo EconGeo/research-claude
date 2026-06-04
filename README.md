@@ -307,9 +307,6 @@ Layer 1 — Custom tools (each repo owns its versioning)
 
 Layer 2 — This repo (compose via apply.sh)
 └── EconGeo/research-claude        ← you are here
-
-Layer 3 — Private workspace (stays local)
-└── academic-claude (private)      development workspace + personal overlay
 ```
 
 ### Why submodules + apply.sh?
