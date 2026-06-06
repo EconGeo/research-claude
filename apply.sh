@@ -12,8 +12,9 @@
 #   From ai-audit:     .claude/skills/humanize/, .claude/skills/verify-claims/,
 #                      .claude/agents/humanize-auditor.md, .claude/agents/claim-verifier.md
 #                      .claude/rules/ai-disclosure.md
-#   From zotpilot:     .claude/skills/ztp-*/
-#   From research-claude (own): .claude/skills/seed-papers/
+#   From zotpilot:     .claude/skills/ztp-*/, .claude/skills/seed-papers/
+#   From research-claude (own skills/):
+#                      .claude/skills/new-project-ztp/
 #
 # What this does NOT install:
 #   ZotPilot Python env (requires user judgment about paths — see Step 7 in README)
@@ -60,9 +61,10 @@ if [[ "$LIST_MODE" == true ]]; then
   echo "  .claude/skills/ztp-setup/"
   echo "  .claude/skills/ztp-profile/"
   echo "  .claude/skills/ztp-tutor/"
-  echo ""
-  echo "From research-claude (own skills — bridges submodule tools):"
   echo "  .claude/skills/seed-papers/  — pre-search Zotero before /discover lit"
+  echo ""
+  echo "From research-claude (own skills/):"
+  echo "  .claude/skills/new-project-ztp/  — ZotPilot setup after /new-project"
   echo ""
   if [[ "$WITH_DIGEST" == true ]]; then
     echo "With --with-digest:"
