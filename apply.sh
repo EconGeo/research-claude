@@ -15,6 +15,8 @@
 #   From zotpilot:     .claude/skills/ztp-*/, .claude/skills/seed-papers/
 #   From research-claude (own skills/):
 #                      .claude/skills/new-project-ztp/
+#   From research-claude (own rules/):
+#                      .claude/rules/registry-verification-gate.md
 #
 # What this does NOT install:
 #   ZotPilot Python env (requires user judgment about paths — see Step 7 in README)
@@ -65,6 +67,9 @@ if [[ "$LIST_MODE" == true ]]; then
   echo ""
   echo "From research-claude (own skills/):"
   echo "  .claude/skills/new-project-ztp/  — ZotPilot setup after /new-project"
+  echo ""
+  echo "From research-claude (own rules/):"
+  echo "  .claude/rules/registry-verification-gate.md  — write-gate: verify registry freshness before /write"
   echo ""
   if [[ "$WITH_DIGEST" == true ]]; then
     echo "With --with-digest:"
@@ -159,7 +164,7 @@ fi
 # ── 6. research-claude own rules (quarto-pdf, quarto-word) ───────────────────
 RC_RULES="$SCRIPT_DIR/rules"
 if [[ -d "$RC_RULES" ]]; then
-  echo "→ Installing research-claude rules (quarto-pdf, quarto-word)..."
+  echo "→ Installing research-claude rules (quarto-pdf, quarto-word, registry-verification-gate)..."
   cp "$RC_RULES/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
 fi
 
