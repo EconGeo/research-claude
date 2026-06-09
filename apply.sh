@@ -16,7 +16,8 @@
 #   From research-claude (own skills/):
 #                      .claude/skills/new-project-ztp/
 #   From research-claude (own rules/):
-#                      .claude/rules/registry-verification-gate.md
+#                      .claude/rules/quarto-empirical.md (required pipeline for new projects)
+#                      .claude/rules/registry-verification-gate.md (legacy: registry-pattern projects)
 #
 # What this does NOT install:
 #   ZotPilot Python env (requires user judgment about paths — see Step 7 in README)
@@ -69,7 +70,8 @@ if [[ "$LIST_MODE" == true ]]; then
   echo "  .claude/skills/new-project-ztp/  — ZotPilot setup after /new-project"
   echo ""
   echo "From research-claude (own rules/):"
-  echo "  .claude/rules/registry-verification-gate.md  — write-gate: verify registry freshness before /write"
+  echo "  .claude/rules/quarto-empirical.md            — required pipeline: single .qmd, cached, PDF primary"
+  echo "  .claude/rules/registry-verification-gate.md  — legacy: registry-pattern projects only"
   echo ""
   if [[ "$WITH_DIGEST" == true ]]; then
     echo "With --with-digest:"
@@ -164,7 +166,7 @@ fi
 # ── 6. research-claude own rules (quarto-pdf, quarto-word) ───────────────────
 RC_RULES="$SCRIPT_DIR/rules"
 if [[ -d "$RC_RULES" ]]; then
-  echo "→ Installing research-claude rules (quarto-pdf, quarto-word, registry-verification-gate)..."
+  echo "→ Installing research-claude rules (quarto-empirical, quarto-pdf, quarto-word, registry-verification-gate)..."
   cp "$RC_RULES/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
 fi
 

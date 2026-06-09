@@ -1,5 +1,11 @@
 # Write Gate: Registry Verification Before Any Manuscript Writing
 
+> **Legacy rule — registry-pattern projects only.**
+> For new projects, use the Quarto empirical pipeline (`quarto-empirical.md`),
+> which eliminates the registry entirely. This rule applies to projects that
+> pre-date that standard (e.g. zoning2026) or that explicitly choose the
+> registry pattern for other reasons.
+
 **Nothing gets written in the manuscript until this gate is cleared.**
 
 This rule exists because registry staleness is a structural bug, not a discipline
