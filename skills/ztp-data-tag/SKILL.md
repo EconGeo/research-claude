@@ -154,9 +154,12 @@ it may span multiple sessions; the marker tag makes it resumable.
 - Remove tags: `mcp__zotpilot__manage_tags(action="remove")` for `data-tagged`,
   `dataset:*`, `var:*`. Removing `data-tagged` alone makes the item eligible for
   reprocessing on the next run.
-- **Notes:** ZotPilot has **no delete-note MCP tool**, so the "Data (auto-extracted)" note
-  must be deleted manually in Zotero. (Because Step 5 creates notes with `idempotent=true`,
-  a reprocessed item won't accumulate duplicate notes even if you leave the old one in place.)
+- **Notes:** delete the "Data (auto-extracted)" note with
+  `mcp__zotpilot__delete_note(note_key=...)` (find the key via
+  `mcp__zotpilot__get_notes(item_key=...)`). It only deletes items of type 'note'
+  and, by default, only ZotPilot-created notes. (Because Step 5 creates notes with
+  `idempotent=true`, a reprocessed item won't accumulate duplicate notes even if you
+  leave the old one in place.)
 
 ## Rules
 
@@ -164,8 +167,8 @@ it may span multiple sessions; the marker tag makes it resumable.
 - **Pilot first.** Always one collection before any whole-library run.
 - **`add` + `allow_new=true`, never `set`** for tags — `allow_new=true` is required or no
   new `dataset:*`/`var:*` tags are created; `set` is destructive (replaces all tags).
-- **Notes are write-once via `idempotent=true`** — there is no delete-note tool; manual
-  deletion in Zotero is the only removal path.
+- **Notes are idempotent via `idempotent=true`** — re-runs won't duplicate them. To remove
+  one, use `mcp__zotpilot__delete_note(note_key=...)` (note-type-guarded; ZotPilot-only by default).
 - **Resumable & cross-project.** The `data-tagged` Zotero tag is the idempotency key —
   it lives on the item in the global Zotero library, so it is visible from every project.
   Always skip items that carry it unless the user asks for a refresh. NEVER track "done"
