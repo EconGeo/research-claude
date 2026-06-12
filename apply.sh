@@ -16,6 +16,7 @@
 #   From zotpilot:     .claude/skills/ztp-*/, .claude/skills/seed-papers/
 #   From research-claude (own skills/):
 #                      .claude/skills/new-project-ztp/
+#                      .claude/skills/ztp-data-tag/
 #   From research-claude (own rules/):
 #                      .claude/rules/quarto-empirical.md         (required pipeline for new projects)
 #                      .claude/rules/data-manifest.md            (raw-data provenance audit trail)
@@ -73,6 +74,7 @@ if [[ "$LIST_MODE" == true ]]; then
   echo ""
   echo "From research-claude (own skills/):"
   echo "  .claude/skills/new-project-ztp/  — ZotPilot setup after /new-project"
+  echo "  .claude/skills/ztp-data-tag/     — backfill dataset/variable tags+notes across the Zotero library"
   echo ""
   echo "From research-claude (own rules/):"
   echo "  .claude/rules/quarto-empirical.md            — required pipeline: single .qmd, cached, PDF primary"
