@@ -309,6 +309,8 @@ You: "find recent papers on zoning supply elasticity and add the good ones"
 6. Re-index (Step 8) to make the new papers semantically searchable
 ```
 
+> **The bridge starts itself — nothing to launch.** You never run a command to start the `127.0.0.1:2619` bridge. The first time Claude ingests a paper, ZotPilot checks whether the bridge is up and, if not, launches it as a background process from the Python environment where `zotpilot` is installed (Step 7). A manual `zotpilot bridge` command exists if you ever want to run it yourself, but normal use never needs it.
+
 The Connector is a **fork of the official Zotero Connector** that adds an agent-driven save path on top of the normal one. The two coexist: the official extension still handles your manual one-click saves; the fork handles agent-driven saves via the local bridge.
 
 ### Install the Connector (Chrome)
