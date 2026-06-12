@@ -19,8 +19,7 @@ project/
 ├── manuscript_files/  ← gitignored; render artifacts
 ├── references.bib
 └── templates/
-    ├── quarto-preamble.tex
-    └── chicago-author-date.csl
+    └── quarto-preamble.tex   ← biblatex style set here; the PDF path uses no CSL
 ```
 
 External R scripts are permitted **only** for:
@@ -59,8 +58,9 @@ execute:
   warning: false
   cache: true
 bibliography: "references.bib"
-csl: "templates/chicago-author-date.csl"
 link-citations: true
+# No top-level csl: the PDF path renders citations via biblatex (cite-method above).
+# Word output, when added, sets its own APA csl inside the docx: block (see quarto-word.md).
 ---
 ```
 
