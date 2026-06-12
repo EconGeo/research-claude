@@ -34,3 +34,29 @@
 **Status:**
 - Done: all README/rules/apply.sh/journal-digest work committed + pushed; both repos in sync.
 - Pending (next session): **execute `docs/plans/2026-06-12-ztp-data-tag-skill.md`** — build the `/ztp-data-tag` skill (Tasks 1–3 are repo edits; Task 4 is a manual pilot that needs a project with ZotPilot configured + write creds + indexed library). Use subagent-driven-development or executing-plans.
+
+## 2026-06-12 20:20 UTC — Executed the ztp-data-tag plan (Tasks 1–3) via subagent-driven development
+
+**Operations:**
+- Ran `docs/plans/2026-06-12-ztp-data-tag-skill.md` with subagent-driven-development: one fresh implementer subagent (sonnet) per task, sequential (shared git state), with controller-run independent verification after each.
+- **Task 1** — created `skills/ztp-data-tag/SKILL.md` (165 lines): opt-in library data-field backfill skill; preconditions check, pilot-collection-first, `data-tagged` resumability marker, retrieval-based extraction (ChromaDB chunks), tags-via-`add` + structured Data note, confirm-before-write gates. Schema reuses journal-digest's five keys + `source`.
+- **Task 2** — updated `apply.sh` header comment + `--list` to mention the skill (install is automatic via the `skills/*` glob).
+- **Task 3** — documented `/ztp-data-tag` in README (pipeline-skills table row + data-discovery cross-reference); pushed.
+
+**Decisions:**
+- Collapsed the skill's per-task spec/code-quality review subagents into controller-run independent verification — for markdown/bash-comment edits with exact specified content + built-in verify commands, a separate code-quality subagent is ceremony. Verified each task by reading files + running the plan's exact checks myself (not trusting subagent reports).
+- Executed on `main`, consistent with the session's direct-to-main workflow and the plan's own commit/push steps.
+
+**Results / verification:**
+- Schema parity confirmed: SKILL.md and `submodules/journal-digest/gather/writer.py` emit the identical 5-key prefix. Tool names: exactly the 9 real `mcp__zotpilot__*` tools, no typos.
+- Fresh `apply.sh --project-dir <tmp>` install confirmed `ztp-data-tag/SKILL.md` lands in the target `.claude/skills/` and shows in `--list`.
+- Each task's diff inspected = only the intended hunks. Branch in sync with origin.
+
+**Commits (research-claude `main`):**
+- `00654c5` feat: add ztp-data-tag skill
+- `68ab9cf` chore: list ztp-data-tag in apply.sh --list/header
+- `cc1632f` docs(readme): document /ztp-data-tag
+
+**Status:**
+- Done: Plan Tasks 1–3 (build + wire + document the skill) — committed, pushed, verified.
+- Pending: **Task 4 — manual pilot.** Cannot run in this tooling repo. In a project with ZotPilot configured + write creds + an indexed library: invoke `/ztp-data-tag`, pilot a small (≤5-paper) collection, confirm tags + Data note land, verify re-run skips `data-tagged` items (resumability), test undo. Then record findings (datasets-found vs empty vs abstract-only) to judge a whole-library run.
