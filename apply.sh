@@ -18,8 +18,8 @@
 #   From research-claude (own rules/):
 #                      .claude/rules/quarto-empirical.md         (required pipeline for new projects)
 #                      .claude/rules/data-manifest.md            (raw-data provenance audit trail)
-#                      .claude/rules/quarto-pdf.md               (PDF-only manuscript pipeline)
-#                      .claude/rules/quarto-word.md              (Word-only manuscript pipeline)
+#                      .claude/rules/quarto-pdf.md               (PDF output format reference for manuscript.qmd)
+#                      .claude/rules/quarto-word.md              (Word docx output format reference)
 #                      .claude/rules/registry-verification-gate.md (legacy: registry-pattern projects)
 #
 # What this does NOT install:
@@ -75,8 +75,8 @@ if [[ "$LIST_MODE" == true ]]; then
   echo "From research-claude (own rules/):"
   echo "  .claude/rules/quarto-empirical.md            — required pipeline: single .qmd, cached, PDF primary"
   echo "  .claude/rules/data-manifest.md               — raw-data provenance audit trail (data/raw/data_manifest.md)"
-  echo "  .claude/rules/quarto-pdf.md                  — PDF-only manuscript pipeline (XeLaTeX)"
-  echo "  .claude/rules/quarto-word.md                 — Word-only manuscript pipeline (DOCX)"
+  echo "  .claude/rules/quarto-pdf.md                  — PDF output format reference (pdf: block, kableExtra, XeLaTeX)"
+  echo "  .claude/rules/quarto-word.md                 — Word output format reference (docx: block, flextable, APA CSL)"
   echo "  .claude/rules/registry-verification-gate.md  — legacy: registry-pattern projects only"
   echo ""
   if [[ "$WITH_DIGEST" == true ]]; then

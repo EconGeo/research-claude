@@ -1,48 +1,47 @@
-# Quarto PDF Pipeline
+# Quarto PDF Output: Format & Rendering Reference
 
-**One file, one output: PDF only via XeLaTeX.**
+**PDF is the canonical output of the single `manuscript.qmd`.** The document
+architecture — single source of truth, caching, inline expressions, the write
+gate — is governed by `quarto-empirical.md` and applies to every output format.
 
-Use `manuscript_quarto_pdf.qmd` for academic paper PDF output. Do NOT add a `docx:` format block to this file — the rendering paths are incompatible (biblatex vs pandoc CSL, kableExtra vs flextable, LaTeX prose vs markdown-only).
-
-For Word output, use a **separate** `manuscript_quarto_word.qmd` (see `quarto-word.md`).
+This file covers **only** the PDF-specific `format: pdf:` block, table/figure
+mechanics, and the R-package landmines we hit getting clean LaTeX output. Do not
+redefine `execute:`/`cache:`, the filename, the bibliography, or the analysis
+structure here — those belong to `quarto-empirical.md`.
 
 ---
 
-## YAML Header (Required)
+## The `pdf:` format block
+
+Add this under `format:` in `manuscript.qmd`. The surrounding YAML (title, author,
+date, abstract, `execute: cache: true`, `bibliography:`) comes from `quarto-empirical.md`.
 
 ```yaml
----
-title: "Paper Title"
-author:
-  - name: "Author Name"
-    affiliation: "Institution"
-    email: "email@university.edu"
-date: today
-abstract: |
-  Abstract text here. Must be 150 words or fewer.
 format:
   pdf:
     pdf-engine: xelatex
     include-in-header: "templates/quarto-preamble.tex"
     toc: false
     number-sections: true
-    keep-tex: true
+    keep-tex: false        # flip to true only to inspect generated LaTeX while debugging
     cite-method: biblatex
-execute:
-  echo: false
-  message: false
-  warning: false
-  cache: false
-bibliography: "references.bib"
-link-citations: true
----
 ```
 
-Do NOT include `docx:` or `cite-method: biblatex` in a Word-output file.
+`cite-method: biblatex` makes the PDF render citations through biblatex/biber, not
+pandoc citeproc. **The document-level `csl:` field is ignored for PDF output** — it
+only affects Word (see `quarto-word.md`).
 
 ---
 
 ## Tables: kableExtra (PDF only)
+
+kableExtra emits LaTeX, so it works **only** in PDF output. The two recurring gotchas:
+
+- **`escape = FALSE` is required** whenever variable names, notes, or cell contents
+  contain LaTeX-special characters (`$`, `_`, `%`, `&`). Without it kableExtra
+  escapes them and they render as literal backslashed text.
+- **`kable_styling(latex_options = "hold_position")`** pins the table where you place
+  it instead of letting LaTeX float it to the next page.
 
 ````markdown
 ```{r}
@@ -85,7 +84,8 @@ modelsummary(
 ```
 ````
 
-Quarto automatically uses vector PDF format for figures in PDF output.
+Quarto automatically uses vector PDF format for figures in PDF output. Do **not**
+set `fig-format` — overriding it forces raster output and degrades print quality.
 
 ---
 
@@ -99,30 +99,31 @@ Use pandoc syntax (works in both prose and Quarto):
 | `[@smith2024]` | (Smith, 2024) |
 | `[@smith2024, p. 12]` | (Smith, 2024, p. 12) |
 
-Never use `\citet{}` / `\citep{}` — LaTeX-only, renders as raw text in any non-PDF output.
+Never use `\citet{}` / `\citep{}` — LaTeX-only, renders as raw text in any non-PDF
+output (and breaks the single-source model the moment you also render to Word).
 
 ---
 
 ## Build
 
 ```bash
-quarto render manuscript_quarto_pdf.qmd         # PDF only
-quarto render manuscript_quarto_pdf.qmd --to pdf
+quarto render manuscript.qmd            # default format (PDF)
+quarto render manuscript.qmd --to pdf
 ```
 
 ---
 
-## What the writer-critic checks (Quarto PDF mode)
+## What the writer-critic checks (PDF format mode)
+
+Format-specific only. General-architecture checks (`source()`, missing `fig-cap`,
+`booktabs`, hardcoded numbers, caching) are owned by `quarto-empirical.md`'s
+coder-critic — not duplicated here.
 
 **Blocking deductions:**
-- `docx:` format block present (-10) — prohibited in PDF-only file
-- Missing `format: pdf:` section (-5)
+- Missing `format: pdf:` block (-5)
 - `pdf-engine:` not `xelatex` (-3)
 - Missing `cite-method: biblatex` (-3)
-- Missing `bibliography:` field (-5)
 - Missing `include-in-header:` (-3)
 - `\citet{}` / `\citep{}` in prose (-3 per, max -10)
-- Figure chunk missing `#| fig-cap:` (-5)
-- Table chunk missing `booktabs = TRUE` (-5)
-- Table chunk missing notes (-5)
-- Any `source()` call in a chunk (-10)
+- kableExtra table missing `escape = FALSE` when names/notes contain LaTeX (-3)
+- Tables rendered with flextable in PDF output — wrong package (-5)

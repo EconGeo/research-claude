@@ -1,60 +1,58 @@
-# Quarto Word Pipeline
+# Quarto Word Output: Format & Rendering Reference
 
-**One file, one output: Word (DOCX) only.**
+**Word (DOCX) is the optional secondary output of the single `manuscript.qmd`** —
+add a `docx:` format block alongside `pdf:` when a co-author needs Word or a journal
+requires a revision in `.docx`. The PDF remains the canonical submission artifact.
+There is **no separate Word-first `.qmd`**: one source file, multiple outputs.
 
-Use `manuscript_quarto_word.qmd` for Word output. Do NOT add a `pdf:` format block to this file — the rendering paths are incompatible.
-
-For PDF output, use a **separate** `manuscript_quarto_pdf.qmd` (see `quarto-pdf.md`).
+The document architecture — single source of truth, caching, inline expressions,
+the write gate — is governed by `quarto-empirical.md`. This file covers **only** the
+`docx:` format block, flextable mechanics, and the R-package landmines specific to
+Word output. Do not redefine `execute:`/`cache:`, the filename, or the analysis
+structure here.
 
 ---
 
-## YAML Header (Required)
+## The `docx:` format block
+
+Add this under `format:` alongside the `pdf:` block. The surrounding YAML (title,
+author, date, abstract, `execute: cache: true`, `bibliography:`) comes from
+`quarto-empirical.md`.
 
 ```yaml
----
-title: "Paper Title"
-author:
-  - name: "Author Name"
-    affiliation: "Institution"
-    email: "email@university.edu"
-date: today
-abstract: |
-  Abstract text here. Must be 150 words or fewer.
 format:
+  pdf:
+    # ... (see quarto-pdf.md)
   docx:
     reference-doc: "templates/word-reference.docx"
+    csl: "templates/apa.csl"
     toc: false
     number-sections: false
-execute:
-  echo: false
-  message: false
-  warning: false
-  cache: false
-  fig-width: 6.5
-  fig-height: 4
-  fig-dpi: 200
-bibliography: "references.bib"
-csl: "templates/apa.csl"
-link-citations: true
----
 ```
 
-**CSL:** Use `apa.csl` (not Chicago). Source from your local Zotero styles: `~/Zotero/styles/apa.csl`. No need to bundle a copy in `templates/` — just point at Zotero's copy.
+**The CSL gotcha (single-file model):** PDF uses `cite-method: biblatex` and ignores
+`csl`. Word has no biblatex — it renders citations through pandoc citeproc, which
+needs a `csl`. Put `csl: "templates/apa.csl"` **inside the `docx:` block** so Word
+uses APA regardless of any top-level/PDF citation setting. Source APA from your local
+Zotero styles (`~/Zotero/styles/apa.csl`) — no need to bundle a copy in `templates/`.
 
-Do NOT include `include-in-header:`, `cite-method: biblatex`, or `pdf-engine:` — LaTeX-only options, will cause errors.
+Do **not** put `include-in-header:`, `cite-method: biblatex`, or `pdf-engine:` in the
+`docx:` block — they are LaTeX-only and cause errors for Word output.
 
 ---
 
 ## Tables: flextable (Word only)
 
-Set global flextable defaults in the setup chunk:
+`kableExtra` emits LaTeX and produces garbage in Word — use **flextable** for the
+`docx:` output. Set global flextable defaults once in the setup chunk (the chunk
+itself, with its library loads and `set.seed()`, is defined per `quarto-empirical.md`):
 
 ````markdown
 ```{r}
-#| label: setup
+#| label: setup-word
+#| cache: false
 #| include: false
 library(flextable)
-library(modelsummary)
 
 set_flextable_defaults(
   font.family = "Times New Roman",
@@ -64,8 +62,6 @@ set_flextable_defaults(
 )
 PAGE_WIDTH <- 6.5
 options(modelsummary_factory_default = "flextable")
-
-set.seed(42L)
 ```
 ````
 
@@ -93,14 +89,13 @@ Table notes appear as italic prose immediately after the chunk:
 *Notes: Robust standard errors clustered at the unit level in parentheses.*
 ```
 
-Do NOT use `kableExtra` — it produces HTML/LaTeX, not Word tables.
-
 ---
 
 ## Figures
 
 `fig-width: 6.5` matches Word's 6.5-inch text width (1-inch margins on 8.5-inch paper).
-Quarto uses PNG by default for Word output — this is correct.
+Quarto uses PNG by default for Word output — this is correct; do **not** force PDF
+figures (they error in DOCX). Set `fig-dpi: 200` for print-quality raster.
 
 ````markdown
 ```{r}
@@ -108,7 +103,7 @@ Quarto uses PNG by default for Word output — this is correct.
 #| fig-cap: "Event Study: Effect of X on Y. *Notes:* 95% CI shown."
 #| fig-width: 6.5
 #| fig-height: 4
-#| dpi: 200
+#| fig-dpi: 200
 # ggplot code here
 ```
 ````
@@ -117,14 +112,9 @@ Quarto uses PNG by default for Word output — this is correct.
 
 ## Citations
 
-Same pandoc syntax as PDF:
-
-```markdown
-@smith2024          → Smith (2024)
-[@smith2024]        → (Smith, 2024)
-```
-
-With APA CSL, parenthetical citations render as "(Smith, 2024)" in the Word doc.
+Same pandoc syntax as PDF (`@smith2024` → Smith (2024); `[@smith2024]` →
+(Smith, 2024)). With the APA CSL in the `docx:` block, parenthetical citations render
+as "(Smith, 2024)" in the Word doc.
 
 ---
 
@@ -136,46 +126,46 @@ With APA CSL, parenthetical citations render as "(Smith, 2024)" in the Word doc.
 ```
 ```
 
-Or place `\newpage` on its own paragraph — Quarto converts it to a Word page break for DOCX.
+Or place `\newpage` on its own paragraph — Quarto converts it to a Word page break
+for DOCX.
 
 ---
 
-## What NOT to use in Word pipeline
+## R-package / option landmines for Word
 
-| Prohibited | Reason |
-|------------|--------|
-| `format: pdf:` block | Word-only file |
-| `include-in-header:` | PDF/LaTeX only |
-| `cite-method: biblatex` | PDF/LaTeX only |
-| `kableExtra` | Produces HTML/LaTeX, not Word |
+| Prohibited in Word output | Reason |
+|---------------------------|--------|
+| `include-in-header:` in the `docx:` block | PDF/LaTeX only |
+| `cite-method: biblatex` in the `docx:` block | PDF/LaTeX only; Word uses citeproc + CSL |
+| `kableExtra` | Produces HTML/LaTeX, not Word tables |
 | Inline LaTeX (`\textbf{}`, `\noindent`) | Appears as literal text in Word |
 | `fig-pos: H` | LaTeX float placement — ignored in Word |
 | `dev = "pdf"` / `fig-format: pdf` | Word embeds PNG; PDF causes errors |
-| Chicago CSL | Use APA CSL for Word; Chicago is for PDF biblatex |
+| Chicago CSL | Use APA CSL for Word; Chicago/biblatex is the PDF path |
 
 ---
 
 ## Build
 
 ```bash
-quarto render manuscript_quarto_word.qmd         # Word only
-quarto render manuscript_quarto_word.qmd --to docx
+quarto render manuscript.qmd --to docx          # Word output from the same file
 ```
 
 ---
 
-## What the writer-critic checks (Quarto Word mode)
+## What the writer-critic checks (Word format mode)
+
+Format-specific only. General-architecture checks (`source()`, hardcoded numbers,
+caching) are owned by `quarto-empirical.md`'s coder-critic — not duplicated here.
+Applies when a `docx:` block is present (i.e. Word output is requested).
 
 **Blocking deductions:**
-- `format: pdf:` block present (-10) — prohibited in Word-only file
-- `include-in-header:` present (-5)
-- `cite-method: biblatex` present (-3)
-- `kableExtra` loaded or used (-5)
+- `docx:` block missing its `csl:` (Word falls back to the wrong style) (-3)
+- `csl:` in the `docx:` block is not APA (-3)
+- `include-in-header:` or `cite-method: biblatex` inside the `docx:` block (-3)
+- `kableExtra` loaded or used for Word tables (-5)
 - Inline LaTeX in prose (-3 per, max -10)
-- Chicago CSL instead of APA (-3)
-- Missing `csl:` field (-3)
 - Tables not using flextable (-5)
-- `modelsummary` without `output = "flextable"` or global option (-5)
-- `set_flextable_defaults()` not called in setup chunk (-3)
+- `modelsummary` without `output = "flextable"` or the global option (-5)
+- `set_flextable_defaults()` not called in the Word setup chunk (-3)
 - `fig-width:` exceeds 6.5 (-2)
-- Any `source()` call in a chunk (-10)

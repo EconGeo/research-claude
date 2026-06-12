@@ -106,8 +106,8 @@ Beyond the submodule agents and skills, research-claude ships its own pipeline r
 |------|------------------|
 | `quarto-empirical.md` | **The required pipeline for new projects.** A single `.qmd` is the source of truth for all analysis, tables, figures, and prose — no external R scripts, no results registry, no ground-truth CSV. The rendered PDF *is* the paper. |
 | `data-manifest.md` | Every project keeps `data/raw/data_manifest.md` — a current table recording where each raw data file came from, how it was acquired, and which variables are used. The audit trail behind every reported number. |
-| `quarto-pdf.md` | PDF-only manuscript pipeline (`manuscript_quarto_pdf.qmd` → XeLaTeX + biblatex). |
-| `quarto-word.md` | Word-only manuscript pipeline (`manuscript_quarto_word.qmd` → DOCX + flextable). Kept separate from PDF — the rendering paths are incompatible. |
+| `quarto-pdf.md` | PDF output format reference for the single `manuscript.qmd`: the `pdf:` block plus kableExtra/figure/citation mechanics and LaTeX landmines (XeLaTeX + biblatex). |
+| `quarto-word.md` | Word output format reference: the optional `docx:` block plus flextable/CSL mechanics, rendered from the *same* `manuscript.qmd`. Architecture and caching are governed by `quarto-empirical.md`, not redefined here. |
 | `registry-verification-gate.md` | *Legacy.* Write-gate for older registry-pattern projects (e.g. `zoning2026`) that pre-date the `quarto-empirical` standard. New projects don't need it. |
 
 ---

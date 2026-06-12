@@ -204,9 +204,11 @@ non-zero and identifies the exact chunk and line. There are no silent wrong valu
 
 ## Word Output (Optional Secondary)
 
-Word output is available from the same `.qmd` by adding a `docx:` format block
-alongside `pdf:`. See `quarto-word.md` for format details. Word is for co-author
-sharing and revision responses only — the PDF is the canonical submission artifact.
+Word output is available from the **same** `manuscript.qmd` by adding a `docx:`
+format block alongside `pdf:`. See `quarto-word.md` for the block contents,
+flextable table mechanics, and the CSL gotcha (PDF uses biblatex and ignores `csl`;
+Word needs an APA `csl` inside its `docx:` block). Word is for co-author sharing and
+revision responses only — the PDF is the canonical submission artifact.
 
 Do NOT maintain a separate Word-first `.qmd`. One source file, multiple outputs.
 
@@ -283,11 +285,16 @@ Invoked when the reviewed artifact is `manuscript.qmd` and this rule is present.
 
 | Rule | Status for new projects |
 |------|------------------------|
-| `quarto-empirical.md` (this rule) | **Required** — pipeline architecture |
-| `quarto-pdf.md` | **Required** — PDF format and YAML details |
-| `quarto-word.md` | Optional — if Word secondary output is needed |
+| `quarto-empirical.md` (this rule) | **Required** — pipeline architecture, caching, data integrity, single source of ground truth |
+| `quarto-pdf.md` | **Required** — `pdf:` format block + kableExtra/figure/citation mechanics for the canonical PDF output |
+| `quarto-word.md` | Optional — `docx:` format block + flextable/CSL mechanics, only if Word secondary output is needed |
 | `registry-verification-gate.md` | **Legacy only** — registry-pattern projects (e.g. zoning2026) |
 | `working-paper-format.md` (clo-author) | **Legacy only** — LaTeX-first projects |
+
+`quarto-pdf.md` and `quarto-word.md` are **format-reference** docs for the two output
+formats of the single `manuscript.qmd` — they describe rendering mechanics and
+R-package landmines, not a competing file architecture. This rule owns the
+source-of-truth, caching, and data-integrity governance; they own format details.
 
 For any project starting after this rule was introduced, the Quarto empirical
 pipeline is the default. Deviations require explicit justification in CLAUDE.md.
