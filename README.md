@@ -313,15 +313,33 @@ The Connector is a **fork of the official Zotero Connector** that adds an agent-
 
 ### Install the Connector (Chrome)
 
-1. Download `zotpilot-connector-v*.zip` from the [ZotPilot releases page](https://github.com/xunhe730/ZotPilot/releases/latest) and unzip it.
+> **What this is:** the Connector is a Chrome extension maintained by the upstream author ([xunhe730](https://github.com/xunhe730/ZotPilot)), not by research-claude — we just bundle its source so you understand the moving parts. Like any Chrome extension, it has to be loaded into your browser once; neither `pip install` nor cloning this repo does that for you. Below are two ways to get it loaded — **most people should use Option A.**
+
+#### Option A — Download the prebuilt extension *(recommended — no programming needed)*
+
+1. Open the [ZotPilot releases page](https://github.com/xunhe730/ZotPilot/releases/latest), download `zotpilot-connector-v*.zip`, and unzip it.
 2. In Chrome, open `chrome://extensions/`.
-3. Enable **Developer mode** (top-right toggle).
-4. Click **Load unpacked** and select the folder containing `manifest.json`.
-5. Confirm the Zotero/ZotPilot icon appears in the toolbar — and keep **Zotero Desktop running** during ingestion.
+3. Turn on **Developer mode** (toggle, top-right).
+4. Click **Load unpacked** and select the unzipped folder (the one containing `manifest.json`).
+5. Confirm the Zotero/ZotPilot icon appears in the toolbar — and keep **Zotero Desktop running** whenever you ingest papers.
 
-> **To upgrade:** download the latest release zip again, then click the refresh icon on the unpacked ZotPilot Connector entry in `chrome://extensions/`.
+> **To upgrade:** download the latest release zip again, unzip over the old folder, then click the refresh icon on the ZotPilot Connector entry in `chrome://extensions/`.
 
-**Without the Connector**, ingestion degrades to *metadata-only* (no PDFs attached) and pure-URL ingests fail — search, citation lookup, and library organization are unaffected. Install it if you want Claude to actually fetch the papers, not just their bibliographic records.
+#### Option B — Build from the copy already in this repo *(advanced — needs Node.js)*
+
+If you'd rather not download a separate file — the Connector source is already in your clone at `submodules/zotpilot/connector/`, pinned to the same commit as everything else. Building it requires [Node.js](https://nodejs.org/) installed. From the repo root:
+
+```bash
+cd submodules/zotpilot/connector
+npm install        # one-time: fetch build dependencies
+./build.sh -d      # builds the Chrome (MV3) extension into build/manifestv3/
+```
+
+Then in Chrome: `chrome://extensions/` → **Developer mode** on → **Load unpacked** → select the **`build/manifestv3/`** folder (load `build/`, *not* `src/` — `src/` won't work). Keep Zotero Desktop running during ingestion.
+
+> If you don't already have Node.js and a build toolchain, Option A is much less hassle. Option B mainly helps if you want the extension to match the exact pinned commit, or you can't download the release zip.
+
+**Without the Connector** (either option), ingestion degrades to *metadata-only* (no PDFs attached) and pure-URL ingests fail — search, citation lookup, and library organization are unaffected. Install it if you want Claude to actually fetch the papers, not just their bibliographic records.
 
 ---
 
