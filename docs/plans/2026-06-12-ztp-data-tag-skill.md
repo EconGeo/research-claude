@@ -22,6 +22,7 @@
 - **How skills install:** `apply.sh` copies `skills/*` into a target project's `.claude/skills/` (see the `RC_SKILLS` block near the end of `apply.sh`). So creating `skills/ztp-data-tag/SKILL.md` is enough for it to install — only the *descriptive* `--list` output and header comment in `apply.sh` need manual updates.
 - **Skill conventions (match these):** see `skills/new-project-ztp/SKILL.md` (research-claude's own skill, references MCP tools by full `mcp__zotpilot__*` name) and `submodules/zotpilot/claude-skills/ztp-profile/SKILL.md` (shows `manage_tags` / `manage_collections` usage and the rule that `manage_tags(action="set")` is destructive — use `action="add"`).
 - **ZotPilot MCP tools that exist** (confirm names against the live tool list at execution time): `get_index_stats`, `browse_library`, `advanced_search`, `get_paper_details`, `search_papers`, `get_passage_context`, `manage_tags`, `manage_collections`, `create_note`, `get_notes`, `index_library`. Write ops (`manage_tags`, `create_note`) require `zotero_api_key` + `zotero_user_id` (README Step 7).
+- **Persistence is global, and that is the whole point of the design.** Tags and notes are written to the **Zotero items** (via the Zotero Web API, sync back to the app); the ChromaDB index and ZotPilot config live in the user's home dir (`~/.local/share/zotpilot/`, `~/.config/zotpilot/`). None of this is per-project — `apply.sh` only drops skill/rule files and a `.mcp.json` that points at the same global ZotPilot. **Consequence:** the `data-tagged` marker is visible to every future project, so a whole-library pass is one-time and a new project's run skips already-tagged items. **Invariant: the idempotency key MUST be the Zotero `data-tagged` tag (read live via `advanced_search`), never a project-local state file** — a local file would silently re-do work in every new project. Note ChromaDB does *not* auto-update when tags/notes are written; a re-index is only needed to make them semantically searchable, not for dedup.
 - **Text channels (decisive for extraction quality):** verified in the ZotPilot source — `get_paper_details` returns metadata + **abstract** from Zotero SQLite (not body text); the paper **body lives only as chunks in ChromaDB**, reachable via `search_papers` (semantic top-K) and `get_passage_context` (adjacent chunks). **No tool returns a paper's full text or all of its chunks.** So extraction is *retrieval-based* (query the index per paper), and any paper not indexed in ChromaDB is **abstract-only** — datasets are usually absent from abstracts, so those will be low-confidence.
 - **You cannot unit-test a Claude skill.** "Verification" is: (a) structural checks on the markdown, (b) a real `apply.sh` install into a temp dir, (c) a manual pilot run against a real Zotero collection. Tasks below reflect that.
 
@@ -193,8 +194,12 @@ it may span multiple sessions; the marker tag makes it resumable.
 - **Opt-in & confirm.** Never write without an explicit user OK on the batch preview.
 - **Pilot first.** Always one collection before any whole-library run.
 - **`add`, never `set`** for tags — `set` is destructive.
-- **Resumable.** The `data-tagged` marker is the idempotency key; always skip items that
-  carry it unless the user asks for a refresh.
+- **Resumable & cross-project.** The `data-tagged` Zotero tag is the idempotency key —
+  it lives on the item in the global Zotero library, so it is visible from every project.
+  Always skip items that carry it unless the user asks for a refresh. NEVER track "done"
+  state in a project-local file; that would silently re-tag the whole library in each new
+  project. (Tags/notes persist in Zotero immediately; ChromaDB only reflects them after a
+  re-index, which is needed for search but not for this skip check.)
 - **Flag weak extractions.** Mark `source: abstract-only` items so the user can review.
 - **Same five shared keys as journal-digest** — keep `datasets/variables/unit/timespan/access`
   identical so Obsidian hubs and any parser treat digest and library papers uniformly.
