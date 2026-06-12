@@ -8,7 +8,8 @@
 #   ./apply.sh --list  # show what would be installed
 #
 # What this installs:
-#   From clo-author:   .claude/agents/*.md, .claude/skills/, .claude/rules/
+#   From clo-author:   .claude/agents/*.md, .claude/skills/, .claude/rules/,
+#                      .claude/state/obsidian-config.md.example (opt-in Obsidian integration template)
 #   From ai-audit:     .claude/skills/humanize/, .claude/skills/verify-claims/,
 #                      .claude/agents/humanize-auditor.md, .claude/agents/claim-verifier.md
 #                      .claude/rules/ai-disclosure.md
@@ -53,6 +54,7 @@ if [[ "$LIST_MODE" == true ]]; then
   echo "  .claude/agents/ — all research pipeline agents"
   echo "  .claude/skills/ — all research skills (strategize, write, review-paper, etc.)"
   echo "  .claude/rules/  — working-paper-format, quarto rules, etc."
+  echo "  .claude/state/obsidian-config.md.example — opt-in Obsidian integration template"
   echo ""
   echo "From ai-audit (submodules/ai-audit):"
   echo "  .claude/skills/humanize/"
@@ -124,6 +126,11 @@ fi
 if [[ -d "$CLO/.claude/rules" ]]; then
   echo "→ Installing clo-author rules..."
   cp "$CLO/.claude/rules/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
+fi
+if [[ -d "$CLO/.claude/state" ]]; then
+  echo "→ Installing clo-author state templates (Obsidian config example)..."
+  mkdir -p "$PROJECT_DIR/.claude/state"
+  cp "$CLO/.claude/state/"*.example "$PROJECT_DIR/.claude/state/" 2>/dev/null || true
 fi
 
 # ── 2. ai-audit: humanize, verify-claims, ai-disclosure ──────────────────────

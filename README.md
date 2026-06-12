@@ -290,6 +290,45 @@ See [EconGeo/journal-digest](https://github.com/EconGeo/journal-digest) for full
 
 ---
 
+## Optional — Obsidian knowledge base (journal-digest + `/checkpoint`)
+
+If you keep an [Obsidian](https://obsidian.md) vault, two parts of the pipeline can write into it, turning Claude's session output into a durable, cross-linked knowledge base instead of a pile of dated files:
+
+1. **`/checkpoint` → project journal.** When you wrap a session, `/checkpoint` appends a journal entry to the matching Obsidian project note (plus a dashboard row and daily-journal entry), alongside its usual memory + `SESSION_REPORT.md` updates.
+2. **journal-digest → literature knowledge base.** After journal-digest produces a weekly digest (Step 9), ask Claude — in-session, with the Obsidian MCP connected — to file the synthesized digest into your vault. Each notable paper becomes a note, `[[wikilink]]`-crosslinked to related papers, your prior work, and the project it bears on. Over weeks this compounds into a navigable map of your field.
+
+Both are **opt-in and gated** — nothing touches your vault unless you configure it. If `.claude/state/obsidian-config.md` is absent or the Obsidian MCP isn't connected, `/checkpoint` silently skips the vault and only updates memory + scaffold files.
+
+### Setup
+
+1. Install [Obsidian](https://obsidian.md) and enable the **Local REST API** community plugin (Settings → Community plugins).
+2. Connect an Obsidian MCP server so Claude can read/write vault notes — see [mcp-obsidian](https://github.com/MarkusPfundstein/mcp-obsidian). Register it in `.mcp.json` alongside ZotPilot.
+3. Create the config from the template `apply.sh` installed to `.claude/state/obsidian-config.md.example`:
+   ```text
+   # In Claude Code, from your project:
+   /checkpoint --setup-obsidian
+   # → copies the .example to .claude/state/obsidian-config.md and walks you
+   #   through vault path + working-dir → project-note mapping
+   ```
+   The real `obsidian-config.md` is gitignored by design — your vault paths and mappings stay local.
+
+### The digest → crosslinked knowledge base loop
+
+```
+journal-digest (Tier 1, automated)  →  digests/YYYY-MM-DD_raw.md
+        ↓  open in Claude Code (Tier 2), Obsidian MCP connected
+Claude synthesizes and files into the vault:
+   • one note per notable paper (abstract, why it matters, connections)
+   • [[wikilinks]] to related papers and your MY_PUBLICATIONS
+   • linked from the relevant Obsidian project note
+        ↓  repeat each week
+A cumulative, navigable literature map — not a stack of dated digests
+```
+
+Because the notes are crosslinked, value compounds: a new paper on, say, zoning supply elasticity automatically connects to everything you've already filed on the topic. This is a Claude-in-session workflow enabled by the Obsidian MCP — journal-digest writes plain markdown; Claude does the synthesis and filing.
+
+---
+
 ## Step 10 — Verify the full stack
 
 After all steps, check:
@@ -302,6 +341,7 @@ After all steps, check:
 - [ ] `quarto render` produces output from a test `.qmd` file
 - [ ] `xelatex` compiles a test `.tex` file
 - [ ] `journal-digest` (if installed): `python run_gather.py --dry-run` completes without errors
+- [ ] Obsidian (if used): `.claude/state/obsidian-config.md` exists and the Obsidian MCP tools appear in `/tools`
 
 ---
 
