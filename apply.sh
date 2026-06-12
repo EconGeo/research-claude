@@ -16,7 +16,10 @@
 #   From research-claude (own skills/):
 #                      .claude/skills/new-project-ztp/
 #   From research-claude (own rules/):
-#                      .claude/rules/quarto-empirical.md (required pipeline for new projects)
+#                      .claude/rules/quarto-empirical.md         (required pipeline for new projects)
+#                      .claude/rules/data-manifest.md            (raw-data provenance audit trail)
+#                      .claude/rules/quarto-pdf.md               (PDF-only manuscript pipeline)
+#                      .claude/rules/quarto-word.md              (Word-only manuscript pipeline)
 #                      .claude/rules/registry-verification-gate.md (legacy: registry-pattern projects)
 #
 # What this does NOT install:
@@ -71,6 +74,9 @@ if [[ "$LIST_MODE" == true ]]; then
   echo ""
   echo "From research-claude (own rules/):"
   echo "  .claude/rules/quarto-empirical.md            — required pipeline: single .qmd, cached, PDF primary"
+  echo "  .claude/rules/data-manifest.md               — raw-data provenance audit trail (data/raw/data_manifest.md)"
+  echo "  .claude/rules/quarto-pdf.md                  — PDF-only manuscript pipeline (XeLaTeX)"
+  echo "  .claude/rules/quarto-word.md                 — Word-only manuscript pipeline (DOCX)"
   echo "  .claude/rules/registry-verification-gate.md  — legacy: registry-pattern projects only"
   echo ""
   if [[ "$WITH_DIGEST" == true ]]; then
@@ -166,7 +172,7 @@ fi
 # ── 6. research-claude own rules (quarto-pdf, quarto-word) ───────────────────
 RC_RULES="$SCRIPT_DIR/rules"
 if [[ -d "$RC_RULES" ]]; then
-  echo "→ Installing research-claude rules (quarto-empirical, quarto-pdf, quarto-word, registry-verification-gate)..."
+  echo "→ Installing research-claude rules (quarto-empirical, data-manifest, quarto-pdf, quarto-word, registry-verification-gate)..."
   cp "$RC_RULES/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
 fi
 

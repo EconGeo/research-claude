@@ -98,6 +98,18 @@ cd research-claude
 
 `apply.sh` copies `.claude/` files from each submodule into `your-project/.claude/`. It does not touch your Python environments or register MCP servers — those require user judgment about paths (Steps 7–8).
 
+### Rules installed into `.claude/rules/`
+
+Beyond the submodule agents and skills, research-claude ships its own pipeline rules that Claude reads as standing project conventions:
+
+| Rule | What it enforces |
+|------|------------------|
+| `quarto-empirical.md` | **The required pipeline for new projects.** A single `.qmd` is the source of truth for all analysis, tables, figures, and prose — no external R scripts, no results registry, no ground-truth CSV. The rendered PDF *is* the paper. |
+| `data-manifest.md` | Every project keeps `data/raw/data_manifest.md` — a current table recording where each raw data file came from, how it was acquired, and which variables are used. The audit trail behind every reported number. |
+| `quarto-pdf.md` | PDF-only manuscript pipeline (`manuscript_quarto_pdf.qmd` → XeLaTeX + biblatex). |
+| `quarto-word.md` | Word-only manuscript pipeline (`manuscript_quarto_word.qmd` → DOCX + flextable). Kept separate from PDF — the rendering paths are incompatible. |
+| `registry-verification-gate.md` | *Legacy.* Write-gate for older registry-pattern projects (e.g. `zoning2026`) that pre-date the `quarto-empirical` standard. New projects don't need it. |
+
 ---
 
 ## Set up ZotPilot (the trickiest step)
