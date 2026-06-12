@@ -87,3 +87,23 @@
 **Status:**
 - Done: **Plan fully executed (Tasks 1–4).** Skill built, wired, documented, piloted against the real library, and corrected for the 4 issues the pilot exposed.
 - Optional next: a whole-library `/ztp-data-tag` run (now safe with the fixes), then re-index so Data notes are searchable. Consider proposing a `delete_note` tool upstream in ZotPilot.
+
+## 2026-06-12 20:45 UTC — Plan written: ZotPilot delete_note MCP tool (checkpoint before /clear)
+
+**Operations:**
+- Explored the ZotPilot codebase (`submodules/zotpilot` = `EconGeo/ZotPilot`) to ground a plan for a `delete_note` MCP tool (the gap the ztp-data-tag pilot exposed — no MCP path to delete a note).
+- Wrote `docs/plans/2026-06-12-zotpilot-delete-note-tool.md` (TDD, full code + tests inline). Decided NOT to keep `spatial` test tags? No — **kept** the spatial backfill per user.
+
+**Key facts verified in ZotPilot source (baked into the plan):**
+- MCP tools register via `@mcp.tool(tags=tool_tags("extended","write"))` in `write_ops.py` (auto-imported by `tools/__init__.py`) — no registry edit needed.
+- `ZoteroWriter.delete_item(key)` already trashes ANY item (no type guard) → `delete_note` adds an `itemType=="note"` guard + a default `[ZotPilot]`-marker guard so it never deletes a paper or the user's own notes.
+- Tests mock pyzotero `_zot` (writer) / patch `_get_writer` (tool); run with `uv run pytest`. Anchors confirmed: `create_note` write_ops.py:154, `delete_item` zotero_writer.py:433, `logger` zotero_writer.py:14, imports present.
+
+**Plan shape:** Task 1 writer method + guard tests · Task 2 MCP tool wrapper + delegation test · Task 3 regression run + push `feat/delete-note-tool` branch + `gh pr create` to EconGeo/ZotPilot · Task 4 (gated on merge) bump submodule + switch ztp-data-tag undo to use `delete_note`.
+
+**Commits (research-claude):**
+- `8921257` docs: add plan for ZotPilot delete_note MCP tool
+
+**Status:**
+- Done: delete_note plan written, grounded, committed/pushed. Checkpoint complete.
+- Pending (next session, after /clear): **execute `docs/plans/2026-06-12-zotpilot-delete-note-tool.md`** via subagent-driven-development. Work is in `submodules/zotpilot` (Tasks 1–3); Task 4 (research-claude) is gated on the PR merging. Needs a ZotPilot dev env (`uv`/deps) for pytest; no live Zotero required (mocked).
