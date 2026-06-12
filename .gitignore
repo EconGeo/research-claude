@@ -1,1 +1,4 @@
 .DS_Store
+
+# Session reports live in docs/; never commit one at the repo root
+/SESSION_REPORT.md
