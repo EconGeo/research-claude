@@ -4,6 +4,14 @@ A fully composed research pipeline for empirical academic work. Combines [clo-au
 
 **Audience:** Academic researchers who write empirical papers (economics, finance, social science) and want Claude Code as a research partner, not just a coding assistant.
 
+> ## 🚀 Easiest way to install: let Claude do it
+>
+> You don't have to follow the steps below by hand. Open this repo in [Claude Code](https://claude.com/claude-code) and simply tell it:
+>
+> > *"Read the README and install everything for me."*
+>
+> Claude will work through this guide step by step — installing the tools, running `apply.sh`, configuring ZotPilot, and verifying each step as it goes. When a step needs **you** (entering an API key, approving an app install, picking your Zotero folder, or loading the Chrome extension), it will pause and walk you through it. The numbered steps below are the same instructions, written out for reference or if you'd rather do it yourself.
+
 ---
 
 ## What you get
