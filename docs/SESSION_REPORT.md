@@ -60,3 +60,30 @@
 **Status:**
 - Done: Plan Tasks 1–3 (build + wire + document the skill) — committed, pushed, verified.
 - Pending: **Task 4 — manual pilot.** Cannot run in this tooling repo. In a project with ZotPilot configured + write creds + an indexed library: invoke `/ztp-data-tag`, pilot a small (≤5-paper) collection, confirm tags + Data note land, verify re-run skips `data-tagged` items (resumability), test undo. Then record findings (datasets-found vs empty vs abstract-only) to judge a whole-library run.
+
+## 2026-06-12 20:30 UTC — Task 4 pilot run + skill fixes
+
+**Operations:**
+- Created test project `~/data_tag_test`, installed via `apply.sh` (ztp-data-tag skill landed).
+- Ran the full pilot against the live Zotero library (293 docs indexed) via ZotPilot MCP. Picked collection `spatial` (5 papers): CI84N8RM, DV4AI84P, NIYFJAEF (dup), MQ5DDUU9, 4LDTWWPX. Wrote `dataset:*`/`var:*`/`data-tagged` tags + a "Data (auto-extracted)" note to each. Verified, tested resumability and undo.
+- Applied 4 fixes to `skills/ztp-data-tag/SKILL.md`.
+
+**Pilot result — all 5 test steps passed:**
+- Preconditions check → collection pick → batch preview before write: ✓
+- Tags + Data note landed on all 5 (verified via `advanced_search` tag=data-tagged + `get_notes`): ✓
+- Resumability: marker query returns all tagged → re-run sees 0 new → "already processed": ✓
+- Undo: removed tags from MQ5DDUU9 → marker returns 4 → reprocessed exactly that one: ✓
+- Extraction quality good even for methods papers (Xu→US voter-turnout/EDR; Ashenfelter-Card→CETA); the ChromaDB retrieval channel surfaced datasets absent from abstracts (Montréal Altus sales 1993–2000; Aberdeen 2004–2007). Justifies a whole-library run.
+
+**Findings → fixes (committed to the skill):**
+- **CRITICAL:** `manage_tags(action="add")` creates NO new tags without `allow_new=true` — as originally written the skill would tag nothing. Fixed: `allow_new=true` + Rules bullet.
+- **IMPORTANT:** `create_note` not idempotent → duplicate Data notes on reprocess. Fixed: `idempotent=true`.
+- **IMPORTANT:** ZotPilot has no delete-note MCP tool — Undo "delete notes" is manual in Zotero. Fixed: Undo wording + rely on `idempotent=true`.
+- **MINOR:** `search_papers` has no `doc_id` filter (only collection/author/tag); one collection-scoped search covers several papers efficiently — and `section_weights` has no `data` key (use `methods`). Fixed: Step 3 reworded.
+
+**Decisions:**
+- Left the `spatial` collection genuinely backfilled (real, useful artifact; all 5 consistently tagged + noted after restoring MQ5DDUU9). `~/data_tag_test/` is disposable scaffold.
+
+**Status:**
+- Done: **Plan fully executed (Tasks 1–4).** Skill built, wired, documented, piloted against the real library, and corrected for the 4 issues the pilot exposed.
+- Optional next: a whole-library `/ztp-data-tag` run (now safe with the fixes), then re-index so Data notes are searchable. Consider proposing a `delete_note` tool upstream in ZotPilot.

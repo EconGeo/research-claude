@@ -84,12 +84,15 @@ If every item already carries `data-tagged`, report "collection already processe
 For each new item (work in batches of 5):
 
 1. Get metadata + abstract via `mcp__zotpilot__get_paper_details(doc_id=...)`.
-2. Get the data/methods passages from ChromaDB: run `mcp__zotpilot__search_papers` scoped
-   to this `doc_id` with a data-oriented query such as
-   `"data sources dataset sample period variables identification methods"`, then
-   `mcp__zotpilot__get_passage_context` on the best hits to pull adjacent context. Because
-   this returns top chunks (not the whole paper), run a second query if the first misses
-   the data section.
+2. Get the data/methods passages from ChromaDB. **`search_papers` has no `doc_id` filter** —
+   scope by `collection` (or `author`/`tag`) instead. Run ONE collection-scoped search with a
+   data-oriented query such as `"data sources dataset sample period variables methods"` (add
+   `section_weights={"methods":1,"results":0.6}` to favor the data section — note there is no
+   `data` section key; data lives under `methods`). The results carry a `doc_id` per passage,
+   so **group them by `doc_id`** — one collection search returns the data passages for *several*
+   papers at once (more efficient than one search per paper). Use `mcp__zotpilot__get_passage_context`
+   on the best hits for adjacent context. Because results are top chunks (not the whole paper),
+   run a second query if a paper's data section is missing.
 3. Set `source`: "full-text" if the item is indexed and chunks came back; "abstract-only"
    if it is **not** indexed (you then have only the abstract from step 1 — lower confidence,
    datasets are often absent from abstracts).
@@ -108,12 +111,15 @@ before writing. Batch writes (>5 papers) must never run without confirmation.
 
 For each approved item:
 
-1. **Tags** — `mcp__zotpilot__manage_tags(action="add", ...)` with the `dataset:` and
-   `var:` tags plus the `data-tagged` marker.
+1. **Tags** — `mcp__zotpilot__manage_tags(action="add", allow_new=true, ...)` with the
+   `dataset:` and `var:` tags plus the `data-tagged` marker.
+   - **`allow_new=true` is REQUIRED.** The `dataset:*`/`var:*` tags are new to the library
+     vocabulary; without `allow_new=true`, `add` silently creates **none** of them.
    - Use `action="add"` ONLY. NEVER `action="set"` — set replaces all existing tags and is
      destructive.
-2. **Note** — `mcp__zotpilot__create_note` with a note titled "Data (auto-extracted)"
-   containing the JSON block and a readable list:
+2. **Note** — `mcp__zotpilot__create_note(idempotent=true, title="Data (auto-extracted)", ...)`
+   containing the JSON block and a readable list. **`idempotent=true`** skips creation if the
+   item already has a ZotPilot note, so reprocessing an item never produces a duplicate note:
 
    ```
    Data (auto-extracted by /ztp-data-tag)
@@ -146,14 +152,20 @@ it may span multiple sessions; the marker tag makes it resumable.
 ## Undo
 
 - Remove tags: `mcp__zotpilot__manage_tags(action="remove")` for `data-tagged`,
-  `dataset:*`, `var:*`.
-- Delete the "Data (auto-extracted)" notes.
+  `dataset:*`, `var:*`. Removing `data-tagged` alone makes the item eligible for
+  reprocessing on the next run.
+- **Notes:** ZotPilot has **no delete-note MCP tool**, so the "Data (auto-extracted)" note
+  must be deleted manually in Zotero. (Because Step 5 creates notes with `idempotent=true`,
+  a reprocessed item won't accumulate duplicate notes even if you leave the old one in place.)
 
 ## Rules
 
 - **Opt-in & confirm.** Never write without an explicit user OK on the batch preview.
 - **Pilot first.** Always one collection before any whole-library run.
-- **`add`, never `set`** for tags — `set` is destructive.
+- **`add` + `allow_new=true`, never `set`** for tags — `allow_new=true` is required or no
+  new `dataset:*`/`var:*` tags are created; `set` is destructive (replaces all tags).
+- **Notes are write-once via `idempotent=true`** — there is no delete-note tool; manual
+  deletion in Zotero is the only removal path.
 - **Resumable & cross-project.** The `data-tagged` Zotero tag is the idempotency key —
   it lives on the item in the global Zotero library, so it is visible from every project.
   Always skip items that carry it unless the user asks for a refresh. NEVER track "done"
