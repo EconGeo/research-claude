@@ -420,7 +420,7 @@ A cumulative, navigable literature map — and a data-discovery index over it
 - **Access:** public (FFIEC) · proprietary (Zillow)
 ```
 
-Because each dataset is a wikilink, Obsidian's backlinks turn `[[HMDA]]` into a hub that lists **every paper you've filed that used HMDA**. So when you start a project needing data on a topic, you open the dataset note (or search a variable) and immediately see what's already been used and where to get it — data discovery, not just literature discovery.
+Because each dataset is a wikilink, Obsidian's backlinks turn `[[HMDA]]` into a hub that lists **every paper you've filed that used HMDA**. So when you start a project needing data on a topic, you open the dataset note (or search a variable) and immediately see what's already been used and where to get it — data discovery, not just literature discovery. To do the same for papers **already** in your library — not just newly digested ones — run `/ztp-data-tag`, which extracts the same fields and writes them back to Zotero as tags + a Data note (piloting one collection first).
 
 Because the notes are crosslinked, value compounds: a new paper on, say, zoning supply elasticity automatically connects to everything — and every dataset — you've already filed on the topic. This is a Claude-in-session workflow enabled by the Obsidian MCP — journal-digest writes plain markdown; Claude does the synthesis and filing.
 
@@ -451,6 +451,7 @@ Once installed, the main entry points are:
 |-------|------------|
 | `/ztp-research` | Find and ingest new papers into your Zotero library |
 | `/ztp-review` | Synthesize papers already in your library |
+| `/ztp-data-tag` | Backfill dataset/variable tags + a structured Data note onto papers already in your Zotero library (pilots one collection first) |
 | `/seed-papers` | Pre-search your Zotero library to seed a bibliography before `/discover lit` |
 | `/strategize` | Design your identification strategy |
 | `/write` | Draft paper sections |
