@@ -22,6 +22,7 @@
 - **How skills install:** `apply.sh` copies `skills/*` into a target project's `.claude/skills/` (see the `RC_SKILLS` block near the end of `apply.sh`). So creating `skills/ztp-data-tag/SKILL.md` is enough for it to install — only the *descriptive* `--list` output and header comment in `apply.sh` need manual updates.
 - **Skill conventions (match these):** see `skills/new-project-ztp/SKILL.md` (research-claude's own skill, references MCP tools by full `mcp__zotpilot__*` name) and `submodules/zotpilot/claude-skills/ztp-profile/SKILL.md` (shows `manage_tags` / `manage_collections` usage and the rule that `manage_tags(action="set")` is destructive — use `action="add"`).
 - **ZotPilot MCP tools that exist** (confirm names against the live tool list at execution time): `get_index_stats`, `browse_library`, `advanced_search`, `get_paper_details`, `search_papers`, `get_passage_context`, `manage_tags`, `manage_collections`, `create_note`, `get_notes`, `index_library`. Write ops (`manage_tags`, `create_note`) require `zotero_api_key` + `zotero_user_id` (README Step 7).
+- **Text channels (decisive for extraction quality):** verified in the ZotPilot source — `get_paper_details` returns metadata + **abstract** from Zotero SQLite (not body text); the paper **body lives only as chunks in ChromaDB**, reachable via `search_papers` (semantic top-K) and `get_passage_context` (adjacent chunks). **No tool returns a paper's full text or all of its chunks.** So extraction is *retrieval-based* (query the index per paper), and any paper not indexed in ChromaDB is **abstract-only** — datasets are usually absent from abstracts, so those will be low-confidence.
 - **You cannot unit-test a Claude skill.** "Verification" is: (a) structural checks on the markdown, (b) a real `apply.sh` install into a temp dir, (c) a manual pilot run against a real Zotero collection. Tasks below reflect that.
 
 ---
@@ -111,15 +112,30 @@ If every item already carries `data-tagged`, report "collection already processe
 
 ## Step 3 — Extract the data field per paper
 
+**How text reaches you (important):** there are two channels and no full-PDF read.
+- `mcp__zotpilot__get_paper_details(doc_id=...)` returns **metadata + abstract** from
+  Zotero's SQLite — *not* the body.
+- The body (data/methods) lives only as **chunks in ChromaDB**. You retrieve it with
+  `mcp__zotpilot__search_papers` (semantic, returns top-K matching chunks) and
+  `mcp__zotpilot__get_passage_context` (surrounding chunks). There is **no tool that
+  returns a paper's full text or all of its chunks** — you extract from retrieved chunks.
+
 For each new item (work in batches of 5):
 
-1. Pull text with `mcp__zotpilot__get_paper_details(doc_id=...)`. For methods detail, use
-   `mcp__zotpilot__search_papers` / `mcp__zotpilot__get_passage_context` scoped to that
-   paper to surface the data/methods passages.
-2. Set `source`: "full-text" if the indexed PDF text was available, else "abstract-only".
-3. Fill the schema from the text. Datasets/variables are usually in the data/methods
-   section. If nothing is identifiable, leave arrays empty and say so in the report.
-4. Slugify tag values: lowercase, spaces → hyphens (e.g. `dataset:zillow-ztrax`,
+1. Get metadata + abstract via `mcp__zotpilot__get_paper_details(doc_id=...)`.
+2. Get the data/methods passages from ChromaDB: run `mcp__zotpilot__search_papers` scoped
+   to this `doc_id` with a data-oriented query such as
+   `"data sources dataset sample period variables identification methods"`, then
+   `mcp__zotpilot__get_passage_context` on the best hits to pull adjacent context. Because
+   this returns top chunks (not the whole paper), run a second query if the first misses
+   the data section.
+3. Set `source`: "full-text" if the item is indexed and chunks came back; "abstract-only"
+   if it is **not** indexed (you then have only the abstract from step 1 — lower confidence,
+   datasets are often absent from abstracts).
+4. Fill the schema from the abstract + retrieved chunks. Datasets/variables are usually in
+   the data/methods section. If nothing is identifiable, leave arrays empty and say so in
+   the report.
+5. Slugify tag values: lowercase, spaces → hyphens (e.g. `dataset:zillow-ztrax`,
    `var:loan-denial-rate`). Keep the readable names in the note's JSON.
 
 ## Step 4 — Preview and confirm (USER_REQUIRED before any write)
