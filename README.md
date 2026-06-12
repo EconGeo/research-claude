@@ -264,7 +264,7 @@ micromamba run -n zotpilot zotpilot index
 
 Verify the index:
 ```bash
-micromamba run -n zotpilot zotpilot stats
+micromamba run -n zotpilot zotpilot status
 # Should report: N papers indexed, embedding provider, index size
 ```
 
@@ -419,7 +419,7 @@ After all steps, check:
 
 - [ ] Claude Code opens in your project
 - [ ] `mcp__zotpilot__*` tools appear in tool list (Settings → Tools or type `/tools`)
-- [ ] `zotpilot stats` shows papers indexed
+- [ ] `zotpilot status` shows papers indexed
 - [ ] `/ztp-research` skill invocable (type `/ztp` in Claude Code)
 - [ ] Connector (for paper download): ZotPilot Connector loaded in `chrome://extensions/`, Zotero Desktop running
 - [ ] `/humanize` and `/verify-claims` skills available
@@ -438,12 +438,13 @@ Once installed, the main entry points are:
 |-------|------------|
 | `/ztp-research` | Find and ingest new papers into your Zotero library |
 | `/ztp-review` | Synthesize papers already in your library |
+| `/seed-papers` | Pre-search your Zotero library to seed a bibliography before `/discover lit` |
 | `/strategize` | Design your identification strategy |
 | `/write` | Draft paper sections |
 | `/review-paper` | Manuscript review (single-pass, adversarial, or simulated peer review) |
 | `/verify-claims` | Hallucination check on a draft |
 | `/humanize` | Detect AI-voice tells before submission |
-| `/data-analysis` | End-to-end R analysis |
+| `/analyze` | End-to-end data analysis (R / Python / Julia) |
 
 See [clo-author](https://github.com/hugosantanna/clo-author) for the full skill and agent reference.
 
@@ -518,21 +519,22 @@ git submodule update --remote            # pull latest from all upstreams
 
 **Remove Claude Code skills/agents/rules:**
 ```bash
-rm -rf /your-project/.claude/
+rm -rf ~/path/to/your-project/.claude/
 ```
 
 **Remove ZotPilot:**
 ```bash
 micromamba env remove -n zotpilot          # removes Python env
-rm /your-project/.mcp.json                 # removes MCP registration
+rm ~/path/to/your-project/.mcp.json                 # removes MCP registration
 rm -rf ~/.config/zotpilot/                 # removes config + API keys
 rm -rf ~/.local/share/zotpilot/            # removes ChromaDB index
 ```
+Also remove the **ZotPilot Connector** from Chrome: open `chrome://extensions/` and click **Remove** on the ZotPilot Connector entry.
 
 **Remove journal-digest:**
 ```bash
 micromamba env remove -n journal-digest
-rm -rf /your-project/journal-digest/
+rm -rf ~/path/to/your-project/journal-digest/
 launchctl unload ~/Library/LaunchAgents/com.YOUR_USERNAME.journal-digest.plist  # if scheduled
 ```
 
