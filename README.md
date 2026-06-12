@@ -379,7 +379,7 @@ See [EconGeo/journal-digest](https://github.com/EconGeo/journal-digest) for full
 If you keep an [Obsidian](https://obsidian.md) vault, two parts of the pipeline can write into it, turning Claude's session output into a durable, cross-linked knowledge base instead of a pile of dated files:
 
 1. **`/checkpoint` → project journal.** When you wrap a session, `/checkpoint` appends a journal entry to the matching Obsidian project note (plus a dashboard row and daily-journal entry), alongside its usual memory + `SESSION_REPORT.md` updates.
-2. **journal-digest → literature knowledge base.** After journal-digest produces a weekly digest (Step 9), ask Claude — in-session, with the Obsidian MCP connected — to file the synthesized digest into your vault. Each notable paper becomes a note, `[[wikilink]]`-crosslinked to related papers, your prior work, and the project it bears on. Over weeks this compounds into a navigable map of your field.
+2. **journal-digest → literature knowledge base.** After journal-digest produces a weekly digest (Step 9), ask Claude — in-session, with the Obsidian MCP connected — to file the synthesized digest into your vault. Each notable paper becomes a note, `[[wikilink]]`-crosslinked to related papers, your prior work, **the datasets and variables it uses**, and the project it bears on. Over weeks this compounds into a navigable map of your field *and* the data behind it.
 
 Both are **opt-in and gated** — nothing touches your vault unless you configure it. If `.claude/state/obsidian-config.md` is absent or the Obsidian MCP isn't connected, `/checkpoint` silently skips the vault and only updates memory + scaffold files.
 
@@ -403,13 +403,26 @@ journal-digest (Tier 1, automated)  →  digests/YYYY-MM-DD_raw.md
         ↓  open in Claude Code (Tier 2), Obsidian MCP connected
 Claude synthesizes and files into the vault:
    • one note per notable paper (abstract, why it matters, connections)
+   • a ## Data block: dataset(s) as [[wikilinks]] + key variables used
    • [[wikilinks]] to related papers and your MY_PUBLICATIONS
    • linked from the relevant Obsidian project note
         ↓  repeat each week
-A cumulative, navigable literature map — not a stack of dated digests
+A cumulative, navigable literature map — and a data-discovery index over it
 ```
 
-Because the notes are crosslinked, value compounds: a new paper on, say, zoning supply elasticity automatically connects to everything you've already filed on the topic. This is a Claude-in-session workflow enabled by the Obsidian MCP — journal-digest writes plain markdown; Claude does the synthesis and filing.
+**Each note records the data behind the paper.** Tier-2 analysis (Step 9's prompt) extracts the dataset(s) and key variables each article uses; the filing step writes them into a `## Data` block, with datasets as `[[wikilinks]]`:
+
+```markdown
+## Data
+- **Datasets:** [[HMDA]], [[Zillow ZTRAX]]
+- **Key variables:** loan-denial rate, LTV, census-tract median income
+- **Unit / coverage:** census tract · 2010–2020
+- **Access:** public (FFIEC) · proprietary (Zillow)
+```
+
+Because each dataset is a wikilink, Obsidian's backlinks turn `[[HMDA]]` into a hub that lists **every paper you've filed that used HMDA**. So when you start a project needing data on a topic, you open the dataset note (or search a variable) and immediately see what's already been used and where to get it — data discovery, not just literature discovery.
+
+Because the notes are crosslinked, value compounds: a new paper on, say, zoning supply elasticity automatically connects to everything — and every dataset — you've already filed on the topic. This is a Claude-in-session workflow enabled by the Obsidian MCP — journal-digest writes plain markdown; Claude does the synthesis and filing.
 
 ---
 
