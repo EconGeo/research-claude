@@ -289,6 +289,42 @@ Indexer(config, library_id=group_lib_id).run()
 
 ---
 
+## Auto-download papers from a literature search (the Connector bridge)
+
+Indexing (Step 8) makes the papers you *already have* searchable. The **ZotPilot Connector** does the opposite direction: it lets Claude **pull new papers — with PDFs — straight into your Zotero library** from a literature search, no one-by-one downloading.
+
+The key advantage: saves go through **your own logged-in Chrome session**, so **institutional / paywalled PDFs come along**. On a campus network or VPN, hand Claude a list of DOIs or arXiv IDs (or let `/ztp-research` find them) and it deposits the full PDFs into Zotero.
+
+### How it works
+
+```
+You: "find recent papers on zoning supply elasticity and add the good ones"
+        ↓  /ztp-research
+1. Claude searches OpenAlex + your indexed library, shows a ranked candidate table
+2. You confirm which papers to ingest (and approve any institutional-access prompts)
+3. Claude calls ingest_by_identifiers →
+        agent → local bridge (127.0.0.1:2619) → Chrome Connector → Zotero Desktop
+4. The Connector saves each paper through your real browser session — PDF attached
+5. Claude auto-tags, files into a collection, and writes a per-paper report
+6. Re-index (Step 8) to make the new papers semantically searchable
+```
+
+The Connector is a **fork of the official Zotero Connector** that adds an agent-driven save path on top of the normal one. The two coexist: the official extension still handles your manual one-click saves; the fork handles agent-driven saves via the local bridge.
+
+### Install the Connector (Chrome)
+
+1. Download `zotpilot-connector-v*.zip` from the [ZotPilot releases page](https://github.com/xunhe730/ZotPilot/releases/latest) and unzip it.
+2. In Chrome, open `chrome://extensions/`.
+3. Enable **Developer mode** (top-right toggle).
+4. Click **Load unpacked** and select the folder containing `manifest.json`.
+5. Confirm the Zotero/ZotPilot icon appears in the toolbar — and keep **Zotero Desktop running** during ingestion.
+
+> **To upgrade:** download the latest release zip again, then click the refresh icon on the unpacked ZotPilot Connector entry in `chrome://extensions/`.
+
+**Without the Connector**, ingestion degrades to *metadata-only* (no PDFs attached) and pure-URL ingests fail — search, citation lookup, and library organization are unaffected. Install it if you want Claude to actually fetch the papers, not just their bibliographic records.
+
+---
+
 ## Step 9 — Set up journal-digest (optional)
 
 ```bash
@@ -357,6 +393,7 @@ After all steps, check:
 - [ ] `mcp__zotpilot__*` tools appear in tool list (Settings → Tools or type `/tools`)
 - [ ] `zotpilot stats` shows papers indexed
 - [ ] `/ztp-research` skill invocable (type `/ztp` in Claude Code)
+- [ ] Connector (for paper download): ZotPilot Connector loaded in `chrome://extensions/`, Zotero Desktop running
 - [ ] `/humanize` and `/verify-claims` skills available
 - [ ] `quarto render` produces output from a test `.qmd` file
 - [ ] `xelatex` compiles a test `.tex` file
