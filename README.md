@@ -361,13 +361,13 @@ Then in Chrome: `chrome://extensions/` → **Developer mode** on → **Load unpa
 
 # Create the Python env
 micromamba create -n journal-digest python=3.12 -c conda-forge
-micromamba run -n journal-digest pip install -r your-project/journal-digest/requirements.txt
+micromamba run -n journal-digest pip install -r ~/path/to/your-project/journal-digest/requirements.txt
 
 # Edit config.py with your journals, keywords, Zotero paths
-nano your-project/journal-digest/config.py
+nano ~/path/to/your-project/journal-digest/config.py
 
 # Test
-micromamba run -n journal-digest python your-project/journal-digest/run_gather.py --dry-run
+micromamba run -n journal-digest python ~/path/to/your-project/journal-digest/run_gather.py --dry-run
 ```
 
 See [EconGeo/journal-digest](https://github.com/EconGeo/journal-digest) for full setup including LaunchAgent (weekly scheduling).
