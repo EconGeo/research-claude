@@ -11,7 +11,7 @@ A fully composed research pipeline for empirical academic work. Combines [clo-au
 | Submodule | What it provides |
 |-----------|-----------------|
 | `clo-author` | Research pipeline agents: strategist, writer, coder, referees, reviewer, data-engineer, theorist, and more |
-| `EconGeo/ZotPilot` | Zotero MCP server — Claude searches your library, ingests papers, cross-references citations |
+| `EconGeo/ZotPilot` | Zotero MCP server — embeds your whole library into a local ChromaDB so Claude searches it semantically, ingests papers, and cross-references citations (our fork of [xunhe730/ZotPilot](https://github.com/xunhe730/ZotPilot)) |
 | `EconGeo/ai-audit` | Prose audit skills: `/humanize` (AI-voice tells) + `/verify-claims` (hallucination check) |
 | `EconGeo/journal-digest` | Weekly journal monitor: RSS/CrossRef fetch + Claude in-session synthesis |
 
@@ -33,11 +33,22 @@ source ~/.zshrc                      # reload shell
 micromamba --version                 # verify: should print a version number
 ```
 
+**Windows (PowerShell):**
+```powershell
+# Official installer — downloads micromamba.exe and runs `micromamba shell init` for you
+Invoke-Expression ((Invoke-WebRequest -Uri https://micro.mamba.pm/install.ps1 -UseBasicParsing).Content)
+
+# Close and reopen PowerShell, then verify:
+micromamba --version                 # should print a version number
+```
+If `Invoke-WebRequest` is blocked by execution policy, run PowerShell as Administrator once with
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then re-run the installer.
+
 **Why micromamba instead of pip?** Running `pip install zotpilot` would add ZotPilot to your system Python — and uninstalling it later might leave orphaned dependencies. micromamba creates a clean, deletable env per tool.
 
 ### Step 2 — Install Zotero + Better BibTeX
 
-1. Download and install [Zotero 8](https://www.zotero.org/download/)
+1. Download and install [Zotero 9](https://www.zotero.org/download/) (the current release)
 2. Open Zotero and sync your library at least once (File → Sync Library)
 3. Install the [Better BibTeX (BBT)](https://retorque.re/zotero-better-bibtex/) plugin:
    - Download the `.xpi` file from the BBT releases page
@@ -114,13 +125,22 @@ Beyond the submodule agents and skills, research-claude ships its own pipeline r
 
 ## Set up ZotPilot (the trickiest step)
 
-ZotPilot lets Claude search your Zotero library, ingest new papers with PDFs, and cross-reference your citations.
+ZotPilot lets Claude search your Zotero library, ingest new papers with PDFs, and cross-reference your citations. Under the hood it embeds your **entire Zotero library into a local [ChromaDB](https://www.trychroma.com/) vector store** — so Claude can search across everything you've ever saved by *meaning*, not just keywords. That index is what powers `/ztp-review`, `/seed-papers`, and the literature-search seeding described later.
+
+**Upstream + our fork.** ZotPilot is originally the work of [xunhe730](https://github.com/xunhe730/ZotPilot). The [`EconGeo/ZotPilot`](https://github.com/EconGeo/ZotPilot) fork that research-claude pins adds and fixes several things on top of upstream:
+
+- **Ollama embeddings** — embed your library locally instead of via Gemini, so indexing a large library isn't throttled by Gemini's API rate limits (see below).
+- **Better BibTeX 7+ schema compatibility** — handles the BBT 7 database change.
+- **Group-library indexing** — index shared/group libraries, not just your personal one.
+- **Bundled `ztp-*` Claude skills** — `/ztp-research`, `/ztp-review`, `/ztp-setup`, etc.
+
+Everything below uses the fork.
 
 > **Tip:** Once you've done this setup once, you can ask Claude to walk you through it interactively: open Claude Code in your project and say "help me set up ZotPilot."
 
 ### Embedding options
 
-ZotPilot needs an embedding model to build the semantic index. **Ollama is the recommended option** — it runs fully locally with no API key and no data leaving your machine.
+ZotPilot needs an embedding model to build the semantic index (the ChromaDB vector store). **Ollama is the recommended option** — it runs fully locally with no API key and no data leaving your machine. The fork added Ollama support specifically to escape Gemini's free-tier rate limit (100 req/min), which throttles the first full index of a large library; with Ollama the only limit is your own hardware.
 
 | Option | Setup | Privacy | Cost |
 |--------|-------|---------|------|
