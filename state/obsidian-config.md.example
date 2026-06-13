@@ -1,0 +1,90 @@
+# Obsidian Integration Config (Example)
+
+<!--
+Copy this file to `.claude/state/obsidian-config.md` and fill it in if you want the
+`/checkpoint` and `/obsidian-digest-sync` skills to read/write your Obsidian vault.
+This file is gitignored by design — your vault paths and project mappings stay local.
+
+If this file does not exist at `.claude/state/obsidian-config.md`, the skills skip the
+Obsidian integration silently and only update memory + SESSION_REPORT + research_journal.
+
+Requirements:
+- An Obsidian MCP server connected so Claude can read/write vault notes.
+  Recommended: mcpvault — a filesystem server that needs NO Obsidian app and NO
+  community plugins (https://github.com/bitbonsai/mcpvault). Register it in .mcp.json:
+      "obsidian-files": {
+        "command": "npx",
+        "args": ["-y", "@bitbonsai/mcpvault@latest", "/absolute/path/to/your/vault"]
+      }
+  The skills call its tools: read_note, write_note (mode overwrite/append), search_notes,
+  list_all_tags, list_directory.
+- Optional (only for live-app features such as running Obsidian commands or opening
+  files): a Local REST API plugin-based server, e.g.
+  https://github.com/MarkusPfundstein/mcp-obsidian — this one requires the Obsidian
+  desktop app to be open and is NOT needed for the /checkpoint or digest workflows.
+-->
+
+## Vault Path
+
+**Absolute path to your Obsidian vault root:**
+
+```
+[e.g., /Users/you/Library/Mobile Documents/com~apple~CloudDocs/Obsidian/Research]
+```
+
+---
+
+## Vault Structure
+
+<!-- What file/folder does each role live in? -->
+
+| Role | Path inside vault |
+|------|-------------------|
+| Vault config | [e.g., `_vault-config.md`] |
+| Dashboard / Home | [e.g., `Home.md`] |
+| Project notes root | [e.g., `Projects/`] |
+| Daily journal root | [e.g., `Journal/`] |
+| Daily journal filename format | [e.g., `YYYY-MM-DD.md`] |
+
+### Knowledge-base folders (used by `/obsidian-digest-sync`)
+
+<!-- Where the digest-sync skill files concepts, datasets, ideas, and weekly notes.
+     Defaults shown; adjust to your vault's layout. -->
+
+| Role | Path inside vault |
+|------|-------------------|
+| Concepts | [e.g., `concepts/`] |
+| Datasets | [e.g., `datasets/`] |
+| Ideas | [e.g., `ideas/`] |
+| Weekly digests | [e.g., `weekly/`] |
+
+---
+
+## Project-Name Mapping
+
+<!-- Map the working-directory name to the Obsidian project note. /checkpoint uses this to
+     find the right project note to update. -->
+
+| Working Directory | Obsidian Project Note |
+|-------------------|----------------------|
+| [e.g., `bad_controls`] | [e.g., `Projects/Bad Controls.md`] |
+| [e.g., `clo-author`] | [e.g., `Projects/clo-author.md`] |
+
+If a working directory has no mapping, /checkpoint will ask the user which project note to use (or to add it).
+
+---
+
+## Category Tags (optional)
+
+<!-- If your dashboard groups projects by category, what category is this one? -->
+
+**Category for this project:** [e.g., Research / Methods / Software]
+
+---
+
+## Notes for /checkpoint
+
+<!-- Any project-specific overrides. -->
+
+- [e.g., Don't update the General Kanban for this project]
+- [e.g., Journal entries go under a custom heading "## Dev Log" instead of "## Journal"]

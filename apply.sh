@@ -18,6 +18,8 @@
 #                      .claude/skills/new-project-ztp/
 #                      .claude/skills/ztp-data-tag/
 #                      .claude/skills/obsidian-digest-sync/  (opt-in: file journal digests into an Obsidian vault)
+#   From research-claude (own state/, overrides clo-author):
+#                      .claude/state/obsidian-config.md.example  (mcpvault-first Obsidian config)
 #   From research-claude (own rules/):
 #                      .claude/rules/quarto-empirical.md         (required pipeline for new projects)
 #                      .claude/rules/data-manifest.md            (raw-data provenance audit trail)
@@ -185,6 +187,17 @@ RC_RULES="$SCRIPT_DIR/rules"
 if [[ -d "$RC_RULES" ]]; then
   echo "→ Installing research-claude rules (quarto-empirical, data-manifest, quarto-pdf, quarto-word, registry-verification-gate)..."
   cp "$RC_RULES/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
+fi
+
+# ── 7. research-claude own state templates (override clo-author's) ───────────
+# Copied AFTER clo-author's state templates (step 1) so the research-claude
+# version wins. This ships a mcpvault-first obsidian-config.md.example (no
+# Obsidian app required) instead of clo-author's REST/Local-REST-API default.
+RC_STATE="$SCRIPT_DIR/state"
+if [[ -d "$RC_STATE" ]]; then
+  echo "→ Installing research-claude state templates (mcpvault-first Obsidian config example)..."
+  mkdir -p "$PROJECT_DIR/.claude/state"
+  cp "$RC_STATE/"*.example "$PROJECT_DIR/.claude/state/" 2>/dev/null || true
 fi
 
 echo ""
