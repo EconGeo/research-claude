@@ -379,14 +379,25 @@ See [EconGeo/journal-digest](https://github.com/EconGeo/journal-digest) for full
 If you keep an [Obsidian](https://obsidian.md) vault, two parts of the pipeline can write into it, turning Claude's session output into a durable, cross-linked knowledge base instead of a pile of dated files:
 
 1. **`/checkpoint` → project journal.** When you wrap a session, `/checkpoint` appends a journal entry to the matching Obsidian project note (plus a dashboard row and daily-journal entry), alongside its usual memory + `SESSION_REPORT.md` updates.
-2. **journal-digest → literature knowledge base.** After journal-digest produces a weekly digest (Step 9), ask Claude — in-session, with the Obsidian MCP connected — to file the synthesized digest into your vault. Each notable paper becomes a note, `[[wikilink]]`-crosslinked to related papers, your prior work, **the datasets and variables it uses**, and the project it bears on. Over weeks this compounds into a navigable map of your field *and* the data behind it.
+2. **journal-digest → literature knowledge base.** After journal-digest produces a weekly digest (Step 9), the **`/obsidian-digest-sync`** skill files the synthesized digest into your vault — a preview-gated *Extract → Resolve → Preview → Push → Confirm* flow that writes nothing until you approve the manifest. Each notable paper becomes a note, `[[wikilink]]`-crosslinked to related papers, your prior work, **the datasets and variables it uses**, and the project it bears on. Over weeks this compounds into a navigable map of your field *and* the data behind it. Edit `.claude/skills/obsidian-digest-sync/references/TAG-TAXONOMY.md` to swap the example areas/concepts/datasets for your field's terms.
 
 Both are **opt-in and gated** — nothing touches your vault unless you configure it. If `.claude/state/obsidian-config.md` is absent or the Obsidian MCP isn't connected, `/checkpoint` silently skips the vault and only updates memory + scaffold files.
 
 ### Setup
 
-1. Install [Obsidian](https://obsidian.md) and enable the **Local REST API** community plugin (Settings → Community plugins).
-2. Connect an Obsidian MCP server so Claude can read/write vault notes — see [mcp-obsidian](https://github.com/MarkusPfundstein/mcp-obsidian). Register it in `.mcp.json` alongside ZotPilot.
+1. **Connect a filesystem Obsidian MCP server (recommended).** Install [mcpvault](https://github.com/bitbonsai/mcpvault) — it reads and writes your vault directly on disk, so it needs **no Obsidian app running and no community plugins**. This is what the `/checkpoint` and journal-digest skills call. Register it in `.mcp.json` alongside ZotPilot, pointing at your vault root:
+   ```json
+   {
+     "mcpServers": {
+       "obsidian-files": {
+         "command": "npx",
+         "args": ["-y", "@bitbonsai/mcpvault@latest", "/absolute/path/to/your/vault"]
+       }
+     }
+   }
+   ```
+   The skills use this server's tools (`read_note`, `write_note`, `search_notes`, `list_all_tags`, …).
+2. **Optional — live-app server.** If you *also* want Claude to drive the **running** Obsidian app (execute commands, open files, periodic notes), install the **Local REST API** community plugin (Settings → Community plugins) and additionally register a REST-based server such as [mcp-obsidian](https://github.com/MarkusPfundstein/mcp-obsidian) as a *second* MCP server. This one **requires the Obsidian desktop app to be open** and is **not** needed for the knowledge-base workflows below.
 3. Create the config from the template `apply.sh` installed to `.claude/state/obsidian-config.md.example`:
    ```text
    # In Claude Code, from your project:
