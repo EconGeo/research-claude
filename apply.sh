@@ -26,6 +26,7 @@
 #                      .claude/rules/quarto-pdf.md               (PDF output format reference for manuscript.qmd)
 #                      .claude/rules/quarto-word.md              (Word docx output format reference)
 #                      .claude/rules/registry-verification-gate.md (legacy: registry-pattern projects)
+#                      .claude/rules/literature-search-order.md  (local Zotero-first lit search)
 #
 # What this does NOT install:
 #   ZotPilot Python env (requires user judgment about paths — see Step 7 in README)
@@ -86,6 +87,7 @@ if [[ "$LIST_MODE" == true ]]; then
   echo "  .claude/rules/quarto-pdf.md                  — PDF output format reference (pdf: block, kableExtra, XeLaTeX)"
   echo "  .claude/rules/quarto-word.md                 — Word output format reference (docx: block, flextable, APA CSL)"
   echo "  .claude/rules/registry-verification-gate.md  — legacy: registry-pattern projects only"
+  echo "  .claude/rules/literature-search-order.md     — local Zotero-first literature search (tripwire)"
   echo ""
   if [[ "$WITH_DIGEST" == true ]]; then
     echo "With --with-digest:"
@@ -185,7 +187,7 @@ fi
 # ── 6. research-claude own rules (quarto-pdf, quarto-word) ───────────────────
 RC_RULES="$SCRIPT_DIR/rules"
 if [[ -d "$RC_RULES" ]]; then
-  echo "→ Installing research-claude rules (quarto-empirical, data-manifest, quarto-pdf, quarto-word, registry-verification-gate)..."
+  echo "→ Installing research-claude rules (quarto-empirical, data-manifest, quarto-pdf, quarto-word, registry-verification-gate, literature-search-order)..."
   cp "$RC_RULES/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
 fi
 
