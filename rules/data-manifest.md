@@ -12,7 +12,7 @@ Every project maintains a `data/raw/data_manifest.md` — a strict, always-curre
 data/raw/data_manifest.md
 ```
 
-Every project directory that contains a `data/raw/` folder must have this file. Copy from `templates/data_manifest.md` when initializing a new project.
+Every project directory that contains a `data/raw/` folder must have this file. Installed automatically by `apply.sh` at `data/raw/data_manifest.md`. If missing, copy it from the research-claude `templates/data_manifest.md`.
 
 ---
 

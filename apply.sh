@@ -100,6 +100,9 @@ if [[ "$LIST_MODE" == true ]]; then
   echo "  .claude/rules/registry-verification-gate.md  — legacy: registry-pattern projects only"
   echo "  .claude/rules/literature-search-order.md     — local Zotero-first literature search (tripwire)"
   echo ""
+  echo "From research-claude (own templates/):"
+  echo "  data/raw/data_manifest.md  — raw-data provenance manifest seed (direct install)"
+  echo ""
   if [[ "$WITH_DIGEST" == true ]]; then
     echo "With --with-digest:"
     echo "  journal-digest/ (full Python module, requires 'micromamba create -n journal-digest')"
@@ -219,6 +222,20 @@ if [[ -d "$RC_STATE" ]]; then
   echo "→ Installing research-claude state templates (mcpvault-first Obsidian config example)..."
   mkdir -p "$PROJECT_DIR/.claude/state"
   cp "$RC_STATE/"*.example "$PROJECT_DIR/.claude/state/" 2>/dev/null || true
+fi
+
+# ── 8. data manifest template (direct install to data/raw/) ──────────────────
+# The data-manifest.md rule expects data/raw/data_manifest.md to exist per project.
+# Install it directly so the rule resolves locally (no project-level templates/ needed).
+RC_MANIFEST="$SCRIPT_DIR/templates/data_manifest.md"
+if [[ -f "$RC_MANIFEST" ]]; then
+  echo "→ Installing data_manifest.md template to data/raw/..."
+  mkdir -p "$PROJECT_DIR/data/raw"
+  if [[ -f "$PROJECT_DIR/data/raw/data_manifest.md" ]]; then
+    echo "    ⤷ data/raw/data_manifest.md already exists — leaving it untouched"
+  else
+    cp "$RC_MANIFEST" "$PROJECT_DIR/data/raw/data_manifest.md"
+  fi
 fi
 
 echo ""
