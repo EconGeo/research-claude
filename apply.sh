@@ -8,7 +8,8 @@
 #   ./apply.sh --list  # show what would be installed
 #
 # What this installs:
-#   From clo-author:   .claude/agents/*.md, .claude/skills/, .claude/rules/,
+#   From clo-author:   .claude/agents/*.md, .claude/skills/ (EXCEPT new-project — see
+#                      CLO_SKIP_SKILLS below), .claude/rules/,
 #                      .claude/state/obsidian-config.md.example (opt-in Obsidian integration template)
 #   From ai-audit:     .claude/skills/humanize/, .claude/skills/verify-claims/,
 #                      .claude/agents/humanize-auditor.md, .claude/agents/claim-verifier.md
@@ -29,6 +30,7 @@
 #                      .claude/rules/literature-search-order.md  (local Zotero-first lit search)
 #
 # What this does NOT install:
+#   clo-author's /new-project skill (superseded by quarto-empirical — see CLO_SKIP_SKILLS)
 #   ZotPilot Python env (requires user judgment about paths — see Step 7 in README)
 #   journal-digest Python env (same reason; install manually per README)
 #   Any LaunchAgent plists (macOS scheduling — opt-in)
@@ -40,6 +42,14 @@ PROJECT_DIR=""
 UPDATE_MODE=false
 WITH_DIGEST=false
 LIST_MODE=false
+
+# Skills imported from clo-author that research-claude deliberately does NOT install.
+#   new-project: its Step 0 scaffolds scripts/R/ + paper/sections/ (the multi-file,
+#   results-registry layout), superseded by research-claude's quarto-empirical
+#   single-manuscript.qmd pipeline. The phase skills it used to orchestrate
+#   (/discover, /strategize, /analyze, /write, /review, /submit) are installed
+#   individually and run à la carte.
+CLO_SKIP_SKILLS=(new-project)
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -57,7 +67,8 @@ if [[ "$LIST_MODE" == true ]]; then
   echo ""
   echo "From clo-author (submodules/clo-author):"
   echo "  .claude/agents/ — all research pipeline agents"
-  echo "  .claude/skills/ — all research skills (strategize, write, review-paper, etc.)"
+  echo "  .claude/skills/ — research phase skills (discover, strategize, analyze, write, review, submit, etc.)"
+  echo "                    EXCLUDED: ${CLO_SKIP_SKILLS[*]} (superseded by research-claude quarto-empirical pipeline)"
   echo "  .claude/rules/  — working-paper-format, quarto rules, etc."
   echo "  .claude/state/obsidian-config.md.example — opt-in Obsidian integration template"
   echo ""
@@ -128,8 +139,16 @@ if [[ -d "$CLO/.claude/agents" ]]; then
   cp "$CLO/.claude/agents/"*.md "$PROJECT_DIR/.claude/agents/" 2>/dev/null || true
 fi
 if [[ -d "$CLO/.claude/skills" ]]; then
-  echo "→ Installing clo-author skills..."
-  cp -r "$CLO/.claude/skills/"* "$PROJECT_DIR/.claude/skills/" 2>/dev/null || true
+  echo "→ Installing clo-author skills (excluding: ${CLO_SKIP_SKILLS[*]})..."
+  for skill_path in "$CLO/.claude/skills/"*; do
+    [[ -e "$skill_path" ]] || continue
+    skill_name="$(basename "$skill_path")"
+    if [[ " ${CLO_SKIP_SKILLS[*]} " == *" $skill_name "* ]]; then
+      echo "    ⤷ skipping $skill_name (superseded by research-claude quarto-empirical pipeline)"
+      continue
+    fi
+    cp -r "$skill_path" "$PROJECT_DIR/.claude/skills/"
+  done
 fi
 if [[ -d "$CLO/.claude/rules" ]]; then
   echo "→ Installing clo-author rules..."

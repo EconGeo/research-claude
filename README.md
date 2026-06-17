@@ -481,7 +481,7 @@ See [clo-author](https://github.com/hugosantanna/clo-author) for the full skill 
 
 Once indexed, your library becomes the *starting point* for every literature search — not an afterthought.
 
-### At project start (`/new-project`)
+### At project start
 
 When you kick off a new project, Claude will ask:
 

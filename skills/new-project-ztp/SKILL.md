@@ -1,18 +1,19 @@
 ---
 name: new-project-ztp
 description: >
-  ZotPilot setup step for new research projects — run after /new-project to embed
+  ZotPilot setup step for new research projects — run when starting a project to embed
   your Zotero library into ChromaDB so /seed-papers and /discover lit can search it.
   Trigger on: "set up ZotPilot", "embed my Zotero library", "configure ZotPilot for
   this project", or any mention of wanting local library search before literature review.
-  Run AFTER /new-project and BEFORE /seed-papers or /discover lit.
+  Run at project start, BEFORE /seed-papers or /discover lit.
 allowed-tools: Read,Write,Edit,Bash
 ---
 
 # ZotPilot Project Setup
 
 This skill configures ZotPilot for a new research project, enabling semantic search
-of your Zotero library during literature review. Run once per project after `/new-project`.
+of your Zotero library during literature review. Run once per project at project start,
+before `/seed-papers` or `/discover lit`.
 
 ---
 
