@@ -6,6 +6,11 @@ The single `.qmd` file is the source of truth for all analysis, tables, figures,
 No external R analysis scripts. No results registry. No ground-truth CSV.
 The rendered PDF is the paper.
 
+> **File name:** the manuscript is `manuscript_<project>.qmd`, where `<project>` is the
+> project directory basename (e.g. `manuscript_zoning2026.qmd` in the `zoning2026/`
+> project). Examples below use `manuscript_<project>.qmd` as a placeholder. See
+> `pipeline-precedence.md` for the canonical statement of this convention.
+
 ---
 
 ## Architecture
@@ -14,9 +19,9 @@ The rendered PDF is the paper.
 project/
 ├── data/
 │   └── raw/           ← raw data files (gitignored if large/proprietary)
-├── manuscript.qmd     ← single source of truth: code + prose
+├── manuscript_<project>.qmd  ← single source of truth: code + prose
 ├── _cache/            ← gitignored; knitr cache (persists across sessions)
-├── manuscript_files/  ← gitignored; render artifacts
+├── manuscript_<project>_files/  ← gitignored; render artifacts
 ├── references.bib
 └── templates/
     └── quarto-preamble.tex   ← biblatex style set here; the PDF path uses no CSL
@@ -27,7 +32,7 @@ External R scripts are permitted **only** for:
 - Raw file downloads from restricted sources (WRDS, Census restricted-use, etc.)
 
 All data cleaning, wrangling, estimation, robustness checks, tables, and figures
-live inside `manuscript.qmd` as cached code chunks. There is no `scripts/R/`
+live inside `manuscript_<project>.qmd` as cached code chunks. There is no `scripts/R/`
 analysis directory, no `00_master.R`, and no `results_ground_truth.csv`.
 
 ---
@@ -190,7 +195,7 @@ consistency. A hardcoded number is a gap in that proof.
 
 ```
 [ ] 1. Raw data is in place: every file referenced in cache.extra exists in data/raw/
-[ ] 2. quarto render manuscript.qmd exits 0 with no NA/NaN in inline expressions
+[ ] 2. quarto render manuscript_<project>.qmd exits 0 with no NA/NaN in inline expressions
 ```
 
 That is the complete gate. No script inventory. No registry coverage audit. No
@@ -204,7 +209,7 @@ non-zero and identifies the exact chunk and line. There are no silent wrong valu
 
 ## Word Output (Optional Secondary)
 
-Word output is available from the **same** `manuscript.qmd` by adding a `docx:`
+Word output is available from the **same** `manuscript_<project>.qmd` by adding a `docx:`
 format block alongside `pdf:`. See `quarto-word.md` for the block contents,
 flextable table mechanics, and the CSL gotcha (PDF uses biblatex and ignores `csl`;
 Word needs an APA `csl` inside its `docx:` block). Word is for co-author sharing and
@@ -244,7 +249,7 @@ Rules for acquisition scripts:
 - Save to `data/raw/` only — no wrangling, no panel construction
 - One script per data source; no master acquisition script needed
 - Must be independently runnable (no dependencies on other scripts)
-- The files they produce are what `manuscript.qmd` reads via `cache.extra`
+- The files they produce are what `manuscript_<project>.qmd` reads via `cache.extra`
 
 Acquisition scripts are not analysis scripts. Their outputs are inputs to the
 `.qmd`, not intermediate products in a pipeline.
@@ -253,7 +258,7 @@ Acquisition scripts are not analysis scripts. Their outputs are inputs to the
 
 ## What the Coder-Critic Checks (Quarto Empirical Mode)
 
-Invoked when the reviewed artifact is `manuscript.qmd` and this rule is present.
+Invoked when the reviewed artifact is `manuscript_<project>.qmd` and this rule is present.
 
 ### Blocking Deductions
 
@@ -292,7 +297,7 @@ Invoked when the reviewed artifact is `manuscript.qmd` and this rule is present.
 | `working-paper-format.md` (clo-author) | **Legacy only** — LaTeX-first projects |
 
 `quarto-pdf.md` and `quarto-word.md` are **format-reference** docs for the two output
-formats of the single `manuscript.qmd` — they describe rendering mechanics and
+formats of the single `manuscript_<project>.qmd` — they describe rendering mechanics and
 R-package landmines, not a competing file architecture. This rule owns the
 source-of-truth, caching, and data-integrity governance; they own format details.
 
