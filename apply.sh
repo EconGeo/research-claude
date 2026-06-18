@@ -23,6 +23,7 @@
 #                      .claude/state/obsidian-config.md.example  (mcpvault-first Obsidian config)
 #   From research-claude (own rules/):
 #                      .claude/rules/quarto-empirical.md         (required pipeline for new projects)
+#                      .claude/rules/pipeline-precedence.md      (quarto-empirical overrides legacy clo-author layout)
 #                      .claude/rules/data-manifest.md            (raw-data provenance audit trail)
 #                      .claude/rules/quarto-pdf.md               (PDF output format reference for manuscript.qmd)
 #                      .claude/rules/quarto-word.md              (Word docx output format reference)
@@ -94,6 +95,7 @@ if [[ "$LIST_MODE" == true ]]; then
   echo ""
   echo "From research-claude (own rules/):"
   echo "  .claude/rules/quarto-empirical.md            — required pipeline: single .qmd, cached, PDF primary"
+  echo "  .claude/rules/pipeline-precedence.md         — quarto-empirical overrides clo-author legacy layout + manuscript naming"
   echo "  .claude/rules/data-manifest.md               — raw-data provenance audit trail (data/raw/data_manifest.md)"
   echo "  .claude/rules/quarto-pdf.md                  — PDF output format reference (pdf: block, kableExtra, XeLaTeX)"
   echo "  .claude/rules/quarto-word.md                 — Word output format reference (docx: block, flextable, APA CSL)"
@@ -209,7 +211,7 @@ fi
 # ── 6. research-claude own rules (quarto-pdf, quarto-word) ───────────────────
 RC_RULES="$SCRIPT_DIR/rules"
 if [[ -d "$RC_RULES" ]]; then
-  echo "→ Installing research-claude rules (quarto-empirical, data-manifest, quarto-pdf, quarto-word, registry-verification-gate, literature-search-order)..."
+  echo "→ Installing research-claude rules (quarto-empirical, pipeline-precedence, data-manifest, quarto-pdf, quarto-word, registry-verification-gate, literature-search-order)..."
   cp "$RC_RULES/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
 fi
 
