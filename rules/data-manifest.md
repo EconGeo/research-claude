@@ -69,7 +69,7 @@ These violations are never acceptable:
 
 To trace any number in the paper back to a source:
 
-1. Find the inline `r` expression or hardcoded value in `manuscript.qmd`
+1. Find the inline `r` expression or hardcoded value in `manuscript_<project>.qmd`
 2. Find the chunk that produces the object — follow `dependson` links
 3. Find the `read_csv(here("data/raw/..."))` or `cache.extra` path in the data-loading chunk
 4. Look up that path in `data/raw/data_manifest.md`
