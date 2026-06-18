@@ -1,6 +1,6 @@
 # Quarto PDF Output: Format & Rendering Reference
 
-**PDF is the canonical output of the single `manuscript.qmd`.** The document
+**PDF is the canonical output of the single `manuscript_<project>.qmd`.** The document
 architecture — single source of truth, caching, inline expressions, the write
 gate — is governed by `quarto-empirical.md` and applies to every output format.
 
@@ -13,7 +13,7 @@ structure here — those belong to `quarto-empirical.md`.
 
 ## The `pdf:` format block
 
-Add this under `format:` in `manuscript.qmd`. The surrounding YAML (title, author,
+Add this under `format:` in `manuscript_<project>.qmd`. The surrounding YAML (title, author,
 date, abstract, `execute: cache: true`, `bibliography:`) comes from `quarto-empirical.md`.
 
 ```yaml
@@ -107,8 +107,8 @@ output (and breaks the single-source model the moment you also render to Word).
 ## Build
 
 ```bash
-quarto render manuscript.qmd            # default format (PDF)
-quarto render manuscript.qmd --to pdf
+quarto render manuscript_<project>.qmd   # default format (PDF)
+quarto render manuscript_<project>.qmd --to pdf
 ```
 
 ---
