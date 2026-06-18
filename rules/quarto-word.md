@@ -1,6 +1,6 @@
 # Quarto Word Output: Format & Rendering Reference
 
-**Word (DOCX) is the optional secondary output of the single `manuscript.qmd`** —
+**Word (DOCX) is the optional secondary output of the single `manuscript_<project>.qmd`** —
 add a `docx:` format block alongside `pdf:` when a co-author needs Word or a journal
 requires a revision in `.docx`. The PDF remains the canonical submission artifact.
 There is **no separate Word-first `.qmd`**: one source file, multiple outputs.
@@ -148,7 +148,7 @@ for DOCX.
 ## Build
 
 ```bash
-quarto render manuscript.qmd --to docx          # Word output from the same file
+quarto render manuscript_<project>.qmd --to docx   # Word output from the same file
 ```
 
 ---
