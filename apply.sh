@@ -5,11 +5,14 @@
 #   ./apply.sh --project-dir /path/to/your/project    # first install
 #   ./apply.sh --project-dir /path/to/your/project --update  # pull latest + reinstall
 #   ./apply.sh --project-dir /path/to/your/project --with-digest  # also installs journal-digest
+#   ./apply.sh --project-dir /path/to/your/project --link-references /shared/refs  # symlink voice refs to a shared dir
 #   ./apply.sh --list  # show what would be installed
 #
 # What this installs:
 #   From clo-author:   .claude/agents/*.md, .claude/skills/ (EXCEPT new-project — see
 #                      CLO_SKIP_SKILLS below), .claude/rules/,
+#                      .claude/references/*.md (voice/domain/journal + coding-standards
+#                      templates — populated later by /discover and /write style-guide),
 #                      .claude/state/obsidian-config.md.example (opt-in Obsidian integration template)
 #   From ai-audit:     .claude/skills/humanize/, .claude/skills/verify-claims/,
 #                      .claude/agents/humanize-auditor.md, .claude/agents/claim-verifier.md
@@ -29,6 +32,17 @@
 #                      .claude/rules/quarto-word.md              (Word docx output format reference)
 #                      .claude/rules/registry-verification-gate.md (legacy: registry-pattern projects)
 #                      .claude/rules/literature-search-order.md  (local Zotero-first lit search)
+#   From research-claude (own templates/, direct install to project root):
+#                      data/raw/data_manifest.md  (raw-data provenance manifest seed)
+#                      .gitignore                 (keeps *.qmd + .bib; ignores quarto build,
+#                                                  rendered PDF/HTML, data/raw, R/Python artifacts)
+#   Directory skeleton: explorations/  (one-off models not yet wired into the manuscript;
+#                      quality_reports/ and manuscript_<project>.qmd are created later by the phase skills)
+#
+# Opt-in flags:
+#   --link-references <dir>  After installing the clo-author reference templates, replace them with
+#                            symlinks into <dir> — a shared voice-profile folder reused across projects.
+#                            The path is supplied at runtime; nothing machine-specific is hardcoded here.
 #
 # What this does NOT install:
 #   clo-author's /new-project skill (superseded by quarto-empirical — see CLO_SKIP_SKILLS)
@@ -43,6 +57,7 @@ PROJECT_DIR=""
 UPDATE_MODE=false
 WITH_DIGEST=false
 LIST_MODE=false
+LINK_REFERENCES=""
 
 # Skills imported from clo-author that research-claude deliberately does NOT install.
 #   new-project: its Step 0 scaffolds scripts/R/ + paper/sections/ (the multi-file,
@@ -55,10 +70,11 @@ CLO_SKIP_SKILLS=(new-project)
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --project-dir) PROJECT_DIR="$2"; shift 2 ;;
-    --update)      UPDATE_MODE=true; shift ;;
-    --with-digest) WITH_DIGEST=true; shift ;;
-    --list)        LIST_MODE=true; shift ;;
+    --project-dir)     PROJECT_DIR="$2"; shift 2 ;;
+    --update)          UPDATE_MODE=true; shift ;;
+    --with-digest)     WITH_DIGEST=true; shift ;;
+    --link-references) LINK_REFERENCES="$2"; shift 2 ;;
+    --list)            LIST_MODE=true; shift ;;
     *) echo "Unknown argument: $1"; exit 1 ;;
   esac
 done
@@ -71,6 +87,8 @@ if [[ "$LIST_MODE" == true ]]; then
   echo "  .claude/skills/ — research phase skills (discover, strategize, analyze, write, review, submit, etc.)"
   echo "                    EXCLUDED: ${CLO_SKIP_SKILLS[*]} (superseded by research-claude quarto-empirical pipeline)"
   echo "  .claude/rules/  — working-paper-format, quarto rules, etc."
+  echo "  .claude/references/*.md — voice/domain/journal + coding-standards templates"
+  echo "                    (filled in later by /discover interview and /write style-guide)"
   echo "  .claude/state/obsidian-config.md.example — opt-in Obsidian integration template"
   echo ""
   echo "From ai-audit (submodules/ai-audit):"
@@ -102,8 +120,16 @@ if [[ "$LIST_MODE" == true ]]; then
   echo "  .claude/rules/registry-verification-gate.md  — legacy: registry-pattern projects only"
   echo "  .claude/rules/literature-search-order.md     — local Zotero-first literature search (tripwire)"
   echo ""
-  echo "From research-claude (own templates/):"
-  echo "  data/raw/data_manifest.md  — raw-data provenance manifest seed (direct install)"
+  echo "From research-claude (own templates/, direct install to project root):"
+  echo "  data/raw/data_manifest.md  — raw-data provenance manifest seed"
+  echo "  .gitignore                 — keeps *.qmd + .bib; ignores quarto build, rendered PDF/HTML, data/raw"
+  echo ""
+  echo "Directory skeleton:"
+  echo "  explorations/  — one-off models not yet wired into the manuscript"
+  echo "                   (quality_reports/ and manuscript_<project>.qmd are created later by the phase skills)"
+  echo ""
+  echo "Opt-in flags:"
+  echo "  --link-references <dir>  — symlink .claude/references/*.md to a shared voice-profile dir"
   echo ""
   if [[ "$WITH_DIGEST" == true ]]; then
     echo "With --with-digest:"
@@ -137,6 +163,11 @@ mkdir -p "$PROJECT_DIR/.claude/agents" \
          "$PROJECT_DIR/.claude/skills" \
          "$PROJECT_DIR/.claude/rules"
 
+# Project directory skeleton. Only explorations/ — one-off models not yet wired into the
+# manuscript. quality_reports/ and manuscript_<project>.qmd are created by the phase skills
+# (/discover, /analyze, /write), not at scaffold time. No paper/, scripts/, or output/.
+mkdir -p "$PROJECT_DIR/explorations"
+
 # ── 1. clo-author: agents + skills + rules ────────────────────────────────────
 CLO="$SCRIPT_DIR/submodules/clo-author"
 if [[ -d "$CLO/.claude/agents" ]]; then
@@ -158,6 +189,19 @@ fi
 if [[ -d "$CLO/.claude/rules" ]]; then
   echo "→ Installing clo-author rules..."
   cp "$CLO/.claude/rules/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
+fi
+if [[ -d "$CLO/.claude/references" ]]; then
+  echo "→ Installing clo-author reference templates (domain-profile, journal-profiles, personal-style-guide, coding-standards)..."
+  mkdir -p "$PROJECT_DIR/.claude/references"
+  for ref in "$CLO/.claude/references/"*.md; do
+    [[ -e "$ref" ]] || continue
+    dest="$PROJECT_DIR/.claude/references/$(basename "$ref")"
+    if [[ -e "$dest" ]]; then
+      echo "    ⤷ $(basename "$ref") already exists — leaving it untouched"
+    else
+      cp "$ref" "$dest"
+    fi
+  done
 fi
 if [[ -d "$CLO/.claude/state" ]]; then
   echo "→ Installing clo-author state templates (Obsidian config example)..."
@@ -237,6 +281,42 @@ if [[ -f "$RC_MANIFEST" ]]; then
     echo "    ⤷ data/raw/data_manifest.md already exists — leaving it untouched"
   else
     cp "$RC_MANIFEST" "$PROJECT_DIR/data/raw/data_manifest.md"
+  fi
+fi
+
+# ── 9. project .gitignore (direct install to project root) ───────────────────
+# Keeps the single-source manuscript (*.qmd) and bibliography (*.bib); ignores quarto
+# build artifacts, the rendered PDF/HTML, raw data, and language toolchain outputs.
+RC_GITIGNORE="$SCRIPT_DIR/templates/gitignore"
+if [[ -f "$RC_GITIGNORE" ]]; then
+  if [[ -f "$PROJECT_DIR/.gitignore" ]]; then
+    echo "→ .gitignore already exists — leaving it untouched"
+  else
+    echo "→ Installing project .gitignore template..."
+    cp "$RC_GITIGNORE" "$PROJECT_DIR/.gitignore"
+  fi
+fi
+
+# ── 10. optional: link references to a shared directory ──────────────────────
+# With --link-references <dir>, replace the per-project reference templates (installed in
+# step 1) with symlinks into <dir> — a shared voice-profile folder reused across projects.
+# The path is a runtime argument; nothing machine-specific is hardcoded in this template.
+if [[ -n "$LINK_REFERENCES" ]]; then
+  if [[ ! -d "$LINK_REFERENCES" ]]; then
+    echo "Error: --link-references dir not found: $LINK_REFERENCES"
+    exit 1
+  fi
+  REF_ABS="$(cd "$LINK_REFERENCES" && pwd)"
+  echo "→ Linking .claude/references/*.md to shared dir: $REF_ABS"
+  mkdir -p "$PROJECT_DIR/.claude/references"
+  linked=0
+  for ref in "$REF_ABS/"*.md; do
+    [[ -e "$ref" ]] || continue
+    ln -sf "$ref" "$PROJECT_DIR/.claude/references/$(basename "$ref")"
+    linked=$((linked + 1))
+  done
+  if [[ "$linked" -eq 0 ]]; then
+    echo "    ⚠️  no *.md files found in $REF_ABS — left the installed templates in place"
   fi
 fi
 

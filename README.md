@@ -113,9 +113,20 @@ cd research-claude
 
 # Preview what would be installed without making changes
 ./apply.sh --list
+
+# Share one set of voice/style references across projects (instead of per-project copies)
+./apply.sh --project-dir ~/path/to/your-project --link-references ~/research/.claude/references
 ```
 
 `apply.sh` copies `.claude/` files from each submodule into `your-project/.claude/`. It does not touch your Python environments or register MCP servers — those require user judgment about paths (Steps 7–8).
+
+This includes clo-author's `.claude/references/` templates (domain profile, journal profiles, personal style guide, coding standards), a project `.gitignore` (keeps the single-file `*.qmd` and `.bib`; ignores Quarto build artifacts, the rendered PDF/HTML, and `data/raw/`), and an `explorations/` directory for one-off models. The manuscript itself and `quality_reports/` are created later by the phase skills, not at scaffold time.
+
+**Starting a new project the guided way.** research-claude ships a root-level `new-project` skill (in `root-skills/`) that runs the whole bootstrap as a conversation — it asks where the repo should live (org vs. personal, and which team), how to wire references and your citation database, writes the per-paper `CLAUDE.md`, and creates + pushes the private repo. It lives here as the single source of truth — **don't copy it out** (a copy drifts from the repo). Use it either way:
+- **Symlink** it so `/new-project` is auto-discovered: `ln -s "$PWD/root-skills/new-project" ~/research/.claude/skills/new-project` (research-root scope) or into `~/.claude/skills/` (global). `~/research` then holds only a pointer.
+- **Or invoke from the repo** — just ask Claude to follow `root-skills/new-project/SKILL.md` from your research-claude checkout; nothing lands in your project dirs at all.
+
+**`--link-references <dir>`** is opt-in: by default each project gets its own editable copy of the reference templates (fill them in with `/discover interview` and `/write style-guide`). Pass the flag only if you maintain one shared set of profiles across many projects — the project's reference files become symlinks into `<dir>`.
 
 ### Rules installed into `.claude/rules/`
 
