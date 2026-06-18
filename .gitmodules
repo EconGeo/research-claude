@@ -1,9 +1,6 @@
 [submodule "submodules/clo-author"]
 	path = submodules/clo-author
 	url = https://github.com/hugosantanna/clo-author.git
-[submodule "submodules/zotpilot"]
-	path = submodules/zotpilot
-	url = https://github.com/EconGeo/ZotPilot.git
 [submodule "submodules/ai-audit"]
 	path = submodules/ai-audit
 	url = https://github.com/EconGeo/ai-audit.git

@@ -17,7 +17,9 @@
 #   From ai-audit:     .claude/skills/humanize/, .claude/skills/verify-claims/,
 #                      .claude/agents/humanize-auditor.md, .claude/agents/claim-verifier.md
 #                      .claude/rules/ai-disclosure.md
-#   From zotpilot:     .claude/skills/ztp-*/, .claude/skills/seed-papers/
+#   From zotpilot-skills/ (vendored from EconGeo/ZotPilot, not a submodule):
+#                      .claude/skills/ztp-*/, .claude/skills/seed-papers/
+#                      (the MCP server itself installs separately — README Step 7)
 #   From research-claude (own skills/):
 #                      .claude/skills/new-project-ztp/
 #                      .claude/skills/ztp-data-tag/
@@ -98,7 +100,7 @@ if [[ "$LIST_MODE" == true ]]; then
   echo "  .claude/agents/claim-verifier.md"
   echo "  .claude/rules/ai-disclosure.md"
   echo ""
-  echo "From zotpilot (submodules/zotpilot/claude-skills/):"
+  echo "From zotpilot-skills/ (vendored from EconGeo/ZotPilot — not a submodule):"
   echo "  .claude/skills/ztp-research/"
   echo "  .claude/skills/ztp-review/"
   echo "  .claude/skills/ztp-setup/"
@@ -225,10 +227,17 @@ if [[ -d "$AI/rules" ]]; then
 fi
 
 # ── 3. ZotPilot: claude-skills (ztp-*) ───────────────────────────────────────
-ZTP="$SCRIPT_DIR/submodules/zotpilot"
-if [[ -d "$ZTP/claude-skills" ]]; then
+# Vendored from EconGeo/ZotPilot's claude-skills/ (see zotpilot-skills/VENDORED.md).
+# Not a submodule: research-claude needs only these ~68 KB of skills, not ZotPilot's
+# 224 MB Chrome connector. The MCP server is installed separately (README Step 7).
+ZTP_SKILLS="$SCRIPT_DIR/zotpilot-skills"
+if [[ -d "$ZTP_SKILLS" ]]; then
   echo "→ Installing ZotPilot claude-skills (ztp-*)..."
-  cp -r "$ZTP/claude-skills/"* "$PROJECT_DIR/.claude/skills/" 2>/dev/null || true
+  for skill_path in "$ZTP_SKILLS/"*; do
+    # only skill directories — skips VENDORED.md (no trailing slash: copies the dir, not its contents)
+    [[ -d "$skill_path" ]] || continue
+    cp -r "$skill_path" "$PROJECT_DIR/.claude/skills/"
+  done
 fi
 
 # ── 4. journal-digest (opt-in) ───────────────────────────────────────────────

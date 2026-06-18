@@ -119,11 +119,11 @@ git submodule update --init      # top-level only — do NOT use --recursive
 ./apply.sh --project-dir ~/path/to/your-project --link-references ~/research/.claude/references
 ```
 
-> **Why `git submodule update --init` and not `--recursive`?** `apply.sh` only needs the
-> top-level submodules (clo-author, ai-audit, zotpilot, journal-digest). The ZotPilot
-> submodule vendors the entire Zotero **connector** as deeply nested sub-submodules (pdf.js,
-> translators, styles…) — none of which research-claude uses. A recursive clone pulls **~1.4 GB
-> over ~2 minutes**; the top-level init is **~31 MB in a few seconds** and installs identically.
+> **Submodules:** there are three, all small — `clo-author`, `ai-audit`, `journal-digest`.
+> `git submodule update --init` (non-recursive) is all `apply.sh` needs; the whole clone is a
+> few tens of MB. The ZotPilot skills are **not** a submodule — they're vendored directly in
+> `zotpilot-skills/`, and the MCP server installs separately (Step 7). So cloning this repo no
+> longer drags in ZotPilot's heavy Chrome-connector toolchain (pdf.js, translators, …).
 
 `apply.sh` copies `.claude/` files from each submodule into `your-project/.claude/`. It does not touch your Python environments or register MCP servers — those require user judgment about paths (Steps 7–8).
 
@@ -371,19 +371,20 @@ The Connector is a **fork of the official Zotero Connector** that adds an agent-
 
 > **To upgrade:** download the latest release zip again, unzip over the old folder, then click the refresh icon on the ZotPilot Connector entry in `chrome://extensions/`.
 
-#### Option B — Build from the copy already in this repo *(advanced — needs Node.js)*
+#### Option B — Build from source *(advanced — needs Node.js)*
 
-If you'd rather not download a separate file — the Connector source is already in your clone at `submodules/zotpilot/connector/`, pinned to the same commit as everything else. Building it requires [Node.js](https://nodejs.org/) installed. From the repo root:
+research-claude no longer vendors the Connector source (it lives in the ZotPilot fork). To build it yourself, clone the fork and build — requires [Node.js](https://nodejs.org/):
 
 ```bash
-cd submodules/zotpilot/connector
+git clone https://github.com/EconGeo/ZotPilot.git
+cd ZotPilot/connector
 npm install        # one-time: fetch build dependencies
 ./build.sh -d      # builds the Chrome (MV3) extension into build/manifestv3/
 ```
 
 Then in Chrome: `chrome://extensions/` → **Developer mode** on → **Load unpacked** → select the **`build/manifestv3/`** folder (load `build/`, *not* `src/` — `src/` won't work). Keep Zotero Desktop running during ingestion.
 
-> If you don't already have Node.js and a build toolchain, Option A is much less hassle. Option B mainly helps if you want the extension to match the exact pinned commit, or you can't download the release zip.
+> Option A is much less hassle. Option B mainly helps if you want to build from source or can't download the release zip.
 
 **Without the Connector** (either option), ingestion degrades to *metadata-only* (no PDFs attached) and pure-URL ingests fail — search, citation lookup, and library organization are unaffected. Install it if you want Claude to actually fetch the papers, not just their bibliographic records.
 
@@ -613,9 +614,9 @@ Layer 0 — Upstream (not owned; tracked via git remote)
 └── xunhe730/ZotPilot              Zotero MCP server (upstream)
 
 Layer 1 — Custom tools (each repo owns its versioning)
-├── EconGeo/ZotPilot               fork: BBT 7+ + group library + Ollama + claude-skills
-├── EconGeo/ai-audit               /humanize + /verify-claims + ai-disclosure
-└── EconGeo/journal-digest         weekly journal monitor (RSS + CrossRef)
+├── EconGeo/ZotPilot               fork: BBT 7+ + group library + Ollama  (server: pip-installed; skills: vendored)
+├── EconGeo/ai-audit               /humanize + /verify-claims + ai-disclosure   (submodule)
+└── EconGeo/journal-digest         weekly journal monitor (RSS + CrossRef)       (submodule)
 
 Layer 2 — This repo (compose via apply.sh)
 └── EconGeo/research-claude        ← you are here
@@ -623,14 +624,14 @@ Layer 2 — This repo (compose via apply.sh)
 
 ### Why submodules + apply.sh?
 
-`research-claude` pins each Layer 1 tool to a tested commit via git submodules — you always know exactly which ZotPilot version you're running. `apply.sh` does the actual file installation. Users need only:
+`research-claude` pins clo-author, ai-audit, and journal-digest to tested commits via git submodules. ZotPilot is handled differently: its server installs separately (Step 7, `pip install` from the fork), and its Claude skills are **vendored** in `zotpilot-skills/` — so research-claude carries ~68 KB of skill files instead of the fork's 224 MB Chrome connector. `apply.sh` does the actual file installation. Users need only:
 
 ```bash
 git clone https://github.com/EconGeo/research-claude.git
-cd research-claude && git submodule update --init   # top-level only, not --recursive
+cd research-claude && git submodule update --init   # three small submodules; not --recursive
 ./apply.sh --project-dir ~/my-project
 ```
 
-Upgrading: `git submodule update --remote && ./apply.sh --update --project-dir ~/my-project`
+Upgrading: `git submodule update --remote && ./apply.sh --update --project-dir ~/my-project` for the submodules; `./scripts/sync-zotpilot-skills.sh` to refresh the vendored ZotPilot skills from the fork.
 
 The same install-on-top mechanism is how research-claude **overrides upstream conventions without forking them.** `apply.sh` copies each submodule's files first, then research-claude's own rules on top — so `pipeline-precedence.md` and the `quarto-*` rules win over clo-author's multi-file layout (see [The single-manuscript pipeline](#the-single-manuscript-pipeline-and-how-it-overrides-clo-author)) while the clo-author submodule itself stays byte-for-byte upstream. That keeps `git submodule update --remote` conflict-free: you get upstream's improvements and research-claude's single-file pipeline at the same time.
