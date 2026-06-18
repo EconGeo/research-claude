@@ -16,18 +16,17 @@ does not run inside one.
 ## Preconditions
 
 - `gh` is authenticated — check `gh auth status`.
-- The research-claude checkout is available (it holds `apply.sh`). Ask the user for its path
-  if unknown; a common location is `~/Academic/research-claude`.
-- You know the research root (where projects live) — commonly `~/research`. Its
-  `CLAUDE.md` may carry standing GitHub/collaboration rules (org, teams); read it first and
-  honor it.
+- The research-claude checkout is available (it holds `apply.sh`) — ask the user where they
+  cloned it if you don't already know.
+- You know the research root (where the user's projects live). Its `CLAUDE.md`, if present,
+  may carry standing GitHub/collaboration rules (org, teams); read it first and honor it.
 
 ## Steps
 
 Create one todo per step and work them in order.
 
 ### 1. Name and location
-Ask for the article/repo name (a slug, e.g. `affordable_housing_2026`). Local directory is
+Ask for the article/repo name (a slug, e.g. `housing_supply_2026`). Local directory is
 `<research-root>/<name>` unless the user says otherwise. If the directory already exists and
 is non-empty, stop and ask whether to pick a new name or remove the existing one — never
 overwrite silently.

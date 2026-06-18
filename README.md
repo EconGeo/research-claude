@@ -105,8 +105,9 @@ install.packages(c(
 ### Step 6 — Clone this repo and run apply.sh
 
 ```bash
-git clone --recurse-submodules https://github.com/EconGeo/research-claude.git
+git clone https://github.com/EconGeo/research-claude.git
 cd research-claude
+git submodule update --init      # top-level only — do NOT use --recursive
 
 # Install into your project directory
 ./apply.sh --project-dir ~/path/to/your-project
@@ -117,6 +118,12 @@ cd research-claude
 # Share one set of voice/style references across projects (instead of per-project copies)
 ./apply.sh --project-dir ~/path/to/your-project --link-references ~/research/.claude/references
 ```
+
+> **Why `git submodule update --init` and not `--recursive`?** `apply.sh` only needs the
+> top-level submodules (clo-author, ai-audit, zotpilot, journal-digest). The ZotPilot
+> submodule vendors the entire Zotero **connector** as deeply nested sub-submodules (pdf.js,
+> translators, styles…) — none of which research-claude uses. A recursive clone pulls **~1.4 GB
+> over ~2 minutes**; the top-level init is **~31 MB in a few seconds** and installs identically.
 
 `apply.sh` copies `.claude/` files from each submodule into `your-project/.claude/`. It does not touch your Python environments or register MCP servers — those require user judgment about paths (Steps 7–8).
 
@@ -619,8 +626,9 @@ Layer 2 — This repo (compose via apply.sh)
 `research-claude` pins each Layer 1 tool to a tested commit via git submodules — you always know exactly which ZotPilot version you're running. `apply.sh` does the actual file installation. Users need only:
 
 ```bash
-git clone --recurse-submodules EconGeo/research-claude
-cd research-claude && ./apply.sh --project-dir ~/my-project
+git clone https://github.com/EconGeo/research-claude.git
+cd research-claude && git submodule update --init   # top-level only, not --recursive
+./apply.sh --project-dir ~/my-project
 ```
 
 Upgrading: `git submodule update --remote && ./apply.sh --update --project-dir ~/my-project`
