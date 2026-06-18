@@ -25,7 +25,7 @@
 #                      .claude/rules/quarto-empirical.md         (required pipeline for new projects)
 #                      .claude/rules/pipeline-precedence.md      (quarto-empirical overrides legacy clo-author layout)
 #                      .claude/rules/data-manifest.md            (raw-data provenance audit trail)
-#                      .claude/rules/quarto-pdf.md               (PDF output format reference for manuscript.qmd)
+#                      .claude/rules/quarto-pdf.md               (PDF output format reference for manuscript_<project>.qmd)
 #                      .claude/rules/quarto-word.md              (Word docx output format reference)
 #                      .claude/rules/registry-verification-gate.md (legacy: registry-pattern projects)
 #                      .claude/rules/literature-search-order.md  (local Zotero-first lit search)
