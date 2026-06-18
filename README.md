@@ -123,11 +123,29 @@ Beyond the submodule agents and skills, research-claude ships its own pipeline r
 
 | Rule | What it enforces |
 |------|------------------|
-| `quarto-empirical.md` | **The required pipeline for new projects.** A single `.qmd` is the source of truth for all analysis, tables, figures, and prose — no external R scripts, no results registry, no ground-truth CSV. The rendered PDF *is* the paper. |
+| `quarto-empirical.md` | **The required pipeline for new projects.** A single `.qmd` — named `manuscript_<project>.qmd`, e.g. `manuscript_zoning2026.qmd` — is the source of truth for all analysis, tables, figures, and prose. No external R scripts, no results registry, no ground-truth CSV. The rendered PDF *is* the paper. |
+| `pipeline-precedence.md` | **Makes the single-file pipeline win.** Declares `quarto-empirical.md` authoritative over the older multi-file layout that clo-author's `/analyze`, `/write`, and `/revise` skills (and some clo-author rules) still describe, and supplies an old→new translation map. See [The single-manuscript pipeline](#the-single-manuscript-pipeline-and-how-it-overrides-clo-author) below. |
 | `data-manifest.md` | Every project keeps `data/raw/data_manifest.md` — a current table recording where each raw data file came from, how it was acquired, and which variables are used. The audit trail behind every reported number. |
-| `quarto-pdf.md` | PDF output format reference for the single `manuscript.qmd`: the `pdf:` block plus kableExtra/figure/citation mechanics and LaTeX landmines (XeLaTeX + biblatex). |
-| `quarto-word.md` | Word output format reference: the optional `docx:` block plus flextable/CSL mechanics, rendered from the *same* `manuscript.qmd`. Architecture and caching are governed by `quarto-empirical.md`, not redefined here. |
+| `quarto-pdf.md` | PDF output format reference for the single `manuscript_<project>.qmd`: the `pdf:` block plus kableExtra/figure/citation mechanics and LaTeX landmines (XeLaTeX + biblatex). |
+| `quarto-word.md` | Word output format reference: the optional `docx:` block plus flextable/CSL mechanics, rendered from the *same* `manuscript_<project>.qmd`. Architecture and caching are governed by `quarto-empirical.md`, not redefined here. |
 | `registry-verification-gate.md` | *Legacy.* Write-gate for older registry-pattern projects (e.g. `zoning2026`) that pre-date the `quarto-empirical` standard. New projects don't need it. |
+
+### The single-manuscript pipeline (and how it overrides clo-author)
+
+research-claude builds on [clo-author](https://github.com/hugosantanna/clo-author), whose research pipeline was designed around a **multi-file LaTeX layout**: analysis code in `scripts/R/`, prose split across `paper/sections/*.tex`, tables emitted as bare `tabular` files, and everything assembled into `paper/main.tex` — coordinated through a results registry. That layout is powerful but demands constant file management: keeping code, intermediate `.rds` outputs, section files, and the assembled paper all in sync, and trusting a registry to tie reported numbers back to the code that produced them.
+
+research-claude deliberately replaces that with **one file as the single source of truth**: `manuscript_<project>.qmd`. Analysis, tables, figures, and prose all live in that one Quarto document as cached code chunks and inline `r` expressions; `quarto render` *is* the build, and the rendered PDF *is* the paper. There are no section files to reassemble, no `scripts/R/` outputs to keep current, and no registry to audit — if the document renders, every number in it is consistent with the code that produced it by construction.
+
+Because clo-author's `/analyze`, `/write`, and `/revise` skills still speak the old layout, `pipeline-precedence.md` reconciles the two **without forking the upstream skills**. It declares `quarto-empirical.md` authoritative on file layout and provides a translation map so the skills' (still excellent) methodological guidance keeps applying:
+
+| clo-author says… | …in the single-manuscript pipeline it means |
+|------------------|---------------------------------------------|
+| `scripts/R/*.R`, `saveRDS()` outputs | cached code chunks inside `manuscript_<project>.qmd` |
+| `paper/sections/*.tex` | prose written directly in the `.qmd` |
+| `paper/main.tex` | `manuscript_<project>.qmd` itself |
+| LaTeX `\caption{}` / bare `tabular` wrapped by `main.tex` | `#| fig-cap:` / `#| tbl-cap:` chunk options; `modelsummary`/`kableExtra` emit the full float |
+
+The payoff: you get clo-author's mature analysis, writing, and peer-review discipline, but you only ever manage and version **one document per paper** instead of a tree of scripts, section files, and assembled output. We do this by *override*, not by editing clo-author — the upstream submodule stays pristine, so `apply.sh --update` keeps pulling improvements cleanly (see [Why submodules + apply.sh?](#why-submodules--applysh)).
 
 ---
 
@@ -473,6 +491,8 @@ Once installed, the main entry points are:
 
 See [clo-author](https://github.com/hugosantanna/clo-author) for the full skill and agent reference.
 
+> **Note:** `/analyze`, `/write`, and `/revise` come from clo-author and describe its older multi-file LaTeX layout. In research-claude their output is redirected into the single `manuscript_<project>.qmd` via `pipeline-precedence.md` — see [The single-manuscript pipeline](#the-single-manuscript-pipeline-and-how-it-overrides-clo-author).
+
 ---
 
 ## How your Zotero library feeds the research pipeline
@@ -593,3 +613,5 @@ cd research-claude && ./apply.sh --project-dir ~/my-project
 ```
 
 Upgrading: `git submodule update --remote && ./apply.sh --update --project-dir ~/my-project`
+
+The same install-on-top mechanism is how research-claude **overrides upstream conventions without forking them.** `apply.sh` copies each submodule's files first, then research-claude's own rules on top — so `pipeline-precedence.md` and the `quarto-*` rules win over clo-author's multi-file layout (see [The single-manuscript pipeline](#the-single-manuscript-pipeline-and-how-it-overrides-clo-author)) while the clo-author submodule itself stays byte-for-byte upstream. That keeps `git submodule update --remote` conflict-free: you get upstream's improvements and research-claude's single-file pipeline at the same time.
