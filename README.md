@@ -237,7 +237,10 @@ Configure with **Ollama** (recommended):
 ```bash
 zotpilot config set zotero_data_dir /path/to/Zotero    # e.g. ~/Library/CloudStorage/.../Zotero
 zotpilot config set embedding_provider ollama
-zotpilot config set ollama_model bge-large            # fork default (1024-dim)
+# The ollama provider defaults to bge-large (1024-dim) — no model line needed.
+# For a different model, set BOTH the model and its dimensions, e.g.:
+#   zotpilot config set embedding_model nomic-embed-text
+#   zotpilot config set embedding_dimensions 768
 zotpilot config set ollama_base_url http://localhost:11434
 zotpilot config set zotero_api_key YOUR_ZOTERO_KEY      # for write operations
 zotpilot config set zotero_user_id YOUR_ZOTERO_USER_ID
@@ -280,9 +283,10 @@ at a new one and rebuild, which preserves the old index until you choose to drop
 
 ```bash
 ollama pull bge-large
-zotpilot config set ollama_model bge-large
-zotpilot config set collection_name chunks_bge      # keep the old 768-dim index intact
-micromamba run -n zotpilot zotpilot index --force    # rebuild into the new collection
+zotpilot config set embedding_model bge-large
+zotpilot config set embedding_dimensions 1024
+zotpilot config set collection_name chunks_bge       # keep the old 768-dim index intact
+micromamba run -n zotpilot zotpilot index --force     # rebuild into the new collection
 ```
 
 If you'd rather not re-index, stay on `nomic-embed-text` — the other improvements
