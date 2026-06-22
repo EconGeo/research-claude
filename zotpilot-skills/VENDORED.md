@@ -16,7 +16,7 @@ that server's MCP tools.
 ## Provenance / refresh
 
 - Source: `https://github.com/EconGeo/ZotPilot.git`, `claude-skills/`
-- Vendored from commit: `577b812` (`v0.5.0-50-g577b812`)
+- Vendored from commit: `c60d29b` (`v0.5.0-51-gc60d29b`)
 
 To refresh after the fork's skills change, run:
 
