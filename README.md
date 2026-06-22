@@ -173,12 +173,13 @@ ZotPilot lets Claude search your Zotero library, ingest new papers with PDFs, an
 
 **Upstream + our fork.** ZotPilot is originally the work of [xunhe730](https://github.com/xunhe730/ZotPilot). The [`EconGeo/ZotPilot`](https://github.com/EconGeo/ZotPilot) fork that research-claude pins adds and fixes several things on top of upstream:
 
-- **Ollama embeddings** — embed your library locally instead of via Gemini, so indexing a large library isn't throttled by Gemini's API rate limits (see below).
+- **Ollama embeddings** — embed your library locally instead of via Gemini, so indexing a large library isn't throttled by Gemini's API rate limits (see below). The default Ollama model is now **`bge-large`** (1024-dim, tuned for academic query→passage retrieval), upgraded from `nomic-embed-text`.
+- **Multi-library indexing by default** — indexes your personal library *and* every group library in one pass, with cross-library reconciliation so a paper shared across libraries isn't wrongly dropped as an orphan.
+- **Indexing reliability + token-aware chunking** — chunks are sized to the embedding model's token window (LlamaIndex backend), oversized inputs are truncated, and Ollama embed calls are sub-batched, so large/long-document libraries index without failures.
 - **Better BibTeX 7+ schema compatibility** — handles the BBT 7 database change.
-- **Group-library indexing** — index shared/group libraries, not just your personal one.
 - **Bundled `ztp-*` Claude skills** — `/ztp-research`, `/ztp-review`, `/ztp-setup`, etc.
 
-Everything below uses the fork.
+Everything below uses the fork. A **fresh** install (Step 7) pulls the latest fork `main`, so you get all of the above automatically. If you installed the fork *before* these landed, see [Upgrading an existing install](#upgrading-an-existing-install) to pull them in.
 
 > **Tip:** Once you've done this setup once, you can ask Claude to walk you through it interactively: open Claude Code in your project and say "help me set up ZotPilot."
 
@@ -201,11 +202,11 @@ brew install ollama          # macOS
 ollama serve &
 
 # Pull an embedding model
-ollama pull nomic-embed-text   # fast, 274MB, good general-purpose embeddings
-# alternative: ollama pull mxbai-embed-large  (higher quality, 670MB)
+ollama pull bge-large          # fork default, ~670MB, tuned for academic retrieval
+# lighter alternative: ollama pull nomic-embed-text  (fast, 274MB, general-purpose)
 
 # Verify
-ollama list   # should show nomic-embed-text
+ollama list   # should show bge-large
 ```
 
 **Gemini API key** (only needed if using Gemini instead of Ollama):
@@ -223,7 +224,8 @@ API keys go in `~/.config/zotpilot/config.json` — **never commit them**.
 micromamba create -n zotpilot python=3.12 -c conda-forge
 micromamba activate zotpilot
 
-# Install from EconGeo fork (BBT 7+ compat + group library indexing)
+# Install from EconGeo fork — always pulls the latest main, so a fresh install
+# includes multi-library indexing, token-aware chunking, bge-large, BBT 7+ compat.
 pip install git+https://github.com/EconGeo/ZotPilot.git
 
 # Find the zotpilot binary path (you'll need this for .mcp.json)
@@ -235,7 +237,7 @@ Configure with **Ollama** (recommended):
 ```bash
 zotpilot config set zotero_data_dir /path/to/Zotero    # e.g. ~/Library/CloudStorage/.../Zotero
 zotpilot config set embedding_provider ollama
-zotpilot config set ollama_model nomic-embed-text
+zotpilot config set ollama_model bge-large            # fork default (1024-dim)
 zotpilot config set ollama_base_url http://localhost:11434
 zotpilot config set zotero_api_key YOUR_ZOTERO_KEY      # for write operations
 zotpilot config set zotero_user_id YOUR_ZOTERO_USER_ID
@@ -258,6 +260,33 @@ ls ~/Library/CloudStorage/ | grep Zotero
 # macOS local storage:
 ls ~/Zotero/
 ```
+
+### Upgrading an existing install
+
+If you installed the fork earlier and want the newer server-side improvements
+(multi-library indexing, token-aware chunking, the `bge-large` embedding default),
+reinstall from `main` in your existing env:
+
+```bash
+micromamba activate zotpilot
+pip install --upgrade --force-reinstall git+https://github.com/EconGeo/ZotPilot.git
+zotpilot --version   # confirm the new build
+```
+
+**Switching to the `bge-large` embedding model (optional but recommended).** Existing
+indexes were built with `nomic-embed-text` (768-dim) in the default ChromaDB collection
+named `chunks`. `bge-large` is 1024-dim, so it needs its own collection — point the config
+at a new one and rebuild, which preserves the old index until you choose to drop it:
+
+```bash
+ollama pull bge-large
+zotpilot config set ollama_model bge-large
+zotpilot config set collection_name chunks_bge      # keep the old 768-dim index intact
+micromamba run -n zotpilot zotpilot index --force    # rebuild into the new collection
+```
+
+If you'd rather not re-index, stay on `nomic-embed-text` — the other improvements
+(multi-library indexing, reliability, token-aware chunking) work regardless of model.
 
 ### Register the MCP server (project-scoped by default)
 
@@ -290,7 +319,7 @@ Restart Claude Code. The `mcp__zotpilot__*` tools should appear in the tool list
 # Make sure Ollama is running (if using Ollama embedding)
 ollama serve &
 
-# Index your personal library
+# Index all your Zotero libraries (personal + every group) in one pass
 micromamba run -n zotpilot zotpilot index
 
 # With Ollama: speed depends on your machine; ~2–4 sec/paper is typical.
@@ -313,23 +342,12 @@ The index does not auto-update. Re-run `zotpilot index` after adding a batch of 
 0 9 * * 0 /path/to/micromamba run -n zotpilot zotpilot index >> ~/.zotpilot-index.log 2>&1
 ```
 
-### Group library indexing (advanced)
+### Group libraries
 
-The CLI only indexes your personal library. Use this Python wrapper for group libraries:
-
-```python
-# Find your group ID: Zotero → right-click group → Group Settings → URL
-# e.g. groups.zotero.org/2350352/... → GROUP_ID = 2350352
-
-from zotpilot.indexer import Indexer
-from zotpilot.zotero_client import ZoteroClient
-from zotpilot.config import Config
-
-config = Config.load()
-GROUP_ID = 2350352   # replace with your group ID
-group_lib_id = ZoteroClient.resolve_group_library_id(config.zotero_data_dir, GROUP_ID)
-Indexer(config, library_id=group_lib_id).run()
-```
+Group libraries are now indexed **automatically** — `zotpilot index` sweeps your
+personal library and every group library in a single pass, and cross-library
+reconciliation ensures a paper shared across libraries isn't dropped as an orphan.
+No separate command or Python wrapper is needed.
 
 ---
 
@@ -614,7 +632,7 @@ Layer 0 — Upstream (not owned; tracked via git remote)
 └── xunhe730/ZotPilot              Zotero MCP server (upstream)
 
 Layer 1 — Custom tools (each repo owns its versioning)
-├── EconGeo/ZotPilot               fork: BBT 7+ + group library + Ollama  (server: pip-installed; skills: vendored)
+├── EconGeo/ZotPilot               fork: multi-library indexing + token-aware chunking + bge-large/Ollama + BBT 7+  (server: pip-installed; skills: vendored)
 ├── EconGeo/ai-audit               /humanize + /verify-claims + ai-disclosure   (submodule)
 └── EconGeo/journal-digest         weekly journal monitor (RSS + CrossRef)       (submodule)
 
