@@ -107,3 +107,41 @@
 **Status:**
 - Done: delete_note plan written, grounded, committed/pushed. Checkpoint complete.
 - Pending (next session, after /clear): **execute `docs/plans/2026-06-12-zotpilot-delete-note-tool.md`** via subagent-driven-development. Work is in `submodules/zotpilot` (Tasks 1–3); Task 4 (research-claude) is gated on the PR merging. Needs a ZotPilot dev env (`uv`/deps) for pytest; no live Zotero required (mocked).
+
+
+## 2026-06-22 19:43 UTC — ZotPilot: executed multi-library indexing (PR #2) + indexing-reliability & token-aware chunking (PR #4)
+
+All work in `~/Projects/ZotPilot` (= `EconGeo/ZotPilot`, fork of `xunhe730/ZotPilot`). Two plans executed via superpowers subagent-driven-development (fresh implementer + spec/quality review per task + opus whole-branch review). Durable ledgers at `ZotPilot/.superpowers/sdd/progress.md`.
+
+**Operations — multi-library indexing (plan `docs/superpowers/plans/2026-06-21-multi-library-indexing.md`):**
+- Executed 6 code tasks + a final-review fix on branch `feat/multi-library-indexing`. Added `enumerate_indexable_libraries`, `global_pdf_doc_ids`, and the `index_all_libraries` orchestrator: one cross-library PDF-doc-id union passed as `protected_doc_ids` to every per-library `Indexer.index_all`, so reconciliation only deletes docs absent from EVERY library. Wired CLI `cmd_index` + MCP `index_library`; stats span all libraries.
+- Final review caught a real convergence bug (a fully-indexed early library starved later libraries under batched runs because `index_all` derives `has_more` from the pre-skip candidate count) → fixed: orchestrator only stops on a library that made real progress. Regression test added.
+- **PR #2** opened (EconGeo fork, base `main`). 8 commits, all reviews clean.
+
+**Operations — indexing reliability + token-aware chunking (plan `docs/superpowers/plans/2026-06-22-indexing-reliability-and-rag-chunking.md`):**
+- Brainstormed whether to switch off ZotPilot vs harden it; chose harden + delegate chunking to a RAG library (LlamaIndex). Wrote the plan, executed 8 tasks + final-review fixes on branch `feat/indexing-reliability-and-token-aware-chunking` (stacked on the multi-library branch — depends on `index_all_libraries`).
+- Phase A (no new deps): Ollama embedder truncates oversized inputs + sub-batches (one over-long chunk no longer fails a whole doc); Gemini retry loop surfaces the real cause (fixed `UnboundLocalError: 'e'` mask); preflight 1-token embedder probe (guarded by `if to_index:`); `--limit 0` = index-nothing; multi-library aggregate fixes (distinct `already_indexed`, restored quality/extraction summary).
+- Phase B: `ChunkerProtocol` seam; `LlamaIndexChunker` using bge-large's own tokenizer via `SentenceSplitter` → chunks guaranteed ≤512 tokens (root-cause fix), behind optional `[llamaindex]` extra; `chunker_backend` config wired into the index config-hash. Final review caught a spurious-reindex-warning risk → folded `chunker_backend` into the hash only for non-default backends so existing `char` users are unaffected on upgrade (locked by `test_config_hash_char_equals_no_attr`).
+- Also fixed 2 stale embedder tests (nomic-embed-text/768 → bge-large/1024). **PR #4** opened, stacked on PR #2. 12 commits, all reviews clean.
+
+**Live runs (real library, ~/Library/CloudStorage/.../Zotero):**
+- 5 libraries (My Library + 4 groups: ESG, NAR_settlement, affordable_housing, regenerative_paradigm); global union 3340 PDFs.
+- First sweep FAILED to embed (254 fails): root cause was env misconfig — `embedding_provider=gemini` with invalid key `'exit'` while Ollama+bge-large was the real backend; failures masked as the EMN7YZV7 `UnboundLocalError`. SAFETY HELD: store unchanged at 2744, 0 deletions.
+- Fixed via `zotpilot config set embedding_provider ollama` (verified bge-large 1024-dim matches the existing `chunks_bge` collection — space is set by MODEL, so safe). Re-ran: +254 docs indexed (store 2744 → 2998), 0 deletions across 4 passes. Remaining ~343 unindexed = long books >40pp (by design), image-only/no-text PDFs, 11 group PDFs not on local disk.
+
+**Decisions:**
+- Library for chunking delegation = **LlamaIndex** (token-aware SentenceSplitter + bge tokenizer), behind a swappable `ChunkerProtocol`.
+- Keep fork PRs only; **do NOT open upstream now** — `EconGeo` fork is 12 commits diverged from `xunhe730/ZotPilot` (which is 57 commits ahead independently), so an upstream PR would be a messy 20-commit conflict mix. Upstream contribution deferred to a deliberate rebase/cherry-pick of feature work onto current `upstream/main`.
+- Embedding errors are now observable (truncation logs a warning; real causes surfaced).
+
+**Results / verified facts:**
+- Full suite: 853 passed; 10 pre-existing failures (down from 12 — fixed the 2 stale embedder tests), all unrelated (present at the pre-PR-#2 baseline `de99ae5`): bootstrap_install, cli_setup batch_size, state tool-surface, 5 token_budget MagicMock-config contracts, 2 tool_profiles.
+- Multi-library safety invariant (`index_authority.py` reconciliation) untouched throughout both PRs.
+- zotpilot is installed editable → CLI/MCP run the committed code. Added an `upstream` git remote (xunhe730) for future rebase.
+
+**GitHub (EconGeo/ZotPilot):**
+- PR #2 — multi-library indexing (base `main`). PR #4 — reliability + token-aware chunking (stacked on #2). Issue #3 — Ollama-400 chunk bug, FILED then cross-linked to PR #4 (resolves on merge). Enabled repo Issues (were disabled).
+
+**Status:**
+- Done: both plans fully executed + reviewed; both PRs open on the fork; library re-indexed; Issue #3 addressed by PR #4.
+- Open follow-ups (non-blocking, in PR #4 notes): LlamaIndexChunker page-offset approximate under overlap (metadata only); gemini deferred-import style; PDFs missing on local disk counted as unindexed (path-resolution, parked); upstream contribution needs a clean rebase onto `xunhe730/main`.
