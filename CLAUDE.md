@@ -55,6 +55,14 @@ to the repo root — this overrides the checkpoint skill's default root path. A 
 ./scripts/check_fork.sh    # exit 0 required
 ```
 
+If the change **adds or removes** a file under `agents/`, `skills/`, `rules/` or
+`hooks/`, also re-link the projects and confirm they picked it up. Edits propagate
+through the links on save; membership does not.
+
+```bash
+./scripts/check_install.sh --all    # exit 0 required after a re-link
+```
+
 It checks: no LaTeX/multi-file residue, no project identity or project nouns, the
 structural deletions still hold, and that the merged `coder-critic` still carries both
 halves it was built from.

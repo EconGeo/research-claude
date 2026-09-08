@@ -85,6 +85,14 @@ Offer to re-run `apply.sh --link` so `.claude/pipeline.lock` records the new SHA
 Without this the lock still names the pre-promotion commit, and a coauthor
 bootstrapping from it gets the pipeline as it was before the improvement.
 
+A promotion that **adds** a file matters beyond the lock: no other project has a
+link to it until each one re-links. Say so, and confirm the install here:
+
+```bash
+"$RC/scripts/check_install.sh"          # this project
+"$RC/scripts/check_install.sh" --all    # every project on this machine
+```
+
 ---
 
 ## What this skill does NOT do

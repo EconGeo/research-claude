@@ -188,6 +188,7 @@ would silently pin every project on your machine to one paper's locked commit.
 | Something only one paper needs | `rm` the symlink, write a real file — `apply.sh --link` will never overwrite it |
 | Check what is canonical vs. overridden | `/promote` reports both |
 | Verify the tree is clean | `./scripts/check_fork.sh` — exit 0 means no LaTeX residue, no project nouns, no orphaned references |
+| Verify a project's install is correct | `./scripts/check_install.sh --all` — exit 0 means every project links a complete, current, resolving tree and has committed no symlinks |
 
 Never copy the tree back into a project to "make it local." That is the drift this
 design exists to end.

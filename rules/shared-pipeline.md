@@ -22,6 +22,30 @@ you.
   the drift this design exists to end: six copies, each diverging, none knowing
   what the others learned.
 
+## Edits propagate; membership does not
+
+A link points at a *file*, so an edit upstream is visible here instantly — that is
+the whole design. But a link cannot point at "whatever this directory will contain
+later." An item **added** upstream gets no link here until the linker runs again:
+
+```bash
+./bootstrap-pipeline.sh --tip     # re-link: adds new items, prunes deleted ones
+```
+
+Per-directory links would make membership automatic, but then a project could
+never keep a real file of its own beside the shared ones, and the override case
+above would be impossible. Membership is the price of that escape hatch, so it is
+checked rather than assumed:
+
+```bash
+RC="$(cd .claude/rules && cd "$(dirname "$(readlink quality.md)")/.." && pwd -P)"
+"$RC/scripts/check_install.sh"
+```
+
+It reports items never linked here, links that resolve to nothing, links pointing
+at some other checkout, symlinks committed into this repo, and overrides that a
+clone would not receive.
+
 ## Which checkout you are on
 
 `.claude/pipeline.lock` records the repo and commit. Two bootstrap modes, and
