@@ -1,7 +1,7 @@
 ---
 name: review
 description: All quality reviews — routes to appropriate critics based on target file type and flags. Replaces /paper-excellence, /proofread, /econometrics-check, /review-r, /review-paper.
-argument-hint: "[file path or --flag] Options: --peer [journal], --stress [journal], --methods, --proofread, --code, --replicate [lang], --all"
+argument-hint: "[file path] Options: --peer [journal], --stress [journal], --methods, --theory [target], --proofread, --code [file], --replicate [language], --all"
 allowed-tools: Read,Grep,Glob,Write,Bash,Task
 ---
 
@@ -21,14 +21,14 @@ Unified review command that routes to the appropriate critic agents based on the
 - `.tex` talk file (in talks/) → **Talk review** (storyteller-critic)
 
 ### Explicit flags (override auto-detect)
-- `--peer [journal]` → **Full peer review** (editor desk review → referee dispatch → editorial decision)
-- `--peer --r2 [journal]` → **R&R second round** (same referees, same dispositions, memory of prior review)
-- `--stress [journal]` → **Hostile stress test** (same flow, adversarial referee dispositions)
+- `--peer` `[journal]` → **Full peer review** (editor desk review → referee dispatch → editorial decision)
+- `--peer --r2` `[journal]` → **R&R second round** (same referees, same dispositions, memory of prior review)
+- `--stress` `[journal]` → **Hostile stress test** (same flow, adversarial referee dispositions)
 - `--methods` → **Causal audit** (strategist-critic standalone, 4-phase review)
-- `--theory [target]` → **Proof audit** (theorist-critic standalone, 4-phase review — logical validity, assumption minimality, citations, linkage)
+- `--theory` `[target]` → **Proof audit** (theorist-critic standalone, 4-phase review — logical validity, assumption minimality, citations, linkage)
 - `--proofread` → **Manuscript polish** (writer-critic standalone, 6 categories)
-- `--code [file]` → **Code review** (coder-critic standalone, categories 4-12)
-- `--replicate [language]` → **Cross-language replication** (Coder re-implements in target language + coder-critic + comparison)
+- `--code` `[file]` → **Code review** (coder-critic standalone, categories 4-12)
+- `--replicate` `[language]` → **Cross-language replication** (Coder re-implements in target language + coder-critic + comparison)
 - `--all` or no file → **Paper excellence** (all critics in parallel + weighted score — theorist-critic included when a theory section is present)
 
 ---

@@ -60,6 +60,12 @@ Full verification + score enforcement + submission checklist.
 Workflow:
 1. Run comprehensive review if not done recently
 2. Run replication audit
+2.5. **AI Disclosure Audit** — read `ai_use_log.md` and the manuscript AI Use Statement:
+   - If `ai_use_log.md` missing or empty: **STOP** — "AI disclosure log missing. Run agents or manually populate ai_use_log.md before submission. See .claude/rules/ai-disclosure.md."
+   - Read the `## AI Use Statement {.unnumbered}` section in `manuscript_<project>.qmd`
+   - If the statement is missing or still contains placeholder text: **STOP** — "AI Use Statement not populated. Populate from ai_use_log.md using the Wiley/COPE-aligned template before submission."
+   - If a journal is specified via `$ARGUMENTS`: check that the disclosure location matches that journal's `**AI disclosure:**` field in `.claude/references/journal-profiles.md`
+   - If all checks pass: report "AI disclosure audit: [N] log entries found, statement populated ✓"
 3. Check score gate: aggregate >= 95, all components >= 80
 4. Save gate summary to `quality_reports/quality_gate_[date].md`
 5. Generate HTML quality gate report and refresh dashboard:
@@ -86,6 +92,7 @@ python3 scripts/generate_dashboard.py
 
 ## Principles
 - **Score >= 95 + all components >= 80. No exceptions.**
+- **AI disclosure must be populated before submission.** `ai_use_log.md` must exist and have entries; the AI Use Statement must not be a placeholder. No exceptions.
 - **Don't skip verification.** Even if reports exist, check they're recent.
 - **If it fails, stop.** Don't generate materials for a failing paper.
 - **Cover letter is a draft.** User must review before sending.
