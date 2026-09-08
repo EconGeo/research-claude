@@ -9,7 +9,7 @@ The rendered PDF is the paper.
 > **File name:** the manuscript is `manuscript_<project>.qmd`, where `<project>` is the
 > project directory basename (e.g. `manuscript_myproject.qmd` in the `myproject/`
 > project). Examples below use `manuscript_<project>.qmd` as a placeholder. See
-> `pipeline-precedence.md` for the canonical statement of this convention.
+> This file is the canonical statement of that convention.
 
 ---
 
@@ -316,7 +316,6 @@ Invoked when the reviewed artifact is `manuscript_<project>.qmd` and this rule i
 | `quarto-pdf.md` | **Required** — `pdf:` format block + kableExtra/figure/citation mechanics for the canonical PDF output |
 | `quarto-word.md` | Optional — `docx:` format block + flextable/CSL mechanics, only if Word secondary output is needed |
 | `registry-verification-gate.md` | **Legacy only** — registry-pattern projects |
-| `working-paper-format.md` (clo-author) | **Legacy only** — LaTeX-first projects |
 
 `quarto-pdf.md` and `quarto-word.md` are **format-reference** docs for the two output
 formats of the single `manuscript_<project>.qmd` — they describe rendering mechanics and

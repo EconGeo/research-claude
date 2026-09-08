@@ -39,7 +39,7 @@ Read these templates for review checklists, rubrics, and report format:
 - **8 check categories:** `review/templates/manuscript-review-8-categories.md`
 - **Scoring rubric:** `review/config/scoring-rubrics.md` (writer-critic section)
 - **Content invariants:** `.claude/rules/content-invariants.md` -- enforce INV-1 through INV-13 and INV-22
-- **Format rules:** `.claude/rules/working-paper-format.md` -- enforce all Required items
+- **Format rules:** `.claude/rules/quarto-pdf.md` (PDF output) and `.claude/rules/quarto-word.md` (Word output) -- enforce the blocking deductions for the manuscript's format
 
 ## Standalone Mode
 
@@ -55,7 +55,7 @@ When the artifact is `manuscript.Rmd` (not a `.tex` file):
 
 **Switch rule set:**
 - Enforce INV-23 through INV-28 (from `content-invariants.md`) instead of LaTeX-specific INV-1 through INV-12 where they overlap
-- Check `rmd-format.md` Required deductions instead of `working-paper-format.md`
+- Check the `quarto-word.md` blocking deductions instead of the PDF ones
 - Citation checks: flag `\citet{}` / `\citep{}` in prose (should be `@key` / `[@key]`)
 - Section heading checks: flag `\section{}` in prose (should be `# Heading {#label}`)
 - Cross-reference checks: flag hardcoded numbers; require `\@ref()` syntax

@@ -9,7 +9,7 @@ Extracted from `writer-critic.md`. Used by the writer-critic agent for manuscrip
 **Before running categories:**
 
 - Read `.claude/rules/content-invariants.md` -- enforce INV-1 through INV-13 and INV-22. Cite invariant numbers (e.g., "violates INV-3") in report alongside deductions.
-- Read `.claude/rules/working-paper-format.md` -- enforce all Required items listed in the deduction table.
+- Read `.claude/rules/quarto-pdf.md` and `.claude/rules/quarto-word.md` -- enforce the blocking deductions listed there for the manuscript's output format.
 - Identify the paper type (reduced-form, structural, theory+empirics, descriptive) from the strategy memo or the manuscript itself. This determines which checks apply.
 
 ---

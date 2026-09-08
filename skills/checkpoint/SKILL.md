@@ -234,7 +234,7 @@ Do NOT run this on every checkpoint — only when the user explicitly opts in.
 - **Never invent progress.** Only log what actually happened — from git, conversation, or user confirmation.
 - **Be fast.** The whole checkpoint should take under 60 seconds including user confirmation.
 - **Don't duplicate.** Check existing memory files before creating new ones. Check if today's journal entry already covers this project.
-- **Respect meta-governance.** Fork users get memory + SESSION_REPORT + research_journal out of the box. Obsidian integration is opt-in and gated behind local config.
+- **Keep the defaults local.** Memory, SESSION_REPORT and the research journal work out of the box. Obsidian integration is opt-in and gated behind local config.
 - **`.claude/state/obsidian-config.md` is local-only.** It contains user-specific paths and mappings; `.gitignore` keeps it out of commits.
 - **Dashboard is source of truth** for Obsidian project stages (when Obsidian is active). Don't contradict it.
 - **Memory is for future conversations.** Don't save things only useful right now.

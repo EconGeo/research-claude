@@ -93,4 +93,3 @@ If any step in this chain is broken, the paper cannot be reproduced. The manifes
 
 - `quarto-empirical.md` — write gate item 3 requires manifest completeness before rendering
 - `content-invariants.md` — INV-23 (manifest coverage) and INV-24 (manifest existence)
-- `permissions.md` — data-engineer PRODUCES includes manifest updates
