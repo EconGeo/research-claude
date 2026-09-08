@@ -9,9 +9,11 @@ fail=0
 # Directories that ship into a project. zotpilot-skills/ is vendored verbatim and exempt (D5).
 SHIP=(agents skills rules references hooks templates)
 
-scan() {  # scan <label> <extended-regex>
-  local label="$1" pat="$2" hits present=()
-  local d; for d in "${SHIP[@]}"; do [[ -d "$RC/$d" ]] && present+=("$d"); done
+scan() {  # scan <label> <extended-regex> [dir...]  — defaults to all of SHIP
+  local label="$1" pat="$2"; shift 2
+  local hits present=() dirs=("$@")
+  [[ ${#dirs[@]} -eq 0 ]] && dirs=("${SHIP[@]}")
+  local d; for d in "${dirs[@]}"; do [[ -d "$RC/$d" ]] && present+=("$d"); done
   if [[ ${#present[@]} -eq 0 ]]; then echo "SKIP [$label] (no ship dirs yet)"; return; fi
   hits="$(cd "$RC" && grep -rInE "$pat" "${present[@]}" 2>/dev/null)"
   if [[ -n "$hits" ]]; then
@@ -35,7 +37,22 @@ echo "── criterion 6: no LaTeX / multi-file pipeline residue ──"
 scan latex-residue 'latexmk|\\doublespacing|threeparttable|paper/main\.tex|paper/sections|Emory'
 
 echo "── criterion 7: no project nouns, no non-standard manuscript filename ──"
-scan project-nouns 'POGM|JREPM|JRER|CoStar|SFPP|zoning|WRLURI|NAR|manuscript_quarto_word'
+# Split into two scans (2026-09-08).
+#
+# Project IDENTITY must not appear anywhere, references/ included — a project
+# name in the shipped tree is the leak D5 exists to stop.
+#
+# Journal and data-vendor names are different. references/ holds per-user,
+# per-discipline TEMPLATES — discipline-cards.md and journal-profiles.md exist
+# precisely to name real journals (JRER, JREPM, REE) and real data vendors
+# (CoStar), and "zoning" is ordinary land-use vocabulary. Banning those tokens
+# from references/ would make it impossible to ship a discipline card at all,
+# which is a worse outcome than the risk it guards against. They remain banned
+# in agents/, skills/, rules/, hooks/ and templates/, where a journal name IS a
+# project leak.
+scan project-identity 'POGM|SFPP|WRLURI|zoning2026|NAR_settlement|manuscript_quarto_word'
+scan project-nouns    'JREPM|JRER|CoStar|[^a-z]zoning|WRLURI|[^A-Za-z]NAR[^A-Za-z]' \
+                      agents skills rules hooks templates
 
 echo "── criteria 1-3: the fork is structural ──"
 absent clo-author-submodule submodules/clo-author
