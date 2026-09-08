@@ -105,6 +105,25 @@ def check_careful(tool_name: str, tool_input: dict, guards: dict) -> tuple:
     return True, ""
 
 
+def deny(message: str) -> None:
+    """Refuse the tool call.
+
+    PreToolUse honours `hookSpecificOutput.permissionDecision`. It does NOT
+    honour a top-level {"decision": "block"} — that is the PostToolUse/Stop
+    shape, and this hook emitted it for both guards, so the JSON was ignored,
+    the hook exited 0, and the tool ran. /freeze and /careful reported that they
+    were active while blocking nothing at all.
+    See https://code.claude.com/docs/en/hooks.
+    """
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": message,
+        },
+    }))
+
+
 def main() -> int:
     """Main hook entry point."""
     try:
@@ -122,13 +141,13 @@ def main() -> int:
     # Check freeze
     allowed, message = check_freeze(tool_name, tool_input, guards)
     if not allowed:
-        print(json.dumps({"decision": "block", "reason": message}))
+        deny(message)
         return 0
 
     # Check careful
     allowed, message = check_careful(tool_name, tool_input, guards)
     if not allowed:
-        print(json.dumps({"decision": "block", "reason": message}))
+        deny(message)
         return 0
 
     return 0

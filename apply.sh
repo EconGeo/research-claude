@@ -207,6 +207,13 @@ fi
   copy_seed "$SCRIPT_DIR/templates/gitignore" "$PROJECT_DIR/.gitignore"
 if [[ -f "$SCRIPT_DIR/templates/bootstrap-pipeline.sh" ]]; then
   copy_seed "$SCRIPT_DIR/templates/bootstrap-pipeline.sh" "$PROJECT_DIR/bootstrap-pipeline.sh"
+
+  # A linked hook does nothing until settings.json names it, and settings.json is
+  # project-owned and never linked (C4) — so without a seed a new project gets
+  # twelve installed hooks and zero firing ones, which is how /freeze and
+  # /careful came to be shipped with their enforcement mechanism uninstalled in
+  # every project. copy_seed never overwrites, so an existing file is safe.
+  copy_seed "$SCRIPT_DIR/templates/settings.json" "$PROJECT_DIR/.claude/settings.json"
   chmod +x "$PROJECT_DIR/bootstrap-pipeline.sh" 2>/dev/null || true
 fi
 

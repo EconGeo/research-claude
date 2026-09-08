@@ -9,14 +9,15 @@ Fires before context compaction to:
    avoid losing mid-plan context before the user has approved it.
    Opt-in via CLAUDE_PRECOMPACT_BLOCK_ON_DRAFT=1 (default: off).
 
-The blocking protocol follows modern Claude Code semantics:
-  exit 0 + JSON {"decision": "block", "reason": "..."} on stdout.
+Blocking protocol: exit 2, with the reason on stderr. PreCompact can block,
+and exit 2 blocks it regardless of what is printed; there is no documented
+hookSpecificOutput schema for this event, so JSON alone would not be reliable.
 Block fires at most once per DRAFT plan — the plan path is recorded in
 state, and a subsequent compaction for the same plan proceeds normally.
 Fail-open on any internal error.
 
 Hook Event: PreCompact
-Returns: exit 0 in all cases; stdout is block JSON or empty.
+Returns: exit 2 to block, exit 0 otherwise.
 """
 
 from __future__ import annotations
@@ -270,13 +271,15 @@ def main() -> int:
     # before the user has approved. Fires at most once per plan.
     block, reason = should_block_draft(plan_info)
     if block:
-        # PreCompact accepts the modern block protocol: exit 0 with JSON
-        # {"decision":"block","reason":"..."} on stdout. stderr is visible.
+        # Exit 2, not exit 0 + JSON. The docs guarantee that on an event which
+        # can block — PreCompact is one — "exit 2 blocks whether or not you
+        # print JSON", but they publish no hookSpecificOutput schema for
+        # PreCompact, so a JSON-only block rests on an undocumented shape. The
+        # reason still goes to stderr, which is what the user and Claude see.
         print(f"\n{YELLOW}⚡ Compaction blocked{NC} (DRAFT plan detected)",
               file=sys.stderr)
         print(f"   {reason}\n", file=sys.stderr)
-        json.dump({"decision": "block", "reason": reason}, sys.stdout)
-        return 0
+        return 2
 
     # Save state for restoration
     save_state(state)
