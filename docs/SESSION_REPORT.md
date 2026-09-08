@@ -356,3 +356,61 @@ git checkout main && git merge --no-ff pipeline-symlink && git push
 
 Verify after: `ls .claude/agents | wc -l` is non-zero, a linked skill resolves, and
 `find .claude -maxdepth 2 -type l ! -exec test -e {} \; -print` is empty.
+
+---
+
+## 2026-09-08 (later) — Rollout complete: all six repos converted
+
+The gating check passed — the user confirmed in a live POGM4 session that a per-item
+symlinked skill is discovered (`/write` resolves). Task 18 ran to completion.
+
+| # | Repo | Branch merged into | Overrides kept | render | prose |
+|---|---|---|---|---|---|
+| 1 | POGM4 | `main` | `skills/commit`, `skills/flextable-quarto-word-captions` | 0 | 0 |
+| 2 | NAR_settlement | `phase1-event-study` | none | 0 | 2 pre-existing |
+| 3 | zoning2026 | `main` | `rules/ground-truth.md` (retired stub) | 0 | 41 pre-existing |
+| 4 | ESG | `main` | none | 0 | 14 pre-existing |
+| 5 | affordable_housing_2026 | `main` | none | 0 | 0 |
+| 6 | BRI | `main` | none | n/a — no `.qmd` yet | n/a |
+
+All six: 19 agents · 26 skills · 16–17 rules · 12 hooks resolving, zero dangling links,
+clean working trees, pushed, rollback backups removed.
+
+### Three more improvements came home rather than being deleted
+
+- **Four hooks** (`context-monitor`, `log-reminder`, `verify-reminder`, `notify.sh`) were
+  byte-identical in POGM4 and ESG and absent from the other four. Two projects
+  independently carrying the same file is shared infrastructure, not a project override.
+  Upstreamed; all six now have them, and POGM4's local copies were dropped so it links
+  like everything else.
+- **`rules/session-handoff.md`** existed only in NAR_settlement. It makes `/checkpoint`
+  verify the active plan's status section rather than trust it — a plan three days behind
+  is worse than no plan, because a resuming session believes it. De-projected and
+  upstreamed with `templates/handoff.md`.
+- **`rules/ai-disclosure.md`** (earlier) existed only in POGM4.
+
+That is the whole point of the fork, demonstrated three times in one session: value that
+had been stranded in one paper now reaches all six.
+
+### End-to-end verification
+
+Edited `rules/quality.md` through BRI's symlink, then confirmed: visible immediately from
+POGM4 and ESG with no re-apply · shows as an uncommitted change in `research-claude`'s
+`git status` · invisible to BRI's own `git status` · revert propagated instantly. That
+single test exercises both the payoff and the hazard the design is built around.
+
+### Pre-existing manuscript findings (NOT caused by the conversion)
+
+`prose_number_check.py` now runs in every project. Three manuscripts have unexplained
+literals — untouched by these branches, and worth a separate pass:
+
+- **zoning2026** `paper/manuscript.qmd` — 41, including a hardcoded "Section 5.3" that
+  should be `@sec-`
+- **ESG** `manuscript.qmd` — 14
+- **NAR_settlement** `manuscript_NAR_settlement.qmd` — 2, in appendix prose
+  ("Figures 1, C1, G1 and I1"; "three figures"). No allowlist file exists in that project,
+  so 2 hits across 11,800 lines is a genuinely strong result.
+
+Also cosmetic: ESG's manuscript is `manuscript.qmd`, not `manuscript_ESG.qmd`. The naming
+convention governs what the template ships, not what an existing paper is called, so it
+was left alone.
