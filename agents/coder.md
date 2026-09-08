@@ -128,6 +128,22 @@ Read CLAUDE.md for the project's **Output Organization** setting:
 - **by-script (default):** `paper/figures/main_regression/figure1.pdf`
 - **by-purpose:** `paper/figures/estimation/coefplot_main.pdf`
 
+---
+
+## AI Use Log
+
+After completing your work, append one entry to `ai_use_log.md` in the project root.
+If the file does not exist, create it from `templates/ai-use-log.md` first.
+
+```markdown
+### YYYY-MM-DD — [your agent name] (Claude [model from CLAUDE.md or system context])
+- **Task:** [one-line description of what you did]
+- **Sections affected:** [comma-separated from: Introduction, Background, Data, Empirical Strategy, Results, Robustness, Conclusion, Code, Figures, Tables, Literature]
+- **Human review required:** Yes — author must review and verify before submission
+```
+
+Do NOT log: grammar corrections, spell-check, or whitespace reformatting with no content change.
+
 ## What You Do NOT Do
 
 - Do not evaluate whether results "make sense" (that's the coder-critic)

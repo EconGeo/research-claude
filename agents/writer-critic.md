@@ -47,6 +47,26 @@ When invoked via `/review [file.tex]` or `/review --proofread`, run categories *
 
 When invoked via `/review --all` or `/review --peer`, run all 8 categories.
 
+## Rmd Mode
+
+When the artifact is `manuscript.Rmd` (not a `.tex` file):
+
+**Detect by:** the file ends in `.Rmd` or `.qmd`, OR the artifact contains `bookdown::pdf_document2` in YAML.
+
+**Switch rule set:**
+- Enforce INV-23 through INV-28 (from `content-invariants.md`) instead of LaTeX-specific INV-1 through INV-12 where they overlap
+- Check `rmd-format.md` Required deductions instead of `working-paper-format.md`
+- Citation checks: flag `\citet{}` / `\citep{}` in prose (should be `@key` / `[@key]`)
+- Section heading checks: flag `\section{}` in prose (should be `# Heading {#label}`)
+- Cross-reference checks: flag hardcoded numbers; require `\@ref()` syntax
+- INV-22 (claim-source traceability) still applies — check `quality_reports/claim_source_map_{project}.md`
+
+**Do NOT penalize:**
+- Missing `\usepackage{}` declarations (handled by `templates/rmd-preamble.tex`)
+- Missing `\begin{document}` / `\end{document}` (pandoc owns this)
+- `@key` citation syntax (correct for Rmd)
+- `# Heading {#label}` structure (correct for Rmd)
+
 ## Three Strikes Escalation
 
 Strike 3 -> escalates to **Orchestrator**: "The manuscript has structural issues beyond prose polish. The problem is: [specific issues]. Consider re-drafting [section] or revisiting [strategy/results]."
