@@ -79,5 +79,45 @@ done
 echo "── C1: no ~/Courses domain leak ──"
 scan course-leak 'academic course materials|Beamer slides|TikZ Freshness'
 
+echo "── criterion 9a: every agent named in skills/ and rules/ exists ──"
+# A skill that dispatches a deleted agent fails silently at run time. Names are
+# matched against the agents/ roster plus the ai-audit submodule's two agents.
+# "worker-critic" is a generic term of art ("Worker-critic pairing"), never an
+# agent name; it is the only such generic in the tree.
+roster="$(ls "$RC"/agents/*.md "$RC"/submodules/ai-audit/agents/*.md 2>/dev/null \
+          | xargs -n1 basename | sed 's/\.md$//' | sort -u)"
+missing=""
+for name in $(cd "$RC" && grep -rhoiE '\b[a-z][a-z-]*-critic\b|\blibrarian\b|\bguide-writer\b' \
+              skills/ rules/ 2>/dev/null | tr 'A-Z' 'a-z' | sort -u); do
+  [[ "$name" == "worker-critic" ]] && continue
+  grep -qx "$name" <<<"$roster" || missing="$missing $name"
+done
+if [[ -n "$missing" ]]; then
+  echo "FAIL [agent-refs] named in skills/ or rules/ but absent from agents/:$missing"; fail=1
+else echo "PASS [agent-refs] every named agent resolves"; fi
+
+# zotpilot-skills/ is vendored verbatim and must never be edited here, so a
+# dangling name in it is a WARN: the remedy is an upstream fix and a re-vendor,
+# never a local edit.
+vmissing=""
+for name in $(cd "$RC" && grep -rhoiE '\b[a-z][a-z-]*-critic\b|\blibrarian\b' zotpilot-skills/ 2>/dev/null \
+              | tr 'A-Z' 'a-z' | sort -u); do
+  [[ "$name" == "worker-critic" ]] && continue
+  grep -qx "$name" <<<"$roster" || vmissing="$vmissing $name"
+done
+[[ -n "$vmissing" ]] && echo "WARN [agent-refs] vendored zotpilot-skills/ names absent agents:$vmissing"
+
+echo "── criterion 9b: no live orchestrator reference ──"
+# D1 deleted the orchestrator. rules/agents.md section 4 names it on purpose, to
+# record why it was cut; those lines carry an explicit marker. Any OTHER mention
+# in a shipped file is a stale instruction pointing at an agent that cannot run.
+# docs/ is exempt entirely — it is the historical record.
+orphans="$(cd "$RC" && grep -rn -i 'orchestrator' agents/ skills/ rules/ 2>/dev/null \
+           | grep -v 'agent-refs:historical' || true)"
+if [[ -n "$orphans" ]]; then
+  echo "FAIL [orchestrator-refs] live references to the deleted orchestrator:"
+  printf '%s\n' "$orphans" | sed 's/^/    /'; fail=1
+else echo "PASS [orchestrator-refs] no live orchestrator reference"; fi
+
 [[ $fail -eq 0 ]] && echo "✓ check_fork: PASS" || echo "✗ check_fork: FAIL"
 exit $fail
