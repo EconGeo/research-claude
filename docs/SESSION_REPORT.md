@@ -145,3 +145,49 @@ All work in `~/Projects/ZotPilot` (= `EconGeo/ZotPilot`, fork of `xunhe730/ZotPi
 **Status:**
 - Done: both plans fully executed + reviewed; both PRs open on the fork; library re-indexed; Issue #3 addressed by PR #4.
 - Open follow-ups (non-blocking, in PR #4 notes): LlamaIndexChunker page-offset approximate under overlap (metadata only); gemini deferred-import style; PDFs missing on local disk counted as unindexed (path-resolution, parked); upstream contribution needs a clean rebase onto `xunhe730/main`.
+
+## 2026-09-08 — Design: fork to a Quarto-native pipeline (clo-author decoupling)
+
+**Operations:**
+- Audited all 47 clo-author agent/rule/skill files for LaTeX/Beamer/multi-file coupling.
+- Checked every clo-author capability for artifact-level evidence of use across `~/Research/*`.
+- Compared agent versions across clo-author, POGM4, NAR_settlement, zoning2026.
+- Created `docs/superpowers/specs/2026-09-08-quarto-native-research-pipeline-design.md`.
+- Created `docs/checkpoints/2026-09-08_quarto-native-pipeline-fork.md`.
+- Branch `design/quarto-native-pipeline` cut from `main`. No code touched; docs only.
+
+**Decisions:**
+- Remove the `clo-author` submodule; keep `ai-audit` and `journal-digest` (both EconGeo, live).
+- Keep worker→critic pairing, separation of powers, 3-strikes escalation; cut the orchestration
+  graph (orchestrator, permissions, lifecycle, pipeline_state, traces, weighted aggregation).
+- `research-claude` is authoritative; harvest project improvements with a de-projectification pass.
+- Fold `librarian`/`librarian-critic` into a new `skills/lit-position/` bridge skill rather than
+  editing the vendored `zotpilot-skills/`.
+- Keep `theorist` + `theorist-critic` in the default install.
+- Delete `rules/pipeline-precedence.md` — with no legacy layer there is nothing to precede.
+
+**Results / verified facts:**
+- Coupling is narrow: `working-paper-format.md` 17%, `content-standards.md` 9%, `storyteller.md` 9%,
+  writer/writer-critic/verifier 6%; ten agents measure exactly 0%.
+- `clo-author` pinned at 2026-05-10; no pulls in four months.
+- Stranded value: `editor.md` 366 lines in POGM4 vs 67 upstream; `coder-critic` diverged
+  independently in POGM4 (99) and zoning2026 (82), each adding a *different* half of Quarto
+  support — POGM4 the manifest checks (INV-23/24), zoning2026 the Correctness Layer.
+- `NAR_settlement` is at baseline on every agent — nothing to harvest there.
+- Four shipped files give wrong instructions and are NOT covered by `pipeline-precedence.md`:
+  `table-standards.md` (threeparttable/tabularray vs flextable), `figure-standards.md`
+  (`ggsave("fig.pdf")` vs PNG@200dpi for Word), `content-standards.md`, `meta-governance.md`
+  (Emory/biology-forker identity leak).
+- Never-exercised capabilities confirmed empty in POGM4: `strategy/`, `theory/`,
+  `preregistrations/`, `decisions/`, `specs/`, `literature/`, `traces/`, `paper/talks/`,
+  `paper/replication/`.
+- De-projectification scope: one leaked token (`manuscript_quarto_word`) across 8 candidates.
+
+**Commits:**
+- `7729df1` Design spec: fork to a Quarto-native research pipeline
+
+**Status:**
+- Done: audit, design, spec written + self-reviewed + committed, checkpoint saved.
+- Pending: user review of the spec; then `superpowers:writing-plans`; then implementation.
+- Open: Q1 scratch-vs-in-place re-apply to POGM4; Q2 promotion mechanism; Q3 rollout order for
+  zoning2026 / ESG / BRI / affordable_housing_2026.
