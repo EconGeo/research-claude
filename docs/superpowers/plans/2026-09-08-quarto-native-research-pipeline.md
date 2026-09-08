@@ -1,5 +1,12 @@
 # Quarto-Native Research Pipeline — Implementation Plan
 
+> **STATUS: COMPLETED 2026-09-08.** All 18 tasks executed; all six paper repos
+> converted, merged and pushed. `scripts/check_fork.sh` exits 0. Outcome, defects found
+> during execution, and the pre-existing manuscript findings are recorded in
+> `~/Academic/research-claude/docs/SESSION_REPORT.md`. Checkboxes below are marked
+> complete; the plan is retained as the historical record of what was decided and why.
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Fork `EconGeo/research-claude` off the dead `hugosantanna/clo-author` submodule into a standalone Quarto-native research pipeline, then symlink that one canonical tree into all six `~/Research` paper repos so a fix lands everywhere at once.
@@ -140,7 +147,7 @@ The spec's nine success criteria are the test suite. Make them runnable *first*,
 **Interfaces:**
 - Produces: `scripts/check_fork.sh`, exit 0 = all criteria pass. Every later task runs it.
 
-- [ ] **Step 1: Copy this plan into the repo it describes**
+- [x] **Step 1: Copy this plan into the repo it describes**
 
 ```bash
 mkdir -p ~/Academic/research-claude/docs/superpowers/plans
@@ -148,7 +155,7 @@ cp ~/academic-claude/quality_reports/plans/write-up-the-plan-compiled-beacon.md 
    ~/Academic/research-claude/docs/superpowers/plans/2026-09-08-quarto-native-research-pipeline.md
 ```
 
-- [ ] **Step 2: Write the gate**
+- [x] **Step 2: Write the gate**
 
 Create `scripts/check_fork.sh`:
 
@@ -221,7 +228,7 @@ scan course-leak 'academic course materials|Beamer slides|TikZ Freshness'
 exit $fail
 ```
 
-- [ ] **Step 3: Run it and confirm it fails**
+- [x] **Step 3: Run it and confirm it fails**
 
 ```bash
 chmod +x ~/Academic/research-claude/scripts/check_fork.sh
@@ -230,13 +237,13 @@ chmod +x ~/Academic/research-claude/scripts/check_fork.sh
 
 Expected: `exit=1`, with FAIL on `clo-author-submodule`, `pipeline-precedence`, `gitmodules`, `apply.sh`, `cc-zoning-half`, `cc-pogm-half`, and `root-skills`. This is the red state the rest of the plan turns green.
 
-- [ ] **Step 4: Apply corrections C1 and C3 to the spec**
+- [x] **Step 4: Apply corrections C1 and C3 to the spec**
 
 In `docs/superpowers/specs/2026-09-08-quarto-native-research-pipeline-design.md`:
 - Work items §A, `verifier` row — replace the Source/De-project cells with: `clo-author | POGM4's verifier.md is a leaked ~/Courses slide agent (12 LaTeX hits vs clo-author's 6) — do not harvest. Take clo-author's two-mode structure; rewrite check 1 latexmk → quarto render.`
 - Success criterion 9 — change `templates/design-checklists/ ships in the template` to `skills/strategize/templates/design-checklists/ ships in the template (in-skill; skills travel with their templates)`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd ~/Academic/research-claude
@@ -262,7 +269,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 **Interfaces:**
 - Produces: `agents/` directory. Tasks 3–5 add to it; Task 13 links it.
 
-- [ ] **Step 1: Copy the vendor-as-is set**
+- [x] **Step 1: Copy the vendor-as-is set**
 
 ```bash
 cd ~/Academic/research-claude && mkdir -p agents
@@ -274,11 +281,11 @@ done
 ls agents | wc -l   # expect 13
 ```
 
-- [ ] **Step 2: De-LaTeX `storyteller` and `storyteller-critic`**
+- [x] **Step 2: De-LaTeX `storyteller` and `storyteller-critic`**
 
 Per spec §A: Quarto-only. In both files remove every reference to `beamer-scaffold.tex` and Beamer output; keep `quarto-scaffold.qmd`. Also delete the scaffold itself in Task 7.
 
-- [ ] **Step 3: Rewrite `verifier` check 1 (correction C1 + B-list `audit-10-checks`)**
+- [x] **Step 3: Rewrite `verifier` check 1 (correction C1 + B-list `audit-10-checks`)**
 
 In `agents/verifier.md`, section `### 1. LaTeX Compilation` → rename to `### 1. Manuscript Render` and replace the `latexmk` command with:
 
@@ -291,7 +298,7 @@ Fail: any non-zero exit, or a render that silently skips a chunk (check for
 
 Leave the two-mode structure (Standard / Submission) and checks 2–10 unchanged — they are format-independent.
 
-- [ ] **Step 4: Run the gate**
+- [x] **Step 4: Run the gate**
 
 ```bash
 scripts/check_fork.sh 2>&1 | grep -E 'latex-residue|project-nouns|course-leak'
@@ -299,7 +306,7 @@ scripts/check_fork.sh 2>&1 | grep -E 'latex-residue|project-nouns|course-leak'
 
 Expected: `PASS [latex-residue]`, `PASS [project-nouns]`, `PASS [course-leak]`. If `latex-residue` fails, the storyteller de-LaTeXing or the verifier rewrite is incomplete — fix before committing.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add agents/ && git commit -m "feat(agents): vendor 13 format-agnostic clo-author agents
@@ -315,7 +322,7 @@ The whole point of the fork: 299 lines of `editor` improvements, plus four other
 - Create/overwrite: `agents/{editor,methods-referee,domain-referee,writer-critic,writer,coder}.md`
 - Read from: `~/Research/POGM4/.claude/agents/`
 
-- [ ] **Step 1: Copy the harvest set**
+- [x] **Step 1: Copy the harvest set**
 
 ```bash
 cd ~/Academic/research-claude
@@ -328,7 +335,7 @@ wc -l agents/editor.md   # expect 366, not 67
 
 Do **not** copy `verifier.md` — correction C1.
 
-- [ ] **Step 2: De-project (D5)**
+- [x] **Step 2: De-project (D5)**
 
 ```bash
 grep -rInE 'POGM|JREPM|JRER|CoStar|SFPP|zoning|WRLURI|NAR|manuscript_quarto_word' agents/
@@ -336,11 +343,11 @@ grep -rInE 'POGM|JREPM|JRER|CoStar|SFPP|zoning|WRLURI|NAR|manuscript_quarto_word
 
 The spec measured exactly one leaked token across the harvest candidates (`manuscript_quarto_word` in `coder-critic`, handled in Task 4). Anything this grep returns in these six files is new — replace project nouns with `<project>` and `manuscript_quarto_word` with `manuscript_<project>`.
 
-- [ ] **Step 3: Note what `editor` brings**
+- [x] **Step 3: Note what `editor` brings**
 
 `editor.md` carries capability that has never run: a novelty check with an explicit anti-hallucination caveat (every "already done" claim must carry a URL or DOI, else report "unable to verify"), referee selection that refuses to draw the same disposition twice, and a `--variance N` mode running 3–5 referees to *estimate* review variance rather than enforce diversity. Confirm all three survive the copy; they are the reason this agent is worth 366 lines.
 
-- [ ] **Step 4: Run the gate, then commit**
+- [x] **Step 4: Run the gate, then commit**
 
 ```bash
 scripts/check_fork.sh 2>&1 | grep -E 'project-nouns|latex-residue'
@@ -360,7 +367,7 @@ The sharpest case in the spec. POGM4 and zoning2026 each taught this agent a dif
 - Create: `agents/coder-critic.md`
 - Read from: `~/Research/POGM4/.claude/agents/coder-critic.md` (99 lines), `~/Research/zoning2026/.claude/agents/coder-critic.md` (82 lines), `submodules/clo-author/.claude/agents/coder-critic.md` (58 lines)
 
-- [ ] **Step 1: See what each side has**
+- [x] **Step 1: See what each side has**
 
 ```bash
 cd ~/Academic/research-claude
@@ -370,18 +377,18 @@ diff <(grep '^#' ~/Research/POGM4/.claude/agents/coder-critic.md) \
 
 Both share `Cold-Read Protocol`, `Your Task`, `Task-Specific Resources`, `Standalone Mode`, `Three Strikes Escalation`, `What You Do NOT Do`. POGM4 alone adds `## Quarto Empirical Mode` and `## Rmd Mode`. zoning2026 alone adds `## Correctness Layer (score correctness, not just hygiene)`.
 
-- [ ] **Step 2: Build the merge**
+- [x] **Step 2: Build the merge**
 
 Start from POGM4's file (it is the longer superset of the shared sections). Insert zoning2026's `## Correctness Layer` block verbatim between `## Task-Specific Resources` and `## Standalone Mode`. The Correctness Layer covers: hardcoded prose numbers (INV-11), no derived CSVs written into `data/raw/`, cache discipline, and zero-inflation / extrapolation traps for count outcomes. Drop `## Rmd Mode` only if the pipeline is Quarto-only — **keep it**; `rules/quarto-format.md` still documents an Rmd path and dropping it would lose coverage for legacy projects.
 
-- [ ] **Step 3: De-project**
+- [x] **Step 3: De-project**
 
 ```bash
 sed -i '' 's/manuscript_quarto_word/manuscript_<project>/g' agents/coder-critic.md
 grep -nE 'POGM|zoning|NAR|manuscript_quarto_word' agents/coder-critic.md   # expect no output
 ```
 
-- [ ] **Step 4: Verify the merge kept both halves — this is spec criterion 8**
+- [x] **Step 4: Verify the merge kept both halves — this is spec criterion 8**
 
 ```bash
 scripts/check_fork.sh 2>&1 | grep -E 'cc-zoning-half|cc-pogm-half'
@@ -389,7 +396,7 @@ scripts/check_fork.sh 2>&1 | grep -E 'cc-zoning-half|cc-pogm-half'
 
 Expected: `PASS [cc-zoning-half]` and `PASS [cc-pogm-half]`. Both must pass; either one failing means half the merge was lost.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add agents/coder-critic.md
@@ -408,7 +415,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Ensure absent: `agents/{orchestrator,guide-writer,librarian,librarian-critic}.md`
 
-- [ ] **Step 1: Confirm they were never vendored**
+- [x] **Step 1: Confirm they were never vendored**
 
 ```bash
 cd ~/Academic/research-claude
@@ -420,7 +427,7 @@ Expected final `agents/` contents (17 files): `coder, coder-critic, data-enginee
 
 `humanize-auditor` and `claim-verifier` are **not** here — they stay in the live `ai-audit` submodule (spec §A).
 
-- [ ] **Step 2: Record why, so this is not undone later**
+- [x] **Step 2: Record why, so this is not undone later**
 
 Create `docs/decisions/2026-09-08_cut-the-orchestration-graph.md`:
 
@@ -429,7 +436,7 @@ Create `docs/decisions/2026-09-08_cut-the-orchestration-graph.md`:
 > **librarian** was WebSearch-first, contradicting `rules/literature-search-order.md` (local Zotero first). Its content survives in `skills/lit-position/` (Task 10).
 > **What would invalidate this:** a project that genuinely needs multi-phase autonomous dispatch, or a literature workflow ZotPilot cannot serve.
 
-- [ ] **Step 3: Run the gate, then commit**
+- [x] **Step 3: Run the gate, then commit**
 
 ```bash
 scripts/check_fork.sh 2>&1 | grep 'd1-deletions'
@@ -450,7 +457,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Delete: `root-skills/`
 - Keep untouched: `skills/{new-project-ztp,obsidian-digest-sync,ztp-data-tag}/`
 
-- [ ] **Step 1: Copy the 13 skills (all but `new-project`)**
+- [x] **Step 1: Copy the 13 skills (all but `new-project`)**
 
 ```bash
 cd ~/Academic/research-claude
@@ -464,7 +471,7 @@ ls skills/   # expect 16 = 13 vendored + 3 existing bridge skills
 
 Each skill brings its `templates/` and `references/` subtrees — that is C2, and it is why six of the eight B-list ports need no separate work.
 
-- [ ] **Step 2: Drop `root-skills/` and `new-project`**
+- [x] **Step 2: Drop `root-skills/` and `new-project`**
 
 ```bash
 git rm -r root-skills
@@ -472,7 +479,7 @@ git rm -r root-skills
 
 `new-project` is superseded by `rules/quarto-empirical.md` (this is what `CLO_SKIP_SKILLS` existed to express) and by `skills/new-project-ztp/`, which stays.
 
-- [ ] **Step 3: Delete the Beamer scaffold (Quarto-only, spec §A)**
+- [x] **Step 3: Delete the Beamer scaffold (Quarto-only, spec §A)**
 
 ```bash
 rm skills/talk/templates/beamer-scaffold.tex
@@ -481,7 +488,7 @@ grep -rn 'beamer-scaffold' skills/ || echo "no dangling references"
 
 If that grep returns hits, remove the referencing lines from `skills/talk/SKILL.md`.
 
-- [ ] **Step 4: Delete the spec's C-list — dormant, and correctly so**
+- [x] **Step 4: Delete the spec's C-list — dormant, and correctly so**
 
 Vendoring a skill wholesale (C2) brings its templates, including three the spec explicitly drops. Remove them now, or they ship by accident:
 
@@ -496,7 +503,7 @@ Every hit from that grep must be removed from the referencing file. The rest of 
 
 `literature-review-6-categories.md`'s six criteria are not lost: they become the self-check in `skills/lit-position/` (Task 10, Step 1, item 6). Read it before deleting.
 
-- [ ] **Step 5: Run the gate, then commit**
+- [x] **Step 5: Run the gate, then commit**
 
 ```bash
 scripts/check_fork.sh
@@ -518,7 +525,7 @@ POGM4 forked `review` (c23707 → 1e7191) and `submit` (f8989f → ebcef4) this 
 **Files:**
 - Modify: `skills/review/SKILL.md`, `skills/submit/SKILL.md`
 
-- [ ] **Step 1: See what diverged**
+- [x] **Step 1: See what diverged**
 
 ```bash
 cd ~/Academic/research-claude
@@ -526,11 +533,11 @@ diff -u submodules/clo-author/.claude/skills/review/SKILL.md ~/Research/POGM4/.c
 diff -u submodules/clo-author/.claude/skills/submit/SKILL.md ~/Research/POGM4/.claude/skills/submit/SKILL.md
 ```
 
-- [ ] **Step 2: Upstream what is worth keeping; drop the rest**
+- [x] **Step 2: Upstream what is worth keeping; drop the rest**
 
 Judgment call per hunk. Keep anything Quarto-aware, anything that reflects the corrected write gate, anything generalizable. Drop anything naming POGM4, its journal, or its dataset. Record the decision in one line per dropped hunk in the commit message so the choice is auditable.
 
-- [ ] **Step 3: Confirm nothing project-specific survived**
+- [x] **Step 3: Confirm nothing project-specific survived**
 
 ```bash
 grep -nE 'POGM|JREPM|JRER|CoStar|SFPP|WRLURI' skills/review/SKILL.md skills/submit/SKILL.md
@@ -538,7 +545,7 @@ grep -nE 'POGM|JREPM|JRER|CoStar|SFPP|WRLURI' skills/review/SKILL.md skills/subm
 
 Expected: no output.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add skills/review skills/submit
@@ -552,7 +559,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Modify: `skills/submit/templates/audit-10-checks.md`
 
-- [ ] **Step 1: Replace check 1**
+- [x] **Step 1: Replace check 1**
 
 Change the LaTeX-compilation check to:
 
@@ -564,7 +571,7 @@ Pass: exit 0, output artifact newer than the source .qmd
 
 Checks 5–10 (package inventory, dependency verification, data provenance, execution verification, output cross-reference, README completeness) port unchanged — they are format-independent.
 
-- [ ] **Step 2: Verify and commit**
+- [x] **Step 2: Verify and commit**
 
 ```bash
 grep -n 'latexmk' skills/submit/templates/audit-10-checks.md   # expect no output
@@ -583,7 +590,7 @@ Referee-comment classification currently lives buried in `skills/review/template
 - Modify: `skills/revise/SKILL.md`
 - Read: `skills/review/templates/disposition-pool.md`
 
-- [ ] **Step 1: Add a severity pass to `/revise`**
+- [x] **Step 1: Add a severity pass to `/revise`**
 
 In `skills/revise/SKILL.md`, before the existing routing table, add:
 
@@ -604,7 +611,7 @@ comment answered with prose is how papers get rejected on the second round.
 
 Keep the existing NEW ANALYSIS / CLARIFICATION / DISAGREE / MINOR routing table as Step 2.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add skills/revise/SKILL.md
@@ -624,7 +631,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 **Interfaces:**
 - Produces: a skill that outputs `annotated_bibliography.md`, `frontier_map.md`, `positioning.md` into `quality_reports/literature/`.
 
-- [ ] **Step 1: Write the skill**
+- [x] **Step 1: Write the skill**
 
 `skills/lit-position/SKILL.md` frontmatter:
 
@@ -645,7 +652,7 @@ Body, in order:
 
 Carry over `librarian.md`'s substantive guidance on frontier mapping and positioning; drop its WebSearch-first search order, which contradicts `rules/literature-search-order.md`.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add skills/lit-position/
@@ -665,7 +672,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Never create: `rules/{permissions,lifecycle,workflow,working-paper-format,meta-governance}.md`
 - Delete: `rules/pipeline-precedence.md`
 
-- [ ] **Step 1: Vendor the six rules worth keeping**
+- [x] **Step 1: Vendor the six rules worth keeping**
 
 ```bash
 cd ~/Academic/research-claude
@@ -677,7 +684,7 @@ done
 
 `permissions.md`, `lifecycle.md`, and `workflow.md` are the orchestration dependency graph — deleted with the orchestrator (D1). `working-paper-format.md` is a live LaTeX deduction table applied to `.qmd` files. `meta-governance.md` tells agents this is a public template with Emory context and biology-PhD forkers.
 
-- [ ] **Step 2: Fold the surviving orchestration content into `rules/agents.md`**
+- [x] **Step 2: Fold the surviving orchestration content into `rules/agents.md`**
 
 `rules/agents.md` already has the three sections that matter — `## 1. Adversarial Pairing`, `## 2. Separation of Powers`, `## 3. Three Strikes Escalation`. Add a fourth:
 
@@ -698,7 +705,7 @@ grep -rn 'permissions\.md\|lifecycle\.md\|workflow\.md\|pipeline-precedence' rul
 
 Every hit must be removed or rewritten. A dangling reference to a deleted rule is how agents end up guessing.
 
-- [ ] **Step 3: Delete `pipeline-precedence.md` (criterion 3)**
+- [x] **Step 3: Delete `pipeline-precedence.md` (criterion 3)**
 
 ```bash
 git rm rules/pipeline-precedence.md
@@ -706,7 +713,7 @@ git rm rules/pipeline-precedence.md
 
 Nothing is left to take precedence over — that is the entire point of rewriting rather than translating.
 
-- [ ] **Step 4: Run the gate, then commit**
+- [x] **Step 4: Run the gate, then commit**
 
 ```bash
 scripts/check_fork.sh 2>&1 | grep -E 'd1-deletions|pipeline-precedence'
@@ -726,7 +733,7 @@ These are the files that made this fork necessary — `pipeline-precedence.md` n
 - Rewrite: `rules/content-standards.md` (454 lines)
 - Modify: `rules/content-invariants.md` (INV-12, INV-13, INV-22)
 
-- [ ] **Step 1: `table-standards.md` → flextable / kableExtra**
+- [x] **Step 1: `table-standards.md` → flextable / kableExtra**
 
 Delete every instruction to export bare `tabular`, wrap in `threeparttable`, or prefer `talltblr`. Replace with the two paths already documented correctly in `rules/quarto-word.md` and `rules/quarto-pdf.md`:
 
@@ -736,21 +743,21 @@ Delete every instruction to export bare `tabular`, wrap in `threeparttable`, or 
 
 Do not duplicate `quarto-word.md` / `quarto-pdf.md` — reference them and keep this file to the table-design judgment they do not cover (what belongs in a table, column ordering, significance-star conventions, when a table should be a figure).
 
-- [ ] **Step 2: `figure-standards.md` → PNG for Word, vector for PDF**
+- [x] **Step 2: `figure-standards.md` → PNG for Word, vector for PDF**
 
 Delete `ggsave('fig.pdf')` and every "output PDF for figures" instruction; Quarto cannot embed a PDF in Word. Replace with `fig-width: 6.5`, `dpi: 200` for Word and automatic vector for PDF. **Keep** the format-independent content — no in-figure titles (they go in `fig-cap`), colorblind-safe palettes, serif fonts — which is most of the file and is correct.
 
-- [ ] **Step 3: `content-standards.md` — keep the format-independent 91%**
+- [x] **Step 3: `content-standards.md` — keep the format-independent 91%**
 
 The spec measured this file at 9% LaTeX-coupled. Strip those lines; keep everything else. Do not rewrite what is already right.
 
-- [ ] **Step 4: `content-invariants.md` — INV-12, INV-13, INV-22**
+- [x] **Step 4: `content-invariants.md` — INV-12, INV-13, INV-22**
 
 Rewrite INV-12 and INV-13 for chunk options and inline `` `r ` `` rather than LaTeX macros. **Retire INV-22** (claim-source map) — superseded by inline `r` plus `prose_number_check.py`, which enforce the same property mechanically. Mark it `RETIRED 2026-09-08` with the reason rather than deleting the number, so old references still resolve.
 
 Then act on the spec's §5 lesson — *a rule with no executable check is a suggestion*: beside every invariant, name the command that enforces it, or mark it `reviewer-judgment` explicitly. `prose_number_check.py` enforces INV-11; `check_fork.sh` enforces the D5 naming rules; `quarto render` enforces nothing about literals, which is precisely the false assumption that started this.
 
-- [ ] **Step 5: Run the gate, then commit**
+- [x] **Step 5: Run the gate, then commit**
 
 ```bash
 scripts/check_fork.sh
@@ -768,7 +775,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Create: `references/*.md` (8), `hooks/*` (7)
 
-- [ ] **Step 1: Copy**
+- [x] **Step 1: Copy**
 
 ```bash
 cd ~/Academic/research-claude && mkdir -p references hooks
@@ -780,7 +787,7 @@ ls references hooks
 
 `references/` holds *templates* — `domain-profile.md`, `journal-profiles.md`, `personal-style-guide.md` are filled in per user, and every `~/Research` project already symlinks those three to `~/Research/.claude/references/`. `apply.sh` must not overwrite an existing reference file (it already gets this right).
 
-- [ ] **Step 2: Ship hooks but do not auto-wire them (correction C4)**
+- [x] **Step 2: Ship hooks but do not auto-wire them (correction C4)**
 
 Add `hooks/README.md`:
 
@@ -789,7 +796,7 @@ Add `hooks/README.md`:
 > repos at once is a silent behavior change. To enable, add the hook to the project's
 > own `settings.json` — that file stays project-owned and is never linked.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add references/ hooks/
@@ -814,11 +821,11 @@ The drift engine becomes the link engine. This is D8 and D9.
 - Consumes: `agents/`, `skills/`, `rules/`, `hooks/`, `references/`, `templates/` from Tasks 2–13.
 - Produces: `apply.sh --project-dir DIR --link [--tip]`, which creates per-item relative symlinks, prunes dead ones, copies scaffolding seeds, and writes `.claude/pipeline.lock`.
 
-- [ ] **Step 1: Delete the copy machinery**
+- [x] **Step 1: Delete the copy machinery**
 
 Remove from `apply.sh`: `CLO_SKIP_SKILLS` (lines 70, 90, 180–186), the entire `── 1. clo-author` block (lines ~173–212), and the `git submodule update --remote` for clo-author. Keep the ai-audit block, the ZotPilot block, and steps 8–10 (data_manifest, .gitignore, --link-references) — those copy *scaffolding seeds*, which are project-owned and meant to be edited, so they must stay copies.
 
-- [ ] **Step 2: Add the linking core**
+- [x] **Step 2: Add the linking core**
 
 First extend the existing argument parser (around `apply.sh:60-95`, beside `UPDATE_MODE` and `WITH_DIGEST`) with the two new flags:
 
@@ -885,7 +892,7 @@ fi
 
 Note `zotpilot-skills/VENDORED.md` is a file, not a skill dir — `link_items` will link it into `.claude/skills/`. Guard the loop with `[[ -d "$item" ]] || continue` for that one call, matching the existing behavior at `apply.sh:246`.
 
-- [ ] **Step 3: Write the lock file**
+- [x] **Step 3: Write the lock file**
 
 ```bash
 write_lock() {
@@ -901,7 +908,7 @@ EOF
 }
 ```
 
-- [ ] **Step 4: Update the project `.gitignore` template (D10)**
+- [x] **Step 4: Update the project `.gitignore` template (D10)**
 
 Append to `templates/gitignore`:
 
@@ -915,7 +922,7 @@ Append to `templates/gitignore`:
 /.pipeline/
 ```
 
-- [ ] **Step 5: Test link mode on a throwaway directory**
+- [x] **Step 5: Test link mode on a throwaway directory**
 
 ```bash
 cd ~/Academic/research-claude
@@ -929,7 +936,7 @@ cat /tmp/linktest/.claude/pipeline.lock
 
 Expected: symlinks with relative targets, all resolving; a lock file naming the current SHA.
 
-- [ ] **Step 6: Test the override and prune behavior (D9)**
+- [x] **Step 6: Test the override and prune behavior (D9)**
 
 ```bash
 rm /tmp/linktest/.claude/rules/quality.md
@@ -943,7 +950,7 @@ ln -s /nonexistent /tmp/linktest/.claude/rules/ghost.md
 # expect: "⤷ removing stale link ghost.md"
 ```
 
-- [ ] **Step 7: Run the gate, then commit**
+- [x] **Step 7: Run the gate, then commit**
 
 ```bash
 scripts/check_fork.sh 2>&1 | grep 'apply.sh'   # expect PASS
@@ -964,7 +971,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Create: `skills/promote/SKILL.md`
 - Create: `rules/shared-pipeline.md`
 
-- [ ] **Step 1: Write the bootstrap script**
+- [x] **Step 1: Write the bootstrap script**
 
 `templates/bootstrap-pipeline.sh` — installed to each paper repo root and committed there:
 
@@ -1015,7 +1022,7 @@ git -C "$RC" submodule update --init --recursive --quiet
 exec "$RC/apply.sh" --project-dir "$PROJECT_DIR" --link
 ```
 
-- [ ] **Step 2: Test it end to end from a clean clone**
+- [x] **Step 2: Test it end to end from a clean clone**
 
 ```bash
 rm -rf /tmp/bstest && git clone --quiet https://github.com/EconGeo/POGM4.git /tmp/bstest 2>/dev/null || \
@@ -1027,7 +1034,7 @@ git -C .pipeline/research-claude rev-parse HEAD   # matches pipeline.lock
 
 This step only becomes runnable after Task 17 commits the bootstrap script into POGM4; run it then and check the box.
 
-- [ ] **Step 3: Write `rules/shared-pipeline.md`**
+- [x] **Step 3: Write `rules/shared-pipeline.md`**
 
 The one behavioral hazard symlinks introduce: an agent editing `.claude/skills/write/SKILL.md` from a paper session is editing every paper at once, and the change lands as an uncommitted diff in a repo the session is not in.
 
@@ -1051,7 +1058,7 @@ uncommitted change in the research-claude working copy, which no session is
   the drift this design exists to end.
 ```
 
-- [ ] **Step 4: Write the `/promote` skill (D7)**
+- [x] **Step 4: Write the `/promote` skill (D7)**
 
 Under symlinks, `/promote`'s job shrinks — there are no forks to reconcile, because there is nothing to fork. What remains is real: surfacing edits made through links so they get committed rather than sitting uncommitted, and finding project overrides that have outgrown being local.
 
@@ -1072,7 +1079,7 @@ Body:
 4. **De-projectification check before any upstream commit** — run the D5 grep from `check_fork.sh`; refuse to commit a file naming a project, journal, or dataset.
 5. **Refresh the lock** — offer to re-run `apply.sh --link` so `.claude/pipeline.lock` records the new SHA.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/bootstrap-pipeline.sh skills/promote/ rules/shared-pipeline.md
@@ -1087,7 +1094,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Delete: `submodules/clo-author/`
 - Modify: `.gitmodules`, `README.md`, `CLAUDE.md`
 
-- [ ] **Step 1: Remove the submodule (criteria 1 and 2)**
+- [x] **Step 1: Remove the submodule (criteria 1 and 2)**
 
 Do this only after Tasks 2–13 have vendored everything out of it.
 
@@ -1099,11 +1106,11 @@ rm -rf .git/modules/submodules/clo-author
 grep -A2 'clo-author' .gitmodules || echo ".gitmodules clean"
 ```
 
-- [ ] **Step 2: Rewrite the README's architecture section**
+- [x] **Step 2: Rewrite the README's architecture section**
 
 The 39 KB README describes a three-source composition that no longer exists. Replace with: research-claude is standalone and authoritative; `ai-audit` and `journal-digest` remain live submodules; `zotpilot-skills/` stays vendored; installation is `apply.sh --link`; new projects and coauthors use `bootstrap-pipeline.sh`. Add a short "How to change the pipeline" section pointing at `rules/shared-pipeline.md` and `/promote`. Credit clo-author for the origin of the vendored agents.
 
-- [ ] **Step 3: The gate must now pass completely**
+- [x] **Step 3: The gate must now pass completely**
 
 ```bash
 scripts/check_fork.sh; echo "exit=$?"
@@ -1111,7 +1118,7 @@ scripts/check_fork.sh; echo "exit=$?"
 
 Expected: `exit=0` and `✓ check_fork: PASS`. This is the first point at which the whole fork is green. If any line still fails, fix it here — do not proceed to Phase 5 with a red gate.
 
-- [ ] **Step 4: Commit and merge the branch**
+- [x] **Step 4: Commit and merge the branch**
 
 ```bash
 git add -A
@@ -1133,7 +1140,7 @@ git push origin main
 
 Nothing under `~/Research` is touched until this passes.
 
-- [ ] **Step 1: Copy POGM4 to scratch and convert it**
+- [x] **Step 1: Copy POGM4 to scratch and convert it**
 
 ```bash
 rm -rf /tmp/pogm4-scratch && cp -R ~/Research/POGM4 /tmp/pogm4-scratch
@@ -1142,7 +1149,7 @@ rm -rf .claude/skills .claude/agents .claude/rules .claude/hooks
 ~/Academic/research-claude/apply.sh --project-dir /tmp/pogm4-scratch --link --tip
 ```
 
-- [ ] **Step 2: Restore POGM4's genuinely local skill**
+- [x] **Step 2: Restore POGM4's genuinely local skill**
 
 `flextable-quarto-word-captions` is project-specific (spec §Phase 3) and must survive as a real file beside the links.
 
@@ -1152,7 +1159,7 @@ cp -R ~/Research/POGM4/.claude/skills/flextable-quarto-word-captions \
 ls -l /tmp/pogm4-scratch/.claude/skills/flextable-quarto-word-captions  # a directory, not a link
 ```
 
-- [ ] **Step 3: Spec criterion 4 — the manuscript still renders**
+- [x] **Step 3: Spec criterion 4 — the manuscript still renders**
 
 ```bash
 cd /tmp/pogm4-scratch && quarto render manuscript_quarto_word.qmd; echo "exit=$?"
@@ -1160,7 +1167,7 @@ cd /tmp/pogm4-scratch && quarto render manuscript_quarto_word.qmd; echo "exit=$?
 
 Expected: `exit=0`. (The scratch copy keeps POGM4's current filename; the `manuscript_<project>.qmd` naming rule governs what the template *ships*, not what an existing paper is called.)
 
-- [ ] **Step 4: Spec criterion 5 — the prose-number gate still passes**
+- [x] **Step 4: Spec criterion 5 — the prose-number gate still passes**
 
 ```bash
 python3 ~/Research/scripts/prose_number_check.py /tmp/pogm4-scratch; echo "exit=$?"
@@ -1168,7 +1175,7 @@ python3 ~/Research/scripts/prose_number_check.py /tmp/pogm4-scratch; echo "exit=
 
 Expected: `exit=0`.
 
-- [ ] **Step 5: Confirm the links actually load in a session**
+- [x] **Step 5: Confirm the links actually load in a session**
 
 Start a Claude Code session in `/tmp/pogm4-scratch` and confirm:
 (a) a linked skill is invocable — `/write` resolves, not `Unknown skill`;
@@ -1177,7 +1184,7 @@ Start a Claude Code session in `/tmp/pogm4-scratch` and confirm:
 
 This is the one check no script can make. The consolidation doc's §1 established that a symlinked directory inside `PROJECT/.claude/skills/` *is* discovered as a project skill — this confirms it holds for per-item links too, which is the thing D9 changed.
 
-- [ ] **Step 6: Record the result**
+- [x] **Step 6: Record the result**
 
 Append to `~/Academic/research-claude/docs/SESSION_REPORT.md`: the four exit codes and the session-load result. If any failed, stop — the fork is not ready and no real project gets converted.
 
@@ -1189,7 +1196,7 @@ POGM4 first because its `review`/`submit` forks were resolved upstream in Task 7
 
 Repeat for each project. **Do not start the next one until the current one is verified and merged.**
 
-- [ ] **Step 1: Branch and back up**
+- [x] **Step 1: Branch and back up**
 
 ```bash
 cd ~/Research/<project>
@@ -1198,7 +1205,7 @@ cp -R .claude ".claude.bak.$(date +%Y%m%d)"     # the rollback; taken before any
 echo ".claude.bak.*" >> .gitignore
 ```
 
-- [ ] **Step 2: Note the project's real-file overrides before removing anything**
+- [x] **Step 2: Note the project's real-file overrides before removing anything**
 
 ```bash
 diff -rq .claude/skills ~/Academic/research-claude/skills 2>/dev/null | grep 'Only in .claude'
@@ -1207,7 +1214,7 @@ diff -rq .claude/rules  ~/Academic/research-claude/rules  2>/dev/null | grep 'On
 
 Anything listed is either (a) genuinely local — restore it as a real file in Step 4, or (b) an unharvested improvement — stop, upstream it via `/promote` first, then continue. Do not discard it.
 
-- [ ] **Step 3: Link**
+- [x] **Step 3: Link**
 
 ```bash
 rm -rf .claude/skills .claude/agents .claude/rules .claude/hooks
@@ -1215,11 +1222,11 @@ rm -rf .claude/skills .claude/agents .claude/rules .claude/hooks
 cp ~/Academic/research-claude/templates/bootstrap-pipeline.sh . && chmod +x bootstrap-pipeline.sh
 ```
 
-- [ ] **Step 4: Restore genuinely local items as real files**
+- [x] **Step 4: Restore genuinely local items as real files**
 
 From the Step 2 list. For POGM4 that is `flextable-quarto-word-captions` and, if it is still wanted, `commit`. Confirm each is a directory or regular file, not a link.
 
-- [ ] **Step 5: Gitignore the linked dirs, commit the pointer (D10)**
+- [x] **Step 5: Gitignore the linked dirs, commit the pointer (D10)**
 
 ```bash
 cat >> .gitignore <<'EOF'
@@ -1236,7 +1243,7 @@ git rm -r --cached .claude/skills .claude/agents .claude/rules 2>/dev/null || tr
 git add .gitignore bootstrap-pipeline.sh .claude/pipeline.lock
 ```
 
-- [ ] **Step 6: Verify before merging — all four must pass**
+- [x] **Step 6: Verify before merging — all four must pass**
 
 ```bash
 quarto render manuscript_*.qmd; echo "render=$?"
@@ -1246,7 +1253,7 @@ find .claude -maxdepth 2 -type l ! -exec test -e {} \; -print   # expect no outp
 
 Then start a session in the project and confirm a linked skill is invocable and `CLAUDE.md` loads.
 
-- [ ] **Step 7: Merge, or roll back**
+- [x] **Step 7: Merge, or roll back**
 
 ```bash
 git commit -m "chore: link pipeline from research-claude instead of copying
@@ -1267,7 +1274,7 @@ cp -R .claude.bak.*/skills .claude.bak.*/agents .claude.bak.*/rules .claude/
 git checkout main && git branch -D pipeline-symlink
 ```
 
-- [ ] **Step 8: After all six — delete the backups and record the outcome**
+- [x] **Step 8: After all six — delete the backups and record the outcome**
 
 Keep the `.claude.bak.*` directories until every project has been converted and used in at least one real session. Then remove them and append a summary to `~/Academic/research-claude/docs/SESSION_REPORT.md`: which projects converted, what stayed local in each, and any improvement upstreamed during Step 2.
 
