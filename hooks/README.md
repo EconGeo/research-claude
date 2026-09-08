@@ -16,6 +16,10 @@ To enable one, add it to the project's own `settings.json`.
 | `lint-scripts.sh` | manual / PostToolUse | Lints analysis scripts against INV-14..19 |
 | `protect-files.sh` | PreToolUse | Blocks edits to protected paths |
 | `post-merge.sh` | git post-merge | Post-merge housekeeping |
+| `context-monitor.py` | PostToolUse | Progressive, de-duplicated nudges as context fills (40/55/65%, then 80%) |
+| `log-reminder.py` | Stop | Counts responses since the session log was last touched and nudges via stderr. Never blocks |
+| `verify-reminder.py` | PostToolUse (Write/Edit) | Reminds you to render before calling a task done, on `.qmd`/`.R` edits |
+| `notify.sh` | Notification | Cross-platform desktop notification when Claude needs attention. Fails open without `jq` |
 
 **Note.** `lint-scripts.sh` and `post-edit-lint.sh` predate the Quarto-native
 pipeline, where analysis lives in `.qmd` chunks rather than `scripts/R/*.R`.
