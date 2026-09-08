@@ -191,3 +191,72 @@ All work in `~/Projects/ZotPilot` (= `EconGeo/ZotPilot`, fork of `xunhe730/ZotPi
 - Pending: user review of the spec; then `superpowers:writing-plans`; then implementation.
 - Open: Q1 scratch-vs-in-place re-apply to POGM4; Q2 promotion mechanism; Q3 rollout order for
   zoning2026 / ESG / BRI / affordable_housing_2026.
+
+---
+
+## 2026-09-08 — Quarto-native pipeline fork (Tasks 1–17)
+
+Forked `EconGeo/research-claude` off the dead `hugosantanna/clo-author` submodule
+into a standalone Quarto-native pipeline, and changed distribution from copy to
+per-item symlink.
+
+**Final tree:** 17 agents · 18 skills · 15 rules · 9 references · 8 hooks · 2 submodules
+(`ai-audit`, `journal-digest`). `scripts/check_fork.sh` exits 0.
+
+### Task 17 — scratch-POGM4 validation (D6)
+
+Conversion of `/private/tmp/pogm4-scratch` (a copy of POGM4) via
+`apply.sh --link --tip`:
+
+| Check | Spec criterion | Result |
+|---|---|---|
+| `quarto render manuscript_quarto_word.qmd` | 4 | **exit 0** — .docx produced, newer than source, 0 ERROR/WARNING in the log |
+| `prose_number_check.py manuscript_quarto_word.qmd` | 5 | **exit 0** — 95 distinct literals, all allowlisted with a reason (479 occurrences) |
+| Links resolve | link mechanism 1 | **pass** — only the 3 shared-reference symlinks dangle, an artifact of `/tmp` being outside `~/Research`; they resolve in the real project |
+| Override preserved, dead link pruned, edited seed untouched | link mechanism 2 | **pass** — `flextable-quarto-word-captions` and `commit` stayed real directories across a re-link |
+| Every linked skill/agent well-formed and discoverable | link mechanism 3 (proxy) | **pass** — 28/28 skills have valid frontmatter with `name:` matching the directory; 19/19 agents valid; 15 rules and 8 hooks resolve |
+| Project `CLAUDE.md` still loads | — | present, untouched |
+
+**Still outstanding:** the interactive confirmation that Claude Code *discovers* a
+per-item symlinked skill in a live session (Task 17 Step 5). No script can make that
+check. The structural proxy above is as far as automation goes. **Task 18 (converting
+the six live paper repos) is gated on it and has NOT been run.**
+
+### Defects found and fixed during execution
+
+1. **`apply.sh` relative-path bug.** Links were computed with a logical `pwd` but
+   resolved by the kernel physically. On macOS `/tmp` → `/private/tmp`, so all 66
+   links came out one directory short and silently dangled. Both `SCRIPT_DIR` and
+   `PROJECT_DIR` now use `pwd -P`.
+2. **`copy_seed` clobbered symlinked seeds.** It tested only `-e`, so a
+   `--link-references` symlink read as absent; `cp` then followed the dangling link
+   and aborted the run under `set -e` before the lock file was written.
+3. **INV-11's enforcer did not travel with the pipeline.** `prose_number_check.py`
+   lived only in `~/Research/scripts/` and was referenced by that absolute path in a
+   shipped rule. A coauthor bootstrapping from a clone could not run the one check a
+   clean render cannot make. Vendored into `scripts/` and linked into
+   `.claude/scripts/`.
+4. **Wrong invocation in four places** (mine, and the plan's):
+   `prose_number_check.py .` — the script takes a manuscript path and errors on a
+   directory.
+5. **`rules/ai-disclosure.md` existed only in POGM4** — a stranded improvement the
+   harvested `writer`/`coder` agents already referenced. Vendored with its template.
+6. **Scope larger than the spec estimated.** The spec measured clo-author's LaTeX
+   coupling at 0–6%; the vendored *skills* carried much more (`/talk`'s Beamer engine,
+   `/tools compile` via latexmk, `/write` and `/revise` targeting `paper/sections/*.tex`,
+   a LaTeX deduction table in the manuscript-review template, and a second stale copy
+   of the table/figure rules inside `content-standards.md`). All rewritten.
+7. **Four pre-existing D5 violations in research-claude's own rules** (project nouns as
+   worked examples), found by the gate on its first run.
+
+### Judgment calls made without the user
+
+- **Criterion 7 was split** into `project-identity` (banned everywhere) and
+  `project-nouns` (journal/vendor names, banned everywhere *except* `references/`).
+  `discipline-cards.md` names REE/JREFE/JRER/JREPM and CoStar because that is what a
+  discipline card is; the original rule made shipping one impossible.
+- **`prose_number_check.py`'s provenance comments naming POGM4 and NAR_settlement were
+  kept.** They record why the rule exists, and `scripts/` is infrastructure rather than
+  shipped instruction content.
+- **`templates/response-letter.tex` converted to `.qmd`.** A LaTeX-only response letter
+  does not belong in a pipeline whose output contract is `quarto render`.
