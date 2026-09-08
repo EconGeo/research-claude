@@ -1,10 +1,41 @@
 # Quarto-Native Research Pipeline — Implementation Plan
 
-> **STATUS: COMPLETED 2026-09-08.** All 18 tasks executed; all six paper repos
-> converted, merged and pushed. `scripts/check_fork.sh` exits 0. Outcome, defects found
-> during execution, and the pre-existing manuscript findings are recorded in
+> **STATUS: COMPLETED 2026-09-08, then AMENDED the same day — read the amendment
+> before trusting any verification claim below.** All 18 tasks executed; all six paper
+> repos converted, merged and pushed. `scripts/check_fork.sh` exits 0. Outcome, defects
+> found during execution, and the pre-existing manuscript findings are recorded in
 > `~/Academic/research-claude/docs/SESSION_REPORT.md`. Checkboxes below are marked
 > complete; the plan is retained as the historical record of what was decided and why.
+>
+> **AMENDMENT — a post-completion audit found four defects the plan's own
+> verification could not have caught.** All four are fixed and pushed (`9c9ec0c`,
+> `b12d6e2`, plus one commit per paper repo); the detail is in the
+> `2026-09-08 (audit)` entry of `docs/SESSION_REPORT.md`. Summarised here because
+> this plan is the cold-start document and three of its statements were wrong:
+>
+> 1. **"Verified three ways" (see Verification, below) was two ways.** Nothing
+>    checked *membership* — that every upstream item is actually linked in each
+>    project. POGM4 silently lacked `rules/session-handoff.md` for a day.
+>    `scripts/check_install.sh` now checks this and five other properties; it is the
+>    project-side gate the plan never specified.
+> 2. **Step 5's `git rm --cached` snippet omits `hooks`** (the Task 18 runbook's
+>    version includes it). Applied inconsistently, this left committed symlinks in
+>    five of six repos — machine-specific targets that hand a coauthor a clone full
+>    of dangling links, defeating D10. Only ESG was correct.
+> 3. **C4 ("hooks are linked but never auto-wired") was not a safe default.** No
+>    project seeded a `settings.json`, so twelve hooks were installed everywhere and
+>    at most one fired. `session-guard.py` was wired in **zero** repos, so `/freeze`
+>    and `/careful` shipped with their enforcement mechanism uninstalled while
+>    reporting themselves active. `apply.sh` now seeds `templates/settings.json`.
+> 4. **Three hooks were inert regardless of wiring** — wrong stdin/env contract or
+>    wrong per-event blocking protocol. Two more had been fixed days earlier for the
+>    same reason, which is the pattern: a hook that fails this way leaves no trace.
+>
+> **The generalisable lesson:** every one of these is a *silent* failure — no error,
+> no log line, nothing happening. The plan's gates all tested that something was
+> present, never that it was doing anything. Where a check can be red-tested by
+> injecting the failure, red-test it: `check_install.sh`'s override check was
+> vacuous on first write and passed on all six repos before the red test caught it.
 
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1301,6 +1332,14 @@ ls skills/strategize/templates/{decision-record.md,robustness-plan.md}
 1. Links resolve — `find .claude -type l ! -exec test -e {} \; -print` returns nothing.
 2. Overrides survive and dead links are pruned — Task 14 Step 6.
 3. Claude Code actually discovers a per-item symlinked skill — Task 17 Step 5, by hand, in a session.
+
+> **AMENDED.** These three check that the links present are *good*. None checks that
+> the links that should exist *are* present — a link cannot point at a file that did
+> not exist when it was made, so an item added upstream reaches nobody until the
+> linker re-runs. Membership is check 4, and it is scriptable after all:
+> `scripts/check_install.sh` (also: no committed symlinks, no foreign checkout, no
+> override a clone would miss, lock-vs-HEAD drift). Run it after any change that adds
+> or removes a file under `agents/`, `skills/`, `rules/` or `hooks/`.
 
 **End-to-end, after rollout:** edit a shared rule from within one paper, confirm the change is visible from a second paper without any re-apply, confirm `git -C ~/Academic/research-claude status` shows it as an uncommitted change, and confirm `/promote` surfaces it. That single test exercises the whole point of the design.
 

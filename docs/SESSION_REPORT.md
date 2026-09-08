@@ -414,3 +414,108 @@ literals — untouched by these branches, and worth a separate pass:
 Also cosmetic: ESG's manuscript is `manuscript.qmd`, not `manuscript_ESG.qmd`. The naming
 convention governs what the template ships, not what an existing paper is called, so it
 was left alone.
+
+---
+
+## 2026-09-08 (audit) — Post-completion audit of the Quarto-native pipeline: four defects, all silent
+
+Asked to review the just-completed plan and answer whether the pipeline is fully
+functional. It is — but the review found four defects that the plan's own gates
+could not have caught, because every one of them fails **silently**: no error, no
+log line, just nothing happening.
+
+**Operations**
+
+- Independently exercised the coauthor bootstrap path (`bootstrap-pipeline.sh`, no
+  flag) from a bare scratch directory — the one design promise the rollout never
+  tested. Clones, detaches at the locked SHA into a project-local
+  `.pipeline/research-claude`, links 19/26/16/12 with zero dangling, leaves the
+  shared checkout on `main`. **D10 holds.**
+- Re-linked POGM4 (`bootstrap-pipeline.sh --tip`), 15 → 16 rules.
+- Untracked 142 committed symlinks across five repos; ESG was already correct.
+- Wrote `scripts/check_install.sh` and red-tested all six of its checks.
+- Audited all twelve hooks against the documented contract at
+  `code.claude.com/docs/en/hooks` (fetched, not recalled); fixed three; wired
+  `session-guard.py` everywhere; added `templates/settings.json` + an `apply.sh` seed.
+- Amended the plan's status banner and its Verification section (staleness sweep).
+
+**Findings**
+
+1. **Committed symlinks in 5 of 6 repos.** `.gitignore` was correct everywhere, but
+   gitignore does not untrack what is already in the index, and Step 5 of the plan
+   omits `hooks` from its `git rm --cached` snippet (the Task 18 runbook includes
+   it). Targets are machine-specific — `../../../../Academic/research-claude/...` —
+   so a coauthor's clone dangles before bootstrap and stays permanently dirty after,
+   since bootstrap repoints them at `.pipeline/`. Exactly the hazard D10 gitignores
+   those directories to prevent. Only mode-120000 entries were untracked; the real
+   overrides (`statusline.sh`, POGM4's two skills, zoning2026's `ground-truth.md`)
+   stayed tracked.
+2. **POGM4 was never re-linked**, so it alone lacked `rules/session-handoff.md`.
+   Per-item links (D9) propagate *edits* instantly but not *membership*: a link
+   points at a file, not at whatever a directory will later contain. Per-directory
+   links would fix that at the cost of the override escape hatch — the wrong trade,
+   so membership is now checked instead of assumed.
+3. **Three hooks did nothing at all.** `post-edit-lint.sh` read
+   `$CLAUDE_TOOL_ARG_FILE_PATH`, which Claude Code does not set and never has, so it
+   exited on line one — in the one project that wired it. `session-guard.py` emitted
+   a top-level `{"decision":"block"}`, the PostToolUse/Stop shape; PreToolUse honours
+   only `hookSpecificOutput.permissionDecision`, so the JSON was ignored and the tool
+   ran. `pre-compact.py` blocked via exit 0 + JSON against an undocumented PreCompact
+   schema (exit 2 is the documented guarantee). Two more had been fixed days earlier
+   for the same class of reason.
+4. **`session-guard.py` was wired in ZERO of six repos.** `/freeze` and `/careful`
+   write `.claude/state/session-guards.json` and document that the hook reads it and
+   blocks edits — so both skills reported themselves active while enforcing nothing,
+   and would have enforced nothing anyway given #3. Two independent failures stacked,
+   which is why neither surfaced. Root cause: a linked hook is inert until
+   `settings.json` names it, `settings.json` is project-owned and never linked (C4),
+   and nothing seeded one.
+
+**Decisions**
+
+- **C4 revised.** "Linked but not auto-wired" is a safe default only if no shipped
+  skill depends on a hook. Two did. `apply.sh` now seeds `templates/settings.json`
+  for new projects; existing projects were brought to the same baseline **after
+  asking** — turning six hooks on across six repos is a decision, not a side effect.
+- **Membership is a gate, not a convention** — `check_install.sh`, wired into README,
+  CLAUDE.md, `rules/shared-pipeline.md` (so it is reachable from any paper session)
+  and `/promote` step 5.
+- **`pipeline.lock` drift is a WARN, not a FAIL.** In `--tip` mode the lock is an
+  install-time provenance stamp; it is only wrong at submission time.
+- Left alone: ESG's `manuscript.qmd` naming; POGM4's untracked
+  `quality_reports/pipeline_test_2026-09-08/` (not this session's).
+
+**Results**
+
+- `check_fork.sh` exit 0 · `check_install.sh --all` exit 0 across all six.
+- All six repos: identical 7-hook / 6-event wiring, every path resolving and
+  returning 0 on a real stdin payload.
+- Every hook fix verified by piping the actual payload and checking the exit code,
+  not by reading the code. Two of those tests first "passed" for the wrong reason —
+  a misplaced plan file and a stale sentinel in `~/.claude/sessions/<hash>/` — so the
+  initial green results were meaningless until isolated.
+- **`check_install.sh`'s override check was vacuous on first write** —
+  `! -path '*/.*'` excluded the whole tree, since everything lives under `.claude`.
+  It passed on all six repos while checking nothing. The red test caught it; the
+  green run had not.
+
+**Commits**
+
+- `9c9ec0c` feat(scripts): add check_install.sh — the project-side gate
+- `b12d6e2` fix(hooks): three hooks did nothing at all, and the guard hook was never wired
+- one `chore:` commit per paper repo (untrack symlinks; wire session-guard; wire the
+  full baseline). All seven repos pushed, clean, at origin.
+
+**Status**
+
+- Done: all four defects fixed, verified and pushed. Plan amended.
+- Pending: the pre-existing manuscript prose-number findings — zoning2026 41
+  (incl. a hardcoded "Section 5.3" that should be `@sec-`), ESG 14,
+  NAR_settlement 2. Not conversion-caused; a separate pass.
+- Note: NAR_settlement's `origin/main` is 95 commits behind `phase1-event-study` and
+  predates the conversion entirely. Pre-existing, untouched.
+
+**The generalisable lesson.** Every defect here was a *presence* check passing while
+the thing checked did nothing. Where a check can be red-tested by injecting the
+failure it is supposed to catch, red-test it — the one check I did not red-test first
+was the one that was broken.
