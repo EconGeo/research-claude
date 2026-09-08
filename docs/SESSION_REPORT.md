@@ -338,3 +338,21 @@ find .claude -maxdepth 2 -type l ! -exec test -e {} \; -print    # expect empty
 
 Then open a session in the project and confirm a linked skill is invocable before
 merging. That is the outstanding gate.
+
+### Step 7 needs a re-link that the plan omits
+
+Merging the conversion branch leaves the working tree broken until you re-run the
+linker. `git checkout main` restores the real `.claude/` files from main's index; the
+merge then applies the branch's deletion of those same files — and because the linked
+directories are gitignored, git neither creates nor restores the symlinks. POGM4 landed
+at `agents: 0 entries, rules: 1` immediately after a correct merge.
+
+The fix is one command, and it is exactly what the bootstrap script is for:
+
+```bash
+git checkout main && git merge --no-ff pipeline-symlink && git push
+./bootstrap-pipeline.sh --tip        # <- REQUIRED; git cannot restore gitignored links
+```
+
+Verify after: `ls .claude/agents | wc -l` is non-zero, a linked skill resolves, and
+`find .claude -maxdepth 2 -type l ! -exec test -e {} \; -print` is empty.
