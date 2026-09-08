@@ -58,8 +58,20 @@ __pycache__/
 
 # Pipeline: linked from research-claude, not project content.
 # Run ./bootstrap-pipeline.sh to materialize.
-.claude/skills/
-.claude/agents/
-.claude/rules/
-.claude/hooks/
+#
+# The `/*` form (not `.claude/skills/`) is deliberate: git cannot re-include a
+# path inside an excluded DIRECTORY, so excluding the directory itself makes the
+# negation pattern below silently dead — and this project's OWN skills, agents,
+# rules and hooks (the real files that shadow a linked item) would drop out of
+# the repo entirely. A coauthor's clone would then be missing them.
+.claude/skills/*
+.claude/agents/*
+.claude/rules/*
+.claude/hooks/*
+.claude/scripts/prose_number_check.py
 /.pipeline/
+
+# Project overrides — real files, not links. These ARE project content, so
+# add a negation line for each one you keep. Example:
+# !.claude/skills/my-project-specific-skill/
+# !.claude/hooks/my-notify.sh
