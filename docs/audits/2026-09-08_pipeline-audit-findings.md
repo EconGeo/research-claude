@@ -145,3 +145,52 @@ not what we failed to take.
 `zotpilot-skills/` 6 skills, `librarian` refs (fix upstream, re-vendor). `submodules/ai-audit`
 2 agents / 1 rule, one `librarian` provenance ref (leave). `submodules/journal-digest` is a
 standalone tool with no pipeline coupling — clean, out of scope.
+
+---
+
+# Corrections (same day, after reading the deleted rules in full)
+
+## C1 — F2 understated it: D1's stated rationale is contradicted by the file
+
+F2 said `lifecycle.md` was deleted under a description that did not fit it. Reading
+`workflow.md` in full shows the same is true of the dependency graph itself, and more sharply.
+
+D1's rationale was that the graph serializes Coder before Writer and so fights the Quarto
+coder↔writer loop. `workflow.md` §3 is titled **"Phases activate by dependency, not sequence.
+Research is not a waterfall,"** and states: *"If an agent's REQUIRES are satisfied, it can
+activate — regardless of whether earlier phases are 'complete.'"* It then gives this example
+verbatim:
+
+> **Targeted re-entry:** A referee says "control for X." The Orchestrator routes back to coder
+> (not through the full pipeline), coder-critic reviews, writer updates, writer-critic reviews
+> the update, then back to peer review.
+
+That is the coder↔writer loop, explicitly supported. The single line D1 relied on —
+`orchestrator.md:29`, "Sequential when dependent: Coder must finish before Writer starts" — is
+a first-pass dispatch heuristic in a bullet list, not the enforcement. The enforcement is
+`REQUIRES`, a precondition on entry. **The machinery was deleted for a property it does not
+have.**
+
+## C2 — `orchestrator.md` is a role spanning two packagings, not an agent
+
+Of its nine sections, §1–§4 and §8 (registry reading, PRE/POST validation, three-strikes
+tracking, score aggregation, dual-critic synthesis) are pure computation over files — well
+suited to a context-isolated agent. But §6 (*"Approval requests before advancing to next
+phase"*), §7 (*"read `pipeline_state.json` on session start as the FIRST action in session
+recovery"*) and §9 (*"Present suggestions. User approves or rejects."*) need a user channel and
+session-start execution.
+
+**Precision matters here and an earlier draft of this correction overstated it:** a subagent
+lacks a direct user channel, but a parent can mediate — the agent returns "approval needed for
+X" and the main session asks. So these sections are *awkward* in an agent, not impossible. The
+corroborating evidence that the conflict was never resolved in practice: nothing in clo-author
+dispatches the orchestrator, and its own artifacts — `pipeline_state.json`, `traces/` — do not
+exist in that repo.
+
+## C3 — Nested subagent dispatch works
+
+Tested empirically in this environment: a subagent dispatched a nested subagent, which returned
+normally (1.5 s, no error). An earlier claim in this session that nesting is unsupported was
+wrong. Two real constraints stand: the dispatch is **asynchronous** (the child's result arrives
+as a later notification, not inline), and the `Explore` and `Plan` agent types exclude the
+dispatch tool entirely.
