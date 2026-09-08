@@ -1,78 +1,48 @@
 #!/usr/bin/env bash
-# apply.sh — install research-claude skills and agents into a target project
 #
-# Usage:
-#   ./apply.sh --project-dir /path/to/your/project    # first install
-#   ./apply.sh --project-dir /path/to/your/project --update  # pull latest + reinstall
-#   ./apply.sh --project-dir /path/to/your/project --with-digest  # also installs journal-digest
-#   ./apply.sh --project-dir /path/to/your/project --link-references /shared/refs  # symlink voice refs to a shared dir
-#   ./apply.sh --list  # show what would be installed
+# apply.sh — install the research-claude pipeline into a paper project.
 #
-# What this installs:
-#   From clo-author:   .claude/agents/*.md, .claude/skills/ (EXCEPT new-project — see
-#                      CLO_SKIP_SKILLS below), .claude/rules/,
-#                      .claude/references/*.md (voice/domain/journal + coding-standards
-#                      templates — populated later by /discover and /write style-guide),
-#                      .claude/state/obsidian-config.md.example (opt-in Obsidian integration template)
-#   From ai-audit:     .claude/skills/humanize/, .claude/skills/verify-claims/,
-#                      .claude/agents/humanize-auditor.md, .claude/agents/claim-verifier.md
-#                      .claude/rules/ai-disclosure.md
-#   From zotpilot-skills/ (vendored from EconGeo/ZotPilot, not a submodule):
-#                      .claude/skills/ztp-*/, .claude/skills/seed-papers/
-#                      (the MCP server itself installs separately — README Step 7)
-#   From research-claude (own skills/):
-#                      .claude/skills/new-project-ztp/
-#                      .claude/skills/ztp-data-tag/
-#                      .claude/skills/obsidian-digest-sync/  (opt-in: file journal digests into an Obsidian vault)
-#   From research-claude (own state/, overrides clo-author):
-#                      .claude/state/obsidian-config.md.example  (mcpvault-first Obsidian config)
-#   From research-claude (own rules/):
-#                      .claude/rules/quarto-empirical.md         (required pipeline for new projects)
-#                      .claude/rules/pipeline-precedence.md      (quarto-empirical overrides legacy clo-author layout)
-#                      .claude/rules/data-manifest.md            (raw-data provenance audit trail)
-#                      .claude/rules/quarto-pdf.md               (PDF output format reference for manuscript_<project>.qmd)
-#                      .claude/rules/quarto-word.md              (Word docx output format reference)
-#                      .claude/rules/registry-verification-gate.md (legacy: registry-pattern projects)
-#                      .claude/rules/literature-search-order.md  (local Zotero-first lit search)
-#   From research-claude (own templates/, direct install to project root):
-#                      data/raw/data_manifest.md  (raw-data provenance manifest seed)
-#                      .gitignore                 (keeps *.qmd + .bib; ignores quarto build,
-#                                                  rendered PDF/HTML, data/raw, R/Python artifacts)
-#   Directory skeleton: explorations/  (one-off models not yet wired into the manuscript;
-#                      quality_reports/ and manuscript_<project>.qmd are created later by the phase skills)
+#   ./apply.sh --project-dir /path/to/project --link           link the pipeline
+#   ./apply.sh --project-dir /path/to/project --link --tip      (bootstrap passes this)
+#   ./apply.sh --project-dir /path/to/project --link --with-digest
+#   ./apply.sh --list
 #
-# Opt-in flags:
-#   --link-references <dir>  After installing the clo-author reference templates, replace them with
-#                            symlinks into <dir> — a shared voice-profile folder reused across projects.
-#                            The path is supplied at runtime; nothing machine-specific is hardcoded here.
+# HOW THIS WORKS (D8)
 #
-# What this does NOT install:
-#   clo-author's /new-project skill (superseded by quarto-empirical — see CLO_SKIP_SKILLS)
-#   ZotPilot Python env (requires user judgment about paths — see Step 7 in README)
-#   journal-digest Python env (same reason; install manually per README)
-#   Any LaunchAgent plists (macOS scheduling — opt-in)
+# The pipeline is LINKED, not copied. `.claude/{skills,agents,rules,hooks}` become
+# one relative symlink per item into this checkout. research-claude is the sole
+# edit surface: editing a linked skill from any paper edits the canonical copy, and
+# `git pull` here updates every project at once. There is no re-import step because
+# there is no copy to re-import.
+#
+# A real (non-symlink) file at a link destination is a deliberate project override
+# (D9) and is never touched. Links whose target has been deleted upstream are pruned.
+#
+# Scaffolding SEEDS are still copied, because they are project-owned and meant to be
+# edited: references/ templates, state/ examples, data/raw/data_manifest.md, .gitignore.
+#
+# See rules/shared-pipeline.md for what a symlinked .claude/ means in practice.
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# pwd -P (physical) on both sides, deliberately: relpath below is purely lexical,
+# but the kernel resolves the resulting symlink physically. On macOS /tmp is a
+# symlink to /private/tmp, so a logical pwd here produces links that are off by a
+# directory level and silently dangle.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 PROJECT_DIR=""
 UPDATE_MODE=false
 WITH_DIGEST=false
 LIST_MODE=false
+LINK_MODE=true      # link is the only install mode; --link is accepted for explicitness
+TIP_MODE=false
 LINK_REFERENCES=""
 
-# Skills imported from clo-author that research-claude deliberately does NOT install.
-#   new-project: its Step 0 scaffolds scripts/R/ + paper/sections/ (the multi-file,
-#   results-registry layout), superseded by research-claude's quarto-empirical
-#   single-manuscript.qmd pipeline. The phase skills it used to orchestrate
-#   (/discover, /strategize, /analyze, /write, /review, /submit) are installed
-#   individually and run à la carte.
-CLO_SKIP_SKILLS=(new-project)
-
-# Parse arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project-dir)     PROJECT_DIR="$2"; shift 2 ;;
+    --link)            LINK_MODE=true; shift ;;
+    --tip)             TIP_MODE=true; shift ;;
     --update)          UPDATE_MODE=true; shift ;;
     --with-digest)     WITH_DIGEST=true; shift ;;
     --link-references) LINK_REFERENCES="$2"; shift 2 ;;
@@ -82,258 +52,214 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$LIST_MODE" == true ]]; then
-  echo "apply.sh would install:"
-  echo ""
-  echo "From clo-author (submodules/clo-author):"
-  echo "  .claude/agents/ — all research pipeline agents"
-  echo "  .claude/skills/ — research phase skills (discover, strategize, analyze, write, review, submit, etc.)"
-  echo "                    EXCLUDED: ${CLO_SKIP_SKILLS[*]} (superseded by research-claude quarto-empirical pipeline)"
-  echo "  .claude/rules/  — working-paper-format, quarto rules, etc."
-  echo "  .claude/references/*.md — voice/domain/journal + coding-standards templates"
-  echo "                    (filled in later by /discover interview and /write style-guide)"
-  echo "  .claude/state/obsidian-config.md.example — opt-in Obsidian integration template"
-  echo ""
-  echo "From ai-audit (submodules/ai-audit):"
-  echo "  .claude/skills/humanize/"
-  echo "  .claude/skills/verify-claims/"
-  echo "  .claude/agents/humanize-auditor.md"
-  echo "  .claude/agents/claim-verifier.md"
-  echo "  .claude/rules/ai-disclosure.md"
-  echo ""
-  echo "From zotpilot-skills/ (vendored from EconGeo/ZotPilot — not a submodule):"
-  echo "  .claude/skills/ztp-research/"
-  echo "  .claude/skills/ztp-review/"
-  echo "  .claude/skills/ztp-setup/"
-  echo "  .claude/skills/ztp-profile/"
-  echo "  .claude/skills/ztp-tutor/"
-  echo "  .claude/skills/seed-papers/  — pre-search Zotero before /discover lit"
-  echo ""
-  echo "From research-claude (own skills/):"
-  echo "  .claude/skills/new-project-ztp/  — ZotPilot setup after /new-project"
-  echo "  .claude/skills/ztp-data-tag/     — backfill dataset/variable tags+notes across the Zotero library"
-  echo "  .claude/skills/obsidian-digest-sync/ — file weekly journal digests into an Obsidian vault (opt-in)"
-  echo ""
-  echo "From research-claude (own rules/):"
-  echo "  .claude/rules/quarto-empirical.md            — required pipeline: single .qmd, cached, PDF primary"
-  echo "  .claude/rules/pipeline-precedence.md         — quarto-empirical overrides clo-author legacy layout + manuscript naming"
-  echo "  .claude/rules/data-manifest.md               — raw-data provenance audit trail (data/raw/data_manifest.md)"
-  echo "  .claude/rules/quarto-pdf.md                  — PDF output format reference (pdf: block, kableExtra, XeLaTeX)"
-  echo "  .claude/rules/quarto-word.md                 — Word output format reference (docx: block, flextable, APA CSL)"
-  echo "  .claude/rules/registry-verification-gate.md  — legacy: registry-pattern projects only"
-  echo "  .claude/rules/literature-search-order.md     — local Zotero-first literature search (tripwire)"
-  echo ""
-  echo "From research-claude (own templates/, direct install to project root):"
-  echo "  data/raw/data_manifest.md  — raw-data provenance manifest seed"
-  echo "  .gitignore                 — keeps *.qmd + .bib; ignores quarto build, rendered PDF/HTML, data/raw"
-  echo ""
-  echo "Directory skeleton:"
-  echo "  explorations/  — one-off models not yet wired into the manuscript"
-  echo "                   (quality_reports/ and manuscript_<project>.qmd are created later by the phase skills)"
-  echo ""
-  echo "Opt-in flags:"
-  echo "  --link-references <dir>  — symlink .claude/references/*.md to a shared voice-profile dir"
-  echo ""
-  if [[ "$WITH_DIGEST" == true ]]; then
-    echo "With --with-digest:"
-    echo "  journal-digest/ (full Python module, requires 'micromamba create -n journal-digest')"
-  fi
+  cat <<EOF
+apply.sh links the pipeline into a project (one symlink per item):
+
+  .claude/agents/   -> $SCRIPT_DIR/agents/          ($(ls "$SCRIPT_DIR/agents" 2>/dev/null | wc -l | tr -d ' ') agents)
+  .claude/skills/   -> $SCRIPT_DIR/skills/          ($(ls "$SCRIPT_DIR/skills" 2>/dev/null | wc -l | tr -d ' ') skills)
+  .claude/rules/    -> $SCRIPT_DIR/rules/           ($(ls "$SCRIPT_DIR/rules" 2>/dev/null | wc -l | tr -d ' ') rules)
+  .claude/hooks/    -> $SCRIPT_DIR/hooks/           (linked, NOT auto-wired — see hooks/README.md)
+  .claude/scripts/prose_number_check.py                 (INV-11 enforcer)
+
+  plus, from live submodules and vendored trees:
+  .claude/skills/, .claude/agents/, .claude/rules/  <- submodules/ai-audit
+  .claude/skills/ztp-*                              <- zotpilot-skills/ (vendored)
+
+Copied as project-owned SEEDS (never overwritten if present):
+  .claude/references/*.md    voice / domain / journal / coding-standard templates
+  .claude/state/*.example    opt-in integration config examples
+  data/raw/data_manifest.md  raw-data provenance manifest seed
+  .gitignore                 keeps *.qmd + *.bib; ignores render artifacts and the linked dirs
+
+Written every run:
+  .claude/pipeline.lock      repo URL + SHA — replication provenance and coauthor bootstrap
+
+Directory skeleton:
+  explorations/              one-off models not yet wired into the manuscript
+                             (quality_reports/ and manuscript_<project>.qmd are created
+                              later by the phase skills)
+
+Flags:
+  --link                     link the pipeline (default; accepted for explicitness)
+  --tip                      recorded in the lock; the caller chose the shared checkout
+  --update                   git submodule update --remote before installing
+  --with-digest              also install the journal-digest module
+  --link-references <dir>    symlink .claude/references/*.md to a shared voice-profile dir
+EOF
   exit 0
 fi
 
-if [[ -z "$PROJECT_DIR" ]]; then
-  echo "Error: --project-dir is required"
-  echo "Usage: ./apply.sh --project-dir /path/to/your/project"
-  exit 1
-fi
-
-if [[ ! -d "$PROJECT_DIR" ]]; then
-  echo "Error: project directory not found: $PROJECT_DIR"
-  exit 1
-fi
+[[ -n "$PROJECT_DIR" ]] || { echo "Error: --project-dir is required"; exit 1; }
+[[ -d "$PROJECT_DIR" ]] || { echo "Error: project directory not found: $PROJECT_DIR"; exit 1; }
+PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd -P)"
 
 echo "→ Installing research-claude into: $PROJECT_DIR"
 echo ""
 
-# Update submodules if requested
 if [[ "$UPDATE_MODE" == true ]]; then
   echo "→ Updating submodules..."
   git -C "$SCRIPT_DIR" submodule update --remote
 fi
 
-# Create .claude/ subdirectories
-mkdir -p "$PROJECT_DIR/.claude/agents" \
-         "$PROJECT_DIR/.claude/skills" \
-         "$PROJECT_DIR/.claude/rules"
+mkdir -p "$PROJECT_DIR/.claude"/{agents,skills,rules,hooks} "$PROJECT_DIR/explorations"
 
-# Project directory skeleton. Only explorations/ — one-off models not yet wired into the
-# manuscript. quality_reports/ and manuscript_<project>.qmd are created by the phase skills
-# (/discover, /analyze, /write), not at scaffold time. No paper/, scripts/, or output/.
-mkdir -p "$PROJECT_DIR/explorations"
+# ── relative path helper (macOS has no realpath --relative-to) ────────────────
+relpath() { python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$1" "$2"; }
 
-# ── 1. clo-author: agents + skills + rules ────────────────────────────────────
-CLO="$SCRIPT_DIR/submodules/clo-author"
-if [[ -d "$CLO/.claude/agents" ]]; then
-  echo "→ Installing clo-author agents..."
-  cp "$CLO/.claude/agents/"*.md "$PROJECT_DIR/.claude/agents/" 2>/dev/null || true
-fi
-if [[ -d "$CLO/.claude/skills" ]]; then
-  echo "→ Installing clo-author skills (excluding: ${CLO_SKIP_SKILLS[*]})..."
-  for skill_path in "$CLO/.claude/skills/"*; do
-    [[ -e "$skill_path" ]] || continue
-    skill_name="$(basename "$skill_path")"
-    if [[ " ${CLO_SKIP_SKILLS[*]} " == *" $skill_name "* ]]; then
-      echo "    ⤷ skipping $skill_name (superseded by research-claude quarto-empirical pipeline)"
+# ── link_items <src-dir> <dest-dir> [dirs-only] ──────────────────────────────
+# One symlink per item. A real (non-symlink) entry at the destination is a
+# deliberate project override (D9) and is left untouched.
+link_items() {
+  local src="$1" dest="$2" dirs_only="${3:-false}" name target item
+  [[ -d "$src" ]] || return 0
+  mkdir -p "$dest"
+  for item in "$src"/*; do
+    [[ -e "$item" ]] || continue
+    [[ "$dirs_only" == true && ! -d "$item" ]] && continue
+    name="$(basename "$item")"
+    target="$dest/$name"
+    if [[ -e "$target" && ! -L "$target" ]]; then
+      echo "    ⤷ $name is a real file here — project override, left alone"
       continue
     fi
-    cp -r "$skill_path" "$PROJECT_DIR/.claude/skills/"
+    ln -sfn "$(relpath "$item" "$dest")" "$target"
   done
-fi
-if [[ -d "$CLO/.claude/rules" ]]; then
-  echo "→ Installing clo-author rules..."
-  cp "$CLO/.claude/rules/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
-fi
-if [[ -d "$CLO/.claude/references" ]]; then
-  echo "→ Installing clo-author reference templates (domain-profile, journal-profiles, personal-style-guide, coding-standards)..."
-  mkdir -p "$PROJECT_DIR/.claude/references"
-  for ref in "$CLO/.claude/references/"*.md; do
-    [[ -e "$ref" ]] || continue
-    dest="$PROJECT_DIR/.claude/references/$(basename "$ref")"
-    if [[ -e "$dest" ]]; then
-      echo "    ⤷ $(basename "$ref") already exists — leaving it untouched"
+}
+
+# ── prune_dead_links <dest-dir> ──────────────────────────────────────────────
+# A link whose target no longer exists means the item was deleted upstream.
+prune_dead_links() {
+  local dest="$1" dead
+  [[ -d "$dest" ]] || return 0
+  while IFS= read -r -d '' dead; do
+    echo "    ⤷ removing stale link $(basename "$dead")"
+    rm "$dead"
+  done < <(find "$dest" -maxdepth 1 -type l ! -exec test -e {} \; -print0 2>/dev/null)
+}
+
+# ── copy_seed <src-file> <dest-file> ─────────────────────────────────────────
+# Project-owned scaffolding. Never overwrites.
+copy_seed() {
+  # -L as well as -e: a SYMLINK at the destination is deliberate (that is what
+  # --link-references creates) and must be left alone even when it dangles.
+  # Without the -L test, cp follows the dangling link and aborts the whole run.
+  if [[ -e "$2" || -L "$2" ]]; then echo "    ⤷ $(basename "$2") already exists — left untouched"
+  else mkdir -p "$(dirname "$2")"; cp "$1" "$2"; fi
+}
+
+if [[ "$LINK_MODE" == true ]]; then
+  echo "→ Linking pipeline from $SCRIPT_DIR"
+  for d in skills agents rules hooks; do
+    [[ -d "$SCRIPT_DIR/$d" ]] || continue
+    echo "  $d/"
+    prune_dead_links "$PROJECT_DIR/.claude/$d"
+    link_items "$SCRIPT_DIR/$d" "$PROJECT_DIR/.claude/$d"
+  done
+
+  # ai-audit ships two skills and two agents from a live submodule — link those too
+  AI="$SCRIPT_DIR/submodules/ai-audit"
+  echo "  ai-audit/"
+  link_items "$AI/skills" "$PROJECT_DIR/.claude/skills"
+  link_items "$AI/agents" "$PROJECT_DIR/.claude/agents"
+  link_items "$AI/rules"  "$PROJECT_DIR/.claude/rules"
+
+  # ZotPilot skills are vendored real files here, so linking them is correct too.
+  # dirs-only: zotpilot-skills/VENDORED.md is a file, not a skill.
+  echo "  zotpilot-skills/"
+  link_items "$SCRIPT_DIR/zotpilot-skills" "$PROJECT_DIR/.claude/skills" true
+
+  # INV-11's enforcer must travel with the pipeline. It is the one check a clean
+  # quarto render cannot make, so a project that cannot run it cannot verify its
+  # own numbers — and a coauthor bootstrapping from a clone has nothing else.
+  # Linked, not copied, so a fix to the scanner reaches every project.
+  if [[ -f "$SCRIPT_DIR/scripts/prose_number_check.py" ]]; then
+    echo "  scripts/"
+    mkdir -p "$PROJECT_DIR/.claude/scripts"
+    if [[ -e "$PROJECT_DIR/.claude/scripts/prose_number_check.py" && ! -L "$PROJECT_DIR/.claude/scripts/prose_number_check.py" ]]; then
+      echo "    ⤷ prose_number_check.py is a real file here — project override, left alone"
     else
-      cp "$ref" "$dest"
+      ln -sfn "$(relpath "$SCRIPT_DIR/scripts/prose_number_check.py" "$PROJECT_DIR/.claude/scripts")" \
+              "$PROJECT_DIR/.claude/scripts/prose_number_check.py"
     fi
+  fi
+fi
+
+# ── scaffolding seeds (copies — project-owned, meant to be edited) ────────────
+echo "→ Installing project-owned seeds"
+if [[ -d "$SCRIPT_DIR/references" ]]; then
+  mkdir -p "$PROJECT_DIR/.claude/references"
+  for ref in "$SCRIPT_DIR/references"/*.md; do
+    [[ -e "$ref" ]] || continue
+    copy_seed "$ref" "$PROJECT_DIR/.claude/references/$(basename "$ref")"
   done
 fi
-if [[ -d "$CLO/.claude/state" ]]; then
-  echo "→ Installing clo-author state templates (Obsidian config example)..."
-  mkdir -p "$PROJECT_DIR/.claude/state"
-  cp "$CLO/.claude/state/"*.example "$PROJECT_DIR/.claude/state/" 2>/dev/null || true
-fi
-
-# ── 2. ai-audit: humanize, verify-claims, ai-disclosure ──────────────────────
-AI="$SCRIPT_DIR/submodules/ai-audit"
-if [[ -d "$AI/skills" ]]; then
-  echo "→ Installing ai-audit skills..."
-  cp -r "$AI/skills/"* "$PROJECT_DIR/.claude/skills/" 2>/dev/null || true
-fi
-if [[ -d "$AI/agents" ]]; then
-  echo "→ Installing ai-audit agents..."
-  cp "$AI/agents/"*.md "$PROJECT_DIR/.claude/agents/" 2>/dev/null || true
-fi
-if [[ -d "$AI/rules" ]]; then
-  echo "→ Installing ai-audit rules..."
-  cp "$AI/rules/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
-fi
-
-# ── 3. ZotPilot: claude-skills (ztp-*) ───────────────────────────────────────
-# Vendored from EconGeo/ZotPilot's claude-skills/ (see zotpilot-skills/VENDORED.md).
-# Not a submodule: research-claude needs only these ~68 KB of skills, not ZotPilot's
-# 224 MB Chrome connector. The MCP server is installed separately (README Step 7).
-ZTP_SKILLS="$SCRIPT_DIR/zotpilot-skills"
-if [[ -d "$ZTP_SKILLS" ]]; then
-  echo "→ Installing ZotPilot claude-skills (ztp-*)..."
-  for skill_path in "$ZTP_SKILLS/"*; do
-    # only skill directories — skips VENDORED.md (no trailing slash: copies the dir, not its contents)
-    [[ -d "$skill_path" ]] || continue
-    cp -r "$skill_path" "$PROJECT_DIR/.claude/skills/"
+if [[ -d "$SCRIPT_DIR/state" ]]; then
+  for ex in "$SCRIPT_DIR/state"/*.example; do
+    [[ -e "$ex" ]] || continue
+    copy_seed "$ex" "$PROJECT_DIR/.claude/state/$(basename "$ex")"
   done
 fi
+[[ -f "$SCRIPT_DIR/templates/data_manifest.md" ]] && \
+  copy_seed "$SCRIPT_DIR/templates/data_manifest.md" "$PROJECT_DIR/data/raw/data_manifest.md"
+[[ -f "$SCRIPT_DIR/templates/ai-use-log.md" ]] && \
+  copy_seed "$SCRIPT_DIR/templates/ai-use-log.md" "$PROJECT_DIR/templates/ai-use-log.md"
+[[ -f "$SCRIPT_DIR/templates/gitignore" ]] && \
+  copy_seed "$SCRIPT_DIR/templates/gitignore" "$PROJECT_DIR/.gitignore"
+if [[ -f "$SCRIPT_DIR/templates/bootstrap-pipeline.sh" ]]; then
+  copy_seed "$SCRIPT_DIR/templates/bootstrap-pipeline.sh" "$PROJECT_DIR/bootstrap-pipeline.sh"
+  chmod +x "$PROJECT_DIR/bootstrap-pipeline.sh" 2>/dev/null || true
+fi
 
-# ── 4. journal-digest (opt-in) ───────────────────────────────────────────────
+# ── journal-digest (opt-in) ──────────────────────────────────────────────────
 if [[ "$WITH_DIGEST" == true ]]; then
-  JD="$SCRIPT_DIR/submodules/journal-digest"
   echo "→ Installing journal-digest module..."
-  cp -r "$JD" "$PROJECT_DIR/journal-digest"
-  echo ""
-  echo "  ⚠️  Next step for journal-digest:"
-  echo "    micromamba create -n journal-digest python=3.12 -c conda-forge"
-  echo "    micromamba run -n journal-digest pip install -r journal-digest/requirements.txt"
-  echo "    Then edit journal-digest/config.py with your Zotero paths and keywords."
+  cp -r "$SCRIPT_DIR/submodules/journal-digest" "$PROJECT_DIR/journal-digest"
+  echo "  ⚠️  Next: micromamba create -n journal-digest python=3.12 -c conda-forge"
+  echo "           micromamba run -n journal-digest pip install -r journal-digest/requirements.txt"
 fi
 
-# ── 5. research-claude own skills (bridge skills) ────────────────────────────
-# Skills that live in research-claude itself — bridge ZotPilot, clo-author, and
-# other submodule tools without modifying upstream repos.
-RC_SKILLS="$SCRIPT_DIR/skills"
-if [[ -d "$RC_SKILLS" ]]; then
-  echo "→ Installing research-claude bridge skills (seed-papers, etc.)..."
-  cp -r "$RC_SKILLS/"* "$PROJECT_DIR/.claude/skills/" 2>/dev/null || true
-fi
-
-# ── 6. research-claude own rules (quarto-pdf, quarto-word) ───────────────────
-RC_RULES="$SCRIPT_DIR/rules"
-if [[ -d "$RC_RULES" ]]; then
-  echo "→ Installing research-claude rules (quarto-empirical, pipeline-precedence, data-manifest, quarto-pdf, quarto-word, registry-verification-gate, literature-search-order)..."
-  cp "$RC_RULES/"*.md "$PROJECT_DIR/.claude/rules/" 2>/dev/null || true
-fi
-
-# ── 7. research-claude own state templates (override clo-author's) ───────────
-# Copied AFTER clo-author's state templates (step 1) so the research-claude
-# version wins. This ships a mcpvault-first obsidian-config.md.example (no
-# Obsidian app required) instead of clo-author's REST/Local-REST-API default.
-RC_STATE="$SCRIPT_DIR/state"
-if [[ -d "$RC_STATE" ]]; then
-  echo "→ Installing research-claude state templates (mcpvault-first Obsidian config example)..."
-  mkdir -p "$PROJECT_DIR/.claude/state"
-  cp "$RC_STATE/"*.example "$PROJECT_DIR/.claude/state/" 2>/dev/null || true
-fi
-
-# ── 8. data manifest template (direct install to data/raw/) ──────────────────
-# The data-manifest.md rule expects data/raw/data_manifest.md to exist per project.
-# Install it directly so the rule resolves locally (no project-level templates/ needed).
-RC_MANIFEST="$SCRIPT_DIR/templates/data_manifest.md"
-if [[ -f "$RC_MANIFEST" ]]; then
-  echo "→ Installing data_manifest.md template to data/raw/..."
-  mkdir -p "$PROJECT_DIR/data/raw"
-  if [[ -f "$PROJECT_DIR/data/raw/data_manifest.md" ]]; then
-    echo "    ⤷ data/raw/data_manifest.md already exists — leaving it untouched"
-  else
-    cp "$RC_MANIFEST" "$PROJECT_DIR/data/raw/data_manifest.md"
-  fi
-fi
-
-# ── 9. project .gitignore (direct install to project root) ───────────────────
-# Keeps the single-source manuscript (*.qmd) and bibliography (*.bib); ignores quarto
-# build artifacts, the rendered PDF/HTML, raw data, and language toolchain outputs.
-RC_GITIGNORE="$SCRIPT_DIR/templates/gitignore"
-if [[ -f "$RC_GITIGNORE" ]]; then
-  if [[ -f "$PROJECT_DIR/.gitignore" ]]; then
-    echo "→ .gitignore already exists — leaving it untouched"
-  else
-    echo "→ Installing project .gitignore template..."
-    cp "$RC_GITIGNORE" "$PROJECT_DIR/.gitignore"
-  fi
-fi
-
-# ── 10. optional: link references to a shared directory ──────────────────────
-# With --link-references <dir>, replace the per-project reference templates (installed in
-# step 1) with symlinks into <dir> — a shared voice-profile folder reused across projects.
-# The path is a runtime argument; nothing machine-specific is hardcoded in this template.
+# ── optional: link references to a shared directory ──────────────────────────
 if [[ -n "$LINK_REFERENCES" ]]; then
-  if [[ ! -d "$LINK_REFERENCES" ]]; then
-    echo "Error: --link-references dir not found: $LINK_REFERENCES"
-    exit 1
-  fi
+  [[ -d "$LINK_REFERENCES" ]] || { echo "Error: --link-references dir not found: $LINK_REFERENCES"; exit 1; }
   REF_ABS="$(cd "$LINK_REFERENCES" && pwd)"
   echo "→ Linking .claude/references/*.md to shared dir: $REF_ABS"
   mkdir -p "$PROJECT_DIR/.claude/references"
   linked=0
-  for ref in "$REF_ABS/"*.md; do
+  for ref in "$REF_ABS"/*.md; do
     [[ -e "$ref" ]] || continue
-    ln -sf "$ref" "$PROJECT_DIR/.claude/references/$(basename "$ref")"
+    ln -sfn "$ref" "$PROJECT_DIR/.claude/references/$(basename "$ref")"
     linked=$((linked + 1))
   done
-  if [[ "$linked" -eq 0 ]]; then
-    echo "    ⚠️  no *.md files found in $REF_ABS — left the installed templates in place"
-  fi
+  [[ "$linked" -eq 0 ]] && echo "    ⚠️  no *.md in $REF_ABS — left the installed templates in place"
 fi
 
+# ── the lock file ────────────────────────────────────────────────────────────
+write_lock() {
+  local sha mode
+  sha="$(git -C "$SCRIPT_DIR" rev-parse HEAD)"
+  mode="pinned"; [[ "$TIP_MODE" == true ]] && mode="tip (shared checkout)"
+  cat > "$PROJECT_DIR/.claude/pipeline.lock" <<EOF
+# Which research-claude produced this project's pipeline.
+# Committed on purpose: it is replication provenance, and it is what
+# ./bootstrap-pipeline.sh checks out for a coauthor.
+repo=https://github.com/EconGeo/research-claude.git
+commit=$sha
+generated=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+# installed via: $mode
+EOF
+}
+write_lock
+
 echo ""
-echo "✓ Done. research-claude installed into $PROJECT_DIR/.claude/"
+echo "✓ Pipeline linked into $PROJECT_DIR/.claude/"
+echo "  source:  $SCRIPT_DIR"
+echo "  commit:  $(git -C "$SCRIPT_DIR" rev-parse --short HEAD)"
+echo ""
+echo "Editing a linked skill/agent/rule edits EVERY project. See rules/shared-pipeline.md."
+echo "Run /promote to land such an edit upstream."
 echo ""
 echo "Next steps:"
-echo "  1. Set up ZotPilot Python env (see README Step 7)"
-echo "  2. Register ZotPilot MCP server in $PROJECT_DIR/.mcp.json (see README Step 7)"
+echo "  1. Set up the ZotPilot Python env (see README)"
+echo "  2. Register the ZotPilot MCP server in $PROJECT_DIR/.mcp.json"
 echo "  3. Run 'zotpilot index' to index your library"
 echo "  4. Restart Claude Code"

@@ -20,7 +20,6 @@ manuscript_*.tex
 *.bbl
 *.bcf
 *.blg
-*.fdb_latexmk
 *.fls
 *.run.xml
 *.toc
@@ -56,3 +55,11 @@ __pycache__/
 
 # ── Editor / OS ──────────────────────────────────────────────────────────────
 .DS_Store
+
+# Pipeline: linked from research-claude, not project content.
+# Run ./bootstrap-pipeline.sh to materialize.
+.claude/skills/
+.claude/agents/
+.claude/rules/
+.claude/hooks/
+/.pipeline/

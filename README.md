@@ -1,6 +1,11 @@
 # research-claude: AI-Powered Research Workstation
 
-A fully composed research pipeline for empirical academic work. Combines [clo-author](https://github.com/hugosantanna/clo-author)'s multi-agent research pipeline with ZotPilot (Zotero MCP server), ai-audit (prose quality tools), and journal-digest (weekly literature monitor).
+A Quarto-native, multi-agent research pipeline for empirical academic work — 17 agents,
+19 skills and 15 rules, plus ZotPilot (Zotero MCP server), ai-audit (prose quality tools),
+and journal-digest (weekly literature monitor).
+
+**This repo is the pipeline**, not a composer of other people's. It is installed into a
+paper project by *symlink*, so one edit here reaches every project at once.
 
 **Audience:** Academic researchers who write empirical papers (economics, finance, social science) and want Claude Code as a research partner, not just a coding assistant.
 
@@ -16,12 +21,17 @@ A fully composed research pipeline for empirical academic work. Combines [clo-au
 
 ## What you get
 
-| Submodule | What it provides |
-|-----------|-----------------|
-| `clo-author` | Research pipeline agents: strategist, writer, coder, referees, reviewer, data-engineer, theorist, and more |
-| `EconGeo/ZotPilot` | Zotero MCP server — embeds your whole library into a local ChromaDB so Claude searches it semantically, ingests papers, and cross-references citations (our fork of [xunhe730/ZotPilot](https://github.com/xunhe730/ZotPilot)) |
-| `EconGeo/ai-audit` | Prose audit skills: `/humanize` (AI-voice tells) + `/verify-claims` (hallucination check) |
-| `EconGeo/journal-digest` | Weekly journal monitor: RSS/CrossRef fetch + Claude in-session synthesis |
+| Source | What it provides |
+|--------|-----------------|
+| **this repo** | The research pipeline itself: `agents/` (strategist, writer, coder, referees, editor, data-engineer, theorist, verifier and their critics), `skills/` (`/discover`, `/strategize`, `/analyze`, `/write`, `/review`, `/revise`, `/submit`, `/talk`, `/lit-position`, `/promote`, …), `rules/`, `references/`, `hooks/` |
+| `EconGeo/ZotPilot` | Zotero MCP server — embeds your library into a local ChromaDB so Claude searches it semantically, ingests papers, and cross-references citations (our fork of [xunhe730/ZotPilot](https://github.com/xunhe730/ZotPilot)). Skills vendored in `zotpilot-skills/` |
+| `EconGeo/ai-audit` | Prose audit skills: `/humanize` (AI-voice tells) + `/verify-claims` (hallucination check) — live submodule |
+| `EconGeo/journal-digest` | Weekly journal monitor: RSS/CrossRef fetch + Claude in-session synthesis — live submodule |
+
+The agents originate in [clo-author](https://github.com/hugosantanna/clo-author) by Hugo
+Santanna, which research-claude was built on as a submodule until 2026-09-08. They are now
+vendored and maintained here: de-LaTeXed for the Quarto pipeline, and enriched with the
+improvements that had accumulated in individual paper projects.
 
 ---
 
@@ -102,38 +112,85 @@ install.packages(c(
 
 ## Install research-claude
 
-### Step 6 — Clone this repo and run apply.sh
+### Step 6 — Clone this repo and link it into your project
 
 ```bash
-git clone https://github.com/EconGeo/research-claude.git
-cd research-claude
+git clone https://github.com/EconGeo/research-claude.git ~/Academic/research-claude
+cd ~/Academic/research-claude
 git submodule update --init      # top-level only — do NOT use --recursive
 
-# Install into your project directory
-./apply.sh --project-dir ~/path/to/your-project
+# Link the pipeline into your project
+./apply.sh --project-dir ~/path/to/your-project --link
 
 # Preview what would be installed without making changes
 ./apply.sh --list
 
-# Share one set of voice/style references across projects (instead of per-project copies)
-./apply.sh --project-dir ~/path/to/your-project --link-references ~/research/.claude/references
+# Share one set of voice/style references across projects
+./apply.sh --project-dir ~/path/to/your-project --link --link-references ~/Research/.claude/references
 ```
 
-> **Submodules:** there are three, all small — `clo-author`, `ai-audit`, `journal-digest`.
-> `git submodule update --init` (non-recursive) is all `apply.sh` needs; the whole clone is a
-> few tens of MB. The ZotPilot skills are **not** a submodule — they're vendored directly in
-> `zotpilot-skills/`, and the MCP server installs separately (Step 7). So cloning this repo no
-> longer drags in ZotPilot's heavy Chrome-connector toolchain (pdf.js, translators, …).
+**The pipeline is linked, not copied.** `apply.sh --link` creates one relative symlink
+per skill directory, agent file, rule file and hook into this checkout. Consequences,
+all deliberate:
 
-`apply.sh` copies `.claude/` files from each submodule into `your-project/.claude/`. It does not touch your Python environments or register MCP servers — those require user judgment about paths (Steps 7–8).
+- **A fix lands everywhere at once.** Edit a skill here — or through the link from any
+  paper session — and every project has it immediately. There is no re-import step,
+  because there is no copy to re-import.
+- **`git pull` here updates every project.** Same reason.
+- **A real file at a link's destination is a project override** and is never touched.
+  Delete the symlink, write a real file in its place, and it survives every later
+  `apply.sh --link`. The tree is per-item, not all-or-nothing.
+- **Links whose target was deleted upstream are pruned** on the next run.
+- **Editing a linked file changes every paper**, and the change lands as an
+  uncommitted diff in *this* repo, which your paper session is not "in" and whose
+  `git status` you are not watching. `rules/shared-pipeline.md` states this, and
+  `/promote` surfaces it. Read that rule before you edit through a link.
 
-This includes clo-author's `.claude/references/` templates (domain profile, journal profiles, personal style guide, coding standards), a project `.gitignore` (keeps the single-file `*.qmd` and `.bib`; ignores Quarto build artifacts, the rendered PDF/HTML, and `data/raw/`), and an `explorations/` directory for one-off models. The manuscript itself and `quality_reports/` are created later by the phase skills, not at scaffold time.
+Scaffolding **seeds** are still copied, because they are project-owned and meant to be
+edited: `.claude/references/*.md` (domain profile, journal profiles, personal style
+guide, coding standards), `.claude/state/*.example`, `data/raw/data_manifest.md`,
+`templates/ai-use-log.md`, a project `.gitignore`, and an `explorations/` directory.
+None is ever overwritten if it already exists. The manuscript itself and
+`quality_reports/` are created later by the phase skills, not at scaffold time.
 
-**Starting a new project the guided way.** research-claude ships a root-level `new-project` skill (in `root-skills/`) that runs the whole bootstrap as a conversation — it asks where the repo should live (org vs. personal, and which team), how to wire references and your citation database, writes the per-paper `CLAUDE.md`, and creates + pushes the private repo. It lives here as the single source of truth — **don't copy it out** (a copy drifts from the repo). Use it either way:
-- **Symlink** it so `/new-project` is auto-discovered: `ln -s "$PWD/root-skills/new-project" ~/research/.claude/skills/new-project` (research-root scope) or into `~/.claude/skills/` (global). `~/research` then holds only a pointer.
-- **Or invoke from the repo** — just ask Claude to follow `root-skills/new-project/SKILL.md` from your research-claude checkout; nothing lands in your project dirs at all.
+`apply.sh` does not touch your Python environments or register MCP servers — those
+require judgment about paths (Steps 7–8).
 
-**`--link-references <dir>`** is opt-in: by default each project gets its own editable copy of the reference templates (fill them in with `/discover interview` and `/write style-guide`). Pass the flag only if you maintain one shared set of profiles across many projects — the project's reference files become symlinks into `<dir>`.
+> **Submodules:** two, both small — `ai-audit` and `journal-digest`.
+> `git submodule update --init` (non-recursive) is all `apply.sh` needs. The ZotPilot
+> skills are **not** a submodule — they are vendored in `zotpilot-skills/`, and the MCP
+> server installs separately (Step 7), so cloning this repo does not drag in ZotPilot's
+> heavy Chrome-connector toolchain.
+
+### Coauthors and archival reproduction
+
+Each paper repo commits two small files — `bootstrap-pipeline.sh` and
+`.claude/pipeline.lock` — and gitignores the linked directories, so a fresh clone has
+nothing dangling. One command materializes the pipeline:
+
+```bash
+./bootstrap-pipeline.sh          # coauthor / archival: pinned commit, project-local checkout
+./bootstrap-pipeline.sh --tip    # maintainer: shared checkout on main
+```
+
+`EconGeo/research-claude` is public, so a coauthor needs no access grant to a private
+paper repo's pipeline — only a clone. The lock doubles as replication provenance: *this
+manuscript was written with pipeline SHA abc123.*
+
+The two modes deliberately use **different checkouts**. Pinning the shared checkout
+would silently pin every project on your machine to one paper's locked commit.
+
+### How to change the pipeline
+
+| You want to… | Do this |
+|---|---|
+| Improve a shared skill / agent / rule | Edit it through the link, then run `/promote` to review and commit it upstream |
+| Something only one paper needs | `rm` the symlink, write a real file — `apply.sh --link` will never overwrite it |
+| Check what is canonical vs. overridden | `/promote` reports both |
+| Verify the tree is clean | `./scripts/check_fork.sh` — exit 0 means no LaTeX residue, no project nouns, no orphaned references |
+
+Never copy the tree back into a project to "make it local." That is the drift this
+design exists to end.
 
 ### Rules installed into `.claude/rules/`
 
@@ -141,29 +198,33 @@ Beyond the submodule agents and skills, research-claude ships its own pipeline r
 
 | Rule | What it enforces |
 |------|------------------|
-| `quarto-empirical.md` | **The required pipeline for new projects.** A single `.qmd` — named `manuscript_<project>.qmd`, e.g. `manuscript_zoning2026.qmd` — is the source of truth for all analysis, tables, figures, and prose. No external R scripts, no results registry, no ground-truth CSV. The rendered PDF *is* the paper. |
-| `pipeline-precedence.md` | **Makes the single-file pipeline win.** Declares `quarto-empirical.md` authoritative over the older multi-file layout that clo-author's `/analyze`, `/write`, and `/revise` skills (and some clo-author rules) still describe, and supplies an old→new translation map. See [The single-manuscript pipeline](#the-single-manuscript-pipeline-and-how-it-overrides-clo-author) below. |
+| `quarto-empirical.md` | **The required pipeline for new projects.** A single `.qmd` — named `manuscript_<project>.qmd` after the project directory — is the source of truth for all analysis, tables, figures, and prose. No external R scripts, no results registry, no ground-truth CSV. The rendered PDF *is* the paper. |
+| `content-invariants.md` | INV-1..INV-24. Every invariant names the command that enforces it, or is explicitly marked `reviewer-judgment`. INV-11 — every prose number is an inline `` `r ` `` expression — is the load-bearing one. |
+| `agents.md` | Worker→critic pairing, separation of powers, three-strikes escalation, and §4: there is no phase graph. Any skill may invoke any agent once its inputs exist. |
+| `shared-pipeline.md` | What a symlinked `.claude/` means: editing a linked file changes every paper. Read before editing through a link. |
+| `ai-disclosure.md` | Wiley/COPE-aligned AI disclosure: what requires it, the `ai_use_log.md` entry format, and the statement templates. `/submit` blocks on it. |
 | `data-manifest.md` | Every project keeps `data/raw/data_manifest.md` — a current table recording where each raw data file came from, how it was acquired, and which variables are used. The audit trail behind every reported number. |
 | `quarto-pdf.md` | PDF output format reference for the single `manuscript_<project>.qmd`: the `pdf:` block plus kableExtra/figure/citation mechanics and LaTeX landmines (XeLaTeX + biblatex). |
 | `quarto-word.md` | Word output format reference: the optional `docx:` block plus flextable/CSL mechanics, rendered from the *same* `manuscript_<project>.qmd`. Architecture and caching are governed by `quarto-empirical.md`, not redefined here. |
-| `registry-verification-gate.md` | *Legacy.* Write-gate for older registry-pattern projects (e.g. `zoning2026`) that pre-date the `quarto-empirical` standard. New projects don't need it. |
+| `registry-verification-gate.md` | *Legacy.* Write-gate for older registry-pattern projects that pre-date the `quarto-empirical` standard. New projects don't need it. |
 
-### The single-manuscript pipeline (and how it overrides clo-author)
+### The single-manuscript pipeline
 
-research-claude builds on [clo-author](https://github.com/hugosantanna/clo-author), whose research pipeline was designed around a **multi-file LaTeX layout**: analysis code in `scripts/R/`, prose split across `paper/sections/*.tex`, tables emitted as bare `tabular` files, and everything assembled into `paper/main.tex` — coordinated through a results registry. That layout is powerful but demands constant file management: keeping code, intermediate `.rds` outputs, section files, and the assembled paper all in sync, and trusting a registry to tie reported numbers back to the code that produced them.
+**One file is the single source of truth:** `manuscript_<project>.qmd`. Analysis,
+tables, figures and prose all live in that one Quarto document as cached code chunks
+and inline `` `r ` `` expressions. `quarto render` *is* the build, and the rendered
+PDF or Word file *is* the paper. There are no section files to reassemble, no
+`scripts/R/` outputs to keep current, and no results registry to audit.
 
-research-claude deliberately replaces that with **one file as the single source of truth**: `manuscript_<project>.qmd`. Analysis, tables, figures, and prose all live in that one Quarto document as cached code chunks and inline `r` expressions; `quarto render` *is* the build, and the rendered PDF *is* the paper. There are no section files to reassemble, no `scripts/R/` outputs to keep current, and no registry to audit — if the document renders, every number in it is consistent with the code that produced it by construction.
+There is one thing a clean render does **not** prove, and it is worth stating plainly
+because assuming otherwise is what prompted the 2026-09-08 rewrite: rendering proves
+every inline expression *evaluated*. It says nothing about a number someone typed by
+hand. That is INV-11, and `prose_number_check.py` is what enforces it.
 
-Because clo-author's `/analyze`, `/write`, and `/revise` skills still speak the old layout, `pipeline-precedence.md` reconciles the two **without forking the upstream skills**. It declares `quarto-empirical.md` authoritative on file layout and provides a translation map so the skills' (still excellent) methodological guidance keeps applying:
-
-| clo-author says… | …in the single-manuscript pipeline it means |
-|------------------|---------------------------------------------|
-| `scripts/R/*.R`, `saveRDS()` outputs | cached code chunks inside `manuscript_<project>.qmd` |
-| `paper/sections/*.tex` | prose written directly in the `.qmd` |
-| `paper/main.tex` | `manuscript_<project>.qmd` itself |
-| LaTeX `\caption{}` / bare `tabular` wrapped by `main.tex` | `#| fig-cap:` / `#| tbl-cap:` chunk options; `modelsummary`/`kableExtra` emit the full float |
-
-The payoff: you get clo-author's mature analysis, writing, and peer-review discipline, but you only ever manage and version **one document per paper** instead of a tree of scripts, section files, and assembled output. We do this by *override*, not by editing clo-author — the upstream submodule stays pristine, so `apply.sh --update` keeps pulling improvements cleanly (see [Why submodules + apply.sh?](#why-submodules--applysh)).
+Everything the pipeline used to say about a multi-file LaTeX layout — `scripts/R/*.R`,
+`paper/sections/*.tex`, bare `tabular` exports assembled into `paper/main.tex` — has
+been rewritten rather than translated. `pipeline-precedence.md`, which used to hold a
+translation map, is gone: there is nothing left to take precedence over.
 
 ---
 
@@ -530,9 +591,9 @@ Once installed, the main entry points are:
 | `/humanize` | Detect AI-voice tells before submission |
 | `/analyze` | End-to-end data analysis (R / Python / Julia) |
 
-See [clo-author](https://github.com/hugosantanna/clo-author) for the full skill and agent reference.
-
-> **Note:** `/analyze`, `/write`, and `/revise` come from clo-author and describe its older multi-file LaTeX layout. In research-claude their output is redirected into the single `manuscript_<project>.qmd` via `pipeline-precedence.md` — see [The single-manuscript pipeline](#the-single-manuscript-pipeline-and-how-it-overrides-clo-author).
+Each skill's `SKILL.md` in `skills/` is its own reference. `/promote` and
+`/lit-position` are research-claude's own; the rest were vendored from clo-author on
+2026-09-08 and rewritten for the Quarto pipeline.
 
 ---
 
@@ -631,8 +692,8 @@ No global state remains after these steps.
 ## Architecture
 
 ```
-Layer 0 — Upstream (not owned; tracked via git remote)
-├── hugosantanna/clo-author        research pipeline + agents  ← primary base
+Layer 0 — Upstream (not owned)
+├── hugosantanna/clo-author        origin of the vendored agents (forked 2026-09-08; no longer a dependency)
 └── xunhe730/ZotPilot              Zotero MCP server (upstream)
 
 Layer 1 — Custom tools (each repo owns its versioning)
@@ -644,16 +705,33 @@ Layer 2 — This repo (compose via apply.sh)
 └── EconGeo/research-claude        ← you are here
 ```
 
-### Why submodules + apply.sh?
+### Why link instead of copy?
 
-`research-claude` pins clo-author, ai-audit, and journal-digest to tested commits via git submodules. ZotPilot is handled differently: its server installs separately (Step 7, `pip install` from the fork), and its Claude skills are **vendored** in `zotpilot-skills/` — so research-claude carries ~68 KB of skill files instead of the fork's 224 MB Chrome connector. `apply.sh` does the actual file installation. Users need only:
+`research-claude` pins `ai-audit` and `journal-digest` to tested commits via git
+submodules. ZotPilot is handled differently: its server installs separately (Step 7,
+`pip install` from the fork), and its Claude skills are **vendored** in
+`zotpilot-skills/` — ~68 KB of skill files instead of the fork's 224 MB Chrome
+connector.
+
+The pipeline itself lives *here*, and `apply.sh --link` installs it by symlink:
 
 ```bash
-git clone https://github.com/EconGeo/research-claude.git
-cd research-claude && git submodule update --init   # three small submodules; not --recursive
-./apply.sh --project-dir ~/my-project
+git clone https://github.com/EconGeo/research-claude.git ~/Academic/research-claude
+cd ~/Academic/research-claude && git submodule update --init   # two small submodules
+./apply.sh --project-dir ~/my-project --link
 ```
 
-Upgrading: `git submodule update --remote && ./apply.sh --update --project-dir ~/my-project` for the submodules; `./scripts/sync-zotpilot-skills.sh` to refresh the vendored ZotPilot skills from the fork.
+Upgrading is `git pull` — every linked project is updated the moment it lands, with no
+per-project re-install. For the submodules,
+`git submodule update --remote && ./apply.sh --update --project-dir ~/my-project --link`;
+`./scripts/sync-zotpilot-skills.sh` refreshes the vendored ZotPilot skills.
 
-The same install-on-top mechanism is how research-claude **overrides upstream conventions without forking them.** `apply.sh` copies each submodule's files first, then research-claude's own rules on top — so `pipeline-precedence.md` and the `quarto-*` rules win over clo-author's multi-file layout (see [The single-manuscript pipeline](#the-single-manuscript-pipeline-and-how-it-overrides-clo-author)) while the clo-author submodule itself stays byte-for-byte upstream. That keeps `git submodule update --remote` conflict-free: you get upstream's improvements and research-claude's single-file pipeline at the same time.
+**Why this replaced copying.** research-claude used to *copy* three sources into each
+project's `.claude/`. Six papers held six full copies, and value flowed out of the
+canonical tree and never came back: one project's `editor` agent grew from 67 lines to
+366 while every new project still scaffolded from 67. Two projects independently taught
+`coder-critic` Quarto and taught it *different halves* — one added Quarto/Rmd modes and
+manifest coverage, the other a correctness layer catching hardcoded prose numbers —
+and neither knew the other existed. Copying is the drift engine. Linking removes it by
+construction: there is one tree, and everything points at it.
+

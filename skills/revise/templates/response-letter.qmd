@@ -1,0 +1,57 @@
+---
+title: "Response to Referee Reports"
+subtitle: "[Manuscript title] — [Journal]"
+author: "[Authors]"
+date: today
+format:
+  pdf:
+    pdf-engine: xelatex
+    geometry: margin=1in
+    number-sections: false
+  docx:
+    number-sections: false
+---
+
+<!--
+How to use this template
+
+- One `##` per referee, one `###` per comment.
+- Quote the referee VERBATIM. Never paraphrase a comment you are answering —
+  an editor reads this letter beside the original report.
+- Every response names where the change landed: section, table, or figure, by
+  cross-reference (`@sec-results`, `@tbl-main`), never a hardcoded page number.
+  Page numbers move; anchors do not.
+- Severity (FATAL / ADDRESSABLE / TASTE) is recorded in the tracker, not shown
+  to the referee. Never tell a referee their comment was classified TASTE.
+-->
+
+## Summary of Changes
+
+[Brief overview of the major revisions, in the order a reader meets them.
+Two to four sentences. Lead with the substantive re-estimation, if any.]
+
+---
+
+## Response to Referee 1
+
+### Comment 1
+
+> [Referee's comment, verbatim.]
+
+**Response.** [Your response. Name the change and where it landed.]
+
+### Comment 2
+
+> [Referee's comment, verbatim.]
+
+**Response.** [Your response.]
+
+---
+
+## Response to Referee 2
+
+### Comment 1
+
+> [Referee's comment, verbatim.]
+
+**Response.** [Your response.]

@@ -145,3 +145,118 @@ All work in `~/Projects/ZotPilot` (= `EconGeo/ZotPilot`, fork of `xunhe730/ZotPi
 **Status:**
 - Done: both plans fully executed + reviewed; both PRs open on the fork; library re-indexed; Issue #3 addressed by PR #4.
 - Open follow-ups (non-blocking, in PR #4 notes): LlamaIndexChunker page-offset approximate under overlap (metadata only); gemini deferred-import style; PDFs missing on local disk counted as unindexed (path-resolution, parked); upstream contribution needs a clean rebase onto `xunhe730/main`.
+
+## 2026-09-08 — Design: fork to a Quarto-native pipeline (clo-author decoupling)
+
+**Operations:**
+- Audited all 47 clo-author agent/rule/skill files for LaTeX/Beamer/multi-file coupling.
+- Checked every clo-author capability for artifact-level evidence of use across `~/Research/*`.
+- Compared agent versions across clo-author, POGM4, NAR_settlement, zoning2026.
+- Created `docs/superpowers/specs/2026-09-08-quarto-native-research-pipeline-design.md`.
+- Created `docs/checkpoints/2026-09-08_quarto-native-pipeline-fork.md`.
+- Branch `design/quarto-native-pipeline` cut from `main`. No code touched; docs only.
+
+**Decisions:**
+- Remove the `clo-author` submodule; keep `ai-audit` and `journal-digest` (both EconGeo, live).
+- Keep worker→critic pairing, separation of powers, 3-strikes escalation; cut the orchestration
+  graph (orchestrator, permissions, lifecycle, pipeline_state, traces, weighted aggregation).
+- `research-claude` is authoritative; harvest project improvements with a de-projectification pass.
+- Fold `librarian`/`librarian-critic` into a new `skills/lit-position/` bridge skill rather than
+  editing the vendored `zotpilot-skills/`.
+- Keep `theorist` + `theorist-critic` in the default install.
+- Delete `rules/pipeline-precedence.md` — with no legacy layer there is nothing to precede.
+
+**Results / verified facts:**
+- Coupling is narrow: `working-paper-format.md` 17%, `content-standards.md` 9%, `storyteller.md` 9%,
+  writer/writer-critic/verifier 6%; ten agents measure exactly 0%.
+- `clo-author` pinned at 2026-05-10; no pulls in four months.
+- Stranded value: `editor.md` 366 lines in POGM4 vs 67 upstream; `coder-critic` diverged
+  independently in POGM4 (99) and zoning2026 (82), each adding a *different* half of Quarto
+  support — POGM4 the manifest checks (INV-23/24), zoning2026 the Correctness Layer.
+- `NAR_settlement` is at baseline on every agent — nothing to harvest there.
+- Four shipped files give wrong instructions and are NOT covered by `pipeline-precedence.md`:
+  `table-standards.md` (threeparttable/tabularray vs flextable), `figure-standards.md`
+  (`ggsave("fig.pdf")` vs PNG@200dpi for Word), `content-standards.md`, `meta-governance.md`
+  (Emory/biology-forker identity leak).
+- Never-exercised capabilities confirmed empty in POGM4: `strategy/`, `theory/`,
+  `preregistrations/`, `decisions/`, `specs/`, `literature/`, `traces/`, `paper/talks/`,
+  `paper/replication/`.
+- De-projectification scope: one leaked token (`manuscript_quarto_word`) across 8 candidates.
+
+**Commits:**
+- `7729df1` Design spec: fork to a Quarto-native research pipeline
+
+**Status:**
+- Done: audit, design, spec written + self-reviewed + committed, checkpoint saved.
+- Pending: user review of the spec; then `superpowers:writing-plans`; then implementation.
+- Open: Q1 scratch-vs-in-place re-apply to POGM4; Q2 promotion mechanism; Q3 rollout order for
+  zoning2026 / ESG / BRI / affordable_housing_2026.
+
+---
+
+## 2026-09-08 — Quarto-native pipeline fork (Tasks 1–17)
+
+Forked `EconGeo/research-claude` off the dead `hugosantanna/clo-author` submodule
+into a standalone Quarto-native pipeline, and changed distribution from copy to
+per-item symlink.
+
+**Final tree:** 17 agents · 18 skills · 15 rules · 9 references · 8 hooks · 2 submodules
+(`ai-audit`, `journal-digest`). `scripts/check_fork.sh` exits 0.
+
+### Task 17 — scratch-POGM4 validation (D6)
+
+Conversion of `/private/tmp/pogm4-scratch` (a copy of POGM4) via
+`apply.sh --link --tip`:
+
+| Check | Spec criterion | Result |
+|---|---|---|
+| `quarto render manuscript_quarto_word.qmd` | 4 | **exit 0** — .docx produced, newer than source, 0 ERROR/WARNING in the log |
+| `prose_number_check.py manuscript_quarto_word.qmd` | 5 | **exit 0** — 95 distinct literals, all allowlisted with a reason (479 occurrences) |
+| Links resolve | link mechanism 1 | **pass** — only the 3 shared-reference symlinks dangle, an artifact of `/tmp` being outside `~/Research`; they resolve in the real project |
+| Override preserved, dead link pruned, edited seed untouched | link mechanism 2 | **pass** — `flextable-quarto-word-captions` and `commit` stayed real directories across a re-link |
+| Every linked skill/agent well-formed and discoverable | link mechanism 3 (proxy) | **pass** — 28/28 skills have valid frontmatter with `name:` matching the directory; 19/19 agents valid; 15 rules and 8 hooks resolve |
+| Project `CLAUDE.md` still loads | — | present, untouched |
+
+**Still outstanding:** the interactive confirmation that Claude Code *discovers* a
+per-item symlinked skill in a live session (Task 17 Step 5). No script can make that
+check. The structural proxy above is as far as automation goes. **Task 18 (converting
+the six live paper repos) is gated on it and has NOT been run.**
+
+### Defects found and fixed during execution
+
+1. **`apply.sh` relative-path bug.** Links were computed with a logical `pwd` but
+   resolved by the kernel physically. On macOS `/tmp` → `/private/tmp`, so all 66
+   links came out one directory short and silently dangled. Both `SCRIPT_DIR` and
+   `PROJECT_DIR` now use `pwd -P`.
+2. **`copy_seed` clobbered symlinked seeds.** It tested only `-e`, so a
+   `--link-references` symlink read as absent; `cp` then followed the dangling link
+   and aborted the run under `set -e` before the lock file was written.
+3. **INV-11's enforcer did not travel with the pipeline.** `prose_number_check.py`
+   lived only in `~/Research/scripts/` and was referenced by that absolute path in a
+   shipped rule. A coauthor bootstrapping from a clone could not run the one check a
+   clean render cannot make. Vendored into `scripts/` and linked into
+   `.claude/scripts/`.
+4. **Wrong invocation in four places** (mine, and the plan's):
+   `prose_number_check.py .` — the script takes a manuscript path and errors on a
+   directory.
+5. **`rules/ai-disclosure.md` existed only in POGM4** — a stranded improvement the
+   harvested `writer`/`coder` agents already referenced. Vendored with its template.
+6. **Scope larger than the spec estimated.** The spec measured clo-author's LaTeX
+   coupling at 0–6%; the vendored *skills* carried much more (`/talk`'s Beamer engine,
+   `/tools compile` via latexmk, `/write` and `/revise` targeting `paper/sections/*.tex`,
+   a LaTeX deduction table in the manuscript-review template, and a second stale copy
+   of the table/figure rules inside `content-standards.md`). All rewritten.
+7. **Four pre-existing D5 violations in research-claude's own rules** (project nouns as
+   worked examples), found by the gate on its first run.
+
+### Judgment calls made without the user
+
+- **Criterion 7 was split** into `project-identity` (banned everywhere) and
+  `project-nouns` (journal/vendor names, banned everywhere *except* `references/`).
+  `discipline-cards.md` names REE/JREFE/JRER/JREPM and CoStar because that is what a
+  discipline card is; the original rule made shipping one impossible.
+- **`prose_number_check.py`'s provenance comments naming POGM4 and NAR_settlement were
+  kept.** They record why the rule exists, and `scripts/` is infrastructure rather than
+  shipped instruction content.
+- **`templates/response-letter.tex` converted to `.qmd`.** A LaTeX-only response letter
+  does not belong in a pipeline whose output contract is `quarto render`.
