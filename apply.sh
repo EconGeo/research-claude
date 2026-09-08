@@ -139,7 +139,10 @@ prune_dead_links() {
 # ── copy_seed <src-file> <dest-file> ─────────────────────────────────────────
 # Project-owned scaffolding. Never overwrites.
 copy_seed() {
-  if [[ -e "$2" ]]; then echo "    ⤷ $(basename "$2") already exists — left untouched"
+  # -L as well as -e: a SYMLINK at the destination is deliberate (that is what
+  # --link-references creates) and must be left alone even when it dangles.
+  # Without the -L test, cp follows the dangling link and aborts the whole run.
+  if [[ -e "$2" || -L "$2" ]]; then echo "    ⤷ $(basename "$2") already exists — left untouched"
   else mkdir -p "$(dirname "$2")"; cp "$1" "$2"; fi
 }
 
