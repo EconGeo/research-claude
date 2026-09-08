@@ -29,7 +29,7 @@ The verifier runs in two modes. Standard mode (checks 1-4) runs between phase tr
 - No stale rendered artifact (output older than the `.qmd`)
 
 ### 4b. Prose numbers are computed, not typed
-- Run: `python3 prose_number_check.py .`
+- Run: `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd`
 - Pass: exit 0. Every numeric claim in prose is an inline `` `r ` `` expression
   bound to a live object (INV-11)
 - This is the check `quarto render` cannot make: a render exiting 0 proves every

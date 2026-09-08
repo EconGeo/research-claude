@@ -137,7 +137,7 @@ Verifier-lite checks:
   the output)? -3 per unresolved
 - All `@key` citations present in the `.bib`? -3 per missing
 - Every prose number an inline `` `r ` `` expression? Run
-  `python3 prose_number_check.py .` — a clean render proves the expressions
+  `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — a clean render proves the expressions
   *evaluated*, never that a typed literal is right (INV-11). -10 per hardcoded value
 
 ## 7. Voice Fidelity

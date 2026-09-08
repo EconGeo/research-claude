@@ -103,7 +103,7 @@ nothing about a number that was typed rather than computed.
 - `manuscript_<project>.qmd` — the single source of truth; prose is written
   directly into it, section by section
 - Verify with `quarto render manuscript_<project>.qmd`, then
-  `python3 prose_number_check.py .`
+  `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd`
 
 ---
 

@@ -105,7 +105,7 @@ kept rather than reused so older reports and reviews still resolve.
 
 | Invariant | Enforced by |
 |---|---|
-| INV-11 | `python3 prose_number_check.py .` — exit 0 required |
+| INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required |
 | INV-14, INV-15, INV-16, INV-19 | lint hook + `verifier` |
 | INV-23, INV-24 | `coder-critic` Correctness Layer, against `data/raw/data_manifest.md` |
 | INV-9, INV-13 | `quarto render` fails or degrades visibly |

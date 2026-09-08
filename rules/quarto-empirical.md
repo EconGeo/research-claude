@@ -196,7 +196,7 @@ consistency. A hardcoded number is a gap in that proof.
 ```
 [ ] 1. Raw data is in place: every file referenced in cache.extra exists in data/raw/
 [ ] 2. quarto render manuscript_<project>.qmd exits 0 with no NA/NaN in inline expressions
-[ ] 3. python3 ~/Research/scripts/prose_number_check.py manuscript_<project>.qmd exits 0
+[ ] 3. python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd exits 0
 ```
 
 No script inventory. No registry coverage audit. No timestamp check.

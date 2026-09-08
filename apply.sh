@@ -59,6 +59,7 @@ apply.sh links the pipeline into a project (one symlink per item):
   .claude/skills/   -> $SCRIPT_DIR/skills/          ($(ls "$SCRIPT_DIR/skills" 2>/dev/null | wc -l | tr -d ' ') skills)
   .claude/rules/    -> $SCRIPT_DIR/rules/           ($(ls "$SCRIPT_DIR/rules" 2>/dev/null | wc -l | tr -d ' ') rules)
   .claude/hooks/    -> $SCRIPT_DIR/hooks/           (linked, NOT auto-wired — see hooks/README.md)
+  .claude/scripts/prose_number_check.py                 (INV-11 enforcer)
 
   plus, from live submodules and vendored trees:
   .claude/skills/, .claude/agents/, .claude/rules/  <- submodules/ai-audit
@@ -166,6 +167,21 @@ if [[ "$LINK_MODE" == true ]]; then
   # dirs-only: zotpilot-skills/VENDORED.md is a file, not a skill.
   echo "  zotpilot-skills/"
   link_items "$SCRIPT_DIR/zotpilot-skills" "$PROJECT_DIR/.claude/skills" true
+
+  # INV-11's enforcer must travel with the pipeline. It is the one check a clean
+  # quarto render cannot make, so a project that cannot run it cannot verify its
+  # own numbers — and a coauthor bootstrapping from a clone has nothing else.
+  # Linked, not copied, so a fix to the scanner reaches every project.
+  if [[ -f "$SCRIPT_DIR/scripts/prose_number_check.py" ]]; then
+    echo "  scripts/"
+    mkdir -p "$PROJECT_DIR/.claude/scripts"
+    if [[ -e "$PROJECT_DIR/.claude/scripts/prose_number_check.py" && ! -L "$PROJECT_DIR/.claude/scripts/prose_number_check.py" ]]; then
+      echo "    ⤷ prose_number_check.py is a real file here — project override, left alone"
+    else
+      ln -sfn "$(relpath "$SCRIPT_DIR/scripts/prose_number_check.py" "$PROJECT_DIR/.claude/scripts")" \
+              "$PROJECT_DIR/.claude/scripts/prose_number_check.py"
+    fi
+  fi
 fi
 
 # ── scaffolding seeds (copies — project-owned, meant to be edited) ────────────
