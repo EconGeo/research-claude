@@ -191,16 +191,38 @@ consistency. A hardcoded number is a gap in that proof.
 
 ---
 
-## The Write Gate (2 Items)
+## The Write Gate (3 Items)
 
 ```
 [ ] 1. Raw data is in place: every file referenced in cache.extra exists in data/raw/
 [ ] 2. quarto render manuscript_<project>.qmd exits 0 with no NA/NaN in inline expressions
+[ ] 3. python3 ~/Research/scripts/prose_number_check.py manuscript_<project>.qmd exits 0
 ```
 
-That is the complete gate. No script inventory. No registry coverage audit. No
-timestamp check. If the render exits 0, all numbers are consistent with the current
-analysis by construction.
+No script inventory. No registry coverage audit. No timestamp check.
+
+**Item 3 is not optional, and item 2 does not subsume it.** A clean render proves
+every *expression* agrees with the analysis. It proves nothing about a number that
+was typed as a literal, because a literal is not an expression and there is nothing
+for the render to fail on. This gate previously listed only items 1 and 2 and
+asserted that a clean render made all numbers consistent "by construction." That
+was wrong, and it was wrong in the way that matters: it told every agent and every
+reviewer that the render was sufficient proof, so no project built the check.
+
+POGM4 is the worked example. It scored 100/100 on its own quality gate while
+carrying 24 hardcoded values in prose, four of them provably wrong and each
+contradicted by a table on the same page — an NL coefficient described as
+"significant" beside a live p of 0.759, "all p>0.20" where the estimate gives 0.33,
+a "58th percentile" that computes as the 59th, and "significant at the 0.1% level"
+for a sweep whose largest p is 0.003. Three separate critic passes read past them.
+Reading does not catch this class; searching does.
+
+The checker requires a per-project allowlist at
+`quality_reports/prose_number_allowlist.csv` (columns: `literal,reason`). Literals
+that cannot come from your R — calendar years, docket numbers, a figure quoted from
+a cited paper — belong there with a written reason. The standard is not that
+literals are forbidden; it is that each surviving one is a decision someone made on
+purpose and can defend.
 
 If any chunk fails or any inline expression evaluates to NA, quarto render exits
 non-zero and identifies the exact chunk and line. There are no silent wrong values.
