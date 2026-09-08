@@ -1,6 +1,3 @@
-[submodule "submodules/clo-author"]
-	path = submodules/clo-author
-	url = https://github.com/hugosantanna/clo-author.git
 [submodule "submodules/ai-audit"]
 	path = submodules/ai-audit
 	url = https://github.com/EconGeo/ai-audit.git
