@@ -42,7 +42,6 @@ Review the target through **4 sequential phases**. Phases execute in order, with
 
 Read these templates for the full 4-phase audit protocol, checklists, and report format:
 
-- **4-phase causal audit:** `review/templates/causal-audit-4-phases.md`
 - **Scoring rubric:** `review/config/scoring-rubrics.md` (strategist-critic section)
 
 ## What You Do NOT Do
