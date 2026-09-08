@@ -131,7 +131,7 @@ all disappear.
 | `coder-critic` | **merge POGM4 + zoning2026** | `manuscript_quarto_word` → `manuscript_<project>.qmd` |
 | `methods-referee`, `domain-referee` | POGM4 rewrites | none |
 | `writer-critic`, `writer`, `coder` | POGM4 | none |
-| `verifier` | POGM4, partial | POGM4 correctly deleted the LaTeX checks but also dropped the two-mode structure and the INV-enforcement line — restore those, keep the deletion |
+| `verifier` | clo-author | POGM4's `verifier.md` is a leaked `~/Courses` slide agent (12 LaTeX/Beamer/TikZ hits vs clo-author's 6) — do not harvest. Take clo-author's two-mode structure; rewrite check 1 `latexmk` → `quarto render`. See plan correction C1. |
 | `theorist`, `theorist-critic`, `strategist`, `strategist-critic`, `explorer`, `explorer-critic`, `data-engineer` | clo-author (identical everywhere) | vendor as-is |
 | `storyteller`, `storyteller-critic` | clo-author | Quarto-only: drop `beamer-scaffold.tex`, keep `quarto-scaffold.qmd` |
 | `orchestrator`, `guide-writer` | — | **delete** (D1) |
@@ -207,7 +207,7 @@ skills/lit-position/
 6. No installed file matches `latexmk`, `\doublespacing`, `threeparttable`, `paper/main.tex`, `paper/sections`, or `Emory`.
 7. No installed file matches a project noun (`POGM`, `JREPM`, `JRER`, `CoStar`, `SFPP`, `zoning`, `WRLURI`, `NAR`) or `manuscript_quarto_word`.
 8. The merged `coder-critic` contains both POGM4's manifest checks (INV-23/INV-24) and zoning2026's Correctness Layer.
-9. Every B-list port has a landing place. `templates/design-checklists/` ships in the template;
+9. Every B-list port has a landing place. `skills/strategize/templates/design-checklists/` ships in the template (in-skill; skills travel with their templates);
    `quality_reports/decisions/` and `paper/replication/` are created by the skills that write to
    them (`/strategize`, `/submit`), not at scaffold time — `apply.sh` creates only `explorations/`.
 

@@ -35,7 +35,7 @@ The manifest is a markdown table with exactly these 8 columns:
 
 | Dataset | Variables Used | Local Path | Source URL / Vendor | Acquisition Script | Date Acquired | Access Type | Notes |
 |---------|---------------|------------|--------------------|--------------------|---------------|-------------|-------|
-| National Zoning Atlas | wrluri, zoning_class, cbsa | data/raw/nza/nza_cbsa_2020.csv | https://nationalzoningatlas.org | scripts/acquire/01_download_nza.py | 2024-03-15 | free | Coverage: 49 states; excludes Hawaii |
+| County Business Patterns | employment, naics, fips | data/raw/cbp/cbp_county_2020.csv | https://www.census.gov/programs-surveys/cbp.html | scripts/acquire/01_download_cbp.py | 2024-03-15 | free | Coverage: 50 states; suppressed cells flagged |
 
 ---
 

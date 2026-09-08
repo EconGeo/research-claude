@@ -3,7 +3,7 @@
 > **Legacy rule — registry-pattern projects only.**
 > For new projects, use the Quarto empirical pipeline (`quarto-empirical.md`),
 > which eliminates the registry entirely. This rule applies to projects that
-> pre-date that standard (e.g. zoning2026) or that explicitly choose the
+> pre-date that standard, or that explicitly choose the
 > registry pattern for other reasons.
 
 **Nothing gets written in the manuscript until this gate is cleared.**

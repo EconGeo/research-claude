@@ -7,7 +7,7 @@ No external R analysis scripts. No results registry. No ground-truth CSV.
 The rendered PDF is the paper.
 
 > **File name:** the manuscript is `manuscript_<project>.qmd`, where `<project>` is the
-> project directory basename (e.g. `manuscript_zoning2026.qmd` in the `zoning2026/`
+> project directory basename (e.g. `manuscript_myproject.qmd` in the `myproject/`
 > project). Examples below use `manuscript_<project>.qmd` as a placeholder. See
 > `pipeline-precedence.md` for the canonical statement of this convention.
 
@@ -209,7 +209,7 @@ asserted that a clean render made all numbers consistent "by construction." That
 was wrong, and it was wrong in the way that matters: it told every agent and every
 reviewer that the render was sufficient proof, so no project built the check.
 
-POGM4 is the worked example. It scored 100/100 on its own quality gate while
+A project in this pipeline is the worked example. It scored 100/100 on its own quality gate while
 carrying 24 hardcoded values in prose, four of them provably wrong and each
 contradicted by a table on the same page — an NL coefficient described as
 "significant" beside a live p of 0.759, "all p>0.20" where the estimate gives 0.33,
@@ -315,7 +315,7 @@ Invoked when the reviewed artifact is `manuscript_<project>.qmd` and this rule i
 | `quarto-empirical.md` (this rule) | **Required** — pipeline architecture, caching, data integrity, single source of ground truth |
 | `quarto-pdf.md` | **Required** — `pdf:` format block + kableExtra/figure/citation mechanics for the canonical PDF output |
 | `quarto-word.md` | Optional — `docx:` format block + flextable/CSL mechanics, only if Word secondary output is needed |
-| `registry-verification-gate.md` | **Legacy only** — registry-pattern projects (e.g. zoning2026) |
+| `registry-verification-gate.md` | **Legacy only** — registry-pattern projects |
 | `working-paper-format.md` (clo-author) | **Legacy only** — LaTeX-first projects |
 
 `quarto-pdf.md` and `quarto-word.md` are **format-reference** docs for the two output
