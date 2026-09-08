@@ -519,3 +519,81 @@ log line, just nothing happening.
 the thing checked did nothing. Where a check can be red-tested by injecting the
 failure it is supposed to catch, red-test it — the one check I did not red-test first
 was the one that was broken.
+
+### Addendum (same session) — cross-session exchange, and a severity correction
+
+Recorded before clearing the window. Everything below existed only in cross-session
+messages or in conversation; none of it was durable.
+
+**A defect I introduced this morning and deliberately did NOT fix.**
+`skills/revise/SKILL.md:80` names `` `templates/response-letter.md` ``. The file is
+`skills/revise/templates/response-letter.qmd` — I converted it from `.tex` during the
+fork (see the judgment calls above) and never updated the pointer. One-line fix:
+
+```
+-| Response letter | `templates/response-letter.md` | Step 6 — response-letter boilerplate |
++| Response letter | `templates/response-letter.qmd` | Step 6 — response-letter boilerplate |
+```
+
+Left unfixed on purpose: `research-62` is running a referential-integrity audit over
+exactly these paths, and a file changing under it would move its numbers mid-sweep. It
+is flagged to that session as mine. **If the audit does not land it, it is still open.**
+
+**Severity correction to that audit — the number driving the current re-scope.**
+`research-62` reported "68 of 108 internal file paths named in shipped files do not
+exist," including 55 nonexistent `templates/...` paths, and concluded all 55 resolve to
+nothing in all six repos because a paper repo's `.claude/` has no top-level `templates/`.
+
+Independently measured on `main` @ `999f3f9`, distinct paths matching
+`templates/[A-Za-z0-9_/-]*\.md`, `zotpilot-skills/` excluded:
+
+| Where named | Distinct | Finding |
+|---|---|---|
+| `skills/` | 45 | **44 resolve** as `skills/<that skill>/templates/<name>` — skill-relative and correct. 1 broken (`response-letter.md`, above) |
+| `agents/` + `rules/` | 26 | 3 resolve at root `templates/`; **19 name a file that exists under some skill's `templates/` but is unreachable from an agent or rule** (pointer-precision, not missing capability); 4 resolve nowhere |
+
+The inference that no `.claude/templates/` implies the skill paths dangle does not hold:
+`.claude/skills/submit` is a symlink to the canonical skill **directory**, which contains
+`templates/`. Verified in BRI — no top-level `.claude/templates/`, and every per-skill
+template present through the skill symlinks.
+
+So the surface splits three ways rather than one: **~44 false positives · ~19 real but
+cosmetic · ~12 genuinely absent.** The 12 are the 4 dead templates, plus
+`scripts/generate_dashboard.py` and `scripts/generate_html_report.py` (confirmed absent,
+named in 7 and 5 shipped files), plus the six missing `references/*.md`. Those are real
+and were confirmed independently.
+
+*"68 missing files" implies rebuilding capability across nearly every agent; "12 missing,
+19 mis-pathed, 44 fine" is a smaller and differently-shaped job.* Sent to `research-62`
+as check-me rather than correction — denominators may differ definitionally (occurrences
+vs distinct, non-`.md` paths), but the resolution-base disagreement accounts for 44 and
+is not definitional. **Unresolved at window close: that session had not replied.**
+
+**Decision D-D — ruled, then overtaken.** The shared checkout was found on
+`fix/critic-dispatch`, so all six papers were running an in-progress branch through their
+symlinks (BRI's `rules/quality.md` verified byte-identical to the branch tip).
+`check_install.sh` does not detect this — it emits only a lock WARN that reads like
+ordinary tip drift. Drew ruled *accept knowingly + add a branch check*; the recommended
+shape is FAIL unless the checkout is on `main` or detached at the project's lock SHA,
+with an explicit opt-out env var downgrading to WARN, so "accept knowingly" is something
+someone must say rather than a silent default. **Not implemented** — Drew then stood this
+session down, and `research-62` returned the checkout to `main`, making it moot for now.
+The check remains unwritten and the gap remains real for the next person who checks out a
+branch here.
+
+**Cross-session state at window close.** `research-62` owns the pipeline work: its
+critic-dispatch plan is paused in favour of an audit-first re-scope, its `/discover` edit
+is in `stash@{0}`, and `check_fork.sh` criteria 9a/9b live only on `fix/critic-dispatch`
+at `cd1d47a`, unmerged. Checkout on `main`, clean, six repos verified resolving.
+`pogm4-91` is on the POGM4 manuscript rewrite and is not involved.
+
+**Method lessons, all earned the hard way this session.** Four instances of the same
+failure, in which *the green result was the bug*: `check_install.sh`'s `! -path '*/.*'`
+matching nothing; criterion 9a written against an assumed surface; my `grep $SHIP` scan
+returning 0 because **zsh does not word-split unquoted parameters** (bash does — the six
+directories collapsed into one nonexistent path and grep's error went to `/dev/null`);
+and my orchestrator count of 34, which searched the stem `orchestrat` and swept in
+"orchestration"/"orchestrated" while I labelled it `orchestrator` — the real figure is 30.
+Red-test every check by injecting the failure it exists to catch. A number is not evidence
+until you have read what produced it. And when a path assertion fails, question the
+resolution base before the file.
