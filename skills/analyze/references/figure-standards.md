@@ -1,6 +1,12 @@
 # Figure Standards
 
-Publication-quality figures for economics papers. All figures must be directly includable in the LaTeX manuscript without manual editing.
+Publication-quality figures for economics papers. Figures are produced by **chunks
+in `manuscript_<project>.qmd`** — Quarto sizes and embeds them. Nothing is
+`ggsave()`d to disk and re-included by hand.
+
+**Mechanics live in the format rules:** `.claude/rules/quarto-pdf.md` (vector,
+automatic) and `.claude/rules/quarto-word.md` (PNG at `dpi: 200`,
+`fig-width: 6.5`). This file covers the design judgment those rules do not.
 
 ---
 
@@ -8,12 +14,22 @@ Publication-quality figures for economics papers. All figures must be directly i
 
 - **Never add titles or subtitles inside ggplot** -- use `labs(title = NULL, subtitle = NULL)`
 - **Figure information goes in two places:**
-  1. **File name** -- descriptive, e.g., `fig1_hispanic_enrollment_ascm.pdf`
-  2. **LaTeX `\caption{}`** -- the authoritative title, numbered and editable without re-running R
+  1. **Chunk label** -- descriptive and `fig-` prefixed, e.g. `fig-enrollment-event-study`
+  2. **`#| fig-cap:`** -- the authoritative title, numbered by Quarto and editable
+     without re-running the chunk
 - **Panel labels are the exception** -- "Panel A: Employment" inside multi-panel figures (via `patchwork`, `cowplot`, etc.) is fine since they identify sub-panels, not the whole figure
 - **Axis labels must be publication-quality** -- "Employment Rate" not "emp_rate". Clean labels stay in the figure; titles and context go in the caption
 - **Use serif fonts** -- figures should match the paper's body text
-- **Output PDF for figures** -- vector graphics for LaTeX. Use `ggsave("fig.pdf")`. PNG only for raster content (maps, photos)
+- **Show all years on the x-axis** when the panel spans ~20 years or fewer --
+  `scale_x_continuous(breaks = min_year:max_year)`. Only thin the labels when they
+  actually overlap (roughly >20 ticks)
+- **Color-independent design** -- the figure must be readable in grayscale.
+  Pair color with `shape` and `linetype` so series stay distinguishable when a
+  referee prints it
+- **Never `ggsave()` to a file and include it by hand.** Let Quarto render the
+  chunk: it emits vector for PDF and PNG for Word automatically. Quarto cannot
+  embed a PDF figure in a Word document — a hand-saved `fig.pdf` is exactly the
+  bug this rule exists to prevent
 
 ---
 
@@ -84,22 +100,24 @@ scale_color_manual(values = c("#1b9e77", "#d95f02", "#7570b3"))
 
 ---
 
-## Figure Width
+## Figure Size
 
-- **Single-panel:** `width=0.8\textwidth` in LaTeX, `width = 6, height = 4` in ggsave
-- **Side-by-side panels:** `width=0.48\textwidth` each in LaTeX
-- **Full-width landscape:** use `\begin{landscape}` environment
+Set per chunk, not per file:
 
-In R:
 ```r
-ggsave(
-  here("paper", "figures", "fig_event_study.pdf"),
-  plot = p,
-  width = 6,
-  height = 4,
-  device = cairo_pdf  # Better font embedding
-)
+#| label: fig-event-study
+#| fig-cap: "Event study estimates of the treatment effect. Points are period-specific
+#|   coefficients with 95% confidence intervals; the dashed line marks treatment onset.
+#|   Pre-treatment coefficients are not distinguishable from zero. Source: [data source]."
+#| fig-width: 6.5
+#| fig-height: 4
 ```
+
+- `fig-width: 6.5` matches the text width of a Word page with 1-inch margins —
+  never exceed it for a full-width figure
+- Single panel: 6.5 x 4. Side-by-side: build one figure with `patchwork`, do not
+  emit two and place them manually
+- A figure that genuinely needs landscape is usually two figures
 
 ---
 
@@ -132,64 +150,17 @@ rdplot(y = df$outcome, x = df$running_var, c = cutoff,
 
 ---
 
-## Export
+## Captions (INV-2)
 
-```r
-# PDF for LaTeX inclusion (vector graphics)
-ggsave(
-  here("paper", "figures", "fig_main.pdf"),
-  plot = p,
-  width = 6, height = 4
-)
+Every caption answers three things, in this order:
 
-# PNG only for raster content
-ggsave(
-  here("paper", "figures", "map_treatment.png"),
-  plot = p_map,
-  width = 8, height = 6, dpi = 300
-)
-```
+- **What is shown** — the estimand, the sample, the units
+- **How to read it** — what the bands are, what the reference line marks
+- **Where it came from** — the data source
 
----
-
-## File Naming
-
-```
-figures/
-  descriptive/
-    fig_histogram_outcome.pdf
-    fig_time_series_treatment.pdf
-  estimation/
-    fig_event_study_main.pdf
-    fig_coefplot_heterogeneity.pdf
-    fig_rdd_main.pdf
-  robustness/
-    fig_placebo_test.pdf
-    fig_sensitivity_bandwidth.pdf
-```
-
-Pattern: `fig_{description}.pdf`
-
----
-
-## LaTeX Inclusion
-
-```latex
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/estimation/fig_event_study_main.pdf}
-\caption{Event study estimates of treatment effect. The figure plots point estimates
-and 95\% confidence intervals for each period relative to treatment. The dashed
-vertical line marks treatment onset. Pre-treatment coefficients are not statistically
-different from zero, consistent with parallel trends. Source: [data source].}
-\label{fig:event_study}
-\end{figure}
-```
-
-Key elements of figure captions (INV-2):
-- What is shown
-- How to read it
-- Data source
+The caption lives in `#| fig-cap:`, never inside the plot. It is the one part of
+a figure a reader can consult without re-running anything, so it carries the
+context the axes cannot.
 
 ---
 
@@ -197,10 +168,12 @@ Key elements of figure captions (INV-2):
 
 | Pattern | Reason |
 |---------|--------|
-| `ggtitle()` or `labs(title = "...")` | Titles go in LaTeX `\caption{}` (INV-12) |
+| `ggtitle()` or `labs(title = "...")` | Titles go in `#\| fig-cap:` (INV-12) |
 | `plt.title()` in matplotlib | Same reason |
 | Default ggplot theme (gray background) | Use `theme_minimal` or custom theme |
 | Red/green only color schemes | Not colorblind-friendly |
-| JPG format | Lossy compression; use PDF for vector, PNG for raster |
+| `ggsave()` inside a manuscript chunk | Quarto emits the figure; saving it to disk produces a stale duplicate and breaks Word output |
+| Chunk label without a `fig-` prefix | Quarto will not number or cross-reference it |
+| Hardcoded "Figure 2" in prose | Use `@fig-label` |
 | Axis labels with underscores | Human-readable labels required |
 | Legend inside plot area (overlapping data) | Use `legend.position = "bottom"` |
