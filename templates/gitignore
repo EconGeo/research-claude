@@ -55,3 +55,11 @@ __pycache__/
 
 # ── Editor / OS ──────────────────────────────────────────────────────────────
 .DS_Store
+
+# Pipeline: linked from research-claude, not project content.
+# Run ./bootstrap-pipeline.sh to materialize.
+.claude/skills/
+.claude/agents/
+.claude/rules/
+.claude/hooks/
+/.pipeline/
