@@ -260,3 +260,81 @@ the six live paper repos) is gated on it and has NOT been run.**
   shipped instruction content.
 - **`templates/response-letter.tex` converted to `.qmd`.** A LaTeX-only response letter
   does not belong in a pipeline whose output contract is `quarto render`.
+
+### Task 18 — POGM4 converted on a branch, deliberately NOT merged
+
+`~/Research/POGM4` branch `pipeline-symlink` (b7dd786) holds the conversion. The
+working tree was returned to `main` and is byte-identical to how it was found, apart
+from the untracked rollback dir `.claude.bak.20260908/`. The other five repos were not
+touched.
+
+**Verified on the live repo:** `quarto render` exit 0 · `prose_number_check.py` exit 0
+(95 literals, all allowlisted) · no dangling symlinks · all six project overrides
+remain real files.
+
+**Why unmerged.** The plan gates Task 18 on Task 17 Step 5 — confirming in a live
+interactive session that Claude Code discovers a *per-item* symlinked skill. No script
+can make that check, and it was not made. Merging six paper repos onto an unverified
+discovery mechanism is not a call to make unattended.
+
+### What Task 18 found that the plan did not anticipate
+
+1. **Step 2 does not diff `hooks/` or `agents/`, but Step 3 deletes them.** POGM4 had
+   four project-specific hooks (`context-monitor.py`, `log-reminder.py`, `notify.sh`,
+   `verify-reminder.py`) and two locally-corrected canonical ones. Following the plan
+   literally would have destroyed all six. **Add `hooks` and `agents` to the Step 2
+   diff before converting any other repo.**
+
+2. **Both corrected hooks fix real API errors that shipped to every project.**
+   `post-compact-restore.py` matched `SessionStart` on `type="compact"` — the field is
+   `source=` — so it never fired. `pre-compact.py` signalled with exit code 2 instead of
+   the exit-0-plus-JSON block contract. Upstreamed (966bb9b).
+
+3. **The plan's `.gitignore` block silently drops a project's own overrides.** It uses
+   `.claude/skills/`, and git cannot re-include a path inside an excluded *directory*,
+   so any negation is dead. POGM4's two local skills and four local hooks would have
+   vanished from the repo, and a coauthor's clone would be missing them. Fixed in the
+   project and in `templates/gitignore` (b7742c8): `/*` form plus explicit negations.
+
+### Before converting the remaining five
+
+Order per D11: NAR_settlement → zoning2026 → ESG → affordable_housing_2026 → BRI.
+
+| Repo | Watch out for |
+|---|---|
+| `NAR_settlement` | On branch `phase1-event-study`, **not** `main` — branch from there, not from main. Carries `rules/session-handoff.md`, which exists in no canonical tree and looks generalizable: it extends what `/checkpoint` must verify. It references `pipeline-precedence.md` and `workflow.md`, both now deleted, so it needs rewriting before upstreaming. Decide before converting. |
+| `zoning2026` | Carries `rules/ground-truth.md` — a RETIRED stub kept so inbound references do not dangle. Project-local; keep as a real file. **No `manuscript_*.qmd` at the repo root**, so the Step 6 render check needs a different target. |
+| `ESG` | Has the same four local hooks as POGM4 — shared across two projects, so consider upstreaming rather than keeping local in both. Manuscript is `manuscript.qmd`, which does not follow the `manuscript_<project>.qmd` convention. |
+| `affordable_housing_2026` | Clean; `manuscript_affordable_housing_2026.qmd` matches the convention. |
+| `BRI` | No `manuscript_*.qmd` at the repo root. |
+
+`humanize`, `verify-claims`, `seed-papers` and the `ztp-*` skills show as "only local"
+against `research-claude/skills/` but are **not** overrides — they come from the
+`ai-audit` submodule and `zotpilot-skills/`, both linked separately. Do not restore them
+as real files.
+
+### Runbook per repo
+
+```bash
+cd ~/Research/<project>
+git checkout -b pipeline-symlink            # from the repo's CURRENT branch
+cp -R .claude ".claude.bak.$(date +%Y%m%d)"
+
+# Step 2 — diff ALL FOUR, not just skills and rules
+for s in skills rules agents hooks; do
+  diff -rq ".claude/$s" ~/Academic/research-claude/$s 2>/dev/null | grep 'Only in .claude'
+done
+
+rm -rf .claude/skills .claude/agents .claude/rules .claude/hooks
+~/Academic/research-claude/apply.sh --project-dir "$PWD" --link --tip
+# restore genuinely local items from the backup as REAL files, then add a
+# !negation line for each in .gitignore
+git rm -r -q --cached .claude/skills .claude/agents .claude/rules .claude/hooks
+
+quarto render manuscript_*.qmd                                   # expect 0
+python3 .claude/scripts/prose_number_check.py manuscript_*.qmd   # expect 0
+find .claude -maxdepth 2 -type l ! -exec test -e {} \; -print    # expect empty
+```
+
+Then open a session in the project and confirm a linked skill is invocable before
+merging. That is the outstanding gate.
