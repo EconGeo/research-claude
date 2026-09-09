@@ -14,7 +14,7 @@
 #
 # Why this exists. Per-item symlinks (D9) propagate EDITS instantly but not
 # MEMBERSHIP: a file added upstream gets no link here until apply.sh runs again.
-# Nothing surfaced that, and POGM4 silently sat without rules/session-handoff.md
+# Nothing surfaced that, and one project silently sat without rules/session-handoff.md
 # for a day. Separately, five of six repos had their symlinks committed — gitignore
 # does not untrack what is already in the index — which hands a coauthor a clone
 # full of dangling machine-specific links. Both are invisible in normal use and

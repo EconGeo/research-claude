@@ -11,7 +11,8 @@ scan() {  # scan <label> <ERE> [dir...]
   local label="$1" pat="$2"; shift 2
   local hits present=() dirs=("$@"); [[ ${#dirs[@]} -eq 0 ]] && dirs=("${SHIP[@]}")
   local d; for d in "${dirs[@]}"; do [[ -d "$RC/$d" ]] && present+=("$d"); done
-  hits="$(cd "$RC" && grep -rInE "$pat" "${present[@]}" 2>/dev/null | grep -v 'residue:historical' )"
+  if [[ ${#present[@]} -eq 0 ]]; then echo "SKIP [$label] (no ship dirs present)"; return; fi
+  hits="$(cd "$RC" && grep -rInE "$pat" "${present[@]}" 2>/dev/null | grep -vE 'residue:(historical|prohibition)' )"
   if [[ -n "$hits" ]]; then echo "FAIL [$label]"; printf '%s\n' "$hits" | sed 's/^/    /'; fail=1
   else echo "PASS [$label]"; fi
 }
@@ -24,17 +25,36 @@ py() {  # py <script> [args] — run a python criterion, fold its exit into $fai
 }
 
 echo "── identity: nothing project-specific ships ──"
-scan project-identity 'POGM|SFPP|WRLURI|zoning2026|NAR_settlement|manuscript_quarto_word' "${SHIP[@]}" tests
-scan project-nouns    'JREPM|JRER|CoStar|[^a-z]zoning|WRLURI|[^A-Za-z]NAR[^A-Za-z]' agents skills rules hooks templates seeds scripts
-scan course-leak      'academic course materials|Beamer slides|TikZ Freshness'
+# Split into two scans (2026-09-08, carried forward from the pre-rewrite gate).
+#
+# Project IDENTITY must not appear anywhere, references/ included — a project
+# name in the shipped tree is the leak D5 exists to stop. It is also scanned
+# against tests/, so the shipped fixture stays generic too.
+#
+# Journal and data-vendor names are different. references/ holds per-user,
+# per-discipline TEMPLATES — discipline-cards.md and journal-profiles.md exist
+# precisely to name real journals and real data vendors, and ordinary
+# land-use terminology is not a leak either. Banning those tokens from
+# references/ would make it impossible to ship a discipline card at all,
+# which is a worse outcome than the risk it guards against. They remain
+# banned everywhere else shipped — agents/, skills/, rules/, hooks/,
+# templates/, seeds/ and scripts/ (this file included, which is why this
+# paragraph names none of them) — where a journal name IS a project leak.
+#
+# The `<!-- residue:prohibition -->` marker on the three scan lines below is
+# this file's one reserved use of that convention: it exempts a line that
+# NAMES a forbidden pattern in order to forbid it, never a line that uses one.
+scan project-identity 'POGM|SFPP|WRLURI|zoning2026|NAR_settlement|manuscript_quarto_word' "${SHIP[@]}" tests  # <!-- residue:prohibition -->
+scan project-nouns    'JREPM|JRER|CoStar|[^a-z]zoning|WRLURI|[^A-Za-z]NAR[^A-Za-z]' agents skills rules hooks templates seeds scripts  # <!-- residue:prohibition -->
+scan course-leak      'academic course materials|Beamer slides|TikZ Freshness'  # <!-- residue:prohibition -->
 
 echo "── structure ──"
 absent clo-author-submodule submodules/clo-author
 absent pipeline-precedence  rules/pipeline-precedence.md
 grep -q 'clo-author' "$RC/.gitmodules" 2>/dev/null && { echo "FAIL [gitmodules]"; fail=1; } || echo "PASS [gitmodules]"
 grep -q 'CLO_SKIP_SKILLS' "$RC/apply.sh" 2>/dev/null && { echo "FAIL [apply.sh]"; fail=1; } || echo "PASS [apply.sh]"
-contains cc-zoning-half agents/coder-critic.md 'Correctness Layer'
-contains cc-pogm-half   agents/coder-critic.md 'INV-23'
+contains cc-correctness-half agents/coder-critic.md 'Correctness Layer'
+contains cc-invariant-half   agents/coder-critic.md 'INV-23'
 
 echo "── D1 inverted: the registry, lifecycle and governance are back; the agent is not ──"
 for p in rules/registry.yaml rules/permissions.md rules/lifecycle.md rules/meta-governance.md \
@@ -60,11 +80,12 @@ py pipeline.py registry check    # prints PASS/FAIL for registry-complete, regis
 
 echo "── seeds and shipped scripts ──"
 if grep -rq 'quarto-preamble\.tex' "$RC/rules" && [[ ! -f "$RC/seeds/quarto-preamble.tex" ]]; then
-  echo "FAIL [seeds-complete] rules require templates/quarto-preamble.tex but seeds/ does not ship it"; fail=1
+  echo "FAIL [seeds-complete] rules require seeds/quarto-preamble.tex but seeds/ does not ship it"; fail=1
 else echo "PASS [seeds-complete]"; fi
 if [[ -f "$RC/scripts/SHIPPED" ]]; then
-  while read -r s; do [[ -z "$s" || -f "$RC/scripts/$s" ]] || { echo "FAIL [scripts-manifest] $s listed but absent"; fail=1; }; done < "$RC/scripts/SHIPPED"
-  echo "PASS [scripts-manifest]"
+  manifest_ok=true
+  while read -r s; do [[ -z "$s" || -f "$RC/scripts/$s" ]] || { echo "FAIL [scripts-manifest] $s listed but absent"; fail=1; manifest_ok=false; }; done < "$RC/scripts/SHIPPED"
+  [[ "$manifest_ok" == true ]] && echo "PASS [scripts-manifest]"
 else echo "FAIL [scripts-manifest] scripts/SHIPPED missing"; fail=1; fi
 
 echo "── fixture ──"
