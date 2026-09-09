@@ -41,10 +41,11 @@ A talk has visual rhythm: dense slides (data, results) alternate with sparse sli
 - Minimal design, high contrast, projection-ready
 - Large type: never below the theme's body size; slide titles clearly larger
 - Figures full-width — give them a dedicated slide
+- Reuse manuscript figures and tables with `{{< embed <manuscript>#fig-label >}}` — the **bare filename** (e.g. `manuscript_<project>.qmd#fig-trends`), never a `../`-relative path, which fails at render; never re-estimate in the talk. This works because `talks/<manuscript filename>` is a relative symlink to `../<manuscript filename>` — `/talk` creates it (via `python3 .claude/scripts/pipeline.py manuscript`) before dispatching you. If it's missing, stop and report rather than embedding `../<manuscript>` directly.
 - Tables simplified for projection: max 4-5 columns, highlight the key coefficient
 - Backup slides in a final `# Appendix` section — anticipate 3-5 likely questions
 
-- Use the project theme at `talks/custom.scss` — do NOT overwrite it
+- Use the project theme at `talks/custom.scss` if the project has one — do NOT overwrite it. It is optional project content a project may add; this skill does not ship or require it.
 - Use `::: {.incremental}` for progressive reveal
 - Use `auto-animate=true` for equation buildup
 - Use `:::: {.columns}` for side-by-side layouts
@@ -57,7 +58,8 @@ A talk has visual rhythm: dense slides (data, results) alternate with sparse sli
 
 ## Output
 
-- `talks/[format]_talk.qmd` + `talks/custom.scss`
+- `talks/[format]_talk.qmd`, scaffolded from `.claude/skills/talk/templates/quarto-scaffold.qmd`
+- `talks/custom.scss` only when the project wants a custom theme beyond `default` — optional, project content, not shipped
 
 ## What You Do NOT Do
 

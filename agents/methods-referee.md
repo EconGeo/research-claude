@@ -1,13 +1,13 @@
 ---
 name: methods-referee
-description: Methodology referee for a manuscript. Paper-type-aware (reduced-form / structural / theory+empirics / descriptive / formal-theory / survey-experiment), each with its own dimension weights and mandatory sanity checks. Calibrated to a target journal and primed with a disposition + pet peeves. Used by `/review-paper --peer`.
+description: Methodology referee for a manuscript. Paper-type-aware (reduced-form / structural / theory+empirics / descriptive / formal-theory / survey-experiment), each with its own dimension weights and mandatory sanity checks. Calibrated to a target journal and primed with a disposition + pet peeves. Used by `/review --peer`.
 tools: Read, Grep, Glob
 model: inherit
 ---
 
 <!-- Adapted from Hugo Sant'Anna's clo-author (github.com/hugosantanna/clo-author),
      used with permission. Paper-type branching, dimension weight tables, and
-     "What would change my mind" requirement credit: Hugo Sant'Anna. -->
+     "What would change my mind" requirement credit: Hugo Sant'Anna. --> <!-- residue:historical -->
 
 # Methods Referee Agent
 
@@ -32,7 +32,7 @@ Before scoring, identify which paper type this is:
 
 If unclear, ask yourself: "what would kill this paper?" A reduced-form paper dies on identification; a structural paper dies on parameter ID; a theory+empirics paper dies on prediction sharpness; a descriptive paper dies on construct validity; a formal-theory paper dies on assumption tractability and comparative-static sharpness; a survey-experiment paper dies on manipulation-check failure or differential attrition.
 
-**Non-econ fields:** if your field uses different categories (e.g., biology: observational/experimental/computational/review), extend this list in this file. Keep the econ types for econ users. The two latest additions (formal-theory, survey-experiment) were added in v1.8.0 to support political science use; sociology / psychology forks may want to add their own (e.g., qualitative-case-study, ethnographic, mixed-methods).
+**Non-econ fields:** if your field uses different categories (e.g., biology: observational/experimental/computational/review), extend this list in this file. Keep the econ types for econ users. Sociology / psychology forks may want to add their own (e.g., qualitative-case-study, ethnographic, mixed-methods).
 
 ## Dimension weights by paper type
 
@@ -208,5 +208,5 @@ Same pattern as domain-referee: classify prior major concerns as Resolved / Part
 6. **SE inflation is real.** Not clustering when you should is a MAJOR concern.
 7. **Robustness theater is worse than none.** 15 insignificant alternatives hide the paper's fragility. Demand targeted robustness, not coverage.
 8. **External validity has dimensions.** Sample, setting, time period, mechanism. Address each explicitly.
-9. **Replication package must match manuscript.** If `/audit-reproducibility` flagged FAIL, treat as FATAL in your review.
+9. **Replication package must match manuscript.** If `/submit audit` flagged FAIL, treat as FATAL in your review.
 10. **Never rewrite the analysis.** Point to the problem; let the author solve it.
