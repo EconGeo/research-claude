@@ -16,7 +16,15 @@ STATE_REL = Path("quality_reports") / "pipeline_state.json"
 LOG_REL = Path("quality_reports") / "agent_dispatch.jsonl"
 GATES = {"commit": (80, None), "pr": (90, None), "submission": (95, 80)}
 
-def now() -> str: return dt.datetime.now().isoformat(timespec="milliseconds")
+def now() -> str:
+    """UTC with an explicit offset, fixed width, millisecond precision.
+
+    `critic-ran` compares an `at` in pipeline_state.json (COMMITTED, shared across machines)
+    against one in agent_dispatch.jsonl (gitignored, local). A local-time string with no offset
+    would compare wrong across machines and would go backwards for an hour at every DST
+    fall-back. Uniform width and a constant `+00:00` suffix keep lexicographic order == chronological order.
+    """
+    return dt.datetime.now(dt.timezone.utc).isoformat(timespec="milliseconds")
 
 # ── registry & manuscript ───────────────────────────────────────────────────
 def find_registry(root: Path) -> Path:
@@ -168,11 +176,34 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
             if not ok: return False, f"render {tg.name} failed: {why}"
         return True, "render exit 0"
     if t == "critic-ran":
+        # Both halves of the lifecycle contract live here, because run_preds() AUTO-APPENDS this
+        # predicate for every agent with a critic. A hand-maintained `score` entry in `produces`
+        # can be forgotten for one agent; this cannot. The score half requires a score that
+        # POSTDATES the creator — a score from an earlier round reviewed earlier work.
         crit = rl.critic_of(ctx.reg, ctx.agent or "")
         if not crit: return True, "no critic declared"
         log = read_log(root); a, c = last_completion(log, ctx.agent), last_completion(log, crit)
-        ok = a is not None and c is not None and c > a
-        return ok, f"critic-ran: {crit} after {ctx.agent} (creator {a}, critic {c})"
+        if a is None or c is None or c <= a:
+            return False, f"critic-ran: {crit} has not completed after {ctx.agent} (creator {a}, critic {c})"
+        ran = f"critic-ran: {crit} after {ctx.agent}"
+        comp = (ctx.reg["agents"].get(ctx.agent or "") or {}).get("component")
+        if comp in (None, "none"):      # keyed on the COMPONENT, never on the agent's name
+            return True, ran + " (component none — nothing to score)"
+        sp = state_path(root)
+        if not sp.exists():
+            return False, ran + f", but there is no pipeline_state.json to carry the {comp} score (run `pipeline.py state init`)"
+        st = json.loads(sp.read_text())
+        at = ((st.get("components") or {}).get(comp) or {}).get("at")
+        if at is None:
+            if st.get("sections"):
+                return False, (ran + f", but {comp} is unscored: {len(st['sections'])} score(s) are recorded under "
+                               "`sections` (a section-scoped critic score), and a section draft does not close the "
+                               f"{ctx.agent} stage — record a {comp} score with no --scope")
+            return False, ran + f", but recorded no {comp} score"
+        if at <= a:
+            return False, (ran + f", but the {comp} score is from an earlier round: scored at {at}, "
+                           f"{ctx.agent} completed at {a} — re-score after the creator's last completion")
+        return True, ran + f", {comp} scored at {at} (creator {a}, critic {c})"
     if t == "prose-check":
         script = root / ".claude" / "scripts" / "prose_number_check.py"
         if not script.exists(): return False, "prose-check: .claude/scripts/prose_number_check.py not linked"

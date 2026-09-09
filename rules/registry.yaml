@@ -56,9 +56,6 @@ agents:
         glob: quality_reports/literature/*/frontier_map.md
       - type: path
         glob: quality_reports/literature/*/positioning.md
-      - type: score
-        component: literature
-        min: 0
     critic: lit-critic
     escalation_target: user
     component: literature
@@ -98,9 +95,6 @@ agents:
         glob: quality_reports/data-assessment/*/data_dictionary.md
       - type: path
         glob: quality_reports/data-assessment/*/access_instructions.md
-      - type: score
-        component: data
-        min: 0
     critic: explorer-critic
     escalation_target: user
     component: data
@@ -168,9 +162,6 @@ agents:
       - type: section
         file: quality_reports/strategy/*/strategy_memo.md
         heading: Threats
-      - type: score
-        component: strategy
-        min: 0
     critic: strategist-critic
     escalation_target: user
     component: strategy
@@ -215,9 +206,6 @@ agents:
       - type: path
         glob: quality_reports/theory/*/notation_glossary.md
       - type: render
-      - type: score
-        component: theory
-        min: 0
     critic: theorist-critic
     escalation_target: user
     component: theory
@@ -260,9 +248,6 @@ agents:
       - type: path
         glob: data/raw/data_manifest.md
       - type: render
-      - type: score
-        component: code
-        min: 0
     critic: coder-critic
     escalation_target: strategist-critic
     component: code
@@ -290,9 +275,6 @@ agents:
         min: 1
       - type: render
       - type: prose-check
-      - type: score
-        component: code
-        min: 0
     critic: coder-critic
     escalation_target: strategist-critic
     component: code
@@ -337,9 +319,6 @@ agents:
     produces:
       - type: render
       - type: prose-check
-      - type: score
-        component: manuscript
-        min: 0
     critic: writer-critic
     escalation_target: user
     component: manuscript

@@ -28,16 +28,32 @@ class TestRegistry(unittest.TestCase):
     def test_weights_agree_with_quality_md(self):
         self.assertEqual(rl.weights_report(self.reg, (ROOT / "rules" / "quality.md").read_text()), [])
     def test_parse_agree(self): self.assertIn(rl.parse_agree(ROOT), ("PASS", "SKIP"))
-    def test_scoreable_creators_produce_their_own_score(self):
-        """post must require the critic's recorded score, not just its dispatch-log entry.
-        `min: 0` reads as 'a score has been recorded at all'. storyteller is component `none`,
-        so it carries no score predicate; `critic-ran` still binds its critic."""
-        want = {"lit-position": "literature", "explorer": "data", "strategist": "strategy",
-                "theorist": "theory", "data-engineer": "code", "coder": "code", "writer": "manuscript"}
-        for a, comp in want.items():
-            got = [(p["component"], p["min"]) for p in self.reg["agents"][a]["produces"] if p["type"] == "score"]
-            self.assertEqual(got, [(comp, 0)], a)
-        self.assertEqual([p for p in self.reg["agents"]["storyteller"]["produces"] if p["type"] == "score"], [])
+    def test_every_predicate_renders_as_prose_not_its_bare_type(self):
+        """A missing `elif` in render_registry.pred() falls through to `else: s = t`, which
+        renders the bare type string into permissions.md, silently dropping the predicate's
+        component/threshold/glob. Nothing else catches it: `registry-rendered` only checks that
+        the file MATCHES the render, so it stays green over the degraded prose."""
+        import render_registry as rr
+        seen = set()
+        def walk(p, where):
+            t = p["type"]; seen.add(t)
+            s = rr.pred(p)
+            self.assertNotEqual(s, t, f"{where}: {t} renders as its bare type string")
+            self.assertFalse(s.startswith(t + " —"), f"{where}: {t} renders as its bare type string")
+            for q in (p.get("of") or []): walk(q, where + ".of")
+        for a, e in self.reg["agents"].items():
+            for k in ("requires", "produces"):
+                for j, p in enumerate(e[k] or []): walk(p, f"{a}.{k}[{j}]")
+        # Types the registry happens not to use today are still rendered if one is added later.
+        synthetic = {"fresh": {"type": "fresh"}, "critic-ran": {"type": "critic-ran"},
+                     "score": {"type": "score", "component": "code", "min": 80},
+                     "score-if-scored": {"type": "score-if-scored", "component": "code", "min": 80},
+                     "path": {"type": "path", "glob": "x/*.md"}, "render": {"type": "render"},
+                     "prose-check": {"type": "prose-check"}, "chunk": {"type": "chunk", "label_glob": "t-*", "min": 1},
+                     "section": {"type": "section", "file": "manuscript", "heading": "H"},
+                     "any_of": {"type": "any_of", "of": [{"type": "path", "glob": "x/*.md"}]}}
+        self.assertEqual(set(synthetic), rl.PRED_TYPES, "a new predicate type needs a synthetic case here")
+        for t in rl.PRED_TYPES - seen: walk(synthetic[t], f"synthetic {t}")
     def test_score_if_scored_needs_component_and_min(self):
         probs = []
         rl._check_pred({"type": "score-if-scored"}, "x", probs)

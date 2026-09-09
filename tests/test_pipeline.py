@@ -48,15 +48,49 @@ class TestPredicates(FixtureCase):
         run("state", "record-score", "code", "85", "--critic", "coder-critic", "--report", "r.md", root=self.t)
         rc, out = run("pre", "writer", root=self.t); self.assertEqual(rc, 0, out)   # render runs here (fixture renders)
     def test_post_coder_needs_critic(self):
+        """`critic-ran` carries both halves of the contract, and reports its three failure
+        states distinctly: critic never ran / ran but scored nothing / score predates."""
         run("state", "init", root=self.t)
         self.log("coder")
-        rc, out = run("post", "coder", root=self.t); self.assertEqual(rc, 1); self.assertIn("critic-ran", out)
+        rc, out = run("post", "coder", root=self.t)
+        self.assertEqual(rc, 1); self.assertIn("has not completed after coder", out)
         time.sleep(0.01); self.log("coder-critic")
-        # both halves of the lifecycle.md contract: the critic's completion in the dispatch
-        # log AND its score in the state file. A logged-but-unscored critic must not pass.
-        rc, out = run("post", "coder", root=self.t); self.assertEqual(rc, 1, out); self.assertIn("code score", out)
+        rc, out = run("post", "coder", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("recorded no code score", out)
         run("state", "record-score", "code", "85", "--critic", "coder-critic", "--report", "r.md", root=self.t)
         rc, out = run("post", "coder", root=self.t); self.assertEqual(rc, 0, out)
+
+    def test_post_coder_rejects_a_score_that_predates_the_creator(self):
+        """The staleness hole: a `code` score recorded BEFORE coder ran reviewed earlier work.
+        Sequence: init → record-score → log coder → log coder-critic → post coder."""
+        run("state", "init", root=self.t)
+        run("state", "record-score", "code", "85", "--critic", "coder-critic", "--report", "r.md", root=self.t)
+        time.sleep(0.01); self.log("coder")
+        time.sleep(0.01); self.log("coder-critic")
+        rc, out = run("post", "coder", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("from an earlier round", out)
+        # re-scoring after the creator's completion closes the round
+        run("state", "record-score", "code", "85", "--critic", "coder-critic", "--report", "r.md", root=self.t)
+        rc, out = run("post", "coder", root=self.t); self.assertEqual(rc, 0, out)
+
+    def test_component_none_skips_the_score_half(self):
+        """storyteller has a critic but `component: none`. The skip is keyed on the COMPONENT,
+        so a future creator without a component inherits it; `critic-ran` still binds the log."""
+        run("state", "init", root=self.t)
+        self.log("storyteller"); time.sleep(0.01); self.log("storyteller-critic")
+        rc, out = run("post", "storyteller", root=self.t)      # fails on talks/*, not on the score
+        self.assertIn("ok      critic-ran: storyteller-critic after storyteller (component none", out)
+
+    def test_section_only_draft_names_the_sections_case(self):
+        """A section-scoped score lands in state['sections'], so `post writer` fails — but it
+        must not read as 'the critic never ran'."""
+        run("state", "init", root=self.t)
+        run("state", "record-score", "manuscript", "88", "--critic", "writer-critic", "--report", "r.md",
+            "--scope", "section:Introduction", root=self.t)
+        self.log("writer"); time.sleep(0.01); self.log("writer-critic")
+        rc, out = run("post", "writer", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("`sections`", out); self.assertIn("does not close the writer stage", out)
     def test_post_strategist_sections(self):
         d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)
         (d / "strategy_memo.md").write_text("# Memo\n## Estimand\n## Specification\n## Assumptions\n")

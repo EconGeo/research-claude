@@ -17,7 +17,8 @@ def pred(p) -> str:
     elif t == "score-if-scored": s = f"{p['component']} score ≥ {p['min']} if the component has been scored"
     elif t == "fresh":   s = "rendered output fresh"
     elif t == "render":  s = "`quarto render` exit 0" + (f" for `{p['file']}`" if p.get("file") else "")
-    elif t == "critic-ran": s = "paired critic completed after the creator"
+    elif t == "critic-ran": s = ("paired critic completed after the creator, **and** the creator's component "
+                                 "carries a score recorded after that completion (no component: log only)")
     elif t == "prose-check": s = "`prose_number_check.py` exit 0"
     elif t == "chunk":   s = f"≥{p['min']} chunk(s) labelled `{p['label_glob']}`"
     elif t == "any_of":  s = "any of: " + "; ".join(pred(q) for q in p["of"])
@@ -43,6 +44,11 @@ def render(reg) -> str:
         for p in e["requires"]: L.append(f"  - {pred(p)}")
         L.append("- **PRODUCES:**")
         for p in e["produces"]: L.append(f"  - {pred(p)}")
+        # `critic-ran` is auto-appended by pipeline.py's run_preds() and is never declared in the
+        # YAML, so without this it is the one gate that binds every creator and appears nowhere in
+        # the rendered contract. Render it where it is evaluated.
+        if e["critic"] not in (None, "none"):
+            L.append(f"  - {pred({'type': 'critic-ran'})} — *appended by `post`, not declared*")
         L += [f"- **CRITIC:** {e['critic']}", f"- **ESCALATION_TARGET:** {e['escalation_target']}",
               f"- **QUALITY_WEIGHT:** {e['quality_weight']} ({e['component']})" + (f" — scored under {e['scored_under']}" if e.get("scored_under") else ""),
               f"- **CONDITIONAL:** {'yes' if e['conditional'] else 'no'}",

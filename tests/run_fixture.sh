@@ -34,12 +34,16 @@ run state-init            python3 "$RC/scripts/pipeline.py" --root "$T" state in
 run state-valid           python3 "$RC/scripts/pipeline.py" --root "$T" state validate
 run registry-check        python3 "$RC/scripts/pipeline.py" --root "$RC" registry check
 expect_fail pre-writer-red   python3 "$RC/scripts/pipeline.py" --root "$T" pre writer
-run         record-code      python3 "$RC/scripts/pipeline.py" --root "$T" state record-score code 85 --critic coder-critic --report quality_reports/reviews/coder-critic_fixture.md
-run         pre-writer-green python3 "$RC/scripts/pipeline.py" --root "$T" pre writer
+# The score must be recorded AFTER the creator's completion, or `critic-ran` rejects it as a
+# score from an earlier round. Recording it first — as this sequence used to — made the harness
+# itself an instance of the staleness bug it is supposed to catch.
 run         log-coder        python3 "$RC/scripts/pipeline.py" --root "$T" log coder
 expect_fail post-coder-red   python3 "$RC/scripts/pipeline.py" --root "$T" post coder
 run         log-coder-critic bash -c "sleep 1; python3 '$RC/scripts/pipeline.py' --root '$T' log coder-critic"
+expect_fail post-coder-unscored-red python3 "$RC/scripts/pipeline.py" --root "$T" post coder
+run         record-code      python3 "$RC/scripts/pipeline.py" --root "$T" state record-score code 85 --critic coder-critic --report quality_reports/reviews/coder-critic_fixture.md
 run         post-coder-green python3 "$RC/scripts/pipeline.py" --root "$T" post coder
+run         pre-writer-green python3 "$RC/scripts/pipeline.py" --root "$T" pre writer
 expect_fail conflicts-red    python3 "$RC/scripts/pipeline.py" --root "$T" conflicts coder writer
 run         score            python3 "$RC/scripts/pipeline.py" --root "$T" score
 run render                bash -c "cd '$T' && quarto render manuscript_fixture.qmd >/dev/null 2>&1"
