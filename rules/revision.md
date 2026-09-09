@@ -23,7 +23,7 @@ Referee reports arrive (real, not simulated)
         ├── NEW ANALYSIS → Coder → coder-critic → Writer updates
         ├── CLARIFICATION → Writer → writer-critic
         ├── DISAGREE → User decides → diplomatic response drafted
-        └── MINOR → Writer
+        └── MINOR → Writer → writer-critic
         │
         ▼
    Revised paper → writer-critic → pipeline.py post writer
