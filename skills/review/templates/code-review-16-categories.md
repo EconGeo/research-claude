@@ -8,7 +8,7 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 
 **Before running categories:**
 
-- Read `.claude/rules/content-invariants.md` -- enforce INV-13 through INV-19. Cite invariant numbers (e.g., "violates INV-16") in report alongside deductions.
+- Read `.claude/rules/content-invariants.md` -- enforce INV-11, INV-13 through INV-19, INV-23, INV-24. Cite invariant numbers (e.g., "violates INV-16") in report alongside deductions.
 - Identify the paper type (reduced-form, structural, theory+empirics, descriptive) from the strategy memo or the code itself. This determines which checks apply.
 
 ---
@@ -21,7 +21,7 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 - Any silent deviations?
 
 ### 2. Paper-to-Code Naming Map
-- Does a naming map exist (in `01_setup.R` or `results_summary.md`)?
+- Does a naming map exist (in the `setup` chunk comment block)?
 - Do code variable names match the paper notation consistently?
 - Are all key parameters traceable from paper equation to code variable?
 
@@ -58,15 +58,14 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 
 ## Code Quality (Categories 5-16)
 
-### 5. Project Layout
-- Numbered script structure (`00_master.R` through `0N_*.R`)?
-- Master script runs everything in sequence?
-- Function files in `functions/` directory, one function per file?
-- File names match function names?
+### 5. Manuscript Layout
+- One `setup` chunk, `cache: false`, first; `execute: cache: true` in YAML?
+- Every chunk labelled; labels follow `build-*`, `estimate-*`, `robustness-*`, `tbl-*`, `fig-*`?
+- The dependency DAG documented in the setup chunk matches the `dependson` links?
 
-### 6. Script Headers
-- Every script has: purpose, inputs, outputs, paper section reference?
-- Clear execution order documented?
+### 6. Chunk Headers
+- Wrangling chunks carry `cache.extra` on every raw file; estimation/table/figure chunks carry `dependson`?
+- Every raw file read has a manifest row (INV-24)?
 
 ### 7. Console Output Hygiene
 - No `cat()`, `print()`, `sprintf()` for status -- use `message()`
@@ -74,10 +73,9 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 - No `rm(list = ls())` at top
 
 ### 8. Reproducibility
-- Single `set.seed()` at top, seed defined in `01_setup.R`
+- Single `set.seed()` at top, seed defined in the `setup` chunk
 - `library()` not `require()`
 - Relative paths only via `here()` -- no `setwd()`, no absolute paths
-- `dir.create(..., recursive = TRUE)` before writing
 - For parallel bootstrap: `future.seed = TRUE` or `RNGkind("L'Ecuyer-CMRG")`
 
 ### 9. Numerical Discipline
@@ -98,24 +96,19 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 - No `<<-` global assignment
 
 ### 11. Figure Quality
-- Consistent color palette across all figures
-- Custom ggplot2 theme (not default gray)
-- Serif font for paper figures (`family = "serif"`)
-- No titles inside ggplot -- titles go in LaTeX `\caption{}`
-- Readable axis labels (publication quality, not variable names)
-- PDF output via `ggsave()` with explicit dimensions
+- `fig-` label, `fig-cap` present (INV-2); no title inside the plot (INV-12)
+- `fig-width`/`fig-height` set; serif family for paper figures; consistent theme
+- No `ggsave()`, no `fig-format` override <!-- residue:prohibition -->
 
 ### 12. Table Quality
-- Bare `tabular` output (no `\begin{table}` wrapper)
-- Three-line format: `\toprule`, `\midrule`, `\bottomrule`
-- Human-readable variable labels
-- Significance stars match project standard (or disabled for AEA journals)
-- Standard errors labeled in notes
+- `tbl-` label, `tbl-cap`, `booktabs = TRUE`, notes (INV-1, INV-3)
+- Human-readable labels; stars per journal profile (INV-4); SE labelled in notes
+- `output = "kableExtra"` for PDF, `"flextable"` for Word — never both in one chunk
 
-### 13. RDS/Checkpoint Pattern
-- Every computed object has `saveRDS()`
-- Descriptive filenames, `file.path()` or `here()` for paths
-- **Missing RDS = HIGH severity** (downstream rendering fails)
+### 13. Cache and Freshness
+- Setup chunk `cache: false`; every other chunk `cache: true`
+- `cache.extra` uses `file.mtime()`; no chunk writes to disk (`saveRDS`, `write_csv` outside `scripts/acquire/`) <!-- residue:prohibition -->
+- **Stale cache after a raw-file change = HIGH severity**
 
 ### 14. Comment Quality
 - Comments explain WHY, not WHAT
@@ -176,7 +169,7 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 
 ## Standalone Mode
 
-When invoked via `/review [file.R]` or `/review --code`, run categories **5-16 only** (code quality + numerical discipline). No strategy memo comparison -- just code quality and best practices.
+When invoked via `/review --code <file under scripts/acquire/ or explorations/>`, run categories **5-16 only** (code quality + numerical discipline). No strategy memo comparison -- just code quality and best practices.
 
 ---
 
@@ -199,15 +192,15 @@ When invoked via `/review [file.R]` or `/review --code`, run categories **5-16 o
 ## Code Quality (12 categories)
 | Category | Status | Issues |
 |----------|--------|--------|
-| Project layout | OK/WARN/FAIL | [details] |
-| Script headers | OK/WARN/FAIL | [details] |
+| Manuscript layout | OK/WARN/FAIL | [details] |
+| Chunk headers | OK/WARN/FAIL | [details] |
 | Console output | OK/WARN/FAIL | [details] |
 | Reproducibility | OK/WARN/FAIL | [details] |
 | Numerical discipline | OK/WARN/FAIL | [details] |
 | Function design | OK/WARN/FAIL | [details] |
 | Figure quality | OK/WARN/FAIL | [details] |
 | Table quality | OK/WARN/FAIL | [details] |
-| RDS/checkpoint | OK/WARN/FAIL | [details] |
+| Cache and freshness | OK/WARN/FAIL | [details] |
 | Comment quality | OK/WARN/FAIL | [details] |
 | Error handling | OK/WARN/FAIL | [details] |
 | Prohibited patterns | OK/WARN/FAIL | [details] |

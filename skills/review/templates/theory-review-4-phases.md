@@ -96,7 +96,7 @@ _Runs after Phase 2. Checks whether the result says what it should say._
 - [ ] Same symbol = same object throughout theory + rest of paper
 - [ ] Different concepts get different symbols (no overloading)
 - [ ] Subscripts/superscripts (treatment group $g$, period $t$, cluster $c$) are consistent with the empirical sections
-- [ ] Bold/italic/calligraphic conventions match the paper's preamble / `preambles/header.tex`
+- [ ] Bold/italic/calligraphic conventions match the paper's preamble / `templates/quarto-preamble.tex`
 - [ ] Symbols match the `Notation Conventions` table in `.claude/references/domain-profile.md`
 
 ---
@@ -124,7 +124,7 @@ For each named result invoked, verify:
   - GMM: Hansen (1982); Hansen & Singleton (1982)
   - Bootstrap: Hall (1992); Horowitz (2001)
 
-Cross-check against `Bibliography_base.bib`.
+Cross-check against `references.bib`.
 
 ### 4B. Linkage to Empirical Claims
 - [ ] Each assumption maps to a plain-language counterpart usable in the empirical section
@@ -136,7 +136,7 @@ Cross-check against `Bibliography_base.bib`.
 - [ ] Proof strategy is stated upfront (one sentence)
 - [ ] Subclaims are labeled and the argument can be followed without reconstructing it from scratch
 - [ ] Appendix deferrals are cleanly forward-referenced
-- [ ] LaTeX compiles; theorem environments match project preamble
+- [ ] The manuscript renders; theorem environments match project preamble
 
 ---
 
