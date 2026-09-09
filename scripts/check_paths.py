@@ -4,6 +4,12 @@
 Every pipeline path in a shipped file must be `.claude/`-prefixed and resolve through the
 table in RESOLVE. Bare pipeline paths (templates/X, skills/X, ...) fail unless they are in
 the project-level exempt set. --list prints the full inventory (Stage 3 uses it).
+
+Repo-maintenance scripts are NOT scanned. A gate operates on the REPO ROOT, not on an
+installed project, so its bare `rules/registry.yaml` is the correct path and prefixing it
+with `.claude/` would break the gate. The set is derived from `scripts/SHIPPED`: anything
+under `scripts/` that the manifest does not ship is repo-maintenance. Shipped scripts ARE
+scanned — they get linked into projects and do need `.claude/`-prefixed paths.
 """
 from __future__ import annotations
 import argparse, re, sys
@@ -22,8 +28,11 @@ RESOLVE = {
 }
 EXEMPT_PREFIX = ("data/", "quality_reports/", "talks/", "explorations/", "scripts/acquire/",
                  "master_supporting_docs/", ".claude/state/", ".claude/settings", ".claude/pipeline.lock")
-EXEMPT_EXACT = {"templates/quarto-preamble.tex", "templates/word-reference.docx",
-                "templates/ai-use-log.md", "templates/apa.csl"}
+EXEMPT_EXACT = {"templates/quarto-preamble.tex", "templates/word-reference.docx",   # <!-- residue:prohibition -->
+                "templates/ai-use-log.md", "templates/apa.csl"}                    # <!-- residue:prohibition -->
+# The two marked lines above NAME project-level paths in order to exempt them. They exist in
+# an installed project and must never exist in this repo (the repo ships them from seeds/),
+# so audit_graph.py would otherwise report them as dangling for ever.
 # A path token: optional .claude/ prefix, one of the pipeline dirs, then a file-ish tail.
 PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])((?:\.claude/)?(?:skills|agents|rules|references|templates|scripts|hooks)/[A-Za-z0-9_./-]*[A-Za-z0-9_])")
 MARK = re.compile(r"<!-- residue:(prohibition|historical) -->\s*$")
@@ -40,6 +49,18 @@ def shipped_scripts(root):
     p = root / "scripts" / "SHIPPED"
     return {ln.strip() for ln in p.read_text().splitlines() if ln.strip()} if p.exists() else set()
 
+def repo_maintenance(root, shipped):
+    """Files under scripts/ that scripts/SHIPPED does not ship: the gates themselves.
+
+    Their pipeline paths are repo-root paths by construction, so the .claude/ rule does not
+    apply to them. Derived from the manifest so it stays correct when the manifest changes.
+    """
+    p = root / "scripts"
+    if not p.is_dir():
+        return set()
+    return {f for f in p.rglob("*")
+            if f.is_file() and str(f.relative_to(p)) not in shipped}
+
 def resolve(root, ref, shipped):
     tail = ref[len(".claude/"):]
     top, _, rest = tail.partition("/")
@@ -52,8 +73,11 @@ def resolve(root, ref, shipped):
 
 def check(root, dirs, warn=False):
     shipped = shipped_scripts(root)
+    maint = repo_maintenance(root, shipped)
     rows = []
     for f in files(root, dirs):
+        if f in maint:
+            continue
         text = f.read_text(errors="ignore")
         lines = text.split("\n")
         if lines and lines[0].strip() == "<!-- residue:historical -->":

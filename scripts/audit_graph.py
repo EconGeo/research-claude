@@ -5,6 +5,14 @@ Nodes: every shipped file. Edges: path references, agent dispatches, skill
 invocations, rule citations. Reports dangling edges and orphan nodes.
 Resolution is tried at BOTH the repo root and the referring file's directory,
 because skills legitimately reference their own bundled files skill-relative.
+
+Honours the repo's residue-marker convention, the same way check_refs.py and
+check_paths.py do: a line ending in '<!-- residue:prohibition -->' or
+'<!-- residue:historical -->' contributes no edges, and a file whose first line is
+exactly '<!-- residue:historical -->' is skipped in full. A gate NAMES ABSENT THINGS
+IN ORDER TO ASSERT THEIR ABSENCE; without the marker those assertions are dangling
+edges for ever. The marker is per-line, so a genuinely broken reference elsewhere in
+the same gate is still reported.
 """
 import re, sys, json, pathlib, collections
 
@@ -17,6 +25,10 @@ SHIP = ["agents","skills","rules","references","hooks","templates","scripts"]
 PATH_RE  = re.compile(r'(?:templates|references|scripts|agents|skills|rules|hooks|docs)/[A-Za-z0-9_./-]+\.(?:md|py|sh|json|R|qmd|tex|bib)')
 AGENT_RE = re.compile(r'\b([a-z][a-z-]*-critic|librarian|orchestrator|guide-writer|coder|writer|explorer|strategist|theorist|storyteller|verifier|editor|data-engineer|domain-referee|methods-referee)\b', re.I)
 SKILL_RE = re.compile(r'(?<![A-Za-z0-9_/-])/([a-z][a-z0-9-]{2,})\b')
+MARK     = re.compile(r'<!-- residue:(prohibition|historical) -->\s*$')
+# Generic pipeline vocabulary that AGENT_RE matches but that names no agent. check_refs.py
+# carries the same exemption for `worker-critic` (its DELETED_AGENTS scan, line 105).
+AGENT_NOT_A_NAME = {"worker-critic"}
 
 def shipped_files(base):
     out=[]
@@ -39,7 +51,12 @@ for f in files:
     try: txt = f.read_text(errors="ignore")
     except Exception: continue
     rel = f.relative_to(ROOT)
-    for t in set(PATH_RE.findall(txt)):
+    lines = txt.split("\n")
+    if lines and lines[0].strip() == "<!-- residue:historical -->":
+        continue
+    live = [ln for ln in lines if not MARK.search(ln)]
+    scanned = "\n".join(live)
+    for t in set(PATH_RE.findall(scanned)):
         hit = None
         for base in (CLAUDE, ROOT, f.parent):
             if (base/t).exists(): hit = base/t; break
@@ -47,9 +64,10 @@ for f in files:
             dangling_paths.append((str(rel), t))
         else:
             inbound[str(hit.resolve())] += 1
-    for a in {m.lower() for m in AGENT_RE.findall(txt)}:
+    for a in {m.lower() for m in AGENT_RE.findall(scanned)}:
+        if a in AGENT_NOT_A_NAME: continue
         agent_edges[a].add(str(rel))
-    for s in set(SKILL_RE.findall(txt)):
+    for s in set(SKILL_RE.findall(scanned)):
         if s in skills: skill_edges[s].add(str(rel))
 
 report = {
