@@ -2,3 +2,9 @@
 
 # Session reports live in docs/; never commit one at the repo root
 /SESSION_REPORT.md
+
+# Python bytecode (R-37, 2026-09-09): not ignored elsewhere in this repo, and running
+# tests/test_pipeline.py or tests/run_fixture.sh creates scripts/__pycache__/ and
+# tests/__pycache__/ that `git add` would otherwise sweep in.
+__pycache__/
+*.pyc

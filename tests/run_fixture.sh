@@ -33,7 +33,15 @@ run manuscript-declared   python3 "$RC/scripts/pipeline.py" --root "$T" manuscri
 run state-init            python3 "$RC/scripts/pipeline.py" --root "$T" state init
 run state-valid           python3 "$RC/scripts/pipeline.py" --root "$T" state validate
 run registry-check        python3 "$RC/scripts/pipeline.py" --root "$RC" registry check
-expect_fail pre-writer-red python3 "$RC/scripts/pipeline.py" --root "$T" pre writer      # no coder-critic score yet
+expect_fail pre-writer-red   python3 "$RC/scripts/pipeline.py" --root "$T" pre writer
+run         record-code      python3 "$RC/scripts/pipeline.py" --root "$T" state record-score code 85 --critic coder-critic --report quality_reports/reviews/coder-critic_fixture.md
+run         pre-writer-green python3 "$RC/scripts/pipeline.py" --root "$T" pre writer
+run         log-coder        python3 "$RC/scripts/pipeline.py" --root "$T" log coder
+expect_fail post-coder-red   python3 "$RC/scripts/pipeline.py" --root "$T" post coder
+run         log-coder-critic bash -c "sleep 1; python3 '$RC/scripts/pipeline.py' --root '$T' log coder-critic"
+run         post-coder-green python3 "$RC/scripts/pipeline.py" --root "$T" post coder
+expect_fail conflicts-red    python3 "$RC/scripts/pipeline.py" --root "$T" conflicts coder writer
+run         score            python3 "$RC/scripts/pipeline.py" --root "$T" score
 run render                bash -c "cd '$T' && quarto render manuscript_fixture.qmd >/dev/null 2>&1"
 run prose-check           python3 "$RC/scripts/prose_number_check.py" "$T/manuscript_fixture.qmd"
 
