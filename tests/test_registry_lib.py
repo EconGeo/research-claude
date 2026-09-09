@@ -28,6 +28,16 @@ class TestRegistry(unittest.TestCase):
     def test_weights_agree_with_quality_md(self):
         self.assertEqual(rl.weights_report(self.reg, (ROOT / "rules" / "quality.md").read_text()), [])
     def test_parse_agree(self): self.assertIn(rl.parse_agree(ROOT), ("PASS", "SKIP"))
+    def test_scoreable_creators_produce_their_own_score(self):
+        """post must require the critic's recorded score, not just its dispatch-log entry.
+        `min: 0` reads as 'a score has been recorded at all'. storyteller is component `none`,
+        so it carries no score predicate; `critic-ran` still binds its critic."""
+        want = {"lit-position": "literature", "explorer": "data", "strategist": "strategy",
+                "theorist": "theory", "data-engineer": "code", "coder": "code", "writer": "manuscript"}
+        for a, comp in want.items():
+            got = [(p["component"], p["min"]) for p in self.reg["agents"][a]["produces"] if p["type"] == "score"]
+            self.assertEqual(got, [(comp, 0)], a)
+        self.assertEqual([p for p in self.reg["agents"]["storyteller"]["produces"] if p["type"] == "score"], [])
     def test_score_if_scored_needs_component_and_min(self):
         probs = []
         rl._check_pred({"type": "score-if-scored"}, "x", probs)

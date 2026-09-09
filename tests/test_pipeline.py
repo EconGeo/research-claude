@@ -52,6 +52,10 @@ class TestPredicates(FixtureCase):
         self.log("coder")
         rc, out = run("post", "coder", root=self.t); self.assertEqual(rc, 1); self.assertIn("critic-ran", out)
         time.sleep(0.01); self.log("coder-critic")
+        # both halves of the lifecycle.md contract: the critic's completion in the dispatch
+        # log AND its score in the state file. A logged-but-unscored critic must not pass.
+        rc, out = run("post", "coder", root=self.t); self.assertEqual(rc, 1, out); self.assertIn("code score", out)
+        run("state", "record-score", "code", "85", "--critic", "coder-critic", "--report", "r.md", root=self.t)
         rc, out = run("post", "coder", root=self.t); self.assertEqual(rc, 0, out)
     def test_post_strategist_sections(self):
         d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)

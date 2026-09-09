@@ -21,6 +21,23 @@ Evaluates every `PRODUCES` predicate, then `critic-ran` for any agent whose `CRI
 its critic's score in the state file.** That is the structural fix for the defect that opened
 this work.
 
+Both halves are declared, not implied. `critic-ran` covers the dispatch log; the score half is a
+`score` predicate on the creator's own component in its `PRODUCES`, carried by every creator whose
+`COMPONENT` is a real component. Its threshold is `min: 0` on purpose: the predicate reads
+`val is not None and val >= min`, so `min: 0` asserts only that *a score has been recorded at
+all* — a legitimate 0.0 satisfies it, an unscored component does not. The quality bar itself is
+enforced elsewhere, by the `score` predicates in the *next* agent's `REQUIRES` and by
+`score --gate`. A creator whose `COMPONENT` is `none` has nothing to score and carries no such
+predicate; `critic-ran` still binds its critic.
+
+Two consequences of that design are intended. A creator that shares a component with another
+creator can have this half satisfied by the shared component's score from an earlier round —
+`critic-ran` is what independently requires *its* critic to have completed after *its* last
+completion, and the two predicates only bind together. And because a section-scoped score is
+recorded under `sections` rather than as the manuscript component, `post` for the manuscript's
+creator fails after a section-only draft: `post` asserts the stage is complete, and a section
+draft is mid-stage.
+
 ## Predicate types
 
 | Type | Passes when |

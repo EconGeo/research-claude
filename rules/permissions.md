@@ -29,6 +29,7 @@ and `/pipeline` read; this file exists so the registry is readable in a linked p
   - `quality_reports/literature/*/annotated_bibliography.md`
   - `quality_reports/literature/*/frontier_map.md`
   - `quality_reports/literature/*/positioning.md`
+  - literature score ≥ 0
 - **CRITIC:** lit-critic
 - **ESCALATION_TARGET:** user
 - **QUALITY_WEIGHT:** 10 (literature)
@@ -56,6 +57,7 @@ and `/pipeline` read; this file exists so the registry is readable in a linked p
   - `quality_reports/data-assessment/*/data_sources.md`
   - `quality_reports/data-assessment/*/data_dictionary.md`
   - `quality_reports/data-assessment/*/access_instructions.md`
+  - data score ≥ 0
 - **CRITIC:** explorer-critic
 - **ESCALATION_TARGET:** user
 - **QUALITY_WEIGHT:** 10 (data)
@@ -89,6 +91,7 @@ and `/pipeline` read; this file exists so the registry is readable in a linked p
   - heading **Assumptions** in `quality_reports/strategy/*/strategy_memo.md`
   - heading **Robustness Plan** in `quality_reports/strategy/*/strategy_memo.md`
   - heading **Threats** in `quality_reports/strategy/*/strategy_memo.md`
+  - strategy score ≥ 0
 - **CRITIC:** strategist-critic
 - **ESCALATION_TARGET:** user
 - **QUALITY_WEIGHT:** 25 (strategy)
@@ -118,6 +121,7 @@ and `/pipeline` read; this file exists so the registry is readable in a linked p
   - `quality_reports/theory/*/theory_memo.md`
   - `quality_reports/theory/*/notation_glossary.md`
   - `quarto render` exit 0
+  - theory score ≥ 0
 - **CRITIC:** theorist-critic
 - **ESCALATION_TARGET:** user
 - **QUALITY_WEIGHT:** 20 (theory)
@@ -145,6 +149,7 @@ and `/pipeline` read; this file exists so the registry is readable in a linked p
 - **PRODUCES:**
   - `data/raw/data_manifest.md`
   - `quarto render` exit 0
+  - code score ≥ 0
 - **CRITIC:** coder-critic
 - **ESCALATION_TARGET:** strategist-critic
 - **QUALITY_WEIGHT:** 0 (code) — scored under code
@@ -161,6 +166,7 @@ and `/pipeline` read; this file exists so the registry is readable in a linked p
   - ≥1 chunk(s) labelled `fig-*`
   - `quarto render` exit 0
   - `prose_number_check.py` exit 0
+  - code score ≥ 0
 - **CRITIC:** coder-critic
 - **ESCALATION_TARGET:** strategist-critic
 - **QUALITY_WEIGHT:** 15 (code)
@@ -190,6 +196,7 @@ and `/pipeline` read; this file exists so the registry is readable in a linked p
 - **PRODUCES:**
   - `quarto render` exit 0
   - `prose_number_check.py` exit 0
+  - manuscript score ≥ 0
 - **CRITIC:** writer-critic
 - **ESCALATION_TARGET:** user
 - **QUALITY_WEIGHT:** 10 (manuscript)
