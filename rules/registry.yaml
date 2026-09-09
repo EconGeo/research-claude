@@ -136,6 +136,14 @@ agents:
           - type: path
             glob: quality_reports/data-assessment/*/data_sources.md
             producer: /discover data
+      - type: score-if-scored
+        component: literature
+        min: 80
+        producer: /lit-position
+      - type: score-if-scored
+        component: data
+        min: 80
+        producer: /discover data
     produces:
       - type: path
         glob: quality_reports/strategy/*/strategy_memo.md

@@ -7,9 +7,11 @@ project can understand a refusal.
 
 ## PRE-dispatch — `pipeline.py pre <agent>`
 
-Evaluates every `REQUIRES` predicate of the agent. On the first failure it prints the missing
-artifact **and the skill that produces it** (the predicate's `producer`) and exits 1. The driver
-does not dispatch. Standalone skills skip this step (spec §4, two modes) but nothing else.
+Evaluates every `REQUIRES` predicate of the agent — all of them, not just up to the first
+failure — printing each one's verdict, and for each failure the missing artifact **and the skill
+that produces it** (the predicate's `producer`). It exits 1 if any predicate failed, so one run
+reports the full list of what is missing. The driver does not dispatch. Standalone skills skip
+this step (spec §4, two modes) but nothing else.
 
 ## POST-completion — `pipeline.py post <agent>`
 
@@ -26,8 +28,9 @@ this work.
 | `path` | the glob (relative to the project root) matches at least `min` files (default 1) |
 | `section` | a Markdown heading with that text exists in the file (`file: manuscript` = the declared manuscript) |
 | `score` | the latest score for the component in `quality_reports/pipeline_state.json` is ≥ `min`; `component: overall` uses the weighted aggregate |
-| `fresh` | the rendered output is newer than the manuscript and every file under `data/raw/`; **render only when stale** |
-| `render` | `quarto render <file>` exits 0 (the declared manuscript unless `file` is given) |
+| `score-if-scored` | the component has **not** been scored yet, **or** its latest score is ≥ `min`. A missing state file fails (absent is not "unscored"). `component: overall` is rejected — the aggregate is derived, so "has been scored" is undefined for it |
+| `fresh` | the rendered output is newer than the manuscript and every file under `data/raw/` |
+| `render` | `quarto render <file>` exits 0 (the declared manuscript unless `file` is given); **the manuscript is rendered only when stale** |
 | `critic-ran` | `quality_reports/agent_dispatch.jsonl` shows the paired critic completing after the creator's last completion |
 | `prose-check` | `python3 .claude/scripts/prose_number_check.py <manuscript>` exits 0 |
 | `chunk` | at least `min` chunks in the declared manuscript have a `#| label:` matching `label_glob` |
@@ -38,8 +41,9 @@ this work.
 `init` creates `quality_reports/pipeline_state.json` (schema in `.claude/templates/pipeline-state.json`);
 `validate` checks it; `record-score <component> <score> --critic <name> --report <path> [--scope section:<name>]`
 records a critic score (latest per component counts; a section-scoped `writer-critic` score is
-recorded under `sections`, never as the manuscript component); `strike <pair>` increments a pair's
-strike count and prints the escalation target at three; `show` prints it. The state file is
+recorded under `sections`, never as the manuscript component); `strike <creator>` takes one agent
+name and increments that creator's strike count, printing the escalation target at three;
+`show` prints it. The state file is
 committed — it is replication provenance. The dispatch log is gitignored — it is session mechanics.
 
 ## Score — `pipeline.py score [--gate commit|pr|submission]`

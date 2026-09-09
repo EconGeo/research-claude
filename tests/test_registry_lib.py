@@ -28,5 +28,14 @@ class TestRegistry(unittest.TestCase):
     def test_weights_agree_with_quality_md(self):
         self.assertEqual(rl.weights_report(self.reg, (ROOT / "rules" / "quality.md").read_text()), [])
     def test_parse_agree(self): self.assertIn(rl.parse_agree(ROOT), ("PASS", "SKIP"))
+    def test_score_if_scored_needs_component_and_min(self):
+        probs = []
+        rl._check_pred({"type": "score-if-scored"}, "x", probs)
+        self.assertTrue(any("missing 'component'" in p for p in probs), probs)
+        self.assertTrue(any("missing 'min'" in p for p in probs), probs)
+    def test_score_if_scored_rejects_overall(self):
+        probs = []
+        rl._check_pred({"type": "score-if-scored", "component": "overall", "min": 80}, "x", probs)
+        self.assertTrue(any("overall" in p for p in probs), probs)
 
 if __name__ == "__main__": unittest.main()

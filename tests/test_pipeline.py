@@ -63,6 +63,43 @@ class TestPredicates(FixtureCase):
         time.sleep(1.1); (self.t / "data" / "raw" / "panel.csv").touch()
         self.assertEqual(run("fresh", root=self.t)[0], 1)
 
+class TestScoreIfScored(FixtureCase):
+    """`score-if-scored`: a component that HAS been scored must clear `min`; one never
+    scored is ignored. `pre strategist` carries two of them (literature, data)."""
+    def discovery_input(self):   # satisfies strategist's any_of, so only the scores decide
+        d = self.t / "quality_reports" / "literature" / "fixture"; d.mkdir(parents=True)
+        (d / "positioning.md").write_text("# Positioning\n")
+    def record(self, comp, score):
+        rc, out = run("state", "record-score", comp, str(score), "--critic", "x", "--report", "r.md", root=self.t)
+        self.assertEqual(rc, 0, out)
+
+    def test_scored_below_min_blocks(self):
+        self.discovery_input(); run("state", "init", root=self.t); self.record("literature", 40)
+        rc, out = run("pre", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("literature score", out); self.assertIn("40", out)
+    def test_scored_at_min_passes(self):
+        self.discovery_input(); run("state", "init", root=self.t); self.record("literature", 80)
+        rc, out = run("pre", "strategist", root=self.t); self.assertEqual(rc, 0, out)
+    def test_never_scored_passes(self):
+        self.discovery_input(); run("state", "init", root=self.t)
+        rc, out = run("pre", "strategist", root=self.t); self.assertEqual(rc, 0, out)
+    def test_mixed_scored_low_and_high_blocks(self):
+        self.discovery_input(); run("state", "init", root=self.t)
+        self.record("literature", 40); self.record("data", 90)
+        rc, out = run("pre", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("literature score", out); self.assertIn("data score", out)
+    def test_missing_state_file_fails(self):
+        """H1: no state file must NOT read as 'never scored' — that would be fail-open."""
+        self.discovery_input()
+        self.assertFalse((self.t / "quality_reports" / "pipeline_state.json").exists())
+        rc, out = run("pre", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("no pipeline_state.json", out)
+    def test_zero_score_blocks(self):
+        """H2: 0.0 is a recorded score, not an absent one — truthiness would let it through."""
+        self.discovery_input(); run("state", "init", root=self.t); self.record("literature", 0)
+        rc, out = run("pre", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("literature score", out); self.assertIn("have 0.0", out)
+
 class TestScore(FixtureCase):
     def test_weighted_and_renormalised(self):
         run("state", "init", root=self.t)

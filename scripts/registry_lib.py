@@ -13,7 +13,8 @@ from typing import Any, Dict, List, Optional, Tuple
 ROLES = {"creator", "critic", "referee", "infrastructure"}
 FIELDS = ["role", "kind", "parallel_group", "requires", "produces", "critic",
           "escalation_target", "component", "quality_weight", "conditional", "writes"]
-PRED_TYPES = {"path", "section", "score", "fresh", "render", "critic-ran", "prose-check", "chunk", "any_of"}
+PRED_TYPES = {"path", "section", "score", "score-if-scored", "fresh", "render", "critic-ran",
+              "prose-check", "chunk", "any_of"}
 KEY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*:(\s|$)")
 
 # ── restricted YAML ─────────────────────────────────────────────────────────
@@ -123,9 +124,13 @@ def _check_pred(p, where, problems):
     t = p["type"]
     if t not in PRED_TYPES: problems.append(f"{where}: unknown predicate type {t!r}"); return
     need = {"path": ["glob"], "section": ["file", "heading"], "score": ["component", "min"],
+            "score-if-scored": ["component", "min"],
             "chunk": ["label_glob", "min"], "any_of": ["of"]}.get(t, [])
     for k in need:
         if k not in p: problems.append(f"{where}: {t} predicate missing {k!r}")
+    if t == "score-if-scored" and p.get("component") == "overall":
+        problems.append(f"{where}: score-if-scored cannot use component 'overall' — the aggregate is "
+                        "derived, so 'has been scored' is undefined for it; name a real component")
     if t == "any_of":
         for j, q in enumerate(p.get("of") or []): _check_pred(q, f"{where}.of[{j}]", problems)
     if "producer" in p and not str(p["producer"]).startswith("/"):

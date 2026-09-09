@@ -80,6 +80,8 @@ and `/pipeline` read; this file exists so the registry is readable in a linked p
 - **ROLE:** creator (agent) · **PARALLEL_GROUP:** strategy
 - **REQUIRES:** 
   - any of: `quality_reports/literature/*/positioning.md` — produced by `/lit-position`; `quality_reports/data-assessment/*/data_sources.md` — produced by `/discover data`
+  - literature score ≥ 80 if the component has been scored — produced by `/lit-position`
+  - data score ≥ 80 if the component has been scored — produced by `/discover data`
 - **PRODUCES:**
   - `quality_reports/strategy/*/strategy_memo.md`
   - heading **Estimand** in `quality_reports/strategy/*/strategy_memo.md`

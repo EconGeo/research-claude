@@ -144,6 +144,19 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
             val = st.get("components", {}).get(pred["component"], {}).get("score")
         ok = val is not None and val >= float(pred["min"])
         return ok, f"{pred['component']} score ≥ {pred['min']} (have {val})"
+    if t == "score-if-scored":
+        # A component that HAS been scored must clear `min`; one never scored is ignored.
+        # A MISSING state file is not "never scored" — defaulting to {} here would make the
+        # predicate pass vacuously on any project that never ran `state init` (fail-open).
+        desc = f"{pred['component']} score ≥ {pred['min']} if scored"
+        sp = state_path(root)
+        if not sp.exists():
+            return False, desc + " — no pipeline_state.json (run `pipeline.py state init`)"
+        st = json.loads(sp.read_text())
+        val = st.get("components", {}).get(pred["component"], {}).get("score")
+        if val is None:                                   # `is None`, never truthiness: 0.0 is a score
+            return True, desc + " (never scored — not required yet)"
+        return val >= float(pred["min"]), desc + f" (have {val})"
     if t == "fresh":
         ok, why = is_fresh(root, ctx.ms); return ok, f"fresh: {why}"
     if t == "render":
