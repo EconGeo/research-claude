@@ -338,6 +338,28 @@ lines are already scheduled for treatment by the repair plan's Task 3b.4 Step 2
 `## Rmd Mode` section. This row exists so the sweep's ✓ on 44–88 is not trusted at
 face value later, not to add new work.
 
+**Third entry — `analyze/references/figure-standards.md` is not free of the
+`manuscript-model` pattern, found running `scripts/check_refs.py --criterion
+manuscript-model` (Task 0.5, 2026-09-08) against the whole-file ✓ mark at §3 line
+127 ("clean (prohibitions only)"):**
+
+| File | Lines | Class | Finding |
+|---|---|---|---|
+| `analyze/references/figure-standards.md` | 29 | 1 (prohibition) | "Never `ggsave()` to a file and include it by hand." |
+| `analyze/references/figure-standards.md` | 175 | 1 (prohibition) | "`ggsave()` inside a manuscript chunk \| Quarto emits the figure; saving it to disk produces a stale duplicate and breaks Word output" |
+
+Read in full: both lines are prohibition prose — exactly what the sweep's own
+"(prohibitions only)" qualifier already says is present. The gap is not in the
+sweep's classification (it is right) but in the file: neither line carries a
+trailing `<!-- residue:prohibition -->` marker, so `check_refs.py`'s
+`MANUSCRIPT_MODEL` regex has no way to distinguish "here is the forbidden
+pattern, don't do it" prose from a real instance and flags both. (A third hit at
+line 5 — "Nothing is `ggsave()`d to disk" — is the same shape and is covered by
+the same fix.) This row exists so the ✓ is not read as "the checker will pass on
+this file"; it will not, until the three lines are marked. Recorded here per the
+plan's Global Constraint rather than fixed, since Task 0.5/0.6 may not edit
+`references/`.
+
 ## 12. Counts
 
 | Layer | Files read | Files clean | Residue rows (classes 1–7) | Hook/contract rows |
