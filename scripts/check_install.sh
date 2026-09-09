@@ -33,7 +33,7 @@ done
 
 # Linked dirs the pipeline owns. settings.json / references / state are
 # project-owned or installed by another mechanism and are not checked here.
-LINKED=(skills agents rules hooks scripts)
+LINKED=(skills agents rules hooks scripts templates)
 
 fail=0
 
@@ -128,13 +128,15 @@ check_project() {
       [[ -e "$dest/$name" || -L "$dest/$name" ]] || missing+=("$2/$name")
     done
   }
-  local d; for d in skills agents rules hooks; do want "$RC/$d" "$d"; done
+  local d; for d in skills agents rules hooks templates; do want "$RC/$d" "$d"; done
   want "$RC/submodules/ai-audit/skills" skills
   want "$RC/submodules/ai-audit/agents" agents
   want "$RC/submodules/ai-audit/rules"  rules
   want "$RC/zotpilot-skills" skills true
-  [[ -f "$RC/scripts/prose_number_check.py" && ! -e "$P/.claude/scripts/prose_number_check.py" ]] \
-    && missing+=("scripts/prose_number_check.py")
+  if [[ -f "$RC/scripts/SHIPPED" ]]; then
+    while IFS= read -r s; do [[ -z "$s" || ! -f "$RC/scripts/$s" ]] && continue
+      [[ -e "$P/.claude/scripts/$s" || -L "$P/.claude/scripts/$s" ]] || missing+=("scripts/$s"); done < "$RC/scripts/SHIPPED"
+  fi
 
   if [[ ${#missing[@]} -gt 0 ]]; then
     bad membership "${#missing[@]} upstream item(s) never linked here — run ./bootstrap-pipeline.sh --tip"
@@ -202,6 +204,19 @@ check_project() {
       bad manuscript-declared "no 'manuscript: <file>.qmd' line in CLAUDE.md"
     else warn manuscript-declared "no manuscript yet — /pipeline refuses until one is declared"; fi
   else bad manuscript-declared "CLAUDE.md declares $decl manuscripts; exactly one is required"; fi
+
+  # ── 8. gitignore covers the linked dirs ───────────────────────────────────
+  local gi_missing=() pat
+  for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' 'quality_reports/agent_dispatch.jsonl'; do
+    grep -qxF "$pat" "$P/.gitignore" 2>/dev/null || gi_missing+=("$pat")
+  done
+  [[ ${#gi_missing[@]} -eq 0 ]] && ok gitignore-covers || bad gitignore-covers "missing lines: ${gi_missing[*]}"
+
+  # ── 9. State file is schema-valid when present ────────────────────────────
+  if [[ -f "$P/quality_reports/pipeline_state.json" ]]; then
+    if python3 "$RC/scripts/pipeline.py" --root "$P" state validate >/dev/null 2>&1; then ok state-valid
+    else bad state-valid "quality_reports/pipeline_state.json fails pipeline.py state validate"; fi
+  else warn state-valid "no pipeline_state.json yet"; fi
 
   [[ -f "$P/bootstrap-pipeline.sh" ]] && ok bootstrap || bad bootstrap "bootstrap-pipeline.sh missing"
 }
