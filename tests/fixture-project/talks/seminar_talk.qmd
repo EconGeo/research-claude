@@ -8,8 +8,8 @@ bibliography: ../references.bib
 
 ## Trends
 
-{{< embed ../manuscript_fixture.qmd#fig-trends >}}
+{{< embed manuscript_fixture.qmd#fig-trends >}}
 
 ## Estimate
 
-{{< embed ../manuscript_fixture.qmd#tbl-main >}}
+{{< embed manuscript_fixture.qmd#tbl-main >}}
