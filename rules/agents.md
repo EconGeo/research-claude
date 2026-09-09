@@ -1,133 +1,70 @@
-# Agents: Pairs, Separation of Powers, and Escalation
+# Agents: Pairs, Separation of Powers, Escalation, Dispatch Ownership
 
----
+## 1. Adversarial pairing
 
-## 1. Adversarial Pairing
+**Every creator has a paired critic, declared in `.claude/rules/registry.yaml` and nowhere else.**
+The dispatching skill dispatches the critic after the creator, every time, in every mode
+(orchestrated or standalone). `python3 .claude/scripts/pipeline.py post <creator>` refuses to
+mark a creator complete until the dispatch log shows its critic completing afterwards and the
+state file carries the critic's score.
 
-**Every worker agent has a paired critic. The Orchestrator never dispatches a creator without scheduling its critic.**
+**Enforcement.**
+- `pipeline.py post` — `critic-ran` predicate (structural).
+- `.claude/hooks/critic-pairing.py` (Stop) — reads `quality_reports/agent_dispatch.jsonl` and
+  surfaces a creator that ran without its critic in the current session.
+- `check_fork.sh registry-complete` — no creator with a non-zero weight lacks a critic.
 
-### Worker-Critic Pairs
+**Peer review** is the one asymmetric structure: the editor dispatches two blind referees and
+synthesises a decision. Referees are already reviewers and have no critic (registry `role: referee`).
 
-| Worker (Creator) | Critic (Reviewer) | What's Reviewed |
-|-----------------|-------------------|-----------------|
-| explorer | explorer-critic | Data feasibility, quality, identification fit |
-| data-engineer | coder-critic | Data pipeline quality, reproducibility, transformation correctness |
-| strategist | strategist-critic | Identification validity, assumptions, robustness |
-| theorist | theorist-critic | Proof validity, assumption minimality, notation, citations |
-| coder | coder-critic | Code quality, reproducibility, code-strategy alignment |
-| writer | writer-critic | Manuscript polish, Quarto format compliance, hedging |
-| storyteller | storyteller-critic | Talk structure, audience calibration, visual quality |
-
-### Peer Review (Special Case)
-
-Peer Review uses a different structure — the Orchestrator dispatches two independent referees:
-
-1. Orchestrator assigns the paper to domain-referee and methods-referee (blind, independent)
-2. Both referees produce scored reports
-3. Orchestrator synthesizes a decision: Accept / Minor Revisions / Major Revisions / Reject
-
-### Enforcement
-
-- The Orchestrator checks: if a creator artifact exists without a critic score, it is **not approved**
-- No artifact advances to the next phase without its critic's score >= 80
-- Critics produce scores; creators produce artifacts — never the reverse
-
----
-
-## 2. Separation of Powers
+## 2. Separation of powers
 
 **Critics never create. Creators never self-score.**
 
-### Critics Never Create
+A critic scores against a rubric, lists issues with deductions, and recommends fixes as
+recommendations. A critic that writes code, rewrites a section, or produces an alternative
+implementation has failed its role. A creator's own assessment of its work is discarded; the
+score always comes from the paired critic, recorded by the dispatching skill with
+`pipeline.py state record-score`.
 
-A critic's job is to evaluate, not to produce artifacts. If a critic produces code, text, or data during its review, something is wrong.
+**Enforcement.** The dispatching skill flags: a critic dispatch that leaves a file under a
+creator's `WRITES` prefix; a creator that reports a score.
 
-**What critics DO:**
-- Score artifacts against a rubric
-- List issues with severity and deductions
-- Suggest fixes (as recommendations, not implementations)
+## 3. Three-strikes escalation
 
-**What critics DON'T DO:**
-- Write code to fix the issues they found
-- Rewrite paper sections
-- Produce alternative implementations
+Round 1: critic reviews → creator fixes. Round 2. Round 3. Still below threshold → escalate to
+the `ESCALATION_TARGET` declared for the creator in the registry. `pipeline.py state strike
+<creator>` counts rounds and prints the target at three.
 
-**Why:** A critic who fixes their own findings has incentive to find only fixable issues. Separation keeps criticism honest.
+- Max 3 rounds per pair per invocation; 5 rounds overall; never loop indefinitely.
+- Escalation is logged in the research journal with the strike count.
+- Escalating to the user requires a specific question: "strategist-critic requires X, which
+  contradicts Y — which takes priority?", never "they disagree".
+- After escalation the creator starts from the target's decision, not from its last attempt.
 
-### Creators Can't Self-Score
+## 4. Dispatch ownership
 
-A creator cannot evaluate the quality of its own work. The score always comes from the paired critic.
+The dependency graph lives in the registry (`REQUIRES` / `PRODUCES`), the loop lives in
+`/pipeline`, and every stage skill owns its pair. Phases activate by `REQUIRES`, never by
+sequence; re-entry is permitted everywhere except Submission. The coder↔writer cycle is normal
+research, and the registry supports it: a referee comment routes to `coder → coder-critic →
+writer → writer-critic` without restarting the pipeline.
 
-| Agent | Creates | Scored By |
-|-------|---------|-----------|
-| librarian | Annotated bibliography | librarian-critic |
-| explorer | Data assessment | explorer-critic |
-| data-engineer | Data pipeline and cleaned datasets | coder-critic |
-| strategist | Strategy memo | strategist-critic |
-| theorist | Assumptions, theorems, proofs (theory section) | theorist-critic |
-| coder | R/Python/Julia scripts | coder-critic |
-| writer | Paper manuscript | writer-critic |
-| storyteller | Beamer talk | storyteller-critic |
+| Skill | Dispatches | Then |
+|---|---|---|
+| `/lit-position` | (skill is the creator) | lit-critic |
+| `/discover data` | explorer | explorer-critic |
+| `/strategize` | strategist | strategist-critic |
+| `/strategize theory` | theorist | theorist-critic |
+| `/analyze` | data-engineer, coder | coder-critic (after each) |
+| `/write` | writer | writer-critic (every mode that touches prose; `style-guide` exempt) |
+| `/review` | critics only, by route | — |
+| `/review --peer` | editor → domain-referee ∥ methods-referee → editor | — |
+| `/revise` | writer or coder per comment | its critic |
+| `/submit package` | coder | coder-critic |
+| `/submit audit`, `/submit final` | verifier | — |
+| `/talk` | storyteller | storyteller-critic |
+| `/pipeline` | the skills above, in `REQUIRES` order, with `pipeline.py pre`/`post` around each | — |
 
-### Enforcement
-
-The Orchestrator flags violations:
-- If a critic invocation produces a file in `scripts/`, `paper/`, or `paper/talks/` → flag
-- If a creator reports its own score → discard, dispatch critic
-
----
-
-## 3. Three Strikes Escalation
-
-**If a worker-critic pair fails to converge after 3 rounds, the Orchestrator escalates.**
-
-### The Protocol
-
-```
-Round 1: Critic reviews → Worker fixes
-Round 2: Critic reviews → Worker fixes
-Round 3: Critic reviews → Worker fixes
-         Still failing?
-              ↓
-         ESCALATION
-```
-
-### Escalation Routing
-
-When a pair hits 3 strikes, escalate as follows:
-
-| Pair | Escalates to |
-|---|---|
-| explorer / explorer-critic | User — data feasibility is a resource trade-off, not a technical call |
-| strategist / strategist-critic | User — a fundamental design question needs human judgment |
-| theorist / theorist-critic | User — the user adjudicates whether the result holds |
-| coder / coder-critic | strategist-critic — re-evaluate whether the strategy is implementable |
-| data-engineer / coder-critic | strategist-critic — re-evaluate whether the data spec is tractable |
-| writer / writer-critic | User — a structural rewrite is a decision, not a fix |
-| storyteller / storyteller-critic | writer — talk problems usually come from paper structure |
-
-Escalating to the user requires a specific question, never "they disagree."
-
-### Rules
-
-- **Max 3 rounds per pair per invocation** — no infinite loops
-- **Escalation is logged** in the research journal with strike count
-- **User escalation requires a clear question** — not "they disagree," but "strategist-critic requires X, which contradicts Y. Which takes priority?"
-- **Post-escalation:** The worker starts fresh from the escalation target's decision, not from its previous attempt
-
----
-
-## 4. No phase graph
-
-Worker→critic pairing is the whole protocol. There is no orchestrator, no
-dependency graph, and no phase gating. Any skill may invoke any agent when its
-inputs exist.
-
-The coder↔writer loop in particular is expected to cycle: a result changes the
-prose, the prose exposes a question the code has to answer, and that is normal
-research rather than a failure of sequencing. Serializing it was the
-orchestrator's mistake, and it is why the orchestrator is gone (see
-`docs/decisions/2026-09-08_cut-the-orchestration-graph.md`).
-
-What survives from the old graph is what actually did work: the pairs above,
-three-strikes escalation, and the rule that a creator never scores its own output.
+Pairs, weights and escalation targets are **not** restated here. Read
+`.claude/rules/permissions.md` (rendered from the registry).
