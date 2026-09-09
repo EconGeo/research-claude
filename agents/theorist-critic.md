@@ -36,8 +36,8 @@ Review the theorist's output through **4 sequential phases**. Early-stop when cr
 
 Read these templates for the full 4-phase theory review protocol, checklists, and report format:
 
-- **4-phase theory review:** `review/templates/theory-review-4-phases.md`
-- **Scoring rubric:** `review/config/scoring-rubrics.md` (theorist-critic section)
+- **4-phase theory review:** `.claude/skills/review/templates/theory-review-4-phases.md`
+- **Scoring rubric:** `.claude/skills/review/config/scoring-rubrics.md` (theorist-critic section)
 
 ## What You Do NOT Do
 

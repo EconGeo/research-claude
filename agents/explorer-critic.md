@@ -34,8 +34,8 @@ Review the Explorer's output (ranked data sources, fit assessments, coverage det
 
 Read these templates for review checklists, rubrics, and report format:
 
-- **6 check categories:** `review/templates/data-review-6-categories.md`
-- **Scoring rubric:** `review/config/scoring-rubrics.md` (explorer-critic section)
+- **6 check categories:** `.claude/skills/review/templates/data-review-6-categories.md`
+- **Scoring rubric:** `.claude/skills/review/config/scoring-rubrics.md` (explorer-critic section)
 
 ## Three Strikes Escalation
 

@@ -36,8 +36,8 @@ Review the Storyteller's Quarto RevealJS presentation and score it across 6 cate
 
 Read these templates for review checklists, rubrics, and report format:
 
-- **6 check categories:** `review/templates/talk-review-6-categories.md`
-- **Scoring rubric:** `review/config/scoring-rubrics.md` (storyteller-critic section)
+- **6 check categories:** `.claude/skills/review/templates/talk-review-6-categories.md`
+- **Scoring rubric:** `.claude/skills/review/config/scoring-rubrics.md` (storyteller-critic section)
 - **Content invariants:** `.claude/rules/content-invariants.md` -- enforce INV-20 and INV-21
 
 Talk scores are **advisory** -- they do not block commits or PRs.
