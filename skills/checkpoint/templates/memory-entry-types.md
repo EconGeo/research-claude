@@ -5,7 +5,7 @@ Four types of auto-memory entries. Check existing memory files before creating n
 ## 1. User (`user` type)
 **What:** Information about the user -- workflow preferences, research interests, institutional context.
 **When to save:** User reveals a personal preference, affiliation, or working style that will persist across sessions.
-**Example:** "Hugo prefers R over Python for analysis."
+**Example:** "The user prefers R over Python for analysis."
 
 ## 2. Feedback (`feedback` type)
 **What:** User corrections, style preferences, quality standards.

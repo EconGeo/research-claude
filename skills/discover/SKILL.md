@@ -2,7 +2,7 @@
 name: discover
 description: Discovery phase combining research interviews, literature search, data discovery, and ideation. Routes to appropriate agents based on arguments. Replaces /interview-me, /lit-review, /find-data, /research-ideation.
 argument-hint: "[mode: interview | lit | data | ideate] [topic or query]"
-allowed-tools: Read,Grep,Glob,Write,Edit,WebSearch,WebFetch,Task
+allowed-tools: Read,Grep,Glob,Write,Edit,WebSearch,WebFetch,Agent
 ---
 
 # Discover
@@ -59,7 +59,7 @@ After interview (5-8 exchanges), produce three outputs:
 Fill in field, target journals, common data sources, identification strategies, field conventions, seminal references, and referee concerns based on the interview.
 
 **Output 3: Decision Record** → `quality_reports/decisions/discovery_[topic].md`
-Using `templates/decision-record.md`, record:
+Using `.claude/skills/strategize/templates/decision-record.md`, record:
 - **Decision:** The research question chosen
 - **Alternatives:** Other angles, framings, or questions that came up during the interview
 - **Why rejected:** For each alternative, why this framing was preferred (scope, data availability, novelty, feasibility)
@@ -90,12 +90,6 @@ Workflow:
 6. Dispatch librarian-critic to check coverage, gaps, recency, scope
 7. If gaps found, re-dispatch Librarian for targeted search (max 1 round)
 8. Save to `quality_reports/lit_review_[topic].md`
-9. Generate interactive HTML bibliography and refresh dashboard:
-```bash
-python3 scripts/generate_html_report.py literature quality_reports/lit_review_[topic].md
-python3 scripts/generate_dashboard.py
-```
-Open the HTML report for the user: `open quality_reports/lit_review_[topic].html`
 
 **Unverified citations:** If you cannot verify a citation, mark the BibTeX entry with `% UNVERIFIED`. Do NOT fabricate or guess citation details. Note when working papers have been published — cite the published version.
 
@@ -169,13 +163,13 @@ Generate:
 
 | Resource | Path | What It Contains |
 |----------|------|-----------------|
-| Research spec | `discover/templates/research-spec.md` | 8-section research specification output format |
-| Interview flow | `discover/templates/interview-flow.md` | 6-category conversational structure for interview mode |
-| Lit review entry | `discover/templates/lit-review-entry.md` | Per-paper annotation format with proximity scoring |
-| Data assessment | `discover/templates/data-assessment.md` | Data source evaluation with 5-point critique and feasibility grades |
-| Research ideas | `discover/templates/research-ideas.md` | Ideation output format with feasibility/novelty ranking |
-| PDF processing | `discover/references/pdf-processing.md` | Safe workflow for reading reference papers |
-| Gotchas | `discover/gotchas.md` | Known failure points and edge cases |
+| Research spec | `.claude/skills/discover/templates/research-spec.md` | 8-section research specification output format |
+| Interview flow | `.claude/skills/discover/templates/interview-flow.md` | 6-category conversational structure for interview mode |
+| Lit review entry | `.claude/skills/discover/templates/lit-review-entry.md` | Per-paper annotation format with proximity scoring |
+| Data assessment | `.claude/skills/discover/templates/data-assessment.md` | Data source evaluation with 5-point critique and feasibility grades |
+| Research ideas | `.claude/skills/discover/templates/research-ideas.md` | Ideation output format with feasibility/novelty ranking |
+| PDF processing | `.claude/skills/discover/references/pdf-processing.md` | Safe workflow for reading reference papers |
+| Gotchas | `.claude/skills/discover/gotchas.md` | Known failure points and edge cases |
 
 ---
 

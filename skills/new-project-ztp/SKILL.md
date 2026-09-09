@@ -2,10 +2,10 @@
 name: new-project-ztp
 description: >
   ZotPilot setup step for new research projects — run when starting a project to embed
-  your Zotero library into ChromaDB so /seed-papers and /discover lit can search it.
+  your Zotero library into ChromaDB so /seed-papers and /lit-position can search it.
   Trigger on: "set up ZotPilot", "embed my Zotero library", "configure ZotPilot for
   this project", or any mention of wanting local library search before literature review.
-  Run at project start, BEFORE /seed-papers or /discover lit.
+  Run at project start, BEFORE /seed-papers or /lit-position.
 allowed-tools: Read,Write,Edit,Bash
 ---
 
@@ -13,7 +13,7 @@ allowed-tools: Read,Write,Edit,Bash
 
 This skill configures ZotPilot for a new research project, enabling semantic search
 of your Zotero library during literature review. Run once per project at project start,
-before `/seed-papers` or `/discover lit`.
+before `/seed-papers` or `/lit-position`.
 
 ---
 
@@ -78,15 +78,15 @@ If `## Tools` already exists, update in place. If not, append after `## Current 
 ## Step 5: Confirm next steps
 
 Tell the user:
-> "ZotPilot is ready. Before running `/discover lit`, run `/seed-papers [topic]` to
-> pre-populate `bibliography_base.bib` from your Zotero library. The librarian agent
-> reads this file and will avoid searching for papers you already have."
+> "ZotPilot is ready. Before running `/lit-position`, run `/seed-papers [topic]` to
+> pre-populate `references.bib` from your Zotero library. `/lit-position` reads
+> references.bib and the Zotero index; it is the main session, so it holds ZotPilot access."
 
 ---
 
 ## Notes
 
-- `/seed-papers` bridges ZotPilot → bibliography_base.bib → librarian agent
-- The librarian has no MCP tools — the main session holds ZotPilot access
+- `/seed-papers` bridges ZotPilot → references.bib → `/lit-position`
+- `/lit-position` reads references.bib and the Zotero index; it is the main session, so it holds ZotPilot access
 - ZotPilot is registered in project `.mcp.json` by default (not globally)
 - To add it globally: `claude mcp add -g zotpilot -- /path/to/zotpilot mcp serve`

@@ -21,13 +21,13 @@ field and the data behind it.
 
 ## Trigger
 Invoke after completing Tier 2 journal-digest analysis — after
-`journal_digest/digests/YYYY-MM-DD_digest.md` has been written and
-`journal_digest/ideas.md` has been updated with today's new entries.
+`journal-digest/digests/YYYY-MM-DD_digest.md` has been written and
+`journal-digest/ideas.md` has been updated with today's new entries.
 
 ## Pre-Conditions
 Before starting, verify:
-1. `journal_digest/digests/YYYY-MM-DD_digest.md` exists for today's date
-2. `journal_digest/ideas.md` was updated this session (new entries under today's date header)
+1. `journal-digest/digests/YYYY-MM-DD_digest.md` exists for today's date
+2. `journal-digest/ideas.md` was updated this session (new entries under today's date header)
 3. Obsidian MCP is connected (call `mcp__obsidian-files__list_all_tags` as a connectivity
    check — if it errors, stop and tell the user to confirm the `obsidian-files` (mcpvault)
    MCP server is registered in `.mcp.json` and pointed at the vault root)
@@ -59,14 +59,14 @@ configured folders. If your knowledge base lives under a parent folder (e.g.
 
 ## Step 1: Extract
 
-Read `journal_digest/digests/YYYY-MM-DD_digest.md` (today's analyzed digest).
+Read `journal-digest/digests/YYYY-MM-DD_digest.md` (today's analyzed digest).
 
 For each paper in the digest, extract:
 - **Concepts** (1–3 per paper): map to `#concept/` tags in TAG-TAXONOMY.md. If a concept doesn't match any existing tag, use the closest match; note the proposed new tag for the preview.
 - **Methods** (1–2 per paper): map to `#method/` tags in TAG-TAXONOMY.md.
 - **Datasets** (0–3 per paper): map to `#data/` tags in TAG-TAXONOMY.md. If a dataset is new, add it to the "new datasets" list.
 
-Read today's new entries from `journal_digest/ideas.md`. For each new idea:
+Read today's new entries from `journal-digest/ideas.md`. For each new idea:
 - Extract: research question (first sentence), key concepts, methods, datasets, potential journals.
 
 Compile into an extraction table:

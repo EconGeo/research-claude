@@ -2,7 +2,7 @@
 name: strategize
 description: Design identification strategy, pre-analysis plan, or formal theory section. Dispatches Strategist / Theorist (proposer) and the paired critic (validator). Replaces /identify and /pre-analysis-plan.
 argument-hint: "[mode: strategy | pap | pap interactive | theory] [research question or spec path]"
-allowed-tools: Read,Grep,Glob,Write,Task
+allowed-tools: Read,Grep,Glob,Write,Agent
 ---
 
 # Strategize
@@ -59,14 +59,9 @@ If research spec, literature review, or data assessment are missing, the Strateg
    - Phase 4: Polish and completeness (robustness, citations)
 5. If CRITICAL issues found, iterate (max 3 rounds per three-strikes)
 6. Save memo to `quality_reports/strategy_memo_[topic].md`
-7. Save review to `quality_reports/strategy_memo_[topic]_review.md`
-8. Generate HTML version and refresh dashboard:
-   ```bash
-   python3 scripts/generate_html_report.py strategy-review quality_reports/strategy_memo_[topic]_review.md
-   python3 scripts/generate_dashboard.py
-   ```
-9. **Save decision record** → `quality_reports/decisions/strategy_[topic].md`
-   Using `templates/decision-record.md`, record:
+7. Save review to `quality_reports/reviews/strategist-critic_<date>.md`
+8. **Save decision record** → `quality_reports/decisions/strategy_[topic].md`
+   Using `.claude/skills/strategize/templates/decision-record.md`, record:
    - **Decision:** The chosen identification strategy (design + estimator)
    - **Alternatives:** Other designs the Strategist considered (e.g., IV, RDD, SC, selection-on-observables)
    - **Why rejected:** For each, the specific reason (no valid instrument, insufficient density at cutoff, no clean donor pool, etc.)
@@ -179,7 +174,7 @@ After PAP creation, optionally dispatch the strategist-critic to review:
 - Are multiple testing corrections appropriate?
 - Are any [ASSUMED] items potentially problematic if left uncorrected?
 
-Save review to `quality_reports/pre_analysis_plan_[topic]_review.md`
+Save review to `quality_reports/reviews/strategist-critic_<date>.md`
 
 Save PAP to `quality_reports/pre_analysis_plan_[topic].md`
 
@@ -200,7 +195,7 @@ Produce a formal theory section: assumptions, definitions, lemmas, theorems, and
 **Input:** `$ARGUMENTS` — research question, path to strategy memo, or path to existing paper/draft.
 
 **Agents:** Theorist → theorist-critic
-**Output:** Theory memo + assumptions.tex + results.tex + proofs.tex + notation glossary
+**Output:** Theory memo + a `# Theory` section and proofs appendix in the manuscript + notation glossary
 
 Workflow:
 1. **Pre-Theory Report (mandatory).** Before writing any math, the Theorist must output a structured report showing what was read:
@@ -211,8 +206,8 @@ Workflow:
 **Strategy memo:** [path or "not found"]
 **Existing paper/draft:** [path or "not found"]
 **Domain profile:** [loaded / not found]
-**Notation conventions:** [header.tex path / domain-profile notation table / "not found"]
-**Bibliography base:** [path / "not found"]
+**Notation conventions:** [setup-chunk naming map / domain-profile notation table / "not found"]
+**Bibliography base:** [references.bib / "not found"]
 
 **Paper type:** [econometric methods / theory+empirics / structural / methodological reduced-form]
 **Theoretical object(s) to produce:** [identification / consistency / asymp. normality / influence function / DML / bootstrap / test / proposition]
@@ -229,9 +224,7 @@ If strategy memo or paper type is missing, the Theorist flags it and asks before
 2. Read `.claude/references/domain-profile.md` for the Theoretical Foundational References table and Author Team table.
 3. Dispatch **Theorist** to produce:
    - `quality_reports/theory/[topic]/theory_memo.md`
-   - `quality_reports/theory/[topic]/assumptions.tex`
-   - `quality_reports/theory/[topic]/results.tex`
-   - `quality_reports/theory/[topic]/proofs.tex`
+   - a `# Theory` section and proofs appendix written directly into the manuscript
    - `quality_reports/theory/[topic]/notation_glossary.md`
 4. Dispatch **theorist-critic** to review through 4 sequential phases:
    - Phase 1: Claim identification (object type, target parameter, estimator, assumptions)
@@ -239,7 +232,7 @@ If strategy memo or paper type is missing, the Theorist flags it and asks before
    - Phase 3: Assumption minimality + statement calibration + notation consistency (INV-7)
    - Phase 4: Citation fidelity + linkage to empirical claims + exposition
 5. If CRITICAL issues found, iterate (max 3 rounds per three-strikes). Escalation target: User.
-6. Save review to `quality_reports/theory_[topic]_review.md`
+6. Save review to `quality_reports/reviews/theorist-critic_<date>.md`
 7. **Save decision record** → `quality_reports/decisions/theory_[topic].md`
    Record:
    - **Decision:** The theoretical objects proved (identification, asymptotic distribution, etc.)
@@ -254,38 +247,38 @@ If strategy memo or paper type is missing, the Theorist flags it and asks before
 ### Templates
 | File | Purpose |
 |------|---------|
-| `strategize/templates/pre-strategy-report.md` | Mandatory pre-check report before designing strategy |
-| `strategize/templates/strategy-memo.md` | Strategy memo output format (5 required sections) |
-| `strategize/templates/robustness-plan.md` | Ordered robustness checklist template |
-| `strategize/templates/theory-memo.md` | Theory section output format (assumptions, results, proofs) |
-| `strategize/templates/decision-record.md` | Template for documenting strategy decisions with alternatives |
+| `.claude/skills/strategize/templates/pre-strategy-report.md` | Mandatory pre-check report before designing strategy |
+| `.claude/skills/strategize/templates/strategy-memo.md` | Strategy memo output format (5 required sections) |
+| `.claude/skills/strategize/templates/robustness-plan.md` | Ordered robustness checklist template |
+| `.claude/skills/strategize/templates/theory-memo.md` | Theory section output format (assumptions, results, proofs) |
+| `.claude/skills/strategize/templates/decision-record.md` | Template for documenting strategy decisions with alternatives |
 
 ### Design Checklists
 | File | Design |
 |------|--------|
-| `strategize/templates/design-checklists/did.md` | Difference-in-Differences (parallel trends, staggered, estimator selection) |
-| `strategize/templates/design-checklists/iv.md` | Instrumental Variables (relevance, exclusion, monotonicity, LATE) |
-| `strategize/templates/design-checklists/rdd.md` | Regression Discontinuity (bandwidth, manipulation, balance) |
-| `strategize/templates/design-checklists/event-study.md` | Event Study (pre-trends, binning, heterogeneity-robust estimators) |
-| `strategize/templates/design-checklists/structural.md` | Structural Estimation (model environment, identification, counterfactuals) |
-| `strategize/templates/design-checklists/descriptive.md` | Descriptive/Measurement (construction, validation, decomposition) |
+| `.claude/skills/strategize/templates/design-checklists/did.md` | Difference-in-Differences (parallel trends, staggered, estimator selection) |
+| `.claude/skills/strategize/templates/design-checklists/iv.md` | Instrumental Variables (relevance, exclusion, monotonicity, LATE) |
+| `.claude/skills/strategize/templates/design-checklists/rdd.md` | Regression Discontinuity (bandwidth, manipulation, balance) |
+| `.claude/skills/strategize/templates/design-checklists/event-study.md` | Event Study (pre-trends, binning, heterogeneity-robust estimators) |
+| `.claude/skills/strategize/templates/design-checklists/structural.md` | Structural Estimation (model environment, identification, counterfactuals) |
+| `.claude/skills/strategize/templates/design-checklists/descriptive.md` | Descriptive/Measurement (construction, validation, decomposition) |
 
 ### PAP Templates
 | File | Registry |
 |------|----------|
-| `strategize/templates/pap-templates/aea-rct.md` | AEA RCT Registry (most structured, all fields required) |
-| `strategize/templates/pap-templates/osf.md` | OSF (flexible, good for observational studies) |
-| `strategize/templates/pap-templates/egap.md` | EGAP (development/political science, governance emphasis) |
+| `.claude/skills/strategize/templates/pap-templates/aea-rct.md` | AEA RCT Registry (most structured, all fields required) |
+| `.claude/skills/strategize/templates/pap-templates/osf.md` | OSF (flexible, good for observational studies) |
+| `.claude/skills/strategize/templates/pap-templates/egap.md` | EGAP (development/political science, governance emphasis) |
 
 ### References
 | File | Purpose |
 |------|---------|
-| `strategize/references/pap-interview-flow.md` | 6-question guided interview for building a PAP interactively |
+| `.claude/skills/strategize/references/pap-interview-flow.md` | 6-question guided interview for building a PAP interactively |
 
 ### Gotchas
 | File | Purpose |
 |------|---------|
-| `strategize/gotchas.md` | Known failure points: design selection traps, memo pitfalls, PAP anti-patterns, theory-mode caveats |
+| `.claude/skills/strategize/gotchas.md` | Known failure points: design selection traps, memo pitfalls, PAP anti-patterns, theory-mode caveats |
 
 ---
 

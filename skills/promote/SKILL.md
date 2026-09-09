@@ -31,7 +31,7 @@ the maintainer and wrong for a coauthor.
 ## Step 2: Uncommitted upstream edits
 
 ```bash
-git -C "$RC" status --porcelain -- agents skills rules references hooks templates
+git -C "$RC" status --porcelain -- agents skills rules references hooks templates seeds scripts
 ```
 
 Every entry is an improvement made from some paper session that has not been

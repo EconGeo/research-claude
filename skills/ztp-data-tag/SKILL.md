@@ -48,7 +48,8 @@ extra quality flag.
    If absent, tell the user to set up ZotPilot (`/ztp-setup`) and stop.
 2. **Write credentials configured** — tags and notes need `zotero_api_key` +
    `zotero_user_id`. If `mcp__zotpilot__manage_tags` / `mcp__zotpilot__create_note`
-   fail for missing keys, stop and point the user to README Step 7 (write-ops config).
+   fail for missing keys, stop and point the user to the ZotPilot install step in the
+   research-claude README ("Step 7 — Install and configure ZotPilot") (write-ops config).
 3. **Library indexed** — run `mcp__zotpilot__get_index_stats`. If many items are
    unindexed, warn that abstract-only extraction will be weaker for them.
 

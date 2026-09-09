@@ -2,7 +2,7 @@
 name: revise
 description: R&R cycle — classify referee comments and route to appropriate agents. Replaces /respond-to-referee.
 argument-hint: "[referee-report file path] [paper path (optional)]"
-allowed-tools: Read,Grep,Glob,Write,Edit,Task
+allowed-tools: Read,Grep,Glob,Write,Edit,Agent
 ---
 
 # Revise
@@ -19,7 +19,7 @@ Structure point-by-point referee responses with classification, agent routing pe
 1. Read referee report(s) from `$ARGUMENTS`
 2. Read the manuscript (`manuscript_<project>.qmd` or specified path)
 3. Read revision protocol from rules
-4. Read existing scripts to know what analyses already exist
+4. Read the manuscript's chunk labels and the setup-chunk naming map to know what analyses already exist
 
 ### Step 2: Classify severity, then route
 
@@ -51,8 +51,8 @@ Save to `quality_reports/referee_response_tracker.md` with:
 - Action items by priority (HIGH: new analysis, MEDIUM: clarification, FLAGGED: disagreements, LOW: minor)
 
 ### Step 5: Dispatch Agents
-- CLARIFICATION/REWRITE → dispatch Writer with specific instructions
-- NEW ANALYSIS → flag for user approval before dispatching Coder
+- CLARIFICATION/REWRITE → dispatch writer, then writer-critic; record the score
+- NEW ANALYSIS → after user approval dispatch coder, then coder-critic; then writer → writer-critic for the affected section
 - DISAGREE → draft diplomatic response, flag prominently for user
 
 ### Step 6: Draft Response Letter
@@ -76,9 +76,9 @@ When DISAGREE: open with acknowledgment, provide evidence, offer partial concess
 
 | Resource | Path | When |
 |----------|------|------|
-| Response tracker | `templates/response-tracker.md` | Step 4 — tracking document |
-| Response letter | `templates/response-letter.md` | Step 6 — response-letter boilerplate |
-| Diplomatic disagreement | `templates/diplomatic-disagreement.md` | Step 7 — DISAGREE phrasing |
+| Response tracker | `.claude/skills/revise/templates/response-tracker.md` | Step 4 — tracking document |
+| Response letter | `.claude/skills/revise/templates/response-letter.qmd` | Step 6 — response-letter boilerplate |
+| Diplomatic disagreement | `.claude/skills/revise/templates/diplomatic-disagreement.md` | Step 7 — DISAGREE phrasing |
 | Gotchas | `gotchas.md` | Always — known failure points |
 
 ---

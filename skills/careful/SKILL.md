@@ -21,8 +21,7 @@ When active, the following Bash command patterns are blocked:
 
 | Pattern | What It Catches |
 |---------|----------------|
-| `rm -rf` | Recursive force delete |
-| `rm -r` without explicit path | Broad recursive delete |
+| `rm -r` / `rm -f` / `rm -rf` / `rm -fr` | Recursive or force delete |
 | `git reset --hard` | Discard all uncommitted changes |
 | `git push --force` | Force push (overwrites remote history) |
 | `git push -f` | Same |
@@ -31,7 +30,6 @@ When active, the following Bash command patterns are blocked:
 | `git branch -D` | Force delete branch |
 | `DROP TABLE` | SQL table deletion |
 | `DROP DATABASE` | SQL database deletion |
-| `> /dev/null` at start | Overwriting with null |
 | `chmod 777` | Overly permissive permissions |
 
 ## Activation
@@ -61,5 +59,5 @@ When `/careful off`:
 
 - Session-scoped -- resets when conversation ends
 - Only blocks Bash tool calls -- doesn't affect user's terminal
-- Can be overridden if the user explicitly approves the blocked command
+- A denied call is denied -- there is no override prompt. `/careful off` is the only way through.
 - `rm` without `-rf` is still allowed (single file deletion)

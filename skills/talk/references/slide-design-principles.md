@@ -28,9 +28,9 @@ Tables on slides are hard to read. Convert key results to figures. If you must s
 - Max 2 equations per slide
 
 ## Builds
-- Use `\pause` for sequential reveals when the logical flow requires it
+- Use `. . .` for sequential reveals when the logical flow requires it (RevealJS pause)
 - Don't over-animate -- most slides should appear complete
-- Use `\only<>` for equation buildup in structural model presentations
+- Use `::: {.fragment}` for equation buildup in structural model presentations
 
 ## Tables on Slides
 - Max 4-5 columns (fewer than the paper)

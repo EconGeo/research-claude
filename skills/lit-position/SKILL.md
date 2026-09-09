@@ -5,7 +5,7 @@ description: >
   ztp-research to find and ingest, ztp-review to synthesize, then produces the two
   artifacts ZotPilot does not — frontier_map.md and positioning.md. Use when starting
   a project, writing an introduction, or defending a contribution claim.
-  Local-first per rules/literature-search-order.md.
+  Local-first per .claude/rules/literature-search-order.md.
 allowed-tools: Read,Write,Edit,Grep,Glob,WebSearch,WebFetch
 ---
 
@@ -19,8 +19,7 @@ ZotPilot finds and summarizes papers. It does not produce the two artifacts that
 argument needs: a map of the frontier, and a defensible positioning claim. This
 skill is the bridge.
 
-**`zotpilot-skills/` is vendored verbatim and is never edited.** This skill calls
-those skills; it does not modify them.
+**The vendored ZotPilot skills, `.claude/skills/ztp-research` and `.claude/skills/ztp-review`, are never edited.** This skill calls those skills; it does not modify them.
 
 ---
 
@@ -124,4 +123,4 @@ Save to `quality_reports/literature/<project>/`:
 
 - Does not write the literature review section — that is `/write`.
 - Does not propose an identification strategy — that is `/strategize`.
-- Does not edit anything under `zotpilot-skills/`.
+- Does not edit `.claude/skills/ztp-research` or `.claude/skills/ztp-review`.

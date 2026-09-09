@@ -2,7 +2,7 @@
 name: talk
 description: Create and audit Quarto RevealJS presentations. Combines talk creation, visual audit, and rendering.
 argument-hint: "[mode: create | audit | render] [format: job-market | seminar | short | lightning] [file path]"
-allowed-tools: Read,Grep,Glob,Write,Edit,Task,Bash
+allowed-tools: Read,Grep,Glob,Write,Edit,Agent,Bash
 ---
 
 # Talk
@@ -37,6 +37,11 @@ Generate a presentation from the paper.
 - **Format** (required): `job-market` | `seminar` | `short` | `lightning`
 - **Paper path** (optional): defaults to `manuscript_<project>.qmd`
 - If no format specified, ask the user.
+- **Resolve the manuscript symlink.** Run `python3 .claude/scripts/pipeline.py manuscript` to
+  get the declared manuscript filename. If `talks/<manuscript filename>` does not already exist,
+  create it as a relative symlink to `../<manuscript filename>` before rendering any talk — talks
+  embed the manuscript by bare filename, and the embed only resolves when the source is reachable
+  from inside `talks/` (see `docs/audits/2026-09-08_embed-test.md`).
 
 **Step 2: Dispatch Storyteller**
 
@@ -99,6 +104,9 @@ Run visual quality checks:
 
 ### `/talk render [file]` — Render Talk
 
+Before rendering, confirm `talks/<manuscript filename>` exists (per Step 1 above); create it if
+absent — the embed will not resolve otherwise.
+
 ```bash
 quarto render talks/[file]
 ```
@@ -114,7 +122,7 @@ and for unresolved cross-references.
 |----------|------|-----------------|
 | Narrative arcs | `talk/templates/narrative-arcs.md` | Paper-type-specific story structures (reduced-form, structural, theory+empirics, descriptive) with pacing and audience calibration |
 | Format constraints | `talk/templates/format-constraints.md` | Slide counts, durations, per-format rules for all 4 formats |
-| Quarto scaffold | `talk/templates/quarto-scaffold.qmd` | RevealJS skeleton with YAML config, section dividers, figure/equation slots (default) |
+| Quarto scaffold | `.claude/skills/talk/templates/quarto-scaffold.qmd` | RevealJS skeleton with YAML config, section dividers, figure/equation slots (default) |
 | Slide design | `talk/references/slide-design-principles.md` | Visual design principles: font sizes, colors, builds, rhythm |
 | Gotchas | `talk/gotchas.md` | Known failure points and edge cases |
 

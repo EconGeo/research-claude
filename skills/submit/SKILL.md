@@ -2,7 +2,7 @@
 name: submit
 description: Submission pipeline — journal targeting, replication package, audit, and final gate. Replaces /submit, /target-journal, /audit-replication, /data-deposit.
 argument-hint: "[mode: target | package | audit | final] [journal name (optional)]"
-allowed-tools: Read,Grep,Glob,Write,Bash,Task
+allowed-tools: Read,Grep,Glob,Write,Bash,Agent
 ---
 
 # Submit
@@ -18,9 +18,9 @@ Submission pipeline with four modes covering journal selection through final ver
 ### `/submit target` — Journal Targeting
 Get ranked journal recommendations.
 
-**Agent:** Orchestrator (journal selection function)
+**Performed by this skill** (no agent): read `.claude/references/journal-profiles.md` and `.claude/references/discipline-cards.md`, rank three journals.
 
-Considers: contribution fit, methodology fit, audience fit, recent publications, desk rejection risk. Consults .claude/references/domain-profile.md for journal tiers.
+Considers: contribution fit, methodology fit, audience fit, recent publications, desk rejection risk.
 
 Output: Ranked list of 3 target journals with rationale.
 Save to `quality_reports/journal_recommendations_[date].md`
@@ -28,31 +28,29 @@ Save to `quality_reports/journal_recommendations_[date].md`
 ### `/submit package` — Build Replication Package
 Assemble AEA-compliant replication package.
 
-**Agents:** Coder + Verifier
+**Agents:** coder → coder-critic
 
 Produces:
-- Master script that runs all analyses end-to-end
-- README with data sources, computational requirements, instructions
-- Data documentation and codebook
-- Organized file structure per AEA standards
-Save to `paper/replication/`
+- the declared manuscript, `references.bib`, `templates/`, `data/raw/data_manifest.md`, `scripts/acquire/`, `renv.lock`, README (`.claude/skills/submit/templates/replication-readme.md`) — assembled under `replication/`
+Save to `replication/`
 
 ### `/submit audit` — Audit Replication Package
 Verify replication package completeness.
 
-**Agent:** Verifier (submission mode — 10 checks)
+**Agent:** Verifier (submission mode — 10 checks, full text in `.claude/agents/verifier.md`)
 
 Checks:
-1. Master script exists and runs
-2. All tables reproduce
-3. All figures reproduce
-4. README complete
-5. Data documentation present
-6. Numbered script order
-7. Dependencies listed
-8. Runtime documented
-9. Output paths match paper references
-10. No hardcoded paths
+1. Render
+2. Chunks execute
+3. References resolve
+4. Fresh
+4b. Prose numbers computed
+5. Package inventory
+6. Dependencies
+7. Data provenance
+8. Execution
+9. Cross-reference
+10. README
 
 ### `/submit final [journal]` — Final Submission Gate
 Full verification + score enforcement + submission checklist.
@@ -66,15 +64,10 @@ Workflow:
    - If the statement is missing or still contains placeholder text: **STOP** — "AI Use Statement not populated. Populate from ai_use_log.md using the Wiley/COPE-aligned template before submission."
    - If a journal is specified via `$ARGUMENTS`: check that the disclosure location matches that journal's `**AI disclosure:**` field in `.claude/references/journal-profiles.md`
    - If all checks pass: report "AI disclosure audit: [N] log entries found, statement populated ✓"
-3. Check score gate: aggregate >= 95, all components >= 80
+3. Check score gate: `python3 .claude/scripts/pipeline.py score --gate submission`
 4. Save gate summary to `quality_reports/quality_gate_[date].md`
-5. Generate HTML quality gate report and refresh dashboard:
-```bash
-python3 scripts/generate_html_report.py quality-gate quality_reports/quality_gate_[date].md
-python3 scripts/generate_dashboard.py
-```
-6. If PASS: generate cover letter draft + submission checklist
-7. If FAIL: list blocking issues and stop
+5. If PASS: generate cover letter draft (`.claude/skills/submit/templates/cover-letter.qmd`) + submission checklist (`.claude/skills/submit/templates/submission-checklist.md`)
+6. If FAIL: list blocking issues and stop
 
 ---
 
@@ -82,11 +75,11 @@ python3 scripts/generate_dashboard.py
 
 | Resource | Path | When |
 |----------|------|------|
-| Submission checklist | `templates/submission-checklist.md` | `/submit final` — pre-submission verification |
-| Cover letter | `templates/cover-letter.tex` | `/submit final` — draft cover letter |
-| Replication README | `templates/replication-readme.md` | `/submit package` — AEA-compliant README |
-| Audit checklist | `templates/audit-10-checks.md` | `/submit audit` — verifier submission mode |
-| Gotchas | `gotchas.md` | Always — known failure points |
+| Submission checklist | `.claude/skills/submit/templates/submission-checklist.md` | `/submit final` — pre-submission verification |
+| Cover letter | `.claude/skills/submit/templates/cover-letter.qmd` | `/submit final` — draft cover letter |
+| Replication README | `.claude/skills/submit/templates/replication-readme.md` | `/submit package` — AEA-compliant README |
+| Audit checklist | `.claude/skills/submit/templates/audit-10-checks.md` | `/submit audit` — verifier submission mode |
+| Gotchas | `.claude/skills/submit/gotchas.md` | Always — known failure points |
 
 ---
 

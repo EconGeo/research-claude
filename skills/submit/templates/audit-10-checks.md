@@ -9,13 +9,12 @@ The verifier runs in two modes. Standard mode (checks 1-4) runs between phase tr
 - Pass: exit 0, output artifact newer than the source `.qmd`
 - No `ERROR` or `WARNING` in the render log
 - No undefined citations, no unresolved cross-references (`?@fig-`, `?@tbl-`)
-- A clean render is **not** proof the prose numbers are right — that is check 11
+- A clean render is **not** proof the prose numbers are right — that is check 4b
   below, `prose_number_check.py` (INV-11)
 
-### 2. Script Execution
-- All scripts run without errors
-- Output files created
-- File sizes > 0
+### 2. Chunks execute
+- Every chunk ran (no `eval: false` on an estimation chunk)
+- No cached chunk older than its `cache.extra` files
 
 ### 3. File Integrity
 - Every `read_csv(here(...))` / `readRDS(here(...))` path in a chunk resolves
@@ -40,7 +39,7 @@ The verifier runs in two modes. Standard mode (checks 1-4) runs between phase tr
 ### 5. Package Inventory
 - Every acquisition script in `scripts/acquire/` is present and numbered sequentially
 - No analysis code outside the manuscript — analysis lives in cached `.qmd` chunks,
-  not in `scripts/R/` (a stray analysis script is an orphan by construction)
+  not in `scripts/R/` (a stray analysis script is an orphan by construction) <!-- residue:prohibition -->
 - No `source()` call inside any chunk
 
 ### 6. Dependency Verification
@@ -55,12 +54,11 @@ The verifier runs in two modes. Standard mode (checks 1-4) runs between phase tr
 - Data availability statement present
 
 ### 8. Execution Verification
-- Run master script end-to-end
+- Run `quarto render` from a cold cache; report runtime
 - Capture all output and errors
-- Report runtime
 
 ### 9. Output Cross-Reference
-- Every table and figure in the paper traced to a specific script
+- Every table and figure traced to a `tbl-`/`fig-` chunk
 - No orphan outputs (generated but not referenced)
 - No missing outputs (referenced but not generated)
 
@@ -69,14 +67,14 @@ The verifier runs in two modes. Standard mode (checks 1-4) runs between phase tr
 - Computational requirements (software, packages, hardware, runtime)
 - Description of programs (numbered, with inputs/outputs)
 - Instructions for replication
-- List of tables and figures with generating scripts
+- List of tables and figures with generating chunk labels
 
 ## Content Invariants Checked
 
 The verifier also enforces these invariants (any violation is FAIL):
-- INV-9: `biblatex` + `biber`, not `natbib` + `bibtex`
-- INV-10: `hyperref` loaded second-to-last; `cleveref` after
-- INV-14: `set.seed()` exactly once at top if stochastic
+- INV-9: pandoc `@key` citations; `cite-method: biblatex` on the PDF path; no top-level `csl:`
+- INV-10: when a preamble is supplied, hyperref second-to-last, cleveref after
+- INV-14: `set.seed()` once, in the setup chunk
 - INV-15: All packages loaded at top
 - INV-16: No absolute paths
 - INV-19: No prohibited functions (`setwd()`, `rm(list = ls())`, `install.packages()`, `attach()`)
