@@ -27,6 +27,8 @@ expect_fail() { # expect_fail <name> <command...> — PASS iff command exits non
 
 echo "══ fixture copy: $T"
 run link "$RC/apply.sh" --project-dir "$T" --link
+run templates-linked test -L "$T/.claude/templates/pipeline-state.json"
+run scripts-linked   test -L "$T/.claude/scripts/pipeline.py"
 
 # ── mechanical checks (extended by later tasks; keep the names stable) ──
 run manuscript-declared   python3 "$RC/scripts/pipeline.py" --root "$T" manuscript
