@@ -1,45 +1,22 @@
-# Drafting Gates -- Approval Checkpoints
+# Drafting Gates — Approval Checkpoints
 
-Draft sections in this order, pausing for user approval at each gate.
-
----
+Draft sections in this order, pausing for user approval at each gate. Every gate ends with the
+writer-critic's score recorded (`pipeline.py state record-score manuscript <score> --scope section:<name>`).
 
 ## GATE 1: Introduction + Literature Positioning
+Present. Wait. User may redirect framing, contribution, literature emphasis.
 
-Present to user. Wait for approval before proceeding.
-
-User may redirect:
-- Framing
-- Contribution positioning
-- Literature emphasis
-
----
-
-## GATE 2: Data + Empirical Strategy (or Model, for structural papers)
-
-Present to user. Wait for approval.
-
-User may adjust:
-- Sample restrictions
-- Variable definitions
-- Specification details
-
----
+## GATE 2: Data + Empirical Strategy (or Model)
+Present. Wait. User may adjust sample restrictions, variable definitions, specification.
 
 ## GATE 3: Results + Robustness + Conclusion
+**Hard prerequisite — never file existence:**
+- at least one `estimate-*` chunk and one `tbl-*` chunk exist in the declared manuscript
+- `quarto render <manuscript>` exits 0 (`python3 .claude/scripts/pipeline.py pre writer` checks both)
 
-**Hard prerequisite:** Requires actual output files (see Artifact Prerequisites in the agent).
-- `paper/tables/` must contain at least one `.tex` file with actual numbers
-- `paper/figures/` must contain at least one `.pdf` or `.png` figure
+Present. Wait.
 
-Present to user. Wait for approval.
-
----
-
-## Application Rules
-
-- **Single-section drafts:** The gate for that section applies.
-- **Full drafts (`/write full`):** All three gates apply in sequence.
-- **BLOCKED items:** Results/Conclusion cannot be drafted without output files.
-- **VERIFY items:** Citations that need user confirmation.
-- **VOICE items:** Style guide not yet extracted (drafting blocked until resolved).
+## Application rules
+- Single-section drafts: that section's gate applies. `/write full`: all three in sequence.
+- **BLOCKED:** Results/Conclusion without an estimation chunk and a clean render.
+- **VERIFY:** citations needing user confirmation. **VOICE:** style guide not yet extracted.

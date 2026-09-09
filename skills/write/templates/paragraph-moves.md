@@ -13,7 +13,7 @@ Every paragraph has one job. Before writing a paragraph, identify its type. Then
 | **Result statement** | Finding with magnitude + units --> comparison to prior estimates --> economic significance | Lead with the number, not the table reference. |
 | **Literature positioning** | What [Author, Year] found --> how we differ --> what our contribution adds | Citations are surgical -- position the paper, don't pad the bibliography. |
 | **Mechanism** | The effect operates through [channel]. We show this by [test]. Alternative [X] ruled out by [Y]. | Explains *why*, not just *that*. |
-| **Robustness narration** | Core result survives [checks]. Main threat: [X]; Table N addresses this by [approach]. | Brief. Don't re-argue the result -- confirm it holds. |
+| **Robustness narration** | Core result survives [checks]. Main threat: [X]; @tbl-label addresses this by [approach]. | Brief. Don't re-argue the result -- confirm it holds. |
 | **Qualification** | May not generalize to [context] because [reason]. | Short. One paragraph maximum. |
 
 ---

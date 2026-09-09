@@ -21,7 +21,7 @@ Notation conventions for consistency across all sections of the paper.
 
 - **Consistent throughout** -- the same symbol never means two things across sections
 - **Define every symbol at first use** -- no implicit notation
-- **Match the strategy memo** -- if the coder's naming map uses specific notation, the paper must match
+- **Match the setup chunk** -- the naming map in the manuscript's `setup` chunk is the notation source; the paper must match it
 - **Subscripts matter** -- $i$ for units, $t$ for time, $g$ for groups, $j$ for secondary units (firms, markets)
 - **Hats for estimates** -- $\hat{\beta}$ for estimated coefficients, $\beta$ for population parameters
 - **Bold for vectors/matrices** -- $\mathbf{X}$ for the control matrix, $X_{it}$ for a single observation's controls

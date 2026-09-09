@@ -160,9 +160,9 @@ No separate strategy section. The contribution is in the data construction (alre
 
 How to narrate by output type:
 - **Regression table:** Lead with the preferred specification. "Column 3, which includes [controls/FE], shows [effect]. Adding [X] in Column 4 does not change the estimate."
-- **Event study figure:** "Figure N shows [pattern]. The pre-period coefficients are close to zero [confirming parallel trends]. The effect appears in period [T] and [persists/fades/grows]."
+- **Event study figure:** "@fig-label shows [pattern]. The pre-period coefficients are close to zero [confirming parallel trends]. The effect appears in period [T] and [persists/fades/grows]."
 - **IV results:** Present first stage, reduced form, and 2SLS together. "The first stage F-statistic is [X]. The reduced-form effect is [Y]. The 2SLS estimate implies [Z], consistent with a LATE of [interpretation]."
-- **RD results:** "Figure N shows the discontinuity visually. The local polynomial estimate is [X] (bandwidth [B], chosen by [method]). The effect is robust to alternative bandwidths (Table N)."
+- **RD results:** "@fig-label shows the discontinuity visually. The local polynomial estimate is [X] (bandwidth [B], chosen by [method]). The effect is robust to alternative bandwidths (@tbl-label)."
 
 **Structural:**
 1. **Parameter estimates** -- Table of estimated parameters with standard errors. Interpret each economically ("the estimated risk aversion coefficient implies...")
