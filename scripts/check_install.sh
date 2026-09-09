@@ -191,6 +191,18 @@ check_project() {
       warn lock "records ${locked:0:7}, checkout is at ${head:0:7} (${behind:-?} commits later) — refresh before submission"
     fi
   fi
+  # ── 7. Manuscript declared (D-8) ──────────────────────────────────────────
+  # Every predicate, hook and skill resolves the manuscript through CLAUDE.md.
+  local decl; decl="$(grep -cE '^manuscript:\s*\S+\.qmd\s*$' "$P/CLAUDE.md" 2>/dev/null || echo 0)"
+  if [[ "$decl" -eq 1 ]]; then
+    local mf; mf="$(sed -nE 's/^manuscript:\s*(\S+\.qmd)\s*$/\1/p' "$P/CLAUDE.md")"
+    [[ -f "$P/$mf" ]] && ok manuscript-declared "$mf" || bad manuscript-declared "CLAUDE.md declares $mf but it does not exist"
+  elif [[ "$decl" -eq 0 ]]; then
+    if [[ -n "$(find "$P" -maxdepth 2 -name '*.qmd' -not -path '*/talks/*' -not -path '*/explorations/*' -print -quit)" ]]; then
+      bad manuscript-declared "no 'manuscript: <file>.qmd' line in CLAUDE.md"
+    else warn manuscript-declared "no manuscript yet — /pipeline refuses until one is declared"; fi
+  else bad manuscript-declared "CLAUDE.md declares $decl manuscripts; exactly one is required"; fi
+
   [[ -f "$P/bootstrap-pipeline.sh" ]] && ok bootstrap || bad bootstrap "bootstrap-pipeline.sh missing"
 }
 

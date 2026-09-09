@@ -6,10 +6,12 @@ The single `.qmd` file is the source of truth for all analysis, tables, figures,
 No external R analysis scripts. No results registry. No ground-truth CSV.
 The rendered PDF is the paper.
 
-> **File name:** the manuscript is `manuscript_<project>.qmd`, where `<project>` is the
-> project directory basename (e.g. `manuscript_myproject.qmd` in the `myproject/`
-> project). Examples below use `manuscript_<project>.qmd` as a placeholder. See
-> This file is the canonical statement of that convention.
+> **File name and declaration.** A new project is scaffolded with `manuscript_<project>.qmd`
+> (`<project>` = the directory basename). Whatever the file is called, the project's `CLAUDE.md`
+> declares it on a line of its own: `manuscript: manuscript_<project>.qmd`. Every predicate in
+> `.claude/scripts/pipeline.py`, every hook and every skill resolves "the manuscript" through
+> that line, and `check_install.sh` fails when it is absent or names more than one file. Examples
+> below write `manuscript_<project>.qmd` and mean the declared manuscript.
 
 ---
 
