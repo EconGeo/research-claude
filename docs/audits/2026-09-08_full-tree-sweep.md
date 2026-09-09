@@ -360,6 +360,23 @@ this file"; it will not, until the three lines are marked. Recorded here per the
 plan's Global Constraint rather than fixed, since Task 0.5/0.6 may not edit
 `references/`.
 
+**Fourth entry — `rules/session-handoff.md` is not free of an unprefixed pipeline path,
+found running `scripts/check_paths.py --root . --list` (Task 0.6, 2026-09-08) against the
+whole-file ✓ mark at §6 line 222 ("literature-search-order.md, shared-pipeline.md,
+session-handoff.md | — | ✓ | clean"):**
+
+| File | Lines | Class | Finding |
+|---|---|---|---|
+| `rules/session-handoff.md` | 58 | 3 (UNPREFIXED) | "Use `templates/handoff.md` for structure." — bare `templates/` path, not `.claude/`-prefixed |
+
+Read in full: the file is otherwise genuinely clean of the classes the sweep's residue
+grep was built to catch (multi-file/LaTeX/deleted-thing/etc.), which is why the ✓ holds
+up against that grep. But `templates/handoff.md` at line 58 is a real D-4 violation — it
+is a shipped pipeline path missing the `.claude/` prefix the repair requires everywhere.
+`literature-search-order.md` and `shared-pipeline.md` (the other two files on the same ✓
+row) produced no hits from `check_paths.py` and remain clean. Recorded here per the
+plan's Global Constraint rather than fixed, since Task 0.5/0.6 may not edit `rules/`.
+
 ## 12. Counts
 
 | Layer | Files read | Files clean | Residue rows (classes 1–7) | Hook/contract rows |
