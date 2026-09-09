@@ -76,6 +76,16 @@ check_project() {
   fi
   ok checkout "$RC"
 
+  # ── 0. The shared checkout is on main or a detached lock SHA ─────────────
+  # Any `git checkout <branch>` in the shared tree re-points all six papers at once.
+  # Set RESEARCH_CLAUDE_ALLOW_BRANCH=1 only while a named canary is deliberately linked
+  # to a worktree; that downgrades the FAIL to a named WARN.
+  local br_rc; br_rc="$(git -C "$RC" symbolic-ref -q --short HEAD 2>/dev/null || echo DETACHED)"
+  if [[ "$br_rc" == "main" ]]; then ok branch "checkout on main"
+  elif [[ "$br_rc" == "DETACHED" && "$(git -C "$RC" rev-parse HEAD)" == "$(sed -n 's/^commit=//p' "$P/.claude/pipeline.lock" 2>/dev/null)" ]]; then ok branch "detached at the lock SHA"
+  elif [[ "${RESEARCH_CLAUDE_ALLOW_BRANCH:-0}" == "1" ]]; then warn branch "checkout on '$br_rc' — allowed by RESEARCH_CLAUDE_ALLOW_BRANCH=1"
+  else bad branch "checkout is on '$br_rc', not main and not the lock SHA"; fi
+
   # ── 1. No dangling links ──────────────────────────────────────────────────
   local dangling
   dangling="$(find "$P/.claude" -maxdepth 2 -type l ! -exec test -e {} \; -print 2>/dev/null)"
