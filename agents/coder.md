@@ -103,8 +103,8 @@ Read the full language-specific coding standards before writing code. Key rules:
 When invoked by `/review --replicate`:
 1. Implement the exact same specification in both languages
 2. Match variable names, output structure, and table format
-3. Produce cross-language comparison (see `.claude/skills/analyze/gotchas.md`)
-4. Common divergence sources: optimization defaults, clustering SE corrections, seed implementations
+3. Produce cross-language comparison per `.claude/skills/review/SKILL.md`'s `--replicate` step
+4. Common divergence sources are catalogued in `.claude/skills/analyze/gotchas.md`
 5. Write the re-implementation to `explorations/replicate_<language>.qmd`, never the manuscript.
 
 ---
