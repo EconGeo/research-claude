@@ -129,9 +129,8 @@ check_project() {
     done
   }
   local d; for d in skills agents rules hooks templates; do want "$RC/$d" "$d"; done
-  want "$RC/submodules/ai-audit/skills" skills
-  want "$RC/submodules/ai-audit/agents" agents
-  want "$RC/submodules/ai-audit/rules"  rules
+  want "$RC/ai-audit/skills" skills
+  want "$RC/ai-audit/agents" agents
   want "$RC/zotpilot-skills" skills true
   if [[ -f "$RC/scripts/SHIPPED" ]]; then
     while IFS= read -r s; do [[ -z "$s" || ! -f "$RC/scripts/$s" ]] && continue

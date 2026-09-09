@@ -5,14 +5,14 @@ Each criterion scans the shipped tree and prints PASS/FAIL/WARN rows. A line end
 '<!-- residue:prohibition -->' or '<!-- residue:historical -->' is exempt from
 latex-residue, manuscript-model and deleted-things. A file whose first line is exactly
 '<!-- residue:historical -->' is exempt in full. Vendored trees (zotpilot-skills/,
-submodules/) are scanned for deleted-things only and reported as WARN.
+ai-audit/) are scanned for deleted-things only and reported as WARN.
 """
 from __future__ import annotations
 import argparse, re, sys
 from pathlib import Path
 
 SHIP = ["agents", "skills", "rules", "references", "hooks", "templates", "seeds", "scripts"]
-VENDORED = ["zotpilot-skills", "submodules/ai-audit"]
+VENDORED = ["zotpilot-skills", "ai-audit"]
 TEXT_SUFFIX = {".md", ".py", ".sh", ".json", ".R", ".qmd", ".yaml", ".yml", ".tex", ".bib", ""}
 MARK = re.compile(r"<!-- residue:(prohibition|historical) -->\s*$")
 
@@ -43,10 +43,6 @@ SLASH_ALLOW = {"compact", "clear", "help", "init", "memory", "config", "permissi
                # Verified false positives (2026-09-08, Task 0.5 red run) — not skill invocations:
                "strong", "div",  # </strong>, </div> — HTML closing tags in rules/html-dashboard.md
                "detach",  # attach()/detach() R function pair in hooks/lint-scripts.sh
-               "concept-slug", "existing-slug", "idea-slug", "dataset-slug", "new-slug",
-               "concept-b", "concept-a", "idea-title", "dataset-a", "dataset-d",
-               # push-manifest filename examples (curly-brace folder placeholder, slug, dot-md)
-               # in skills/obsidian-digest-sync/SKILL.md
                "assumptions", "results", "proofs",
                # theory-output filename tails (bracket topic placeholder, name, dot-tex) in
                # skills/strategize/SKILL.md — path segments, not skill invocations
@@ -132,7 +128,7 @@ def crit_inv_refs(root):
 
 def crit_skill_refs(root):
     skills = set()
-    for d in ["skills", "submodules/ai-audit/skills", "zotpilot-skills"]:
+    for d in ["skills", "ai-audit/skills", "zotpilot-skills"]:
         p = root / d
         if p.is_dir():
             skills |= {c.name for c in p.iterdir() if c.is_dir() and (c / "SKILL.md").exists()}

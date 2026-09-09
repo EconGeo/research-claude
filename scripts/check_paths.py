@@ -16,11 +16,11 @@ import argparse, re, sys
 from pathlib import Path
 
 SHIP = ["agents", "skills", "rules", "references", "hooks", "templates", "seeds", "scripts"]
-VENDORED = ["zotpilot-skills", "submodules/ai-audit"]
+VENDORED = ["zotpilot-skills", "ai-audit"]
 RESOLVE = {
-    "skills":     ["skills", "submodules/ai-audit/skills", "zotpilot-skills"],
-    "agents":     ["agents", "submodules/ai-audit/agents"],
-    "rules":      ["rules", "submodules/ai-audit/rules"],
+    "skills":     ["skills", "ai-audit/skills", "zotpilot-skills"],
+    "agents":     ["agents", "ai-audit/agents"],
+    "rules":      ["rules"],
     "references": ["references"],
     "templates":  ["templates"],
     "scripts":    ["scripts"],

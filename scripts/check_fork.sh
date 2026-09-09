@@ -49,7 +49,13 @@ scan project-nouns    'JREPM|JRER|CoStar|[^a-z]zoning|WRLURI|[^A-Za-z]NAR[^A-Za-
 scan course-leak      'academic course materials|Beamer slides|TikZ Freshness'  # <!-- residue:prohibition -->
 
 echo "── structure ──"
-absent clo-author-submodule submodules/clo-author
+# The submodule mechanism itself was removed 2026-09-09 (ai-audit, journal-digest — the
+# only two it ever carried). This supersedes the old clo-author-submodule check (clo-author
+# was de-submoduled earlier and never came back either): with no submodules/ directory at
+# all, no submodule can silently reappear as an empty, uninitialized clone — the exact
+# failure mode (`git submodule update --init` skipped) that motivated removing the
+# mechanism entirely rather than just clo-author's entry in it.
+absent submodules-dir submodules
 absent pipeline-precedence  rules/pipeline-precedence.md  # <!-- residue:prohibition -->
 # Every `absent` assertion below NAMES A FILE THAT MUST NEVER EXIST. The marker on those
 # lines is the second reserved use of the convention in this file: without it audit_graph.py
@@ -57,7 +63,12 @@ absent pipeline-precedence  rules/pipeline-precedence.md  # <!-- residue:prohibi
 # criterion is structurally unreachable. Marking only the `absent` lines keeps a genuinely
 # broken reference anywhere else in this gate visible — the `present` block below is NOT
 # marked, so a d1-restored file that goes missing is still reported.
-grep -q 'clo-author' "$RC/.gitmodules" 2>/dev/null && { echo "FAIL [gitmodules]"; fail=1; } || echo "PASS [gitmodules]"
+# .gitmodules itself must not exist — the git submodule mechanism was removed entirely
+# (2026-09-09), not just pruned of one entry. A submodule needs `git submodule update
+# --init` and silently yields an EMPTY directory when a clone skips that step; the fix was
+# to vendor everything real (ai-audit/, zotpilot-skills/) and stop shipping .gitmodules at
+# all, not to keep the mechanism alive for whatever is left in it.
+absent no-gitmodules .gitmodules
 grep -q 'CLO_SKIP_SKILLS' "$RC/apply.sh" 2>/dev/null && { echo "FAIL [apply.sh]"; fail=1; } || echo "PASS [apply.sh]"
 contains cc-correctness-half agents/coder-critic.md 'Correctness Layer'
 contains cc-invariant-half   agents/coder-critic.md 'INV-23'

@@ -24,7 +24,7 @@ fi
 
 if [[ ! -d "$RC/.git" ]]; then
   echo "→ cloning $repo → $RC"
-  git clone --recurse-submodules "$repo" "$RC"
+  git clone "$repo" "$RC"
 fi
 git -C "$RC" fetch --quiet origin
 
@@ -39,7 +39,6 @@ else
   echo "→ pipeline: pinned $commit (project-local)"
   git -C "$RC" checkout --quiet "$commit"
 fi
-git -C "$RC" submodule update --init --recursive --quiet
 
 APPLY_ARGS=(--project-dir "$PROJECT_DIR" --link)
 [[ "$TIP" == true ]] && APPLY_ARGS+=(--tip)
