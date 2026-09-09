@@ -38,8 +38,22 @@ to the repo root — this overrides the checkpoint skill's default root path. A 
 - `root-skills/` was **removed** on 2026-09-08. `new-project` was superseded by
   `rules/quarto-empirical.md` and `skills/new-project-ztp/`; see
   `docs/decisions/2026-09-08_cut-the-orchestration-graph.md`.
-- `submodules/` holds only `ai-audit` and `journal-digest`, both live. `clo-author` was
-  removed on 2026-09-08 — its agents are vendored into `agents/` and maintained here.
+- **There is no `submodules/` directory and no `.gitmodules`.** The git submodule
+  mechanism was removed entirely on 2026-09-09: a submodule needs
+  `git submodule update --init` and silently yields an EMPTY directory when a clone or a
+  coauthor skips that step, which defeats the point of a public template a coauthor
+  bootstraps with a clone and no access grant. `clo-author` was de-submoduled on
+  2026-09-08 (its agents are vendored into `agents/` and maintained here); `ai-audit` was
+  vendored the same way on 2026-09-09 (see `ai-audit/VENDORED.md`); `journal-digest` — a
+  standalone tool, not part of this pipeline — was dropped outright, and
+  `skills/obsidian-digest-sync/`, which only existed to file its output into Obsidian,
+  went with it.
+- `ai-audit/` is **vendored verbatim** (`agents/`, `skills/`, `README.md` — never
+  `rules/`) from `EconGeo/ai-audit` and is never edited in place, mirroring
+  `zotpilot-skills/` below. Refresh with `scripts/sync-ai-audit.sh`. Its `rules/ai-disclosure.md`
+  is not carried here: it had drifted from the canonical `rules/ai-disclosure.md` (still
+  describing a retired dual LaTeX+Quarto placement), so that copy was reconciled away —
+  `rules/ai-disclosure.md` at repo root is the one true copy.
 - `zotpilot-skills/` is **vendored verbatim** from `EconGeo/ZotPilot` and is never edited
   in place. Changes go into a bridge skill under `skills/` (see `lit-position`,
   `new-project-ztp`, `ztp-data-tag`).
