@@ -287,6 +287,20 @@ Skills: `/new-project`, `/review-paper`, `/audit-replication`, `/data-deposit`, 
 `/prompt`, `/prompt-only`, `/interview-me`, `/research-ideation`, `/preregister`, `/seven-pass-review`, `/devils-advocate`,
 `/promote-memory`, `/data-analysis`, `/tools compile`.
 
+## Addendum (found during repair)
+
+Found running the widened residue grep for baseline snapshot
+`docs/audits/baseline-2026-09-08/` (2026-09-08, Task 0.1): the sweep's own row for
+`writer.md` (§1, line 49) reads "Quarto-native throughout; `Bibliography_base` absent;
+INV-22 marked retired" and marks the file **✓ clean**. It is not.
+
+| File | Lines | Class | Finding |
+|---|---|---|---|
+| `writer.md` | 44 | 4 | "Read `quality_reports/results_summary.md` (produced by `/analyze`)" — a separate handoff file read as a Results-drafting prerequisite; the same class-4 "contradicts the one-manuscript model" issue already flagged at `coder.md:60`, `analyze/SKILL.md:59`, and `analyze/gotchas.md:35` for the file `writer.md` reads here |
+
+No other file the sweep lists as clean (`promote/SKILL.md`, `talk/SKILL.md`, or any other
+✓ row in §1–§8) turned up in the same grep.
+
 ## 12. Counts
 
 | Layer | Files read | Files clean | Residue rows (classes 1–7) | Hook/contract rows |
