@@ -29,7 +29,12 @@ RESOLVE = {
 EXEMPT_PREFIX = ("data/", "quality_reports/", "talks/", "explorations/", "scripts/acquire/",
                  "master_supporting_docs/", ".claude/state/", ".claude/settings", ".claude/pipeline.lock")
 EXEMPT_EXACT = {"templates/quarto-preamble.tex", "templates/word-reference.docx",   # <!-- residue:prohibition -->
-                "templates/ai-use-log.md", "templates/apa.csl"}                    # <!-- residue:prohibition -->
+                "templates/ai-use-log.md", "templates/apa.csl",                    # <!-- residue:prohibition -->
+                # The acquisition directory named WITHOUT a trailing slash. EXEMPT_PREFIX
+                # already covers "scripts/acquire/<file>"; prose that names the directory
+                # itself ("a new acquisition script in `scripts/acquire/`") tokenises as the
+                # bare path and was reported as unprefixed. Project-level either way.
+                "scripts/acquire"}                                                 # <!-- residue:prohibition -->
 # The two marked lines above NAME project-level paths in order to exempt them. They exist in
 # an installed project and must never exist in this repo (the repo ships them from seeds/),
 # so audit_graph.py would otherwise report them as dangling for ever.
