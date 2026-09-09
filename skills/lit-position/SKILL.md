@@ -90,7 +90,7 @@ what it adds that they do not. Then stress-test it:
 ## Step 6 — Self-check
 
 Score the output against the six categories inherited from the retired
-`librarian-critic`:
+`librarian-critic`: <!-- residue:historical -->
 
 1. **Coverage** — missing subfields, adjacent literatures, seminal papers, or the
    econometric-methods papers the strategy depends on?

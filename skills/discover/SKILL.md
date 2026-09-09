@@ -67,43 +67,10 @@ Using `.claude/skills/strategize/templates/decision-record.md`, record:
 - **What would invalidate:** What would force a pivot (e.g., "if the policy change turns out to have been anticipated")
 
 ### `/discover lit [topic]` — Literature Review
-Search and synthesize academic literature.
-
-**Agents:** Librarian (collector) → librarian-critic (reviewer)
-**Output:** Annotated bibliography + BibTeX entries + frontier map
-
-Workflow:
-1. Read `.claude/references/domain-profile.md` for field journals and seminal references
-2. Check `master_supporting_docs/` for uploaded papers
-3. Read `bibliography_base.bib` for papers already in the project
-4. Dispatch Librarian to search:
-   - Top-5 journals (AER, Econometrica, QJE, JPE, REStud)
-   - Field journals from domain-profile.md
-   - NBER/SSRN/IZA working papers
-   - **Citation chains** — forward and backward citation tracking from key papers. Follow: (a) backward citations (what do the key papers cite?), and (b) forward citations (who cites the key papers?). This is often the most productive search vector.
-5. Assign **proximity scores** to each paper:
-   - **1** — Directly competes (same question, similar method)
-   - **2** — Closely related (same question, different method or setting)
-   - **3** — Related (overlapping topic, different angle)
-   - **4** — Background (provides theory, method, or context)
-   - **5** — Tangentially related (useful framing only)
-6. Dispatch librarian-critic to check coverage, gaps, recency, scope
-7. If gaps found, re-dispatch Librarian for targeted search (max 1 round)
-8. Save to `quality_reports/lit_review_[topic].md`
-
-**Unverified citations:** If you cannot verify a citation, mark the BibTeX entry with `% UNVERIFIED`. Do NOT fabricate or guess citation details. Note when working papers have been published — cite the published version.
-
-Output format for each paper:
-
-```markdown
-### [Author (Year)] — [Short Title]
-- **Journal:** [venue]
-- **Proximity:** [1-5 score]
-- **Main contribution:** [1-2 sentences]
-- **Identification strategy:** [DiD / IV / RDD / SC / descriptive]
-- **Key finding:** [result with effect size]
-- **Relevance:** [why it matters for our research]
-```
+**Superseded by `/lit-position`.** Search, proximity scoring, coverage self-check,
+frontier mapping and positioning all live in `.claude/skills/lit-position/SKILL.md`
+now — invoke it directly instead of this mode. It is local-Zotero-first per
+`.claude/rules/literature-search-order.md`.
 
 ### `/discover data [requirements]` — Data Discovery
 Find and assess datasets for the research question.
@@ -183,4 +150,4 @@ Generate:
 - **Data feasibility matters:** A perfect dataset you can't access is useless. Always assign A/B/C/D grades.
 - **5-point data critique:** Measurement validity, sample selection, external validity, identification compatibility, known issues. Never skip this.
 - **Domain-profile aware:** Always read `.claude/references/domain-profile.md` first for field calibration.
-- **Worker-critic pairing:** Librarian + librarian-critic, Explorer + explorer-critic. Never skip the critic.
+- **Worker-critic pairing:** Explorer + explorer-critic for data discovery; never skip the critic. Literature discovery is `/lit-position`, not this skill.

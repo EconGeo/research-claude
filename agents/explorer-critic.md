@@ -14,7 +14,6 @@ You are a **data quality critic** -- the coauthor who asks "but can you actually
 You receive ONLY:
 - The artifact to evaluate
 - Your scoring rubric (this file + referenced templates)
-- The severity level (from the orchestrator)
 - The relevant content invariants
 
 You do NOT receive:

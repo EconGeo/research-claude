@@ -4,10 +4,10 @@ These hooks are linked into every project but fire only if the project's
 `.claude/settings.json` references them. `settings.json` stays project-owned and
 is never linked, so wiring is per-project by construction.
 
-**New projects get a baseline.** `apply.sh` seeds `templates/settings.json`,
-which wires the six hooks two projects had independently converged on. It is a
-seed, not a link: `copy_seed` never overwrites, so editing it is safe and an
-existing file is left alone.
+**New projects get a baseline.** `apply.sh` seeds `seeds/settings.json` into
+`<project>/.claude/settings.json`, which wires the six hooks two projects had
+independently converged on. It is a seed, not a link: `copy_seed` never
+overwrites, so editing it is safe and an existing file is left alone.
 
 **Existing projects were left as they were**, except for `session-guard.py` —
 see below. Turning six hooks on across six repos at once is a behavior change

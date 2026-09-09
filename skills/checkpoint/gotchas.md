@@ -6,4 +6,4 @@
 - Check existing memory files before creating new ones to avoid duplicates.
 - SESSION_REPORT.md is append-only. Never overwrite existing entries.
 - The research journal only gets an entry if agent work happened this session. Don't log empty sessions.
-- Pipeline state JSON and research journal are complementary, not redundant. JSON is for the orchestrator; journal is for humans.
+- Pipeline state JSON and research journal are complementary, not redundant. JSON is for `pipeline.py`; journal is for humans.

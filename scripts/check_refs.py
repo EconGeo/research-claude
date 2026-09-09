@@ -26,7 +26,7 @@ MANUSCRIPT_MODEL = [
     (re.compile(r"writeLines\([^)]*\.tex"), "writeLines to .tex"),
     (re.compile(r'dir\.create\("paper'), 'dir.create("paper'),
 ]
-DELETED_AGENTS = re.compile(r"\b(orchestrator|librarian-critic|librarian|guide-writer|rmd-coder-critic|domain-reviewer)\b", re.I)
+DELETED_AGENTS = re.compile(r"\b(orchestrator|librarian-critic|librarian|guide-writer|rmd-coder-critic|domain-reviewer)\b", re.I)  # <!-- residue:prohibition -->
 DELETED_SCRIPTS = re.compile(r"generate_(dashboard|html_report)\.py|(^|[^A-Za-z0-9_])guide/|clone .*clo-author|clo-author-upgrade")
 ABSENT_SKILLS = ["new-project", "review-paper", "audit-replication", "data-deposit", "audit-reproducibility",
                  "compile-latex", "prompt", "prompt-only", "interview-me", "research-ideation", "preregister",
