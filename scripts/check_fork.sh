@@ -50,7 +50,13 @@ scan course-leak      'academic course materials|Beamer slides|TikZ Freshness'  
 
 echo "── structure ──"
 absent clo-author-submodule submodules/clo-author
-absent pipeline-precedence  rules/pipeline-precedence.md
+absent pipeline-precedence  rules/pipeline-precedence.md  # <!-- residue:prohibition -->
+# Every `absent` assertion below NAMES A FILE THAT MUST NEVER EXIST. The marker on those
+# lines is the second reserved use of the convention in this file: without it audit_graph.py
+# counts each named-but-absent file as a dangling edge for ever, and Stage 3b's `dangling = 0`
+# criterion is structurally unreachable. Marking only the `absent` lines keeps a genuinely
+# broken reference anywhere else in this gate visible — the `present` block below is NOT
+# marked, so a d1-restored file that goes missing is still reported.
 grep -q 'clo-author' "$RC/.gitmodules" 2>/dev/null && { echo "FAIL [gitmodules]"; fail=1; } || echo "PASS [gitmodules]"
 grep -q 'CLO_SKIP_SKILLS' "$RC/apply.sh" 2>/dev/null && { echo "FAIL [apply.sh]"; fail=1; } || echo "PASS [apply.sh]"
 contains cc-correctness-half agents/coder-critic.md 'Correctness Layer'
@@ -61,11 +67,13 @@ for p in rules/registry.yaml rules/permissions.md rules/lifecycle.md rules/meta-
          agents/lit-critic.md skills/pipeline/SKILL.md scripts/pipeline.py scripts/registry_lib.py \
          hooks/dispatch-log.py hooks/critic-pairing.py tests/run_fixture.sh templates/pipeline-state.json \
          templates/journal-profile-template.md seeds/quarto-preamble.tex scripts/SHIPPED; do present d1-restored "$p"; done
-for g in agents/orchestrator.md agents/guide-writer.md agents/librarian.md agents/librarian-critic.md \
-         rules/workflow.md rules/working-paper-format.md rules/html-dashboard.md skills/dashboard \
-         references/coding-standards-rmd.md references/prompt-formatting-core.md hooks/post-merge.sh \
-         skills/analyze/templates/r-script-structure.R skills/analyze/templates/python-script-structure.py \
-         skills/analyze/templates/results-summary.md skills/submit/templates/cover-letter.tex root-skills; do absent d1-deletions "$g"; done
+# One `for` per line, not a backslash continuation: a marker must sit at end of line, and a
+# continued line cannot carry a trailing comment. The list and its order are unchanged.
+for g in agents/orchestrator.md agents/guide-writer.md agents/librarian.md agents/librarian-critic.md; do absent d1-deletions "$g"; done  # <!-- residue:prohibition -->
+for g in rules/workflow.md rules/working-paper-format.md rules/html-dashboard.md skills/dashboard; do absent d1-deletions "$g"; done  # <!-- residue:prohibition -->
+for g in references/coding-standards-rmd.md references/prompt-formatting-core.md hooks/post-merge.sh; do absent d1-deletions "$g"; done  # <!-- residue:prohibition -->
+for g in skills/analyze/templates/r-script-structure.R skills/analyze/templates/python-script-structure.py; do absent d1-deletions "$g"; done  # <!-- residue:prohibition -->
+for g in skills/analyze/templates/results-summary.md skills/submit/templates/cover-letter.tex root-skills; do absent d1-deletions "$g"; done  # <!-- residue:prohibition -->
 
 echo "── text criteria (scripts/check_refs.py) ──"
 for c in latex-residue manuscript-model deleted-things inv-refs skill-refs tool-name hooks-readme; do
