@@ -30,7 +30,7 @@ DELETED_AGENTS = re.compile(r"\b(orchestrator|librarian-critic|librarian|guide-w
 DELETED_SCRIPTS = re.compile(r"generate_(dashboard|html_report)\.py|(^|[^A-Za-z0-9_])guide/|clone .*clo-author|clo-author-upgrade")
 ABSENT_SKILLS = ["new-project", "review-paper", "audit-replication", "data-deposit", "audit-reproducibility",
                  "compile-latex", "prompt", "prompt-only", "interview-me", "research-ideation", "preregister",
-                 "seven-pass-review", "devils-advocate", "promote-memory", "data-analysis"]
+                 "seven-pass-review", "devils-advocate", "promote-memory", "data-analysis", "obsidian-digest-sync"]
 INV_RETIRED = {"INV-22"}
 INV_REF = re.compile(r"\bINV-(\d{1,2})\b")
 SLASH = re.compile(r"(?<![A-Za-z0-9_/.\-`])/([a-z][a-z0-9-]{2,})\b(?!/)")

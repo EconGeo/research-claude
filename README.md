@@ -1,7 +1,7 @@
 # research-claude: AI-Powered Research Workstation
 
 A Quarto-native, multi-agent research pipeline for empirical academic work — 17 agents,
-19 skills and 15 rules, plus ZotPilot (Zotero MCP server) and ai-audit (prose quality
+17 skills and 19 rules, plus ZotPilot (Zotero MCP server) and ai-audit (prose quality
 tools).
 
 **This repo is the pipeline**, not a composer of other people's. It is installed into a
@@ -181,6 +181,17 @@ manuscript was written with pipeline SHA abc123.*
 
 The two modes deliberately use **different checkouts**. Pinning the shared checkout
 would silently pin every project on your machine to one paper's locked commit.
+
+> **A lock pinned at or before commit `5d9fa0f`** (the last commit before `ai-audit` was
+> vendored) will silently install with `/humanize` and `/verify-claims` missing. At that
+> commit, `submodules/ai-audit` is still a submodule gitlink; a fresh, non-recursive
+> `git clone` (what `bootstrap-pipeline.sh` now does) checks it out as an **empty
+> directory**, and that old commit's `apply.sh` finds nothing under it and links
+> nothing — no error, nothing in the output beyond the `ai-audit/` line header. If a
+> project's `/humanize` or `/verify-claims` skill is unexpectedly absent, check
+> `.claude/pipeline.lock`'s `commit=` line: re-pin to a commit at or after `6c2d025`
+> (where `ai-audit/` is a real vendored directory, not a submodule) or run
+> `./bootstrap-pipeline.sh --tip` once to pick up main.
 
 ### How to change the pipeline
 
