@@ -1,0 +1,65 @@
+diff --git a/skills/discover/SKILL.md b/skills/discover/SKILL.md
+index 7f6ec53..28bbc7b 100644
+--- a/skills/discover/SKILL.md
++++ b/skills/discover/SKILL.md
+@@ -66,50 +66,21 @@ Using `templates/decision-record.md`, record:
+ - **Key assumptions:** What must hold for this question to be answerable
+ - **What would invalidate:** What would force a pivot (e.g., "if the policy change turns out to have been anticipated")
+ 
+-### `/discover lit [topic]` — Literature Review
+-Search and synthesize academic literature.
++### `/discover lit` — superseded by `/lit-position` (D3)
+ 
+-**Agents:** Librarian (collector) → librarian-critic (reviewer)
+-**Output:** Annotated bibliography + BibTeX entries + frontier map
++Literature search and positioning live in **`/lit-position`**, the ZotPilot bridge
++skill. Run that instead:
+ 
+-Workflow:
+-1. Read `.claude/references/domain-profile.md` for field journals and seminal references
+-2. Check `master_supporting_docs/` for uploaded papers
+-3. Read `bibliography_base.bib` for papers already in the project
+-4. Dispatch Librarian to search:
+-   - Top-5 journals (AER, Econometrica, QJE, JPE, REStud)
+-   - Field journals from domain-profile.md
+-   - NBER/SSRN/IZA working papers
+-   - **Citation chains** — forward and backward citation tracking from key papers. Follow: (a) backward citations (what do the key papers cite?), and (b) forward citations (who cites the key papers?). This is often the most productive search vector.
+-5. Assign **proximity scores** to each paper:
+-   - **1** — Directly competes (same question, similar method)
+-   - **2** — Closely related (same question, different method or setting)
+-   - **3** — Related (overlapping topic, different angle)
+-   - **4** — Background (provides theory, method, or context)
+-   - **5** — Tangentially related (useful framing only)
+-6. Dispatch librarian-critic to check coverage, gaps, recency, scope
+-7. If gaps found, re-dispatch Librarian for targeted search (max 1 round)
+-8. Save to `quality_reports/lit_review_[topic].md`
+-9. Generate interactive HTML bibliography and refresh dashboard:
+-```bash
+-python3 scripts/generate_html_report.py literature quality_reports/lit_review_[topic].md
+-python3 scripts/generate_dashboard.py
+ ```
+-Open the HTML report for the user: `open quality_reports/lit_review_[topic].html`
+-
+-**Unverified citations:** If you cannot verify a citation, mark the BibTeX entry with `% UNVERIFIED`. Do NOT fabricate or guess citation details. Note when working papers have been published — cite the published version.
++/lit-position [topic]
++```
+ 
+-Output format for each paper:
++It searches the local Zotero corpus first per `rules/literature-search-order.md`,
++ingests only what the library lacks, and produces `annotated_bibliography.md`,
++`frontier_map.md`, and `positioning.md` — with proximity scoring and a six-category
++self-check carried over from the retired librarian pair (D3).
+ 
+-```markdown
+-### [Author (Year)] — [Short Title]
+-- **Journal:** [venue]
+-- **Proximity:** [1-5 score]
+-- **Main contribution:** [1-2 sentences]
+-- **Identification strategy:** [DiD / IV / RDD / SC / descriptive]
+-- **Key finding:** [result with effect size]
+-- **Relevance:** [why it matters for our research]
+-```
++If a bibliography seed is wanted first, run `/seed-papers`.
+ 
+ ### `/discover data [requirements]` — Data Discovery
+ Find and assess datasets for the research question.
