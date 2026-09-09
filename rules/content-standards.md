@@ -100,58 +100,21 @@ done
 
 ---
 
-## 4. Exploration Folder Protocol
+## 4. Explorations
 
-**All experimental work goes into `explorations/` first.** Never directly into production folders.
-
-### Folder Structure
+**All experimental work goes into `explorations/` first**, as one `.qmd` per exploration:
 
 ```
 explorations/
-├── ACTIVE_PROJECTS.md
-├── [project]/
-│   ├── README.md          # Goal, status, findings
-│   ├── R/                 # Code (use _v1, _v2 for iterations)
-│   ├── scripts/           # Test scripts
-│   ├── output/            # Results
-│   └── SESSION_LOG.md     # Progress notes
-└── ARCHIVE/
-    ├── completed_[project]/
-    └── abandoned_[project]/
+├── ACTIVE.md                        # one line per live exploration: goal, status
+├── <name>.qmd                       # self-contained: its own setup chunk, its own data chunk
+└── archive/<name>.qmd               # abandoned or graduated, with a one-paragraph note at the top
 ```
 
-### Lifecycle
+An exploration renders on its own (`quarto render explorations/<name>.qmd`), reads `data/raw/`
+directly, and never writes to disk. **Graduation** moves its chunks into the declared manuscript
+(with `cache.extra`/`dependson` per `.claude/rules/quarto-empirical.md`) and archives the file;
+nothing is copied into a script tree because there is no script tree.
 
-1. **Create** — `mkdir -p explorations/[name]/{R,scripts,output}` + README from `templates/exploration-readme.md`
-2. **Develop** — work entirely within the exploration folder
-3. **Decide:**
-
-   - **Graduate to production** — copy to `R/`, `scripts/`; requires quality >= 80, tests pass, code clear. Move to `ARCHIVE/completed_[project]/`
-   - **Keep exploring** — document next steps in README
-   - **Abandon** — move to `ARCHIVE/abandoned_[project]/` with explanation (use `templates/archive-readme.md`)
-
-### Graduate Checklist
-
-- [ ] Quality score >= 80
-- [ ] All tests pass
-- [ ] Results replicate within tolerance
-- [ ] Code is clear without deep context
-- [ ] README explains approach and findings
-
----
-
-## 5. Exploration Fast-Track
-
-**Lightweight workflow for experimental work.** Quality threshold: 60/100 (vs 80 for production). No planning needed.
-
-### Steps
-
-1. **Research value check** — Does this improve the project? If NO, don't build it.
-2. **Create folder** — `mkdir -p explorations/[name]/{R,scripts,output}` + README + SESSION_LOG.md
-3. **Code immediately** — no plan needed. Must-haves: code runs, results correct, goal documented. Not needed: Roxygen docs, full tests, perfect style.
-4. **Log progress** — append 2-3 lines to SESSION_LOG.md as you work
-5. **Decision point** — keep exploring, graduate to production (upgrade to 80/100), or archive with brief explanation
-
-### When to Stop (Kill Switch)
-
-At any point: stop, archive with note ("Attempted X, hit blocker Y"), move on. No guilt — exploration is inherently uncertain.
+Quality threshold for an exploration: 60/100 (production is 80). No plan needed. Kill switch:
+archive with a note ("Attempted X, hit blocker Y") and move on.

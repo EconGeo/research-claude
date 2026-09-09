@@ -41,7 +41,6 @@ SLASH_ALLOW = {"compact", "clear", "help", "init", "memory", "config", "permissi
                "home", "users", "private", "library", "applications", "system", "volumes", "workflows", "tasks",
                "artifacts", "code", "docs", "en", "api", "npm", "ajax", "libs", "gh-pages",
                # Verified false positives (2026-09-08, Task 0.5 red run) — not skill invocations:
-               "strong", "div",  # </strong>, </div> — HTML closing tags in rules/html-dashboard.md
                "detach",  # attach()/detach() R function pair in hooks/lint-scripts.sh
                "assumptions", "results", "proofs",
                # theory-output filename tails (bracket topic placeholder, name, dot-tex) in

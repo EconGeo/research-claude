@@ -30,11 +30,14 @@ format:
     number-sections: false
 ```
 
+`templates/word-reference.docx` is project-created: `quarto pandoc -o templates/word-reference.docx --print-default-data-file reference.docx`, then edit styles in Word.
+
 **The CSL gotcha (single-file model):** PDF uses `cite-method: biblatex` and ignores
 `csl`. Word has no biblatex — it renders citations through pandoc citeproc, which
 needs a `csl`. Put `csl: "templates/apa.csl"` **inside the `docx:` block** so Word
-uses APA regardless of any top-level/PDF citation setting. Source APA from your local
-Zotero styles (`~/Zotero/styles/apa.csl`) — no need to bundle a copy in `templates/`.
+uses APA regardless of any top-level/PDF citation setting. Copy APA from your local
+Zotero styles (`~/Zotero/styles/apa.csl`) to `templates/apa.csl` once; the manuscript
+references the project copy so a coauthor's render does not depend on a Zotero install.
 
 Do **not** put `include-in-header:`, `cite-method: biblatex`, or `pdf-engine:` in the
 `docx:` block — they are LaTeX-only and cause errors for Word output.

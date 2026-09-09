@@ -34,8 +34,8 @@ External R scripts are permitted **only** for:
 - Raw file downloads from restricted sources (WRDS, Census restricted-use, etc.)
 
 All data cleaning, wrangling, estimation, robustness checks, tables, and figures
-live inside `manuscript_<project>.qmd` as cached code chunks. There is no `scripts/R/`
-analysis directory, no `00_master.R`, and no `results_ground_truth.csv`.
+live inside `manuscript_<project>.qmd` as cached code chunks. There is no `scripts/R/` <!-- residue:prohibition -->
+analysis directory, no `00_master.R`, and no `results_ground_truth.csv`. <!-- residue:prohibition -->
 
 ---
 
@@ -70,6 +70,9 @@ link-citations: true
 # Word output, when added, sets its own APA csl inside the docx: block (see quarto-word.md).
 ---
 ```
+
+`templates/quarto-preamble.tex` is seeded into every project by `apply.sh`
+(`seeds/quarto-preamble.tex`); edit the project copy, never the seed.
 
 `execute: cache: true` is **required** globally. Individual chunks override with
 `cache: false` only for genuinely fast operations (printing objects, inline setup).
@@ -296,7 +299,7 @@ Invoked when the reviewed artifact is `manuscript_<project>.qmd` and this rule i
 | Full dependency chain not documented in setup chunk | −3 |
 | Prose number hardcoded (not an inline `r` expression) | −10 per instance |
 | `source()` call inside any chunk | −10 |
-| Analysis R script present in `scripts/R/` beyond acquisition scripts | −5 per script |
+| Analysis script outside `scripts/acquire/` (any language) | −5 per script |
 | `_cache/` absent from `.gitignore` | −5 |
 | Figure chunk missing `#\| fig-cap:` | −5 |
 | Table chunk missing `booktabs = TRUE` | −5 |

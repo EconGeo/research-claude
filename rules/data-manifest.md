@@ -12,7 +12,7 @@ Every project maintains a `data/raw/data_manifest.md` — a strict, always-curre
 data/raw/data_manifest.md
 ```
 
-Every project directory that contains a `data/raw/` folder must have this file. Installed automatically by `apply.sh` at `data/raw/data_manifest.md`. If missing, copy it from the research-claude `templates/data_manifest.md`.
+Every project directory that contains a `data/raw/` folder must have this file. Installed automatically by `apply.sh` at `data/raw/data_manifest.md`. If missing, copy it from the research-claude `seeds/data_manifest.md`.
 
 ---
 
@@ -22,11 +22,11 @@ The manifest is a markdown table with exactly these 8 columns:
 
 | Column | Description |
 |--------|-------------|
-| `Dataset` | Human-readable name (e.g., "National Zoning Atlas") |
+| `Dataset` | Human-readable name (e.g., "County Business Patterns") |
 | `Variables Used` | Comma-separated list of key variables drawn from this source |
-| `Local Path` | Relative path from project root (e.g., `data/raw/nza/nza_cbsa_baseline.csv`) |
-| `Source URL / Vendor` | Full URL or vendor name + database (e.g., `https://zoneomics.com/api`, `WRDS/Compustat`) |
-| `Acquisition Script` | Relative path to script (e.g., `scripts/acquire/01_download_nza.py`) or `manual` |
+| `Local Path` | Relative path from project root (e.g., `data/raw/cbp/cbp_county_2020.csv`) |
+| `Source URL / Vendor` | Full URL or vendor name + database (e.g., `https://www.census.gov/programs-surveys/cbp.html`, `WRDS/Compustat`) |
+| `Acquisition Script` | Relative path to script (e.g., `scripts/acquire/01_download_cbp.py`) or `manual` |
 | `Date Acquired` | ISO date (YYYY-MM-DD) |
 | `Access Type` | `free` / `api-key` / `restricted` / `manual-download` |
 | `Notes` | Known issues, version, coverage limitations |
@@ -83,13 +83,14 @@ If any step in this chain is broken, the paper cannot be reproduced. The manifes
 
 | Agent | Checks | Action on Violation |
 |-------|--------|-------------------|
-| **coder-critic** | INV-23: every `cache.extra` / `read_csv(here("data/raw/..."))` path has a manifest entry | −10 per missing entry |
-| **verifier** | INV-24: `data/raw/data_manifest.md` exists and has at least one entry | FAIL |
+| **coder-critic** | INV-24: every `cache.extra` / read path has a manifest row | −10 per |
+| **coder-critic** | INV-23: no derived file written into `data/raw/` | −5 per |
+| **verifier** | INV-24: manifest exists, non-empty, every read path present | FAIL |
 | **data-engineer** | Must update manifest as part of any data acquisition work | Required output |
 
 ---
 
 ## Relation to Other Rules
 
-- `quarto-empirical.md` — write gate item 3 requires manifest completeness before rendering
-- `content-invariants.md` — INV-23 (manifest coverage) and INV-24 (manifest existence)
+- `quarto-empirical.md` — write-gate item 1 (raw data in place) presumes the manifest; item 3 is `prose_number_check.py`
+- `content-invariants.md` — INV-24 (manifest coverage/existence) and INV-23 (no derived file in `data/raw/`)

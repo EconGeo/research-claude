@@ -27,6 +27,9 @@ format:
     cite-method: biblatex
 ```
 
+`templates/quarto-preamble.tex` is seeded into every project by `apply.sh`
+(`seeds/quarto-preamble.tex`); edit the project copy, never the seed.
+
 `cite-method: biblatex` makes the PDF render citations through biblatex/biber, not
 pandoc citeproc. **The document-level `csl:` field is ignored for PDF output** — it
 only affects Word (see `quarto-word.md`).
