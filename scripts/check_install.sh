@@ -197,7 +197,7 @@ check_project() {
   # Every predicate, hook and skill resolves the manuscript through CLAUDE.md.
   local decl; decl="$(grep -cE '^manuscript:\s*\S+\.qmd\s*$' "$P/CLAUDE.md" 2>/dev/null || true)"; decl="${decl:-0}"
   if [[ "$decl" -eq 1 ]]; then
-    local mf; mf="$(sed -nE 's/^manuscript:\s*(\S+\.qmd)\s*$/\1/p' "$P/CLAUDE.md")"
+    local mf; mf="$(sed -nE 's/^manuscript:[[:space:]]*([^[:space:]]+\.qmd)[[:space:]]*$/\1/p' "$P/CLAUDE.md")"
     [[ -f "$P/$mf" ]] && ok manuscript-declared "$mf" || bad manuscript-declared "CLAUDE.md declares $mf but it does not exist"
   elif [[ "$decl" -eq 0 ]]; then
     if [[ -n "$(find "$P" -maxdepth 2 -name '*.qmd' -not -path '*/talks/*' -not -path '*/explorations/*' -print -quit)" ]]; then
