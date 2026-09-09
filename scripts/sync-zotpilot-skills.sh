@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 # sync-zotpilot-skills.sh — refresh the vendored ZotPilot skills from the fork.
 #
-# research-claude vendors only the ~68 KB claude-skills/ from EconGeo/ZotPilot rather than
-# carrying the whole fork (224 MB connector) as a submodule. This script re-pulls just that
-# directory — blobless + sparse, so no connector, no pdf.js — and overwrites
-# zotpilot-skills/ in place.
-#
-# Provenance lives in zotpilot-skills/VENDORED.md  <!-- residue:prohibition -->
-# (marked: that is a vendored-tree path, not a pipeline one. audit_graph.py's PATH_RE is
-#  unanchored, so it matches the tail of that filename as though it named a pipeline skill
-#  file and would report it dangling for ever.)
+# research-claude vendors only the ~68 KB claude-skills/ from EconGeo/ZotPilot (see
+# zotpilot-skills/VENDORED.md) rather than carrying the whole fork (224 MB connector) as a
+# submodule. This script re-pulls just that directory — blobless + sparse, so no connector,
+# no pdf.js — and overwrites zotpilot-skills/ in place.
 #
 # Usage:  ./scripts/sync-zotpilot-skills.sh [git-ref]
 #   git-ref defaults to the fork's default branch.
@@ -44,5 +39,5 @@ cp -r "$TMP/zp/claude-skills" "$DEST"
 [[ -f "$TMP/VENDORED.md" ]] && cp "$TMP/VENDORED.md" "$DEST/VENDORED.md"
 
 echo "✓ Refreshed zotpilot-skills/ from EconGeo/ZotPilot@${SRC_COMMIT}"
-echo "  Update the 'Vendored from commit' line in zotpilot-skills/VENDORED.md to ${SRC_COMMIT}," # <!-- residue:prohibition -->
+echo "  Update the 'Vendored from commit' line in zotpilot-skills/VENDORED.md to ${SRC_COMMIT},"
 echo "  review the diff, and commit."

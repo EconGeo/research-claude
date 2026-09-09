@@ -22,12 +22,30 @@ ROOT = pathlib.Path(sys.argv[1]).resolve()
 CLAUDE = ROOT/".claude" if (ROOT/".claude"/"agents").is_dir() else ROOT
 SHIP = ["agents","skills","rules","references","hooks","templates","scripts"]
 
-PATH_RE  = re.compile(r'(?:templates|references|scripts|agents|skills|rules|hooks|docs)/[A-Za-z0-9_./-]+\.(?:md|py|sh|json|R|qmd|tex|bib)')
-AGENT_RE = re.compile(r'\b([a-z][a-z-]*-critic|librarian|orchestrator|guide-writer|coder|writer|explorer|strategist|theorist|storyteller|verifier|editor|data-engineer|domain-referee|methods-referee)\b', re.I)
+# The lookbehind excludes `-` and word characters but deliberately ALLOWS `/`, so a
+# skill-relative reference (<skill>/templates/<file>.md, the form every agent file uses) and a
+# .claude/-prefixed one are both still seen — that is the detection check_paths.py's own
+# lookbehind gives up. A tail match inside a longer directory name is not: zotpilot-skills/
+# and master_supporting_docs/ are not references to skills/ or docs/.
+PATH_RE  = re.compile(r'(?<![A-Za-z0-9_.-])(?:templates|references|scripts|agents|skills|rules|hooks|docs)/[A-Za-z0-9_./-]+\.(?:md|py|sh|json|R|qmd|tex|bib)')
+AGENT_RE = re.compile(r'\b([a-z][a-z-]*-critic|librarian|orchestrator|guide-writer|coder|writer|explorer|strategist|theorist|storyteller|verifier|editor|data-engineer|domain-referee|methods-referee)\b', re.I)  # <!-- residue:prohibition -->
 SKILL_RE = re.compile(r'(?<![A-Za-z0-9_/-])/([a-z][a-z0-9-]{2,})\b')
 MARK     = re.compile(r'<!-- residue:(prohibition|historical) -->\s*$')
-# Generic pipeline vocabulary that AGENT_RE matches but that names no agent. check_refs.py
-# carries the same exemption for `worker-critic` (its DELETED_AGENTS scan, line 105).
+# Project-level paths: they exist in an INSTALLED project and never in this repo, so they can
+# never resolve here and are not dangling edges. Mirrored from check_paths.py's sets of the
+# same names, so the two tools agree on what "project-level" means. Only `scripts/acquire/`
+# and the four templates entries can actually match — PATH_RE's leading alternation covers
+# neither `data/` nor `quality_reports/` — but the sets are kept identical on purpose, so an
+# addition on either side is obviously mirrored on the other.
+EXEMPT_PREFIX = ("data/", "quality_reports/", "talks/", "explorations/", "scripts/acquire/",
+                 "master_supporting_docs/", ".claude/state/", ".claude/settings", ".claude/pipeline.lock")
+EXEMPT_EXACT = {"templates/quarto-preamble.tex", "templates/word-reference.docx",
+                "templates/ai-use-log.md", "templates/apa.csl", "scripts/acquire"}
+# Generic pipeline vocabulary that AGENT_RE matches but that names no agent. This has to be a
+# set here and CANNOT be replaced by residue markers: AGENT_RE is case-insensitive, and
+# "Worker-critic pairing" / "Worker-critic separation" is ordinary prose in four shipped
+# SKILL.md files (analyze, discover, review, talk). check_refs.py carries the same exemption
+# inline, in its DELETED_AGENTS scan.
 AGENT_NOT_A_NAME = {"worker-critic"}
 
 def shipped_files(base):
@@ -57,6 +75,7 @@ for f in files:
     live = [ln for ln in lines if not MARK.search(ln)]
     scanned = "\n".join(live)
     for t in set(PATH_RE.findall(scanned)):
+        if t.startswith(EXEMPT_PREFIX) or t in EXEMPT_EXACT: continue
         hit = None
         for base in (CLAUDE, ROOT, f.parent):
             if (base/t).exists(): hit = base/t; break

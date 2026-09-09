@@ -4,20 +4,22 @@ D-4 PATH INVENTORY — research-claude, branch pipeline-repair, 2026-09-09 (Task
 Stage 3b's eight tasks work from this file. Every row is a pipeline path reference that
 does not resolve as written. Rows that already resolve ("ok") are not listed.
 
+Revised in fix round 1 (2026-09-09): eight rows retired, see NOTE 9.
+
 MEASURED TOTALS
 ---------------
   check_paths.py --root . --list   total=208  unresolved=5  unprefixed=90
                                    -> 95 non-ok rows
-  audit_graph.py . /tmp/g3.json    dangling path refs : 63
-                                   -> 73 line-level rows (a token repeated in one file is
+  audit_graph.py . /tmp/g.json     dangling path refs : 55
+                                   -> 65 line-level rows (a token repeated in one file is
                                       one audit_graph row but several lines to edit)
-  UNION                            135 rows
+  UNION                            127 rows
 
-  Both figures are POST the two gate-tooling fixes committed with this task (9c01be7,
-  301afb2) and the one EXEMPT_EXACT addition in NOTE 7. Pre-fix they were:
-  check_paths total=270 unresolved=5 unprefixed=152
-  (157 non-ok rows); audit_graph 73 dangling. See docs/audits/2026-09-08_stage0-red.md for
-  the row-level before/after and the justification for every dropped row.
+  Both figures are POST every gate-tooling change made by Task 3.1 (commits 9c01be7,
+  301afb2, 370f3fb and the fix-round-1 commit). At the task's starting point, e0c6c90,
+  they were: check_paths total=270 unresolved=5 unprefixed=152 (157 non-ok rows);
+  audit_graph 73 dangling. docs/audits/2026-09-08_stage0-red.md carries the row-level
+  before/after and the justification for every dropped row, in both rounds.
 
 HOW TO READ IT
 --------------
@@ -31,31 +33,31 @@ Columns:  <file>:<line>  <reference as the checker saw it>  <seen-by>  <class>  
             delete          remove the reference (illustrative example, deleted tool, or a
                             D-18/D-21/D-22/D-24 deletion that takes the whole file or block)
             exempt          legitimate as written; do NOT prefix it. Either it is a
-                            project-level path already in check_paths' exempt set, or the line
-                            NAMES a path in order to forbid/describe it and wants a
+                            project-level path already in the checkers' exempt sets, or the
+                            line NAMES a path in order to forbid/describe it and wants a
                             `<!-- residue:prohibition -->` marker. The action column says which.
             false-positive  DO NOT TOUCH. A checker regex artefact. Acting on these would
                             flatten a correct glob or placeholder and CREATE a dangling
                             reference in order to satisfy a broken regex.
             pending         correct as written; the target is a file a LATER stage creates
-                            (Stage 4 hooks / lit-critic / pipeline skill). No edit.
+                            (Stage 4: lit-critic, the /pipeline skill, the two hooks). No edit.
                             ("pending" is a fifth class the brief did not name — see NOTE 5.)
 
 CLASS COUNTS
 ------------
   rewrite          60
   delete           35
-  exempt           29
+  exempt           22
   pending           6
-  false-positive    5
+  false-positive    4
                   ---
-                  135
+                  127
 
 SEEN-BY COUNTS
 --------------
   both           33
   check_paths    62   (check_paths sees these; audit_graph does not)
-  audit_graph    40   (audit_graph sees these; check_paths does not — see NOTE 1)
+  audit_graph    32   (audit_graph sees these; check_paths does not — see NOTE 1)
 
 NOTES
 -----
@@ -65,40 +67,54 @@ NOTE 1 — WHY THE INVENTORY IS A UNION, NOT `check_paths --list` ALONE.
   resources skill-relative — `analyze/templates/pre-code-report.md`,
   `strategize/templates/decision-record.md`, `review/templates/code-review-16-categories.md`
   — and the character before `templates/` is `/`, which the lookbehind rejects. Thirty of
-  these live in agents/coder.md, agents/strategist.md, agents/writer.md and the five critics.
-  audit_graph.py's PATH_RE has no lookbehind and sees all of them. An inventory built from
-  `check_paths --list` alone would omit them, Stage 3b would never rewrite them, and Task
-  3b.8's `dangling = 0` would fail at the end of a long stage with no obvious cause.
+  these live in agents/coder.md, agents/writer.md, agents/strategist.md, agents/theorist.md
+  and the five critics. audit_graph.py's PATH_RE has a lookbehind that ALLOWS `/`, so it sees
+  all of them. An inventory built from `check_paths --list` alone would omit them, Stage 3b
+  would never rewrite them, and Task 3b.8's dangling criterion would fail at the end of a
+  long stage with no obvious cause.
 
 NOTE 2 — READ THE TOTALS WITH `grep '^total='`, NOT `tail -1`.
   check_paths.py prints the totals line BEFORE its PASS/FAIL line and before the vendored
   WARN rows, so `tail -1` lands on a WARN row about submodules/ai-audit.
 
-NOTE 3 — audit_graph.py HAS NO EXEMPT SET, AND THAT BLOCKS `dangling = 0`.
-  check_paths.py exempts project-level paths (EXEMPT_PREFIX / EXEMPT_EXACT). audit_graph.py
-  does not, so seven rows here are marked `exempt` yet will still count as dangling after
-  Stage 3b: templates/ai-use-log.md x3 (agents/coder.md:136, agents/writer.md:115,
-  rules/ai-disclosure.md:42), templates/quarto-preamble.tex x2 (rules/quarto-empirical.md:57,
-  rules/quarto-pdf.md:23) and scripts/acquire/01_download_{nza,cbp}.py x2
-  (rules/data-manifest.md:29, :38). All seven are correct as written and all seven are
-  explicitly kept by the 3b.7 brief. Task 3b.8 must either mark those five lines
-  `<!-- residue:prohibition -->` (the two data-manifest example rows are inside an
-  illustrative table, so a marker there is awkward) or teach audit_graph.py the same exempt
-  set check_paths.py carries. Raised to the controller in the Task 3.1 report.
+NOTE 3 — THE ARITHMETIC TO `dangling = 0`, AND WHY IT REACHES SIX, NOT ZERO.
+  Task 3b.8's stated exit criterion is `audit_graph.py dangling = 0`. Applying every
+  `rewrite` and every `delete` row in this inventory, plus the file-level
+  `<!-- residue:historical -->` marker Task 3b.7 puts on rules/registry-verification-gate.md,
+  clears 49 of the 55 dangling rows audit_graph reports today. SIX REMAIN, and all six are
+  `pending` rows — correct references to the four files Stage 4 creates:
 
-NOTE 4 — audit_graph.py's PATH_RE IS UNANCHORED AND PRODUCES TAIL MATCHES.
-  `master_supporting_docs/published_paper_1.tex` is reported as `docs/published_paper_1.tex`;
-  `zotpilot-skills/VENDORED.md` was reported as `skills/VENDORED.md` (marked in this task).
-  Measured fix: adding the lookbehind `(?<![A-Za-z0-9_.-])` — which excludes `-` and word
-  characters but ALLOWS `/`, so the skill-relative references in NOTE 1 keep being seen —
-  drops exactly those two rows and adds none. Not applied here (outside this task's ruling);
-  recommended to the controller in the Task 3.1 report.
+      rules/agents.md          -> hooks/critic-pairing.py
+      rules/logging.md         -> hooks/dispatch-log.py
+      scripts/check_fork.sh    -> agents/lit-critic.md
+      scripts/check_fork.sh    -> skills/pipeline/SKILL.md
+      scripts/check_fork.sh    -> hooks/critic-pairing.py
+      scripts/check_fork.sh    -> hooks/dispatch-log.py
+
+  So Task 3b.8 should expect `dangling path refs : 6`, with those six enumerated, and
+  `dangling = 0` becomes reachable only after Task 4.3 and the hooks task. Reading 6 as a
+  failure and "fixing" it would mean editing four correct lines or marking a `present`
+  assertion the gate needs visible.
+
+  Fix round 1 removed two other sources from this arithmetic, which is why it is six rather
+  than fourteen: audit_graph.py now carries the same project-level exempt sets check_paths.py
+  has (7 rows), and its PATH_RE lookbehind no longer tail-matches inside a longer directory
+  name (1 row). Both were rows no content edit could ever have cleared. See NOTE 9.
+
+NOTE 4 — audit_graph.py's PATH_RE LOOKBEHIND.
+  Its PATH_RE now opens with `(?<![A-Za-z0-9_.-])`, which excludes `-` and word characters but
+  deliberately ALLOWS `/`. Consequence: skill-relative references (NOTE 1) are still seen,
+  and so is a `.claude/`-prefixed one, but a tail match inside a longer directory name is
+  not — `zotpilot-skills/VENDORED.md` is not a reference to `skills/`, and
+  `master_supporting_docs/published_paper_1.tex` is not a reference to `docs/`. Measured when
+  applied: drops exactly those two rows, adds none.
 
 NOTE 5 — A FIFTH CLASS, `pending`.
   The brief named four classes. Six rows fit none of them: they are already written correctly
   and simply name a file a later stage creates (agents/lit-critic.md, skills/pipeline/SKILL.md,
   hooks/dispatch-log.py, hooks/critic-pairing.py). Calling them `rewrite` would send a
-  repairer to edit a correct line. They are `pending`: no edit, self-healing.
+  repairer to edit a correct line. They are `pending`: no edit, self-healing — and they are
+  exactly the six rows NOTE 3's arithmetic leaves standing.
 
 NOTE 6 — CONFIRMATION REQUESTED BY THE BRIEF (step 2).
   The D-4 rewrite target for a skill's own file is `.claude/skills/<skill>/<sub>/<file>` and
@@ -108,18 +124,44 @@ NOTE 6 — CONFIRMATION REQUESTED BY THE BRIEF (step 2).
   exists today (`skills/analyze/templates/pre-code-report.md` resolves ok); the same lookup
   will resolve chunk-structure.md once Task 3b.1 creates it. Nothing to change in the checker.
 
-NOTE 7 — THE ONE EXEMPT-SET ADDITION MADE BY THIS TASK.
-  `"scripts/acquire"` (the directory named WITHOUT a trailing slash) was added to
-  check_paths.py's EXEMPT_EXACT. EXEMPT_PREFIX already covered `scripts/acquire/<file>`, but
-  prose that names the directory itself tokenises as the bare path and was reported unprefixed
-  in four places (hooks/README.md:71, rules/data-manifest.md:46, rules/quarto-empirical.md:267,
-  skills/submit/templates/audit-10-checks.md:41). Those four rows are gone from this inventory.
+NOTE 7 — THE EXEMPT-SET CHANGES MADE BY THIS TASK.
+  check_paths.py gained `"scripts/acquire"` in EXEMPT_EXACT — the directory named WITHOUT a
+  trailing slash. EXEMPT_PREFIX already covered `scripts/acquire/<file>`, but prose that names
+  the directory itself tokenises as the bare path and was reported unprefixed in four places
+  (hooks/README.md:71, rules/data-manifest.md:46, rules/quarto-empirical.md:267,
+  skills/submit/templates/audit-10-checks.md:41).
+  audit_graph.py gained EXEMPT_PREFIX and EXEMPT_EXACT mirroring check_paths.py's, so the two
+  tools agree on what "project-level" means (fix round 1). Keep them identical: an addition on
+  either side wants the same addition on the other.
 
 NOTE 8 — TWO ROWS NEED A SOURCE-FILE FIX, NOT AN EDIT WHERE THEY APPEAR.
   rules/permissions.md is GENERATED by scripts/render_registry.py (`render()`, the
   "Rendered from `rules/registry.yaml` by `scripts/render_registry.py`." line). Editing
   permissions.md by hand makes check_fork's `registry-rendered` FAIL. Fix the string in
   render_registry.py and re-render.
+
+NOTE 9 — EIGHT ROWS RETIRED IN FIX ROUND 1, AND WHY EACH WAS NEVER A WORKLIST ITEM.
+  These appeared in the first version of this inventory. No checker reports them any more, so
+  they are not worklist items; they are recorded here so the reasoning is not lost.
+
+    agents/coder.md:136          templates/ai-use-log.md           exempt
+    agents/writer.md:115         templates/ai-use-log.md           exempt
+    rules/ai-disclosure.md:42    templates/ai-use-log.md           exempt
+    rules/quarto-empirical.md:57 templates/quarto-preamble.tex     exempt
+    rules/quarto-pdf.md:23       templates/quarto-preamble.tex     exempt
+    rules/data-manifest.md:29    scripts/acquire/01_download_nza.py exempt
+    rules/data-manifest.md:38    scripts/acquire/01_download_cbp.py exempt
+      -> All seven are project-level paths that exist in an INSTALLED project and never in
+         this repo (apply.sh seeds them from seeds/). check_paths.py already exempted all
+         seven; audit_graph.py now does too. Every one is explicitly kept as written by the
+         3b.1 and 3b.7 briefs. DO NOT PREFIX THEM.
+
+    references/personal-style-guide.md:22  docs/published_paper_1.tex  false-positive
+      -> Source text is `master_supporting_docs/published_paper_1.tex`, a correct project-level
+         example. Only audit_graph's then-unanchored PATH_RE saw it, as a tail match. Fixed at
+         the regex (NOTE 4). Task 3b.6 still rewrites this line to `.qmd or .pdf` for the
+         one-manuscript model, which is a content change, not a path fix — and note that it
+         would NOT have cleared the old false positive, because .qmd is in PATH_RE too.
 
 ================================================================================
 
@@ -150,9 +192,6 @@ agents/coder.md:73                              references/figure-standards.md  
         | .claude/skills/analyze/references/figure-standards.md  [3b.1]
 agents/coder.md:84                              scripts/R                                    check_paths  delete
         | inside ## Project Layout, which 3b.1 deletes entirely (lines 79-98)
-agents/coder.md:136                             templates/ai-use-log.md                      audit_graph  exempt
-        | project-level: apply.sh copies seeds/ai-use-log.md -> <project>/templates/ai-use-log.md.
-        | Already in check_paths EXEMPT_EXACT; audit_graph has no exempt set (see NOTE 3)
 agents/editor.md:20                             templates/journal-profile-template.md        check_paths  rewrite
         | .claude/templates/journal-profile-template.md  (file exists; apply.sh links templates/)
         | [3b.4]
@@ -199,8 +238,6 @@ agents/writer.md:74                             templates/drafting-gates.md     
         | .claude/skills/write/templates/drafting-gates.md  [3b.4]
 agents/writer.md:75                             references/notation-protocol.md              audit_graph  rewrite
         | .claude/skills/write/references/notation-protocol.md  [3b.4]
-agents/writer.md:115                            templates/ai-use-log.md                      audit_graph  exempt
-        | project-level (see agents/coder.md:136)
 
 ---- hooks/ -------------------------------------------------------------------
 
@@ -221,11 +258,6 @@ references/coding-standards-rmd.md:103          scripts/R                       
 references/discipline-cards.md:143              .claude/references/audit-pet-peeves.md       both         delete
         | 3b.6 deletes the audit-pet-peeves clause on 143 and 144 (pools live in
         | .claude/agents/editor.md). The only genuinely UNRESOLVED .claude/ row in the tree
-references/personal-style-guide.md:22           docs/published_paper_1.tex                   audit_graph  false-positive
-        | DO NOT TOUCH. Source text is `master_supporting_docs/published_paper_1.tex` — a project-
-        | level path check_paths correctly exempts (EXEMPT_PREFIX). audit_graph's PATH_RE is
-        | unanchored and matched the `docs/...` tail. 3b.6 rewrites the line to `.qmd or .pdf`, which
-        | does NOT clear it (.qmd is in PATH_RE too). See NOTE 4
 references/prompt-formatting-core.md:5          skills/prompt-references/formatting-core.md  both         delete
         | whole file deleted by 3b.6 (D-24)
 
@@ -234,8 +266,6 @@ references/prompt-formatting-core.md:5          skills/prompt-references/formatt
 rules/agents.md:13                              .claude/hooks/critic-pairing.py              both         pending
         | already correct as written; resolves when the hooks task creates hooks/critic-pairing.py
         | (check_fork d1-restored, currently FAIL). No edit
-rules/ai-disclosure.md:42                       templates/ai-use-log.md                      audit_graph  exempt
-        | project-level (see agents/coder.md:136)
 rules/content-standards.md:125                  templates/exploration-readme.md              both         delete
         | inside 103-157, which 3b.7 replaces wholesale with the .qmd explorations model (D-22); no
         | README template in the replacement, and none exists in the repo
@@ -244,11 +274,6 @@ rules/content-standards.md:131                  templates/archive-readme.md     
 rules/data-manifest.md:15                       templates/data_manifest.md                   both         rewrite
         | seeds/data_manifest.md — the repo ships it there; apply.sh copies it to
         | <project>/data/raw/data_manifest.md. SWEEP GAP: 3b.7 lists lines 25-28, 86-87 and 94, not 15
-rules/data-manifest.md:29                       scripts/acquire/01_download_nza.py           audit_graph  exempt
-        | project-level illustrative acquisition script; check_paths exempts via EXEMPT_PREFIX
-        | 'scripts/acquire/'. audit_graph has no exempt set (NOTE 3)
-rules/data-manifest.md:38                       scripts/acquire/01_download_cbp.py           audit_graph  exempt
-        | project-level illustrative acquisition script (see above); 3b.7 generalises this example row
 rules/html-dashboard.md:148                     templates/html/base/styles.css               check_paths  delete
         | whole file deleted by 3b.7 (D-18)
 rules/logging.md:57                             .claude/hooks/dispatch-log.py                both         pending
@@ -264,14 +289,9 @@ rules/permissions.md:3                          scripts/render_registry.py      
 rules/quarto-empirical.md:37                    scripts/R                                    check_paths  exempt
         | prohibition line ('There is no scripts/R/'). 3b.7 explicitly assigns <!--
         | residue:prohibition --> to the 35-36 sentence naming scripts/R/
-rules/quarto-empirical.md:57                    templates/quarto-preamble.tex                audit_graph  exempt
-        | project-level: apply.sh copies seeds/quarto-preamble.tex -> <project>/templates/quarto-
-        | preamble.tex; 3b.7 explicitly keeps this YAML line. audit_graph-only (NOTE 3)
 rules/quarto-empirical.md:299                   scripts/R                                    check_paths  exempt
         | deduction row naming the forbidden location; 3b.7 rewrites it and assigns <!--
         | residue:prohibition --> explicitly
-rules/quarto-pdf.md:23                          templates/quarto-preamble.tex                audit_graph  exempt
-        | project-level, kept by 3b.7 (see quarto-empirical.md:57)
 rules/registry-verification-gate.md:26          scripts/R/00_master.R                        both         exempt
         | 3b.7 inserts <!-- residue:historical --> as line 1, which exempts the WHOLE file in
         | check_paths, check_refs and (as of this task) audit_graph. No per-row edit
@@ -483,4 +503,4 @@ skills/write/SKILL.md:186                       references/notation-protocol.md 
         | .claude/skills/write/references/notation-protocol.md  [3b.2]
 
 ================================================================================
-END — 135 rows.
+END — 127 rows.
