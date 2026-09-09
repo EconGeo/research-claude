@@ -1,0 +1,15 @@
+---
+title: "Fixture talk"
+format:
+  revealjs:
+    slide-number: true
+bibliography: ../references.bib
+---
+
+## Trends
+
+{{< embed ../manuscript_fixture.qmd#fig-trends >}}
+
+## Estimate
+
+{{< embed ../manuscript_fixture.qmd#tbl-main >}}
