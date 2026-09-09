@@ -195,7 +195,7 @@ check_project() {
   fi
   # ── 7. Manuscript declared (D-8) ──────────────────────────────────────────
   # Every predicate, hook and skill resolves the manuscript through CLAUDE.md.
-  local decl; decl="$(grep -cE '^manuscript:\s*\S+\.qmd\s*$' "$P/CLAUDE.md" 2>/dev/null || echo 0)"
+  local decl; decl="$(grep -cE '^manuscript:\s*\S+\.qmd\s*$' "$P/CLAUDE.md" 2>/dev/null || true)"; decl="${decl:-0}"
   if [[ "$decl" -eq 1 ]]; then
     local mf; mf="$(sed -nE 's/^manuscript:\s*(\S+\.qmd)\s*$/\1/p' "$P/CLAUDE.md")"
     [[ -f "$P/$mf" ]] && ok manuscript-declared "$mf" || bad manuscript-declared "CLAUDE.md declares $mf but it does not exist"
