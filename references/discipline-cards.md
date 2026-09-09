@@ -1,6 +1,6 @@
 # Discipline Cards
 
-Short reference cards naming each discipline's dominant paper-type frequencies, top journals, preregistration norms, and method conventions. Read by `/research-ideation`, `/interview-me`, `/preregister`, and the `editor` agent (in `/review-paper --peer`) when the user gives a `paper_type` or domain hint without specifying a target journal.
+Short reference cards naming each discipline's dominant paper-type frequencies, top journals, preregistration norms, and method conventions. Read by `/discover interview`, `/discover ideate`, `/strategize pap`, and the `editor` (`/review --peer`) when the user gives a `paper_type` or domain hint without specifying a target journal.
 
 **Scope.** v1.8.0 ships two cards: **economics** and **political science**. Other social sciences (psychology, sociology, public health) are deferred to a later release. To add your own discipline, copy a card section, fill the four fields (paper-type frequencies, journals, preregistration norms, method conventions), and reference the new short-name from `journal-profiles.md` and `methods-referee.md`.
 
@@ -23,7 +23,7 @@ Short reference cards naming each discipline's dominant paper-type frequencies, 
 **Dominant journals (shipped in `journal-profiles.md`).** AER, QJE, JPE, ECMA, ReStud. AEA P&P (proceedings) for descriptive / measurement work.
 
 **Preregistration norms.**
-- **Field experiments / RCTs:** mandatory in the **AEA RCT Registry** since 2018 for AEA-journal submission. Use `/preregister --style aea-rct`.
+- **Field experiments / RCTs:** mandatory in the **AEA RCT Registry** since 2018 for AEA-journal submission. Use `/strategize pap` (AEA RCT template).
 - **Lab experiments:** OSF / AsPredicted increasingly common; not yet uniformly required.
 - **Observational / archival:** preregistration uncommon; pre-analysis plans appearing in some applied-micro corners.
 - **Replication packages:** AEA Data and Code Availability Policy enforced; replication archive at JEL data archive.
@@ -78,7 +78,7 @@ Short reference cards naming each discipline's dominant paper-type frequencies, 
 | Theory + empirics | ~10% | Theoretical model of land use / zoning / sorting with empirical test. |
 | Formal theory | ~5% | Pure theory (land use, housing markets, search). More common in JUE. |
 
-**Dominant journals (shipped in `journal-profiles.md`).** REE (flagship), JREFE (finance-oriented), JUE (urban), JFQA (top finance), JRER (applied), JREPM (portfolio/investment). Overlap journals: JPubE (land use, local public finance), JF/RFS/JFE (REIT finance, MBS), JHE (housing policy).
+**Dominant journals (shipped in `journal-profiles.md`).** REE (flagship), JREFE (finance-oriented), JUE (urban), JFQA (top finance), JRER (applied), JREPM (portfolio/investment). Overlap journals: JPubE (land use, local public finance), JF/RFS/JFE (REIT finance, MBS), JHousE (housing policy).
 
 **Preregistration norms.**
 - **Field experiments / RCTs:** rare in real estate; AEA RCT Registry if relevant.
@@ -98,10 +98,10 @@ Short reference cards naming each discipline's dominant paper-type frequencies, 
 
 ## How skills consume these cards
 
-- **`/research-ideation`** — when the user names a topic without a discipline, the skill may infer one from context (citation style, vocabulary). The card supplies the default `paper_type` distribution to bias hypothesis generation.
-- **`/interview-me`** — Phase 1 paper-type question uses the card's frequency table to order the option list (most-likely-first per discipline).
-- **`/preregister`** — `--style` defaults to the card's preregistration-norms suggestion (e.g., `osf` for poli-sci, `aea-rct` for econ field experiments).
-- **`editor`** (`/review-paper --peer`) — when the user gives `--peer` without naming a specific journal but with a discipline hint, the editor uses the card's "Dominant journals" list as the candidate set and asks for clarification.
+- **`/discover ideate`** — when the user names a topic without a discipline, the skill may infer one from context (citation style, vocabulary). The card supplies the default `paper_type` distribution to bias hypothesis generation.
+- **`/discover interview`** — the paper-type question uses the card's frequency table to order the option list (most-likely-first per discipline).
+- **`/strategize pap`** — the pre-analysis-plan template defaults to the card's preregistration-norms suggestion (e.g., `osf` for poli-sci, the AEA RCT template for econ field experiments).
+- **`editor`** (`/review --peer`) — when the user gives `--peer` without naming a specific journal but with a discipline hint, the editor uses the card's "Dominant journals" list as the candidate set and asks for clarification.
 
 ---
 
@@ -140,5 +140,5 @@ Then:
 ## Where this file lives
 
 - **File:** `.claude/references/discipline-cards.md`
-- **Schema parallel:** `.claude/references/journal-profiles.md` (per-journal) and `.claude/references/audit-pet-peeves.md` (living-catalogue format).
-- **Consumed by:** `/research-ideation`, `/interview-me`, `/preregister`, `editor` agent.
+- **Schema parallel:** `.claude/references/journal-profiles.md` (per-journal; referee pools live in `.claude/agents/editor.md`).
+- **Consumed by:** `/discover interview`, `/discover ideate`, `/strategize pap`, `editor` agent.

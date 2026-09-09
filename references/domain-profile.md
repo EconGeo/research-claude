@@ -16,7 +16,7 @@ If no field is specified, agents default to applied economics.
 
 ## Target Journals (ranked by tier)
 
-<!-- The Orchestrator uses this for journal selection. The Librarian prioritizes these in searches. -->
+<!-- /submit target uses this for journal ranking. /lit-position prioritizes these venues. -->
 
 | Tier | Journals |
 |------|----------|
@@ -71,7 +71,7 @@ If no field is specified, agents default to applied economics.
 
 ## Seminal References
 
-<!-- The Librarian ensures these are cited when relevant. The strategist-critic knows their methods. -->
+<!-- /lit-position ensures these are cited when relevant. The strategist-critic knows their methods. -->
 
 | Paper | Why It Matters |
 |-------|---------------|

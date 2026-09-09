@@ -19,7 +19,7 @@ drafting against a stale voice profile.
 **Extracted on:** [YYYY-MM-DD]
 **Papers analyzed:** [N]
 **Paths:**
-- [e.g., master_supporting_docs/published_paper_1.tex]
+- [e.g., master_supporting_docs/published_paper_1.qmd or .pdf]
 - [...]
 
 ---

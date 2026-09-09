@@ -136,8 +136,8 @@ estimate_<parameter> <- function(
 }
 ```
 
-### One Function Per File
-Files in `functions/` contain one primary function. File name matches function name: `estimate_att.R` contains `estimate_att()`.
+### One Function Per Purpose
+Helper functions used by more than one chunk are defined in the manuscript's `setup` chunk. Acquisition scripts under `scripts/acquire/` may define their own. No `functions/` directory, no `source()`.
 
 ### Fail Fast
 ```r
@@ -205,7 +205,7 @@ For sequential: `RNGkind("L'Ecuyer-CMRG")` before `set.seed()`.
 | `attach()` / `detach()` | Namespace ambiguity | Explicit references |
 | `<<-` | Global assignment | Pass through arguments |
 | Hardcoded paths | Breaks portability | `here()` |
-| `source()` with relative paths | Fragile | `here()` |
+| `source()` inside a chunk | Prohibited (INV-19, −10) | define helpers in the setup chunk |
 | `print()` for status | Mixes with output | `message()` |
 | `cbind` / `rbind` in loops | O(n²) copies | Pre-allocate matrix |
 | `1:n` | Breaks when `n == 0` | `seq_len(n)` |
