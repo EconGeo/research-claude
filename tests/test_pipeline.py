@@ -56,7 +56,7 @@ class TestPredicates(FixtureCase):
     def test_post_strategist_sections(self):
         d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)
         (d / "strategy_memo.md").write_text("# Memo\n## Estimand\n## Specification\n## Assumptions\n")
-        rc, out = run("post", "strategist", root=self.t); self.assertEqual(rc, 1); self.assertIn("Robustness Plan", out)
+        rc, out = run("post", "strategist", root=self.t); self.assertEqual(rc, 1); self.assertIn("MISSING heading 'Robustness Plan'", out)
     def test_fresh_stale_after_data_touch(self):
         subprocess.run(["quarto", "render", "manuscript_fixture.qmd"], cwd=self.t, capture_output=True)
         self.assertEqual(run("fresh", root=self.t)[0], 0)

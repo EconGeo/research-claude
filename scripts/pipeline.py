@@ -6,7 +6,7 @@ checkout), the project's CLAUDE.md `manuscript:` declaration, quality_reports/pi
 and quality_reports/agent_dispatch.jsonl. See rules/lifecycle.md for the contract.
 """
 from __future__ import annotations
-import argparse, datetime as dt, fnmatch, glob, json, os, re, subprocess, sys
+import argparse, datetime as dt, fnmatch, glob, json, re, subprocess, sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -16,7 +16,7 @@ STATE_REL = Path("quality_reports") / "pipeline_state.json"
 LOG_REL = Path("quality_reports") / "agent_dispatch.jsonl"
 GATES = {"commit": (80, None), "pr": (90, None), "submission": (95, 80)}
 
-def now() -> str: return dt.datetime.now().isoformat(timespec="seconds")
+def now() -> str: return dt.datetime.now().isoformat(timespec="milliseconds")
 
 # ── registry & manuscript ───────────────────────────────────────────────────
 def find_registry(root: Path) -> Path:
