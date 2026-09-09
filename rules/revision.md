@@ -9,7 +9,8 @@
 | **NEW ANALYSIS** | Requires new estimation or data work | Coder → coder-critic |
 | **CLARIFICATION** | Text revision sufficient | Writer → writer-critic |
 | **DISAGREE** | Diplomatic pushback needed | Flagged for User review |
-| **MINOR** | Typos, formatting | Writer |
+| **MINOR** | Typos, formatting | Writer → writer-critic |
+| **FATAL** | Invalidates a headline claim if correct | Stop; escalate to User before any drafting |
 
 ## The R&R Flow
 
@@ -25,7 +26,7 @@ Referee reports arrive (real, not simulated)
         └── MINOR → Writer
         │
         ▼
-   Revised paper → writer-critic → Orchestrator re-checks
+   Revised paper → writer-critic → pipeline.py post writer
         │
         ▼
    Response letter produced
@@ -37,4 +38,4 @@ Referee reports arrive (real, not simulated)
 - Each comment gets its own routing — a single referee report may trigger multiple agent pairs
 - The response letter maps each referee comment to the specific change made
 - DISAGREE items are always flagged for user review — Claude never autonomously pushes back on referees
-- The Orchestrator tracks which comments are resolved and which are pending
+- `/revise` tracks which comments are resolved in `quality_reports/referee_response_tracker.md`

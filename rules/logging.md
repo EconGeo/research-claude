@@ -45,43 +45,19 @@ Agent outputs (reports, scripts, memos, decisions) are saved to `quality_reports
 
 ## Pipeline State
 
-Structured pipeline state lives in `quality_reports/pipeline_state.json`.
+`quality_reports/pipeline_state.json` is the machine-readable record of scores and progress.
+Schema: `.claude/templates/pipeline-state.json` (v2). Written only by
+`python3 .claude/scripts/pipeline.py state ...`; read by `pipeline.py score`, `/pipeline`,
+`/checkpoint` (staleness sweep) and `.claude/hooks/post-compact-restore.py`. **Committed** — it is
+replication provenance. The research journal entry is derived from it, never the reverse.
 
-**Location:** `quality_reports/pipeline_state.json`
-**Template:** `templates/pipeline-state.json`
-**Format:** JSON (machine-readable)
+## Dispatch Log
 
-**Triggers:**
-- Created when the first agent in a pipeline completes
-- Updated after every agent completion, critic score, or phase transition
-- Read as the first action in session recovery
+`quality_reports/agent_dispatch.jsonl` — one JSON line per subagent completion, written by
+`.claude/hooks/dispatch-log.py` (SubagentStop) or by `pipeline.py log <agent>` from a standalone
+skill. `pipeline.py post` reads it to prove the critic ran. **Gitignored** — session mechanics.
 
-**Relationship to research journal:**
-- The research journal is narrative context for humans: "what happened and why"
-- The pipeline state is structured context for the orchestrator: "where are we and what's next"
-- They are complementary, not redundant
+## Learning Loop
 
-**Execution traces:**
-After pipeline completion, the orchestrator generates an execution trace from the pipeline state and saves to `quality_reports/traces/`.
-
-### Trace Analysis
-
-After pipeline completion, read the execution trace and the last 5 traces (if available in `quality_reports/traces/`) to identify recurring patterns.
-
-Analysis covers:
-- Agents with first-pass >= 90 (HIGH-PERF)
-- Agents that hit 3 strikes (FRICTION)
-- Escalations to user (USER ESCALATION)
-- Agents whose scores improved most between rounds (learning curve)
-
-Save analysis to: `quality_reports/traces/analysis_{date}.md`
-
-The orchestrator uses this analysis for the Learning Loop (see `orchestrator.md` Section 9).
-
----
-
-## 4. Project Dashboard
-
-**Managed by the `/dashboard` skill.** See `.claude/skills/dashboard/SKILL.md` for the full specification.
-
-The dashboard is `project_dashboard.html` — a single unified HTML page with all project information. Generated and refreshed by `/dashboard refresh`. Changelog entries appended by `/dashboard add-changelog`.
+Owned by `.claude/rules/meta-governance.md`: `/pipeline` surfaces suggested learnings from the
+state file and dispatch log; the user approves; `/promote` lands them.
