@@ -4,9 +4,7 @@ Known failure points and edge cases for data analysis.
 
 ## R Packages
 
-- `fixest::etable()` with `tex=TRUE` includes `\begin{table}` wrappers by default. Use `style.tex = style.tex(tpt=TRUE)` or export manually for bare tabular output (INV-13).
 - `modelsummary` silently drops coefficients when `coef_rename` keys don't match variable names exactly. Always check output dimensions against model object.
-- `modelsummary` with `output = "latex"` adds table float wrappers. Use `output = "latex_tabular"` for bare tabular.
 - Clustering syntax differs between `fixest` and `lm` -- always use `fixest::feols()` for cluster-robust standard errors.
 - R's `haven::read_dta()` preserves Stata value labels as attributes -- use `as_factor()` explicitly or they'll be invisible numeric codes.
 - `did::att_gt()` requires the group variable to be the year of first treatment (0 for never-treated). Miscoding this produces silent wrong results.
@@ -15,7 +13,7 @@ Known failure points and edge cases for data analysis.
 ## Data Handling
 
 - Pre-Code Report blocks on strategic alignment if strategy memo doesn't exist. Run `/strategize` first, or proceed with user description and flag the gap.
-- `saveRDS()` required for ALL computed objects, not just final outputs. Intermediate objects enable debugging and writer handoff.
+- Nothing is saved to disk; chunks cache. A `saveRDS()` in a chunk is a coder-critic deduction. <!-- residue:prohibition -->
 - `here()` resolves from `.here` file or `.Rproj` file -- make sure one exists at project root.
 - Never use `setwd()` -- it breaks reproducibility across machines (INV-19).
 - When merging datasets, always check merge rates. A 60% merge rate is a red flag. Document non-merges.
@@ -29,12 +27,11 @@ Known failure points and edge cases for data analysis.
 
 ## Output
 
-- Figures must not have titles inside ggplot (INV-12). Titles go in LaTeX `\caption{}`.
-- Tables must be bare `tabular` -- no `\begin{table}` wrapper (INV-13).
-- PDF is the required format for figures (vector graphics for LaTeX). PNG only for raster content.
-- `results_summary.md` is mandatory. Without it, the writer agent cannot draft the results section.
+- Figures: no in-plot titles (INV-12) — titles go in `#| fig-cap:`.
+- Tables: `tbl-` chunks with `booktabs = TRUE` and notes (INV-1, INV-3).
+- Quarto picks the figure format per output; never set `fig-format`.
 
-## Cross-Language (--dual mode)
+## Cross-language replication (`/review --replicate`)
 
 - R and Python handle NA differently in groupby/aggregate operations. Explicit `na.rm = TRUE` in R; `dropna()` in pandas.
 - Factor ordering in R defaults to alphabetical; pandas categoricals preserve insertion order. This affects dummy variable encoding.

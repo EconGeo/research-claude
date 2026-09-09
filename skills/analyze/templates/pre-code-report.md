@@ -54,9 +54,7 @@
 3. [check from memo]
 
 ### Output Plan
-**Tables:** [list planned tables with filenames]
-**Figures:** [list planned figures with filenames]
-**Output directory:** [paper/tables/ and paper/figures/ — confirm by-script or by-purpose from CLAUDE.md]
+**Chunk plan:** [list planned chunk labels: build-*, estimate-*, robustness-*, tbl-*, fig-*]
 
 ### Feasibility Assessment
 **Blockers:** [any issues that prevent implementation — missing data, unavailable packages, unclear spec]
@@ -72,5 +70,5 @@ Proceeding to implementation.
 1. **This report is mandatory.** The coder-critic checks for its existence.
 2. **If strategy memo is missing**, proceed with user's description but flag: "No memo found. Strategic alignment checks (coder-critic categories 1-3) cannot be verified."
 3. **If data is missing or inaccessible**, stop and report the blocker. Do not generate placeholder analysis.
-4. **The variable mapping becomes the naming map** in `01_setup.R`. No deviations allowed downstream.
+4. **The variable mapping becomes the naming map** in the `setup` chunk comment block. No deviations allowed downstream.
 5. **Feasibility issues are reported here**, not discovered mid-implementation.
