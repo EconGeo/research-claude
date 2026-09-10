@@ -130,12 +130,29 @@ def headings(path: Path) -> List[str]:
     return [h.strip() for h in re.findall(r"^#{1,6}\s+(.+?)\s*(?:\{[^}]*\})?\s*$", path.read_text(), re.M)]
 
 def is_fresh(root: Path, ms: Path) -> Tuple[bool, str]:
-    out = rendered_output(ms)
-    if not out: return False, "no rendered output"
+    """Every rendered output must be at least as new as every input.
+
+    Deliberately checks the OLDEST output, not the newest. `rendered_output()`
+    returns the newest of .pdf/.docx/.html for reporting, and freshness once used
+    it — so a stale .docx passed as long as a newer .html sat beside it, and the
+    `render` predicate then skipped rendering entirely. A gate whose job is to
+    prove the manuscript still compiles was satisfied by an artifact of a format
+    the project may not even publish.
+
+    Failing closed costs a re-render when a leftover artifact from another format
+    lingers; the message names the stale file so the fix is obvious (re-render, or
+    delete the leftover). The alternative — trusting whichever file happens to be
+    newest — silently certifies a deliverable nobody rebuilt.
+    """
+    outs = [c for c in (ms.with_suffix(".pdf"), ms.with_suffix(".docx"), ms.with_suffix(".html")) if c.exists()]
+    if not outs: return False, "no rendered output"
     newest = ms.stat().st_mtime
     for f in (root / "data" / "raw").rglob("*"):
         if f.is_file(): newest = max(newest, f.stat().st_mtime)
-    return (out.stat().st_mtime >= newest), f"{out.name} vs newest input"
+    stale = [o for o in outs if o.stat().st_mtime < newest]
+    if stale:
+        return False, f"{', '.join(s.name for s in stale)} older than newest input"
+    return True, f"{', '.join(o.name for o in outs)} vs newest input"
 
 def do_render(root: Path, target: Path) -> Tuple[bool, str]:
     p = subprocess.run(["quarto", "render", str(target.relative_to(root))], cwd=root, capture_output=True, text=True)
