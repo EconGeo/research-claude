@@ -148,8 +148,46 @@ if [[ "$LIVE" == true ]]; then
   run live-link "$RC/apply.sh" --project-dir "$L" --link
   run live-clean-log bash -c "[ ! -e '$L/quality_reports/agent_dispatch.jsonl' ]"
 
+  # ── seed ONLY the stage a temp dir cannot run ──────────────────────────────────────────
+  # literature is the sole creator with `kind: skill`: it delegates to /lit-position, which
+  # calls /ztp-research + /ztp-review, i.e. ZotPilot against a real Zotero library. A
+  # mktemp -d has none, so the stage correctly stops and asks rather than inventing a
+  # bibliography (observed 2026-09-10 — the run exited cleanly after ~3.5 min having
+  # dispatched nothing). Because `run` walks stages in REQUIRES order, `--until analyze`
+  # necessarily starts there, so the live tier could never reach the stages worth testing.
+  #
+  # Seeding literature's OUTPUT leaves data → strategy → analyze to run for real. Every one
+  # of those creators is `kind: agent`, so that path is what exercises this tier's whole
+  # point: Agent dispatch → SubagentStop → dispatch-log.py, critic-pairing.py, post, scoring.
+  #
+  # This is INPUT state and is deliberately NOT the residue problem that produced the false
+  # green: it seeds an artifact and a score, and NEVER the dispatch log — so
+  # live-dispatch-log and live-critic-ran still measure only what the live run itself did.
+  mkdir -p "$L/quality_reports/literature/fixture" "$L/quality_reports/reviews"
+  cat > "$L/quality_reports/literature/fixture/positioning.md" <<'SEED'
+# Positioning — seeded fixture input
+
+Stands in for `/lit-position` output so the driver can reach the stages a temp dir can
+actually run. Not a claim about any real literature.
+
+**Gap.** No published estimate of the fixture's synthetic treatment effect.
+**Contribution.** Estimates it on the fixture panel.
+SEED
+  echo '# lit-critic — seeded fixture input' > "$L/quality_reports/reviews/lit-critic_seed.md"
+  python3 "$RC/scripts/pipeline.py" --root "$L" state init >/dev/null 2>&1
+  python3 "$RC/scripts/pipeline.py" --root "$L" state record-score literature 88 \
+    --critic lit-critic --report quality_reports/reviews/lit-critic_seed.md >/dev/null 2>&1
+  # Prove the seed did its job BEFORE claude runs: strategy is now reachable.
+  run live-seed-reaches-strategy python3 "$RC/scripts/pipeline.py" --root "$L" pre strategist
+
   LIVE_LOG="$L/live-pipeline.log"
-  LIVE_TIMEOUT="${LIVE_TIMEOUT:-1800}"
+  # Measured 2026-09-10: strategist took 12 min and strategist-critic another 12. A stage
+  # that strikes (score < 80) re-dispatches both, so ONE stage can want ~50 min; --until
+  # analyze wants ~90+. Default to the narrowest scope that still exercises the entire
+  # chain — dispatch → SubagentStop → dispatch-log → critic → score → strike — and let a
+  # fuller run be asked for explicitly.
+  LIVE_UNTIL="${LIVE_UNTIL:-strategy}"
+  LIVE_TIMEOUT="${LIVE_TIMEOUT:-3600}"
   if ! command -v claude >/dev/null 2>&1; then
     bad live-claude-present "claude not on PATH — the live tier cannot run"
   else
@@ -158,24 +196,31 @@ if [[ "$LIVE" == true ]]; then
     # itself has no .claude/skills/, so running from the script's cwd makes every /skill an
     # "Unknown command". No timeout(1) on macOS; perl's alarm(2) survives exec, so the
     # watchdog outlives the replacement of perl by claude (SIGALRM ends it at exit 142).
+    # stream-json, not the default text: `claude -p` text output is written only at the END,
+    # so SIGALRM killed a 30-minute run and left a 0-line transcript — the run that finally
+    # exercised the whole chain reported "claude produced no output at all". Streaming means
+    # a killed run still leaves everything it had emitted.
     ( cd "$L" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "$LIVE_TIMEOUT" \
-        claude -p '/pipeline run --until analyze --yes' --permission-mode acceptEdits \
+        claude -p "/pipeline run --until $LIVE_UNTIL --yes" --permission-mode acceptEdits \
+        --output-format stream-json --verbose \
     ) >"$LIVE_LOG" 2>&1
     lrc=$?
     # `claude -p` EXITS 0 ON AN UNKNOWN COMMAND (tested 2026-09-10: a bogus /command prints
     # "Unknown command: ..." and returns 0), so the exit code alone cannot tell a real run
     # from one that never started. Read the transcript.
     live_bad=0
-    if grep -qi '^Unknown command:' "$LIVE_LOG"; then
-      bad live-pipeline "claude did not recognise the command: $(head -1 "$LIVE_LOG")"; live_bad=1
+    if [[ $lrc -eq 142 ]]; then
+      # FIRST: a timeout also produces an empty/short transcript, so testing emptiness ahead
+      # of it reported every timeout as "claude produced no output at all" (observed).
+      bad live-pipeline "TIMED OUT after ${LIVE_TIMEOUT}s — raise LIVE_TIMEOUT, or lower LIVE_UNTIL"; live_bad=1
+    elif grep -qi 'Unknown command:' "$LIVE_LOG"; then
+      bad live-pipeline "claude did not recognise the command"; live_bad=1
     elif [[ ! -s "$LIVE_LOG" ]]; then
       bad live-pipeline "empty transcript — claude produced no output at all"; live_bad=1
+    elif [[ $lrc -ne 0 ]]; then
+      bad live-pipeline "exit $lrc"; live_bad=1
     else
-      case $lrc in
-        0)   ok  live-pipeline ;;
-        142) bad live-pipeline "TIMED OUT after ${LIVE_TIMEOUT}s — re-run with LIVE_TIMEOUT=<seconds>"; live_bad=1 ;;
-        *)   bad live-pipeline "exit $lrc"; live_bad=1 ;;
-      esac
+      ok live-pipeline
     fi
     echo "    transcript: $LIVE_LOG ($(wc -l <"$LIVE_LOG" 2>/dev/null | tr -d ' ') lines)"
     [[ $live_bad -eq 0 ]] || { echo "    ── last 25 lines"; tail -25 "$LIVE_LOG" 2>/dev/null | sed 's/^/    | /'; }
