@@ -20,7 +20,7 @@ Short reference cards naming each discipline's dominant paper-type frequencies, 
 | Descriptive | ~5% | Measurement / data-construction. Often the AEA P&P route. |
 | Formal-theory | ~5% | Pure theory (micro, IO, contracts). More common in ECMA / TE / JET. |
 
-**Dominant journals (shipped in `journal-profiles.md`).** AER, QJE, JPE, ECMA, ReStud. AEA P&P (proceedings) for descriptive / measurement work.
+**Dominant journals (shipped in `journal-profiles.md`).** AER, QJE, JPE, ECMA, REStud. AEA P&P (proceedings) for descriptive / measurement work.
 
 **Preregistration norms.**
 - **Field experiments / RCTs:** mandatory in the **AEA RCT Registry** since 2018 for AEA-journal submission. Use `/strategize pap` (AEA RCT template).
@@ -29,11 +29,11 @@ Short reference cards naming each discipline's dominant paper-type frequencies, 
 - **Replication packages:** AEA Data and Code Availability Policy enforced; replication archive at JEL data archive.
 
 **Method conventions.**
-- Significance stars: AEA journals do **NOT** use stars in tables (since 2018 AEA Code style guide). Other journals (e.g., ReStud, JPubE) still allow them.
+- Significance stars: AEA journals do **NOT** use stars in tables (since 2018 AEA Code style guide). Other journals (e.g., REStud, JPubE) still allow them.
 - Standard-error reporting: clustered SEs at treatment-assignment level expected; Conley / spatial SEs required for spatial data.
 - Code: R, Stata, Python, Julia all accepted; replication packages must be self-contained and deterministic (`set.seed`).
 
-**Cross-references.** `methods-referee.md` paper types: reduced-form, structural, theory+empirics, descriptive, formal-theory. `journal-profiles.md`: AER, QJE, JPE, ECMA, ReStud.
+**Cross-references.** `methods-referee.md` paper types: reduced-form, structural, theory+empirics, descriptive, formal-theory. `journal-profiles.md`: AER, QJE, JPE, ECMA, REStud.
 
 ---
 

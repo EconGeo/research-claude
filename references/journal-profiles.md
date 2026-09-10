@@ -149,6 +149,12 @@ Each journal profile includes a **Referee pool** that weights which dispositions
 
 **Short Format**
 
+### AEA Papers and Proceedings (AEA P&P)
+**Focus:** The May issue of the *American Economic Review*, publishing short papers presented at the AEA annual meeting — often descriptive, measurement-focused, or a compact preview of a larger paper still in progress. Not a venue for a full empirical contribution; the format is 3-6 pages.
+**Bar:** A clean, self-contained descriptive or measurement contribution, or a tight preview of an ongoing project's core finding. Full identification and robustness batteries are not expected at this length — clarity about the number and why it matters carries the paper.
+**Referee pool:** MEASUREMENT (high), POLICY (medium), CREDIBILITY (medium), STRUCTURAL (low), THEORY (low), SKEPTIC (low)
+**Table format:** No significance stars. Standard errors in parentheses. Exact p-values or confidence intervals for key results (AEA style) — same convention as AER/AEJ.
+
 ### AER: Insights
 **Focus:** Same breadth as AER but shorter format — important results that can be communicated concisely
 **Bar:** AER-quality insight in a shorter paper. Must be self-contained and punchy.
@@ -345,6 +351,154 @@ Each journal profile includes a **Referee pool** that weights which dispositions
 **Methods referee adjusts:** Quantitative papers: panel data, fixed effects, causal identification expected. Qualitative papers: systematic data collection, coding protocols, theoretical sampling. Mixed methods: integration of qualitative and quantitative evidence. Ethnographic work accepted if theoretically motivated.
 **Typical concerns:** "What's the theoretical mechanism?" "How does this advance organization theory?" "Is this generalizable beyond your empirical context?" "Have you considered alternative theoretical explanations?"
 **Referee pool:** THEORY (high), MEASUREMENT (high), STRUCTURAL (medium), CREDIBILITY (medium), POLICY (low), SKEPTIC (low)
+
+---
+
+## Real Estate
+
+### Real Estate Economics (REE)
+
+**Short name:** `REE`
+
+**Focus:** Applied empirical real estate economics across housing markets, commercial real estate, mortgage markets, and land use / zoning policy. Welcomes reduced-form causal work with strong data. Policy relevance expected — audience includes academic economists and real estate professionals.
+
+**Bar:** Credible identification required; local market detail valued. Contribution must be clean and applied — grand theoretical claims are less valued than sharp, well-identified empirical results. Data quality and transparency are taken seriously. Comparison to prior filtering, supply-elasticity, or zoning literature is expected.
+
+**Domain referee adjusts:** Contribution 30 → 30 (unchanged). Policy relevance 15 → 25 (REE audience cares about applied implications). External validity 15 → 20 (generalizability beyond one market matters). Fit 10 → 5 (RE field journal; fit is rarely a constraint).
+
+**Methods referee adjusts:** Identification 35 → 35 (credibility required; not QJE-level obsession, but threats must be addressed). Robustness 15 → 20 (REE referees push for alternative controls, samples, specifications). Replication 5 → 10 (data and code availability increasingly expected).
+
+**Typical concerns:** "Is the identification strategy credible for this local-market setting, or is it just OLS with controls?" "Does new supply actually reach lower price tiers, or only high-end? Show the price distribution." "What is the local housing market mechanism? Spell out the supply-demand channel." "How do results compare to Gyourko et al. / Glaeser / Saiz? Does this overturn or confirm?" "Is the sample representative? Many zoning studies focus on high-cost coastal metros."
+
+**Referee pool:** CREDIBILITY (high), MEASUREMENT (high), POLICY (high), STRUCTURAL (medium), THEORY (low), SKEPTIC (low)
+
+**Table format:** Standard significance stars (* p<0.10, ** p<0.05, *** p<0.01). SE in parentheses. Include observation counts, R², and SE-clustering specification in all regression tables.
+
+### Journal of Real Estate Finance and Economics (JREFE)
+
+**Short name:** `JREFE`
+
+**Focus:** Finance-oriented real estate research: asset pricing, mortgage markets, housing finance, REITs, and land use. Welcomes both structural and reduced-form approaches.
+
+**Bar:** Finance-first framing preferred — market efficiency, pricing, risk. Strong methods expected; supply-side papers need asset-pricing or finance angle to differentiate from JUE/REE.
+
+**Domain referee adjusts:** Contribution 30 → 30 (unchanged). Finance framing 15 → 25 (needs market efficiency / pricing angle). Policy relevance 15 → 10 (less important than at REE).
+
+**Methods referee adjusts:** Identification 35 → 35 (unchanged). Robustness 15 → 15 (unchanged).
+
+**Typical concerns:** "What's the asset-pricing or finance implication of this zoning result?" "How does this connect to housing market efficiency or price discovery?" "Are the returns/price effects economically large relative to financing costs?"
+
+**Referee pool:** CREDIBILITY (high), STRUCTURAL (high), MEASUREMENT (medium), POLICY (medium), THEORY (medium), SKEPTIC (low)
+
+**Table format:** Standard significance stars (* p<0.10, ** p<0.05, *** p<0.01). SE in parentheses. Include observation counts, R², and SE-clustering specification in all regression tables.
+
+### Journal of Housing Economics (JHousE)
+
+**Short name:** `JHousE`
+
+**Focus:** Applied housing economics: housing demand, affordability, supply constraints, homeownership, rental markets. Accessible to policy audience. High receptivity to reduced-form zoning and land use papers.
+
+**Bar:** Lower identification bar than REE or JUE. Clear empirical contribution and policy relevance sufficient. Data transparency valued.
+
+**Domain referee adjusts:** Policy relevance 15 → 30 (policy audience is primary). Contribution 30 → 25 (applied contribution sufficient). External validity 15 → 20 (national evidence valued).
+
+**Methods referee adjusts:** Identification 35 → 25 (credibility appreciated but not load-bearing). Robustness 15 → 20 (practical robustness checks expected).
+
+**Typical concerns:** "Are the affordability implications spelled out clearly for policy audiences?" "What can local governments actually do with this finding?" "Is the effect size economically meaningful for typical renters?"
+
+**Referee pool:** POLICY (high), MEASUREMENT (high), CREDIBILITY (medium), STRUCTURAL (low), THEORY (low), SKEPTIC (low)
+
+**Table format:** Standard significance stars (* p<0.10, ** p<0.05, *** p<0.01). SE in parentheses. Include observation counts, R², and SE-clustering specification in all regression tables.
+
+### Journal of Real Estate Research (JRER)
+
+**Short name:** `JRER`
+
+**Focus:** Applied real estate research across valuation, market analysis, investment performance, and property markets — the American Real Estate Society (ARES) flagship journal. Broadest practitioner-academic readership among the real estate field journals; welcomes empirical work across residential, commercial, and mortgage markets.
+
+**Bar:** Sound applied contribution with clear practical, decision-relevant implications. Credible identification valued but the bar is more forgiving than REE or JUE — ARES's practitioner readership rewards results that translate directly into valuation, investment, or market practice.
+
+**Domain referee adjusts:** Contribution 30 → 25 (broad applied contribution sufficient; grand theoretical claims not required). Policy relevance 15 → 30 (ARES's practitioner audience wants results usable by appraisers, investors, and brokers, not just other academics). Fit 10 → 15 (should read as "real estate research" for a practitioner-facing audience, not general applied economics).
+
+**Methods referee adjusts:** Identification 35 → 25 (credible but not load-bearing the way it is at REE or JUE). Robustness 15 → 20 (practitioner readership wants results that hold across market segments and specifications).
+
+**Typical concerns:** "What can an appraiser, investor, or broker actually do with this finding?" "Is the market or property type representative, or a narrow niche result?" "How does this compare to the REE/JUE literature on the same question?"
+
+**Referee pool:** CREDIBILITY (high), POLICY (high), MEASUREMENT (medium), STRUCTURAL (low), THEORY (low), SKEPTIC (low)
+
+### Journal of Real Estate Portfolio Management (JREPM)
+
+**Short name:** `JREPM`
+
+**Focus:** Real estate investment and portfolio management — REIT and private real estate portfolio construction, risk-return characteristics, appraisal-based index behavior (NCREIF NPI), and the diversification role of real estate in mixed-asset portfolios.
+
+**Bar:** Sound portfolio-theory-grounded empirical work with a clear investment/finance framing. Appraisal-smoothing and return-measurement issues must be addressed explicitly whenever NCREIF-style appraisal-based data is used.
+
+**Domain referee adjusts:** Contribution 30 → 25 (applied portfolio contribution sufficient). Fit 10 → 20 (must read as portfolio/investment research, not general real estate or urban economics). External validity 15 → 10 (single-market or single-vehicle findings acceptable if the investment implication is clear).
+
+**Methods referee adjusts:** Identification 35 → 20 (portfolio-return regressions, not causal identification, are the norm). Robustness 15 → 25 (appraisal-smoothing correction, alternative index construction, and risk-adjustment checks expected).
+
+**Typical concerns:** "Have you corrected for appraisal smoothing in the NCREIF series?" "Is the risk adjustment — Sharpe ratio, Jensen's alpha, or a factor model — appropriate for an illiquid asset class?" "Does this add diversification value beyond public REITs and traditional asset classes?"
+
+**Referee pool:** MEASUREMENT (high), STRUCTURAL (medium), POLICY (medium), CREDIBILITY (low), THEORY (low), SKEPTIC (low)
+
+---
+
+## Political Science
+
+### American Political Science Review (APSR)
+
+**Short name:** `APSR`
+
+**Focus:** General political science — the APSA flagship, spanning American politics, comparative politics, international relations, and political theory. The broadest audience in the discipline; formal theory has a stronger foothold here than at AJPS or JOP.
+
+**Bar:** Must interest political scientists outside the author's own subfield. A big theoretical contribution paired with careful empirical or formal execution — an incremental empirical result rarely clears the desk without a discipline-wide payoff.
+
+**Domain referee adjusts:** Contribution must be legible to the whole discipline, not just a subfield audience. Literature positioning against the general theoretical frontier expected, not just the closest empirical neighbors. Formal-theoretic framing, even for empirical papers, strengthens fit.
+
+**Methods referee adjusts:** For formal-theory submissions, proofs and comparative statics are scrutinized closely; robustness means weakening assumptions, not adding controls. For empirical submissions, identification is held to the same standard as the other top-3 political science journals, and a replication archive is expected per APSA norms.
+
+**Typical concerns:** "Why should comparativists, IR scholars, or theorists outside this subfield care?" "What's the theoretical mechanism, and is it stated formally?" "Is this a subfield contribution that belongs at a field journal instead?"
+
+**Referee pool:** THEORY (high), CREDIBILITY (high), SKEPTIC (medium), STRUCTURAL (low), MEASUREMENT (low), POLICY (low)
+
+**Table format:** Standard significance stars (* p<0.05, ** p<0.01, *** p<0.001 — APSA convention; note the floor differs from the AEA/economics default of .10/.05/.01). SE in parentheses.
+
+### American Journal of Political Science (AJPS)
+
+**Short name:** `AJPS`
+
+**Focus:** Causal inference and survey/experimental methods in political science — the methodologically strictest of the top-3 journals. A strong home for DiD/IV/RD designs and vignette, conjoint, and list experiments.
+
+**Bar:** Identification must be airtight; AJPS referees are the discipline's most demanding on causal inference. Survey and experimental papers need clean randomization, adequate power, and pre-registration where the design allows it.
+
+**Domain referee adjusts:** Contribution weighted toward methodological or causal-inference novelty as much as substantive political science content. External validity scrutinized — does the finding travel beyond the sampled population or single-country setting? Fit is rarely a constraint if identification is credible.
+
+**Methods referee adjusts:** Identification and design held to the discipline's highest bar — pre-trends, first-stage strength, and randomization checks are non-negotiable. For survey/list/conjoint experiments, attrition, balance, and manipulation checks are scrutinized as closely as an economics referee scrutinizes an IV. Replication-archive deposit is mandatory *before* acceptance under the AJPS Replication Policy — treat this as load-bearing, not a formality.
+
+**Typical concerns:** "Is the identification strategy credible, or just cross-sectional correlation with controls?" "What's the balance table / manipulation check for the experimental treatment?" "Has the replication archive been deposited, per AJPS policy?"
+
+**Referee pool:** CREDIBILITY (high), MEASUREMENT (high), SKEPTIC (medium), STRUCTURAL (low), THEORY (low), POLICY (low)
+
+**Table format:** Standard significance stars (* p<0.05, ** p<0.01, *** p<0.001 — APSA convention). Robust SEs (HC2/HC3), or SEs clustered at the subject level for survey/list experiments, reported in parentheses.
+
+### Journal of Politics (JOP)
+
+**Short name:** `JOP`
+
+**Focus:** Broad political science across American politics, comparative politics, and international relations — the third of the discipline's top-3 general journals, somewhat less methodologically demanding than AJPS and less theory-first than APSR.
+
+**Bar:** Solid, well-executed contribution to an active literature; a clear empirical or theoretical advance is enough without APSR's discipline-wide sweep or AJPS's methodological showcase. Policy and real-world relevance appreciated.
+
+**Domain referee adjusts:** Contribution judged relative to the closest subfield literature, not the whole discipline. Policy or real-world implications valued when present. Fit matters — the paper should read as squarely political science, not economics or sociology with a political label.
+
+**Methods referee adjusts:** Identification credible but not the primary selling point the way it is at AJPS; solid reduced-form or survey-experiment execution suffices. A replication archive is recommended, not mandatory as at AJPS.
+
+**Typical concerns:** "What does this add to the existing literature on [topic]?" "What are the real-world / policy implications?" "Is the identification credible enough, even if not AJPS-tier?"
+
+**Referee pool:** CREDIBILITY (high), POLICY (medium), STRUCTURAL (low), MEASUREMENT (low), THEORY (low), SKEPTIC (low)
+
+**Table format:** Standard significance stars (* p<0.05, ** p<0.01, *** p<0.001 — APSA convention). SE in parentheses.
 
 ---
 
