@@ -12,6 +12,10 @@ Consolidated deduction tables from all critic agents. Each critic starts at 100 
 |-------|-----------|
 | Manuscript does not render | -20 |
 | Causal language without identification (INV-8) | -20 |
+| Claim CONTRADICTED by its evidence (Claim–Evidence Table) | -25 per |
+| Claim UNSUPPORTED (no evidence in the manuscript) | -15 per |
+| Claim OVERSTATED | -10 per |
+| Claim UNVERIFIABLE | -5 per |
 | Numbers in text don't match tables (INV-11) | -10 per, max -30 |
 | Strategy section misrepresents the actual design | -15 |
 | Missing table notes on any table (INV-1) | -5 per, max -15 |

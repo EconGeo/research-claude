@@ -43,6 +43,7 @@ Extracted from `writer-critic.md`. Used by the writer-critic agent for manuscrip
 - Effect sizes stated with units ("4.2 percentage points", not "the coefficient is significant")
 - Comparisons to prior literature include specific magnitudes from cited papers
 - No stale numbers (values that don't match current output files)
+- **Claim–Evidence Table (mandatory):** build it per `.claude/skills/review/templates/claim-evidence-table.md`; deductions per verdict. Save it; cite its path in the report.
 
 ---
 
@@ -189,6 +190,10 @@ When invoked via `/review --all` or `/review --peer`, run all 8 categories.
 ## Render: [PASS/WARNINGS/FAIL]
 ## Voice Fidelity: [MATCH/DRIFT/NOT SCORED]
 ## Notation Consistency: [CONSISTENT/INCONSISTENCIES]
+
+## Claim–Evidence Table
+- Path:
+- Rows: N (SUPPORTED a / OVERSTATED b / UNSUPPORTED c / CONTRADICTED d / UNVERIFIABLE e)
 
 ## Score Breakdown
 - Starting: 100
