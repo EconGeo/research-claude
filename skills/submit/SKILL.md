@@ -88,7 +88,8 @@ Workflow:
 ---
 
 ## Principles
-- **Score >= 95 + all components >= 80. No exceptions.**
+- **Score >= 95 + every SCORED component >= 80. No exceptions.**
+  `pipeline.py score` weights only components that carry a score, so a component nothing ever scored does not hold the gate closed — it silently is not in it. Run `pipeline.py state show` and confirm every component the paper actually has is present before treating a PASS as a submission decision.
 - **AI disclosure must be populated before submission.** `ai_use_log.md` must exist and have entries; the AI Use Statement must not be a placeholder. No exceptions.
 - **Don't skip verification.** Even if reports exist, check they're recent.
 - **If it fails, stop.** Don't generate materials for a failing paper.

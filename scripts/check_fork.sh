@@ -12,7 +12,11 @@ scan() {  # scan <label> <ERE> [dir...]
   local hits present=() dirs=("$@"); [[ ${#dirs[@]} -eq 0 ]] && dirs=("${SHIP[@]}")
   local d; for d in "${dirs[@]}"; do [[ -d "$RC/$d" ]] && present+=("$d"); done
   if [[ ${#present[@]} -eq 0 ]]; then echo "SKIP [$label] (no ship dirs present)"; return; fi
-  hits="$(cd "$RC" && grep -rInE "$pat" "${present[@]}" 2>/dev/null | grep -vE 'residue:(historical|prohibition)' )"
+  # -i is load-bearing, not tidiness: a private dataset name shipped in a public
+  # rule file for the whole repair as a lowercased dataset name, because this scan was  # <!-- residue:prohibition -->
+  # case-sensitive. The identity scan is the one gate whose miss actually harms
+  # the user, so it matches however the token is cased.
+  hits="$(cd "$RC" && grep -rInEi "$pat" "${present[@]}" 2>/dev/null | grep -vE 'residue:(historical|prohibition)' )"
   if [[ -n "$hits" ]]; then echo "FAIL [$label]"; printf '%s\n' "$hits" | sed 's/^/    /'; fail=1
   else echo "PASS [$label]"; fi
 }
@@ -44,8 +48,8 @@ echo "── identity: nothing project-specific ships ──"
 # The `<!-- residue:prohibition -->` marker on the three scan lines below is
 # this file's one reserved use of that convention: it exempts a line that
 # NAMES a forbidden pattern in order to forbid it, never a line that uses one.
-scan project-identity 'POGM|SFPP|WRLURI|zoning2026|NAR_settlement|manuscript_quarto_word' "${SHIP[@]}" tests  # <!-- residue:prohibition -->
-scan project-nouns    'JREPM|JRER|CoStar|[^a-z]zoning|WRLURI|[^A-Za-z]NAR[^A-Za-z]' agents skills rules hooks templates seeds scripts  # <!-- residue:prohibition -->
+scan project-identity '\bPOGM|\bSFPP|\bWRLURI|\bzoning2026|\bNAR_settlement|\bmanuscript_quarto_word' "${SHIP[@]}" tests  # <!-- residue:prohibition -->
+scan project-nouns    '\bJREPM|\bJRER|\bCoStar|\bzoning|\bWRLURI|\bNAR\b' agents skills rules hooks templates seeds scripts  # <!-- residue:prohibition -->
 scan course-leak      'academic course materials|Beamer slides|TikZ Freshness'  # <!-- residue:prohibition -->
 
 echo "── structure ──"

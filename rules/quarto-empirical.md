@@ -111,12 +111,12 @@ Without it, a changed raw file will not invalidate the cached panel.
 ```r
 #| label: build-panel
 #| cache: true
-#| cache.extra: !expr list(file.mtime(here("data/raw/permits.csv")),
-#|                         file.mtime(here("data/raw/wrluri.csv")))
-panel <- read_csv(here("data/raw/permits.csv")) |>
-  left_join(read_csv(here("data/raw/wrluri.csv")), by = "cbsa") |>
+#| cache.extra: !expr list(file.mtime(here("data/raw/outcomes.csv")),
+#|                         file.mtime(here("data/raw/treatment_index.csv")))
+panel <- read_csv(here("data/raw/outcomes.csv")) |>
+  left_join(read_csv(here("data/raw/treatment_index.csv")), by = "unit_id") |>
   filter(year >= 2000) |>
-  mutate(log_permits = log(permits + 1))
+  mutate(log_y = log(y + 1))
 ```
 
 Use `!expr list(...)` for multiple files. Use `file.mtime()` not `file.info()`.
@@ -129,11 +129,11 @@ Use `!expr list(...)` for multiple files. Use `file.mtime()` not `file.info()`.
 #| dependson: "build-panel"
 att_result <- att_gt(
   data        = panel,
-  yname       = "log_permits",
+  yname       = "log_y",
   tname       = "year",
-  idname      = "cbsa",
+  idname      = "unit_id",
   gname       = "treat_year",
-  clustervars = "cbsa"
+  clustervars = "unit_id"
 )
 es <- aggte(att_result, type = "dynamic")
 ```
@@ -148,7 +148,7 @@ if `estimate-main` depends on `build-panel`, and `table-main` depends on
 #| label: fig-event-study
 #| cache: true
 #| dependson: "estimate-main"
-#| fig-cap: "Event Study: Effect of Zoning Reform on Permitting. *Notes:* ..."
+#| fig-cap: "Event Study: Effect of the Treatment on the Outcome. *Notes:* ..."
 #| fig-width: 6
 #| fig-height: 4
 ggplot(es_df, aes(x = t, y = att, ymin = att - 1.96*se, ymax = att + 1.96*se)) +
@@ -161,12 +161,12 @@ ggplot(es_df, aes(x = t, y = att, ymin = att - 1.96*se, ymax = att + 1.96*se)) +
 #| label: tbl-main-results
 #| cache: true
 #| dependson: "estimate-main"
-#| tbl-cap: "Main Results: Effect of Zoning Reform on Log Permits"
+#| tbl-cap: "Main Results: Effect of the Treatment on the Log Outcome"
 modelsummary(
   list("Baseline" = m1, "Controls" = m2, "Never-Treated" = m3),
   booktabs = TRUE,
   stars    = c("*" = 0.10, "**" = 0.05, "***" = 0.01),
-  notes    = "Clustered SEs at the CBSA level. Sample: 2000–2020."
+  notes    = "Clustered SEs at the unit level. Sample: 2000–2020."
 )
 ```
 

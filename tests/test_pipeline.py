@@ -108,7 +108,7 @@ class TestScoreIfScored(FixtureCase):
         d = self.t / "quality_reports" / "literature" / "fixture"; d.mkdir(parents=True)
         (d / "positioning.md").write_text("# Positioning\n")
     def record(self, comp, score):
-        rc, out = run("state", "record-score", comp, str(score), "--critic", "x", "--report", "r.md", root=self.t)
+        rc, out = run("state", "record-score", comp, str(score), "--critic", _scorer(comp), "--report", "r.md", root=self.t)
         self.assertEqual(rc, 0, out)
 
     def test_scored_below_min_blocks(self):
@@ -138,11 +138,47 @@ class TestScoreIfScored(FixtureCase):
         rc, out = run("pre", "strategist", root=self.t)
         self.assertEqual(rc, 1, out); self.assertIn("literature score", out); self.assertIn("have 0.0", out)
 
+# record-score now refuses a --critic that is not the component's declared `scored_by`
+# (a creator could otherwise score itself and close its own stage). Tests must therefore
+# name the real critic; read it from the registry so this can never drift.
+def _scorer(comp):
+    if str(ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(ROOT / "scripts"))
+    import registry_lib as _rl
+    return _rl.load_registry(ROOT)["components"][comp]["scored_by"]
+
+class TestScoredByEnforced(FixtureCase):
+    """`record-score` honours the registry's `scored_by`.
+
+    Without this, `record-score code 100 --critic coder` was accepted and `post coder`
+    then passed on a creator that had scored itself — the invariant
+    .claude/rules/agents.md states as "Creators never self-score"."""
+    def test_creator_cannot_score_itself(self):
+        run("state", "init", root=self.t)
+        rc, out = run("state", "record-score", "code", "100", "--critic", "coder",
+                      "--report", "r.md", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("scored by coder-critic", out)
+
+    def test_declared_critic_is_accepted(self):
+        run("state", "init", root=self.t)
+        rc, out = run("state", "record-score", "code", "85", "--critic", "coder-critic",
+                      "--report", "r.md", root=self.t)
+        self.assertEqual(rc, 0, out)
+
+    def test_every_component_scorer_is_accepted(self):
+        run("state", "init", root=self.t)
+        for comp in ["literature", "data", "strategy", "theory", "code",
+                     "manuscript", "referees", "replication"]:
+            rc, out = run("state", "record-score", comp, "85", "--critic", _scorer(comp),
+                          "--report", "r.md", root=self.t)
+            self.assertEqual(rc, 0, f"{comp}: {out}")
+
 class TestScore(FixtureCase):
     def test_weighted_and_renormalised(self):
         run("state", "init", root=self.t)
         for c, s in [("literature", 90), ("data", 80), ("strategy", 90), ("code", 85), ("manuscript", 88), ("referees", 85), ("replication", 100)]:
-            run("state", "record-score", c, str(s), "--critic", "x", "--report", "r.md", root=self.t)
+            run("state", "record-score", c, str(s), "--critic", _scorer(c), "--report", "r.md", root=self.t)
         rc, out = run("score", root=self.t); self.assertIn("overall=87.3", out)
         run("state", "record-score", "theory", "92", "--critic", "theorist-critic", "--report", "r.md", root=self.t)
         rc, out = run("score", root=self.t); self.assertIn("overall=88.08", out)

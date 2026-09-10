@@ -319,6 +319,14 @@ def main() -> int:
             if len(a.args) != 2 or not a.critic or not a.report: sys.exit("usage: state record-score <component> <score> --critic X --report P [--scope section:NAME]")
             comp, score = a.args[0], float(a.args[1])
             if comp not in reg["components"] or not 0 <= score <= 100: print("record-score: bad component or score"); return 1
+            # The registry already knows which critic owns each component, so honour it.
+            # Without this, `record-score code 100 --critic coder` is accepted and `post coder`
+            # then passes on a creator that scored itself — the exact thing
+            # .claude/rules/agents.md names as an invariant: creators never self-score.
+            owner = reg["components"][comp].get("scored_by")
+            if owner and a.critic != owner:
+                print(f"record-score: {comp} is scored by {owner}, not {a.critic} "
+                      f"(see .claude/rules/registry.yaml)"); return 1
             entry = {"score": score, "critic": a.critic, "report": a.report, "at": now()}
             if a.scope and a.scope.startswith("section:"):
                 stt["sections"][a.scope.split(":", 1)[1]] = entry

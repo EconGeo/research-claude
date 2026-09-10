@@ -8,11 +8,21 @@ The dispatching skill dispatches the critic after the creator, every time, in ev
 mark a creator complete until the dispatch log shows its critic completing afterwards and the
 state file carries the critic's score.
 
-**Enforcement.**
-- `pipeline.py post` — `critic-ran` predicate (structural).
-- `.claude/hooks/critic-pairing.py` (Stop) — reads `quality_reports/agent_dispatch.jsonl` and
-  surfaces a creator that ran without its critic in the current session.
-- `check_fork.sh registry-complete` — no creator with a non-zero weight lacks a critic.
+**Enforcement.** These are not three equal gates. Only the first refuses anything.
+- **`pipeline.py post` — the gate.** Its `critic-ran` predicate refuses to close a creator's
+  stage without a critic completion that postdates the creator AND a component score recorded
+  after it, by the critic the registry declares. Nothing else here can stop a session.
+- **`.claude/hooks/critic-pairing.py` (Stop) — advisory.** It reads
+  `quality_reports/agent_dispatch.jsonl` and surfaces a creator that ran without its critic.
+  It blocks **once per creator per session**, then goes advisory, so a session can pass it by
+  stopping twice. That is deliberate — a Stop hook that blocks unconditionally can trap a
+  session with no way out — but it means the hook makes a session *notice*, it does not make a
+  session *comply*.
+- **`check_fork.sh registry-complete` — a template check, not a runtime one.** It only asserts
+  that no creator with a non-zero weight lacks a declared critic in the registry.
+
+Note that nothing forces `pipeline.py post` to be *called*. A session that never runs it is
+never gated; `/pipeline` is what runs it on every stage.
 
 **Peer review** is the one asymmetric structure: the editor dispatches two blind referees and
 synthesises a decision. Referees are already reviewers and have no critic (registry `role: referee`).
@@ -67,5 +77,8 @@ pipeline.
 | `/talk` | storyteller | storyteller-critic |
 | `/pipeline` | the skills above, in `REQUIRES` order, with `pipeline.py pre`/`post` around each | — |
 
-Pairs, weights and escalation targets are **not** restated here. Read
-`.claude/rules/permissions.md` (rendered from the registry).
+The table above is **dispatch ownership** — which skill dispatches what, keyed by skill.
+It is deliberately not a pairing table: a creator's bound critic, its escalation target and its
+component weight are declared once, in `.claude/rules/registry.yaml`, and rendered to
+`.claude/rules/permissions.md`. Where the two could ever disagree, the registry is right and this
+table is stale. Read `permissions.md` before relying on a pairing.

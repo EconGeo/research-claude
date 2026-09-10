@@ -7,7 +7,7 @@
 #
 # Run it from a paper repo, or point it anywhere:
 #   ./check_install.sh                       # $PWD
-#   ./check_install.sh --project-dir ~/Research/BRI
+#   ./check_install.sh --project-dir ~/Research/<project>
 #   ./check_install.sh --all                 # every project under $RESEARCH_DIR
 #
 # Exit 0 = this project's pipeline is correctly installed.

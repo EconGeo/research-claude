@@ -24,20 +24,19 @@ markets). Scanning every number word would flag "the one that does" and
 checking. Word hits are allowlisted in the same CSV and by the same rule: give a
 reason or make it an inline expression.
 
-PROVENANCE. Written for a settlement-study project (quality_reports/w_prose_number_check.py,
-2026-09-05) and promoted here unchanged in logic, with the manuscript and
-allowlist paths parameterized so every project under ~/Research can use it. The
-project-local copy remains the reference implementation.
+PROVENANCE. Written for one project in 2026-09 and promoted here unchanged in
+logic, with the manuscript and allowlist paths parameterized so any project can
+use it.
 
-WHY THIS IS RESEARCH-WIDE. One project carried 24 hardcoded values in prose while
-scoring 100/100 on its own quality gate, four of them provably wrong and each
-contradicted by a table on the same page, because that project had no equivalent
-check and its scorer tested hardcoded *paths* rather than *numbers*. A rule that
-lives only in prose is not enforced; this file is the enforcement.
+WHY THIS SHIPS. The project it came from carried 24 hardcoded values in prose
+while scoring 100/100 on its own quality gate — four of them provably wrong, each
+contradicted by a table on the same page — because its scorer tested hardcoded
+*paths* rather than *numbers*. A rule that lives only in prose is not enforced;
+this file is the enforcement.
 
 Usage
 -----
-    python3 ~/Research/scripts/prose_number_check.py MANUSCRIPT.qmd [ALLOWLIST.csv]
+    python3 .claude/scripts/prose_number_check.py MANUSCRIPT.qmd [ALLOWLIST.csv]
 
 The allowlist defaults to quality_reports/prose_number_allowlist.csv relative to
 the manuscript. Exit codes: 0 clean, 1 unexplained literals, 2 usage error.
