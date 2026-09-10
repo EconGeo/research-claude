@@ -102,7 +102,41 @@ this file is that move.**
 - **Loose ends 1 and 2 are both done**; the six locks are refreshed and all six repos are
   pushed and in sync with their remotes.
 - **§2d closed** (PR #5 merged `a8120c5`, re-vendored `1e780f8`).
-- Still open: §2a (109 prose literals) and a full green `--live` run
+- **§2a done — all three repos green.** The 109 count was three different problems, not one:
+  - **NAR (54): a filename, not a judgment call.** All 54 were already adjudicated in
+    `quality_reports/w_prose_number_allowlist.csv`; the shipped scanner looks for
+    `prose_number_allowlist.csv` and so read an empty allowlist. Renaming it alone would
+    have broken `quality_reports/w_prose_number_check.py`, a superseded copy of the shipped
+    script (same logic, no HTML-comment handling), so that copy was retired — both were run
+    against the same allowlist first and agreed exactly (54 distinct, 152 occurrences, same
+    two stale rows). `x7_gate.sh`, `HANDOFF.md` and the `nword()` comment repointed.
+    Commit `689ec39`.
+  - **ESG (14): drafting notes, not prose.** Every hit sat inside an italic
+    `*Stage G. …*` / `*RA-6. …*` note — referee ids, cited-work years, a filename. Resolved
+    by converting those notes to HTML comments, which the scanner skips *because they do not
+    render*, and which the file already used for its own STATUS block. Allowlisting would
+    have pre-authorised bare `2`, `3`, `4`, `2023` in a manuscript whose prose is not yet
+    written. Now 0 literals — the honest state of a 154-line shell. Commit `8e81512`.
+  - **zoning2026 (41): the real adjudication.** Four became inline expressions because they
+    mirrored a live value — `65,000`→`POP_THRESHOLD`, `2017 dollars`×3→`CPI_BASE_YEAR`,
+    the `2014--2024` table note→a new `SUMM_YEARS` named once in `sumstats-table` and used by
+    its five filters, and `10`/`15` log points→`theta_lo`/`theta_hi` in `power-sim` (the
+    prose quoted an effect size that was itself the *selector* for the power it quoted).
+    **Note the trap:** the note's window is 2014--2024 while the panel is 2012--2024, so
+    `min(panel$year)` would have been the wrong expression there. The other 37 got rows with
+    reasons in `paper/quality_reports/prose_number_allowlist.csv`. Commit `41af5dc`.
+- **Two things §2a surfaced and did not fix.**
+  1. **The allowlist path is manuscript-dir-relative.** zoning2026 keeps its manuscript in
+     `paper/`, so the shipped scanner looks in `paper/quality_reports/` and the allowlist had
+     to go there rather than beside the project's other `quality_reports/`. Nothing is broken;
+     it is a wart in `prose_number_check.py`'s default and worth a deliberate ruling.
+  2. **`_NOUN` does not cover the nouns this literature counts.** zoning2026's prose says
+     "nine states adopted strong measures", "eight moderate measures", "sixteen affected
+     MSAs", "Fifty MSAs that span state boundaries", "five states" — every one a count off an
+     exhibit, every one invisible to the scanner. `PROSE_NUMBER_NOUNS` is the supported
+     extension point (per the script's own comment, widening the shared default is not free).
+     Each hit needs adjudicating, so it is its own task.
+- Still open: a full green `--live` run
   (the last one proved the mechanism, then hit the wall clock mid-round-2). The
   `session_logs/` question above is closed.
 
