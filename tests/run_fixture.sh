@@ -136,8 +136,45 @@ rm -f "$T/.claude/state/session-guards.json"
 
 if [[ "$LIVE" == true ]]; then
   echo "── live tier"
-  run live-pipeline bash -c "cd '$T' && claude -p '/pipeline run --until analyze --yes' --permission-mode acceptEdits >/dev/null 2>&1"
+  # The transcript is the ONLY evidence of what the driver did. run() prints just the last
+  # three lines of a failing command, and the old `>/dev/null 2>&1` discarded even those — a
+  # red on the largest artifact in the tree said nothing at all. Keep it inside $T so --keep
+  # preserves it alongside the state file and dispatch log it explains.
+  LIVE_LOG="$T/live-pipeline.log"
+  LIVE_TIMEOUT="${LIVE_TIMEOUT:-1800}"
+  if ! command -v claude >/dev/null 2>&1; then
+    bad live-claude-present "claude not on PATH — the live tier cannot run"
+  else
+    ok live-claude-present
+    # No timeout(1) on macOS. perl's alarm(2) survives exec, so the watchdog outlives the
+    # replacement of perl by claude; SIGALRM's default action ends it at exit 142.
+    perl -e 'alarm shift @ARGV; exec @ARGV' "$LIVE_TIMEOUT" \
+      claude -p '/pipeline run --until analyze --yes' --permission-mode acceptEdits \
+      >"$LIVE_LOG" 2>&1
+    lrc=$?
+    case $lrc in
+      0)   ok  live-pipeline ;;
+      142) bad live-pipeline "TIMED OUT after ${LIVE_TIMEOUT}s — re-run with LIVE_TIMEOUT=<seconds>" ;;
+      *)   bad live-pipeline "exit $lrc" ;;
+    esac
+    if [[ $lrc -ne 0 ]]; then
+      echo "    ── last 25 lines of $LIVE_LOG"
+      tail -25 "$LIVE_LOG" 2>/dev/null | sed 's/^/    | /'
+    fi
+    echo "    transcript: $LIVE_LOG ($(wc -l <"$LIVE_LOG" 2>/dev/null | tr -d ' ') lines)"
+  fi
+
   run live-dispatch-log test -s "$T/quality_reports/agent_dispatch.jsonl"
+  run live-state-valid  python3 "$RC/scripts/pipeline.py" --root "$T" state validate
+  # What actually ran — printed on red AND green, because "it passed" is not evidence of
+  # which stages executed. Exits non-zero iff no declared critic completed, which is the
+  # one enforcement claim this tier exists to test (pipefail carries that through the sed).
+  echo "    ── what actually ran"
+  if python3 "$RC/tests/live_summary.py" "$T" "$RC" | sed 's/^/    /'; then
+    ok  live-critic-ran
+  else
+    bad live-critic-ran "no declared critic completed — see the summary above"
+  fi
 fi
 
 [[ $fail -eq 0 ]] && echo "✓ run_fixture: PASS" || echo "✗ run_fixture: FAIL"
