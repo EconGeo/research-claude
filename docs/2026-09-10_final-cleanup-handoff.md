@@ -94,6 +94,11 @@ this file is that move.**
 - Verified green on main after all of the above: `check_fork` PASS · **75 tests OK** (62 + 13
   for the compaction hooks) · `run_fixture` (mechanical) PASS · `check_install --all` PASS six
   repos · `audit_graph` dangling 0 · roster [] · never-invoked [].
+- **Locks refreshed to `452aa4f`** in all six repos (`31851ef` POGM4, `a96ed56` NAR,
+  `aca8715` zoning2026, `4040fd5` ESG, `47032da` BRI, `69d9ace` affordable_housing_2026).
+  Nothing parses the lock's `# installed via:` comment — `check_install` reads only
+  `^commit=` — so it was left saying `pinned`. Note POGM4 and NAR are on feature branches
+  (`rewrite-phase1`, `phase1-event-study`), so their lock commit landed there, not on main.
 - Still open: §2a (109 prose literals), §2d (upstream ZotPilot), and a full green `--live` run
   (the last one proved the mechanism, then hit the wall clock mid-round-2). The
   `session_logs/` question above is closed.
@@ -148,9 +153,13 @@ can bootstrap from a clone with no access grant, and each paper repo's
 unpushed commit is therefore unresolvable for anyone but this machine, and the six locks are
 what point at it. Push before relying on any of this elsewhere.
 
-**Follow-on, not yet done:** the six locks still record `8bb6218`, which `check_install`
-reports as a WARN ("refresh before submission"). Now that `main` is pushed those SHAs are at
-least reachable, but they are ~13 commits behind what the projects are actually running.
+**Follow-on — ✅ DONE 2026-09-10.** The six locks recorded `8bb6218` (~15 commits behind what
+the projects were running) and `check_install` warned "refresh before submission". All six now
+record `452aa4f`, and the gate reads `lock 452aa4f == checkout HEAD` in every repo. Only
+`commit=` and `generated=` were rewritten — `apply.sh`'s full install was not re-run, because
+membership had not changed and re-running an installer across six repos is a wider blast radius
+than a two-line provenance stamp needs. **Each of the six is now 2–4 commits ahead of its
+remote; some of that predates this refresh, so none were pushed.**
 
 ```
 ✓ check_fork:    PASS      56 criteria, 0 failures
