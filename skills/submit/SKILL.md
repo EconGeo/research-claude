@@ -28,7 +28,7 @@ Save to `quality_reports/journal_recommendations_[date].md`
 ### `/submit package` — Build Replication Package
 Assemble AEA-compliant replication package.
 
-**Agents:** coder → coder-critic
+**Agents:** coder, then coder-critic (paired per `.claude/rules/registry.yaml`)
 
 Produces:
 - the declared manuscript, `references.bib`, `templates/`, `data/raw/data_manifest.md`, `scripts/acquire/`, `renv.lock`, README (`.claude/skills/submit/templates/replication-readme.md`) — assembled under `replication/`

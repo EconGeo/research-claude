@@ -52,7 +52,7 @@ Save to `quality_reports/referee_response_tracker.md` with:
 
 ### Step 5: Dispatch Agents
 - CLARIFICATION/REWRITE → dispatch writer, then writer-critic; record the score
-- NEW ANALYSIS → after user approval dispatch coder, then coder-critic; then writer → writer-critic for the affected section
+- NEW ANALYSIS → after user approval dispatch coder, then coder-critic; then dispatch writer and writer-critic for the affected section
 - DISAGREE → draft diplomatic response, flag prominently for user
 
 ### Step 6: Draft Response Letter

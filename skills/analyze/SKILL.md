@@ -25,13 +25,13 @@ The coder outputs `.claude/skills/analyze/templates/pre-code-report.md` filled i
 path, paper type, naming map, planned **chunk labels** (not filenames). If the memo is missing,
 proceed on the user's description and flag that categories 1–3 of the review cannot be verified.
 
-### Step 2: Wrangling — data-engineer → coder-critic
+### Step 2: Wrangling — data-engineer, then its paired critic
 Dispatch **data-engineer**: `build-*` chunks with `cache.extra`, manifest rows, `tbl-summary`
 chunk. Then `python3 .claude/scripts/pipeline.py log data-engineer` (standalone) and dispatch
 **coder-critic** on the manuscript; record its score:
 `python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --report <path>`.
 
-### Step 3: Estimation — coder → coder-critic
+### Step 3: Estimation — coder, then its paired critic
 Dispatch **coder**: `estimate-*`, `robustness-*`, `tbl-*`, `fig-*` chunks per
 `.claude/skills/analyze/templates/chunk-structure.md`; render clean; prose check clean. Log,
 dispatch **coder-critic**, record the score. Three rounds maximum
@@ -60,5 +60,5 @@ specifications the memo names that could not be run).
 ## Principles
 - **Reproduce, don't guess.** If the user specifies a regression, run exactly that.
 - **Strategy alignment.** If a memo exists, chunks implement it faithfully.
-- **Creator then critic, every time.** data-engineer → coder-critic; coder → coder-critic.
+- **Creator then critic, every time.** Each creator's paired critic is declared in `.claude/rules/registry.yaml`, not restated here.
 - **One manuscript.** No script tree, no results file, no output directory; the render is the output.

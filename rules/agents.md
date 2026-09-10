@@ -47,8 +47,9 @@ the `ESCALATION_TARGET` declared for the creator in the registry. `pipeline.py s
 The dependency graph lives in the registry (`REQUIRES` / `PRODUCES`), the loop lives in
 `/pipeline`, and every stage skill owns its pair. Phases activate by `REQUIRES`, never by
 sequence; re-entry is permitted everywhere except Submission. The coder↔writer cycle is normal
-research, and the registry supports it: a referee comment routes to `coder → coder-critic →
-writer → writer-critic` without restarting the pipeline.
+research, and the registry supports it: a referee comment routes back through the code stage and
+then the writing stage, each with its paired critic per the registry, without restarting the
+pipeline.
 
 | Skill | Dispatches | Then |
 |---|---|---|
