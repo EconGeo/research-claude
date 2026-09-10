@@ -24,7 +24,7 @@ that took real work to find.
 **Read §2 and §3 before trusting a gate.** Three checkers have known, permanent blind spots.
 A green gate does not mean what you might assume in the specific cases named there.
 
-Rulings are numbered R-1…R-130 in the order they were made. Where a later ruling reversed an
+Rulings are numbered R-1…R-136 in the order they were made. Where a later ruling reversed an
 earlier one, both are shown — the reversal is usually the more interesting record.
 
 ---
@@ -298,6 +298,32 @@ rather than folded silently into the task's diff.
 
 ---
 
+### R-131 · A private dataset name shipped in the public repo for the whole repair
+
+`rules/quarto-empirical.md` carried `data/raw/wrluri.csv` twice, in a worked example that also
+named the CBSA join key and the outcome variable — a recognisable fingerprint of one private
+land-use project. `WRLURI` is on **both** banlists in `check_fork.sh`. The scan ran
+`grep -rInE` without `-i`, so the lowercase filename passed every run. `rules/` is linked into
+all six private repos **and** published.
+
+Two systematic holes, both closed:
+
+- **no `-i`** — any lowercasing evaded the whole identity scan;
+- **`[^a-z]zoning` and `[^A-Za-z]NAR[^A-Za-z]`** both require a *preceding character*, so
+  neither could ever match a token at the **start of a line**. `\b` has no such hole.
+
+Also removed in the same pass: a private project's provenance and a personal `~/Research/...`
+path from `scripts/prose_number_check.py` (which ships), and a private repo name from
+`check_install.sh`'s usage line.
+
+**This is the fourth time in this repair a gate read green while the property it names was
+false** — after the case-blind `AUTH_ARROW`, the `MARK` regex inside a table cell, and
+`audit_graph.py`'s unanchored path pattern. It landed on the one gate whose miss actually harms
+the user. When a scan defends a *public* boundary, case-insensitivity and word boundaries are
+not tidiness.
+
+---
+
 ### R-127 · Every gate is green; nothing has run in a real project
 
 `check_fork.sh` exits 0 — 56 criteria, 0 failures — and the fixture harness runs 32 checks
@@ -485,6 +511,40 @@ prefix found none, so the class is closed rather than the instance.
 concerns a *genuine* hit. Here the hit was demonstrably false — the skill is live, on disk, and
 dispatched. Correcting a proven false positive is what keeps a gate worth obeying; a gate that
 forces a workaround gets worked around next time, without anyone asking.
+
+---
+
+### R-135 · The claim gates are denylists of known strings, not detectors of the property
+
+Two of the branch's four central claims rest on gates that cannot, in principle, establish them.
+
+**"One manuscript"** is enforced by `check_refs.py`'s `latex-residue` / `manuscript-model`,
+which match the *specific retired filenames* (`scripts/R/`, `paper/tables/`,
+`results_summary.md`, `main.tex`). The final review reinstated the entire pre-repair multi-file
+model under different directory names — `sections/*.qmd` with includes, a `code/R/` script tree,
+`output/tables/*.tex`, a results digest — and **all seven criteria passed**.
+
+**"The registry is the single source"** is enforced by `AUTH_PAIR` / `AUTH_ARROW` /
+`AUTH_WEIGHT`. A file stating all eight pairs in prose, with reversed table columns, with an
+em-dash instead of an arrow, or a weight table in `quality.md`'s own row shape, passes. The scan
+also only reads `*.md`: no `.py`, `.sh`, `.yaml`, `.json` or `.qmd` in any shipped directory is
+ever examined. And any line ending `<!-- residue:prohibition -->` is invisible to every text
+gate, by design.
+
+**State the claims accordingly.** These gates hold the line against *regression* — they catch
+the known-bad forms coming back. They do not prove the tree has the property. The honest form is
+"no known violation is present, and these gates prevent the known forms returning", not "the
+tree is one-manuscript" or "the registry is the only source".
+
+### R-133 · The submission gate renormalises, so one component can carry it
+
+`compute_overall` weights only components that carry a score. A paper with `code` at 100 and the
+other seven never scored reads `overall=100.0` and `score --gate submission` **passes**, as does
+`pre verifier`. `rules/quality.md` and `rules/lifecycle.md` were already honest ("every
+**scored** component"); `skills/submit/SKILL.md` and `skills/submit/gotchas.md` were not —
+they promised a completeness check that does not exist, in the skill that runs the gate. Both
+corrected to say what the code does, and to say that an unscored component is not counted at
+all rather than failing.
 
 ---
 
@@ -681,6 +741,24 @@ given *mode* of a multi-mode skill reaches the dispatch code at all.
 
 ---
 
+### R-132, R-134 · Two claims the tree did not support, corrected rather than restated
+
+**R-132 — a creator could score itself.** `record-score` never checked `--critic` against the
+component's declared `scored_by`, so `record-score code 100 --critic coder` was accepted and
+`post coder` then passed on a creator that had scored its own work — the invariant
+`rules/agents.md` §2 states as "Creators never self-score". Now enforced from the registry.
+Two existing tests had been passing a placeholder `--critic x`; they now read the real critic
+from the registry, so they cannot drift from it again.
+
+**R-134 — R-110's fix moved the pair statements out of the regex's reach, not out of the tree.**
+All ten flagged lines were resolved by rewriting `→` as `, then` — the one token `AUTH_ARROW`
+matches. The pairings survive verbatim in meaning, and `rules/agents.md`'s 12-row table still
+names the critic for seven of eight creators, directly above a sentence claiming pairs are "not
+restated here". The table is legitimately *dispatch ownership* — keyed by skill, answering "what
+does `/analyze` dispatch?" — so it stays; the **disclaimer** was the false part and now says what
+the table is and defers to the registry wherever they could disagree. R-110's own account was
+overstated and is corrected here rather than left standing.
+
 ### R-128, R-129 · Fix the checker, and do not manufacture a red the plan promised
 
 Two late findings that are the same lesson from opposite directions.
@@ -721,6 +799,7 @@ outward-facing.
 | Reword `rules/registry.yaml`'s 8-row self-documentation header and the 6 dual-context docstring rows in `pipeline.py`/`registry_lib.py` so `path-resolves` reaches green without a new exempt set | Task 3b.8 |
 | Add the `artifact-paths` gate: flag any `quality_reports/` path matching no registry glob, with an allow-list for genuine convenience artifacts | R-112 |
 | ~~Resolve the `.claude/references/coding-standards` double-reference left dangling by deleting `references/coding-standards-rmd.md`~~ — **withdrawn (R-125): the premise was false.** `coding-standards-{r,python,julia}.md` all exist; only the Rmd file was deleted, correctly. The two hits are R-21's documented truncation of `-{lang}` and `-*`, four sections above. Fixed in `PATH_RE` at Task 7.3, not by editing the references. | R-125 |
+| **Wire the six repos' `.claude/settings.json` AS PART OF THE MERGE, not after it.** `apply.sh`'s `copy_seed` never overwrites an existing settings file, so the two new hooks reach no existing project on merge. Until each is edited by hand, the dispatch log is written only where a skill explicitly runs `pipeline.py log` — three creators — and `post` fails closed on `creator None` for the rest. This is a prerequisite for the pairing gate being true in production, not a tidy-up | R-136 |
 | Implement the enumerated (but not yet applied) `SKILL.md` "Replaces /X" frontmatter rewordings for the 18 genuine `skill-refs` hits | Task 3b.8 |
 
 ---
@@ -767,17 +846,28 @@ Recorded, judged non-blocking, and left for triage:
   because `now()` emits fixed-width UTC timestamps so lexicographic order equals chronological
   order (R-49). Relaxing that format would break this silently. The reasoning is in the
   function's own docstring as well as here.
-- `hooks-readme`'s 10 remaining hits, itemised for whoever closes them: six hooks carry no
-  `Hook Event:` line (`post-edit-lint.sh`, `lint-scripts.sh`, `protect-files.sh`,
-  `post-merge.sh`, `log-reminder.py`, `notify.sh`); two table rows name a stale event
-  (`session-guard.py` says SessionStart, the hook says PreToolUse; `post-compact-restore.py`
-  says PostCompact, the hook says SessionStart); and three are a **checker defect** — the row
-  regex reads any first backticked cell as a filename, so the second "how to block" table, whose
-  first column is an event name, is scanned as if `hooks/PreToolUse` were a file.
-- `hooks/README.md`'s "how to block" table states that `PreCompact, Stop` block only by exit 2.
-  A Stop hook also honours a top-level `{"decision":"block","reason":...}` — which is what
-  `hooks/critic-pairing.py` emits. Verified against the current hooks documentation, fetched
-  rather than recalled. Until corrected, the README contradicts a shipped hook.
+- ~~`hooks-readme`'s 10 remaining hits, itemised…~~ **CLOSED at Task 7.4.** All six hooks now
+  carry a `Hook Event:` line (`post-merge.sh` was deleted), both stale rows agree with their
+  hooks, and the checker defect is fixed at `check_refs.py` — the row match is anchored to cells
+  ending `.py`/`.sh`, so the "how to block" table is no longer read as a file list.
+  `hooks-readme` reports PASS with zero hits. Left here, struck through, because a reader who
+  saw the open version should learn it closed rather than find it missing.
+- ~~`hooks/README.md`'s "how to block" table states that `PreCompact, Stop` block only by exit
+  2…~~ **CORRECTED at Task 7.4.** The row now records that `Stop` also honours a top-level
+  `{"decision":"block","reason":…}`, which is what `hooks/critic-pairing.py` emits.
+- `hooks/protect-files.sh` exists, is documented in the README table, and is registered in **no**
+  settings file anywhere. That is deliberate (R-7: it is opt-in and needs `PROTECTED_PATTERNS`
+  edited per project), but `hooks-readme` only checks existence and event agreement, never
+  registration — so nothing distinguishes "deliberately unwired" from "forgotten".
+- `critic-pairing.py`'s sentinel under `~/.claude/sessions/<hash>/` is never pruned and grows one
+  `<sid>:<creator>` key per incident, indefinitely.
+- Clock skew between machines is unfixed and fails OPEN: a creator run on a slow clock can stamp
+  earlier than an older committed score, and `critic-ran` accepts it. UTC removed the timezone
+  and DST halves of the problem, not this one. Now said plainly in `now()`'s docstring.
+- A coauthor cloning a repo inherits `pipeline_state.json` (committed) but not
+  `agent_dispatch.jsonl` (gitignored), so `post` fails closed on every stage the original author
+  legitimately closed. Correct, but a real cost in a repo whose stated purpose is bootstrapping
+  from a clone.
 
 ---
 
@@ -918,3 +1008,9 @@ worth having.
 | R-128 | `hooks-readme`'s residual hits were a checker defect; anchored the row match to `.py`/`.sh` rather than restyling the document |
 | R-129 | The plan promised a `booktabs` false positive the code cannot produce; verified rather than staged, and a real instance of the class red/greened instead |
 | R-130 | `residue:prohibition` on a runtime string literal is pre-existing convention (`check_paths.py:31-37`, `audit_graph.py:31`), not an overload invented here |
+| R-131 | A private dataset name shipped in a public rule file for the whole repair; the identity scan was case-blind AND could not match at line start |
+| R-132 | `record-score` accepted any `--critic`, so a creator could score itself and close its own stage; now enforced from the registry's `scored_by` |
+| R-133 | The submission gate renormalises over scored components; two `/submit` sentences promised a completeness check that does not exist |
+| R-134 | **Corrects R-110.** Its fix rewrote `→` as `, then`, moving the pair statements out of the regex's reach rather than out of the tree |
+| R-135 | The gates for "one manuscript" and "registry is the single source" are denylists of known strings, not property detectors; state the claims accordingly |
+| R-136 | The six repos' hook wiring is a merge prerequisite, not follow-up work: `copy_seed` never overwrites, so the new hooks reach no existing project |
