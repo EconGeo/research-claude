@@ -235,7 +235,7 @@ def run_preds(kind: str, agent: str, root: Path, reg) -> int:
 
 # ── registry check (check_fork criteria) ────────────────────────────────────
 AUTH_PAIR = re.compile(r"^\|\s*(lit-position|explorer|strategist|theorist|coder|data-engineer|writer|storyteller)\s*\|\s*[a-z-]+-critic\s*\|", re.M)
-AUTH_ARROW = re.compile(r"\b(lit-position|explorer|strategist|theorist|coder|data-engineer|writer|storyteller)\s*(→|->|↔)\s*[a-z-]+-critic\b")
+AUTH_ARROW = re.compile(r"\b(lit-position|explorer|strategist|theorist|coder|data-engineer|writer|storyteller)\b\s*(\([^)]{0,40}\)\s*)?(→|->|↔)\s*[a-z-]+-critic\b", re.I)
 AUTH_WEIGHT = re.compile(r"(QUALITY_WEIGHT|\bweight)\s*[:=|]\s*\d|\b\d+(\.\d+)?%\s*(of\s+)?(weight|\((literature|data|strategy|theory|code|manuscript|replication))", re.I)
 AUTH_ALLOW = {"rules/registry.yaml", "rules/permissions.md", "rules/quality.md"}
 

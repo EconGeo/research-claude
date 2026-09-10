@@ -75,7 +75,7 @@ now — invoke it directly instead of this mode. It is local-Zotero-first per
 ### `/discover data [requirements]` — Data Discovery
 Find and assess datasets for the research question.
 
-**Agents:** Explorer (finder) → explorer-critic (assessor)
+**Agents:** Explorer (finder), then explorer-critic (assessor)
 **Output:** Ranked data sources with feasibility grades
 
 Workflow:

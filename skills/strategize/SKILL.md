@@ -18,7 +18,7 @@ Design an identification strategy, pre-analysis plan, or formal theory section b
 ### `/strategize [question]` or `/strategize strategy [question]` — Identification Strategy
 Design the causal identification strategy.
 
-**Agents:** Strategist → strategist-critic
+**Agents:** Strategist, then strategist-critic
 **Output:** Strategy memo + robustness plan + falsification tests
 
 Workflow:
@@ -60,7 +60,7 @@ If research spec, literature review, or data assessment are missing, the Strateg
 
    Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --report quality_reports/reviews/strategist-critic_<date>.md`.
 5. If CRITICAL issues found, iterate (max 3 rounds per three-strikes)
-6. Save memo to `quality_reports/strategy_memo_[topic].md`
+6. Save to `quality_reports/strategy/<project>/`: `strategy_memo.md` (primary output — must include all 5 required sections: Estimand, Specification, Assumptions, Robustness Plan, Threats), `pseudo_code.md`, `robustness_plan.md`, `falsification_tests.md`
 7. Save review to `quality_reports/reviews/strategist-critic_<date>.md`
 8. **Save decision record** → `quality_reports/decisions/strategy_[topic].md`
    Using `.claude/skills/strategize/templates/decision-record.md`, record:
@@ -196,7 +196,7 @@ Produce a formal theory section: assumptions, definitions, lemmas, theorems, and
 
 **Input:** `$ARGUMENTS` — research question, path to strategy memo, or path to existing paper/draft.
 
-**Agents:** Theorist → theorist-critic
+**Agents:** Theorist, then theorist-critic
 **Output:** Theory memo + a `# Theory` section and proofs appendix in the manuscript + notation glossary
 
 Workflow:

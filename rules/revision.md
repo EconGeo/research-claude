@@ -6,11 +6,13 @@
 
 | Classification | What It Means | Routed To |
 |---------------|---------------|-----------|
-| **NEW ANALYSIS** | Requires new estimation or data work | Coder → coder-critic |
-| **CLARIFICATION** | Text revision sufficient | Writer → writer-critic |
+| **NEW ANALYSIS** | Requires new estimation or data work | Coder, then coder-critic |
+| **CLARIFICATION** | Text revision sufficient | Writer, then writer-critic |
 | **DISAGREE** | Diplomatic pushback needed | Flagged for User review |
-| **MINOR** | Typos, formatting | Writer → writer-critic |
+| **MINOR** | Typos, formatting | Writer, then writer-critic |
 | **FATAL** | Invalidates a headline claim if correct | Stop; escalate to User before any drafting |
+
+Each pairing above is declared in `.claude/rules/registry.yaml`; this column names who to dispatch, not a second source of truth for the pairing.
 
 ## The R&R Flow
 
@@ -20,10 +22,10 @@ Referee reports arrive (real, not simulated)
         ▼
    /revise classifies each comment
         │
-        ├── NEW ANALYSIS → Coder → coder-critic → Writer updates
-        ├── CLARIFICATION → Writer → writer-critic
+        ├── NEW ANALYSIS → Coder, then coder-critic → Writer updates
+        ├── CLARIFICATION → Writer, then writer-critic
         ├── DISAGREE → User decides → diplomatic response drafted
-        └── MINOR → Writer → writer-critic
+        └── MINOR → Writer, then writer-critic
         │
         ▼
    Revised paper → writer-critic → pipeline.py post writer
@@ -31,6 +33,8 @@ Referee reports arrive (real, not simulated)
         ▼
    Response letter produced
 ```
+
+Pairing per `.claude/rules/registry.yaml`; this diagram names dispatch order, not the pairing itself.
 
 ## Rules
 
