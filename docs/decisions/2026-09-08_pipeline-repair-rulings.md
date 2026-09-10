@@ -24,7 +24,7 @@ that took real work to find.
 **Read §2 and §3 before trusting a gate.** Three checkers have known, permanent blind spots.
 A green gate does not mean what you might assume in the specific cases named there.
 
-Rulings are numbered R-1…R-126 in the order they were made. Where a later ruling reversed an
+Rulings are numbered R-1…R-130 in the order they were made. Where a later ruling reversed an
 earlier one, both are shown — the reversal is usually the more interesting record.
 
 ---
@@ -295,6 +295,27 @@ two siblings. No Stage 5 task named this file. It was fixed anyway: the change i
 lines already being applied to its neighbours, and leaving one hook able to throw an error banner
 while fixing the two next to it had no defensible justification. Recorded as a judgment call
 rather than folded silently into the task's diff.
+
+---
+
+### R-127 · Every gate is green; nothing has run in a real project
+
+`check_fork.sh` exits 0 — 56 criteria, 0 failures — and the fixture harness runs 32 checks
+green. That is worth what it is worth, and no more.
+
+`check_install.sh --all` reports all six paper repos linked to the **parent checkout on `main`**,
+not to the repair worktree. The plan's Stage 2 exit criterion ("POGM4 is linked to `$W`") was
+never met, so:
+
+- no hook in this branch has fired in a live session — the piped-payload tests and the fixture's
+  `pairing-*` checks are real, but a hook behaving correctly under `echo | python3` is not a hook
+  wired into a running session;
+- `tests/run_fixture.sh --live` and the two live-tier tasks are **untested, not merely undone**;
+- the first real exercise of Stage 4's scoring wiring will be Stage 8's `/write abstract` on the
+  canary.
+
+**Do not read this branch's green as live validation.** The mechanical tier is thorough and the
+judgment tier was reviewed; the runtime tier is entirely ahead.
 
 ---
 
@@ -660,6 +681,26 @@ given *mode* of a multi-mode skill reaches the dispatch code at all.
 
 ---
 
+### R-128, R-129 · Fix the checker, and do not manufacture a red the plan promised
+
+Two late findings that are the same lesson from opposite directions.
+
+**R-128 — three of `hooks-readme`'s ten hits were a checker defect.** Its row regex read any
+first backticked cell as a filename, so the "Getting the contract right" table — whose first
+column is an *event* name — was scanned for a file called `hooks/PreToolUse`. The alternative on
+the table was restyling the document to dodge the regex. The row match is now anchored to cells
+ending `.py` or `.sh`, which is what the criterion always meant. Changing a document to suit a
+checker is the trade R-122 got wrong once already.
+
+**R-129 — the plan asserted a false positive that the code cannot produce.** Task 7.3's brief
+said the linter's `boot` pattern false-matches `booktabs`. It does not — `'boot' in 'booktabs'`
+is `False`. The implementer verified instead of manufacturing a red to satisfy the checklist,
+then red/greened a case that genuinely exercises the class (`reboot`, which does contain `boot`).
+"The plan says there is a bug here" is not evidence a bug is there, and red-before-green is
+worthless if the red is staged.
+
+---
+
 ## §5. Deferred — outstanding for the maintainer
 
 Everything here was deliberately **not** executed under R-1. None of it is blocked; all of it is
@@ -873,3 +914,7 @@ worth having.
 | R-124 | `skills/dashboard/` deleted only after confirming every other `dashboard` hit refers to the Obsidian `Home.md` note, a different artifact |
 | R-125 | **Withdraws a §5 deferred item.** The `coding-standards` "dangling refs" were R-21 truncation false positives; the three real files exist. Fixed in `PATH_RE`, not in the references |
 | R-126 | Task 7.5's six-repo wiring and Task 7b.1's `~/Research` work deferred — that tree is read-only for this session. The in-tree halves (`hooks-wired`, `seeds/settings.json`, the profile/card files) still ship |
+| R-127 | Every gate green, nothing run live: the six repos are linked to the parent checkout, not the worktree; the runtime tier is entirely untested |
+| R-128 | `hooks-readme`'s residual hits were a checker defect; anchored the row match to `.py`/`.sh` rather than restyling the document |
+| R-129 | The plan promised a `booktabs` false positive the code cannot produce; verified rather than staged, and a real instance of the class red/greened instead |
+| R-130 | `residue:prohibition` on a runtime string literal is pre-existing convention (`check_paths.py:31-37`, `audit_graph.py:31`), not an overload invented here |
