@@ -23,12 +23,12 @@ paper project by *symlink*, so one edit here reaches every project at once.
 
 | Source | What it provides |
 |--------|-----------------|
-| **this repo** | The research pipeline itself: `agents/` (strategist, writer, coder, referees, editor, data-engineer, theorist, verifier and their critics), `skills/` (`/discover`, `/strategize`, `/analyze`, `/write`, `/review`, `/revise`, `/submit`, `/talk`, `/lit-position`, `/promote`, …), `rules/`, `references/`, `hooks/` |
+| **this repo** | The research pipeline itself: `agents/` (strategist, writer, coder, referees, editor, data-engineer, theorist, verifier and their critics), `skills/` (`/discover`, `/strategize`, `/analyze`, `/write`, `/review`, `/revise`, `/submit`, `/talk`, `/lit-position`, `/pipeline`, `/promote`, …), `rules/`, `references/`, `hooks/`, `seeds/` (scaffolding copied into new projects), `scripts/` (the four listed in `scripts/SHIPPED` install into a project; the rest are pipeline-dev tooling), `tests/` (`run_fixture.sh` + the unit suite) |
 | `EconGeo/ZotPilot` | Zotero MCP server — embeds your library into a local ChromaDB so Claude searches it semantically, ingests papers, and cross-references citations (our fork of [xunhe730/ZotPilot](https://github.com/xunhe730/ZotPilot)). Skills vendored in `zotpilot-skills/` |
 | `EconGeo/ai-audit` | Prose audit skills: `/humanize` (AI-voice tells) + `/verify-claims` (hallucination check) — vendored in `ai-audit/`, not a submodule |
 
-The agents originate in [clo-author](https://github.com/hugosantanna/clo-author) by Hugo
-Santanna, which research-claude was built on as a submodule until 2026-09-08. They are now
+The agents originate in [clo-author](https://github.com/hugosantanna/clo-author) by Hugo <!-- residue:historical -->
+Santanna, which research-claude was built on as a submodule until 2026-09-08. They are now <!-- residue:historical -->
 vendored and maintained here: de-LaTeXed for the Quarto pipeline, and enriched with the
 improvements that had accumulated in individual paper projects.
 
@@ -492,7 +492,7 @@ Then in Chrome: `chrome://extensions/` → **Developer mode** on → **Load unpa
 If you keep an [Obsidian](https://obsidian.md) vault, `/checkpoint` can write into it,
 turning session wrap-up into a durable, cross-linked project journal: when you wrap a
 session, `/checkpoint` appends a journal entry to the matching Obsidian project note
-(plus a dashboard row and daily-journal entry), alongside its usual memory +
+(plus the Obsidian Home.md row and daily-journal entry), alongside its usual memory +
 `SESSION_REPORT.md` updates.
 
 This is **opt-in and gated** — nothing touches your vault unless you configure it. If `.claude/state/obsidian-config.md` is absent or the Obsidian MCP isn't connected, `/checkpoint` silently skips the vault and only updates memory + scaffold files.
@@ -550,10 +550,12 @@ Once installed, the main entry points are:
 
 | Skill | When to use |
 |-------|------------|
+| `/pipeline` | Run the whole pipeline end to end, or resume it — see [The pipeline driver](#the-pipeline-driver) below |
 | `/ztp-research` | Find and ingest new papers into your Zotero library |
 | `/ztp-review` | Synthesize papers already in your library |
 | `/ztp-data-tag` | Backfill dataset/variable tags + a structured Data note onto papers already in your Zotero library (pilots one collection first) |
-| `/seed-papers` | Pre-search your Zotero library to seed a bibliography before `/discover lit` |
+| `/seed-papers` | Pre-search your Zotero library to seed `references.bib` before `/lit-position` |
+| `/lit-position` | Position the project against the literature (frontier map + positioning claim) |
 | `/strategize` | Design your identification strategy |
 | `/write` | Draft paper sections |
 | `/review-paper` | Manuscript review (single-pass, adversarial, or simulated peer review) |
@@ -561,9 +563,53 @@ Once installed, the main entry points are:
 | `/humanize` | Detect AI-voice tells before submission |
 | `/analyze` | End-to-end data analysis (R / Python / Julia) |
 
-Each skill's `SKILL.md` in `skills/` is its own reference. `/promote` and
-`/lit-position` are research-claude's own; the rest were vendored from clo-author on
+Each skill's `SKILL.md` in `skills/` is its own reference. `/promote`, `/lit-position` <!-- residue:historical -->
+and `/pipeline` are research-claude's own; the rest were vendored from clo-author on <!-- residue:historical -->
 2026-09-08 and rewritten for the Quarto pipeline.
+
+---
+
+## The pipeline driver
+
+`/pipeline` runs the research pipeline end to end, or resumes it after a break. It
+never hand-evaluates whether a stage is ready: it reads `rules/registry.yaml` — the
+declared stages, their `REQUIRES`/`PRODUCES`, component weights, and escalation
+targets — through `scripts/pipeline.py`, dispatches that stage's creator → critic
+agent pair, and holds an approval gate before moving on.
+
+```bash
+/pipeline status                    # what's done, what's next, current score
+/pipeline run --until write --yes   # run through the write stage, no gate pauses
+/pipeline resume                    # after /compact or a new session
+```
+
+Stages run in `REQUIRES` order, never a hardcoded sequence: `setup` → `literature` →
+`data` → `strategy` → `theory` (conditional) → `analyze` → `write` → `review` →
+`submit`, with `talk` parallel and advisory.
+
+- **The registry**, `rules/registry.yaml`, is the single declared source for which
+  stage needs which artifact, the creator/critic pair for each, and the weights that
+  roll up into the overall score. `/pipeline` reads it; it never encodes the graph
+  itself.
+- **State** lives in `quality_reports/pipeline_state.json` (seeded from
+  `templates/pipeline-state.json`) — per-component scores, strikes, and what is
+  currently blocked. It is the source of truth; the research journal is written
+  from it, not the other way around.
+- **The dispatch log**, `quality_reports/agent_dispatch.jsonl`, is written by
+  `hooks/dispatch-log.py` on every agent dispatch. `post <creator>` checks a stage's
+  entries here to confirm its critic actually ran before letting the pipeline advance.
+- **`tests/run_fixture.sh`** is the end-to-end check: it copies `tests/fixture-project/`
+  into a scratch directory, commits it, and runs the mechanical tier (no LLM calls,
+  a simulated dispatch log); `--live` additionally drives a real `claude -p
+  '/pipeline ...'` run through the copy. Every check is individually named so a
+  failure can be cited directly.
+
+A stage skill can still be invoked standalone (e.g. running `/write` directly rather
+than through `/pipeline`) — it skips the `pre` dependency check but never skips its
+critic, and still writes to the dispatch log and state file, so a later `/pipeline`
+run sees what happened. Escalation is three strikes per creator→critic pair, then the
+registry's named `ESCALATION_TARGET` with a specific question — never a disagreement.
+See `skills/pipeline/SKILL.md` for the full contract.
 
 ---
 
@@ -581,42 +627,62 @@ When you kick off a new project, Claude will ask:
 
 If ZotPilot is already indexed, Claude records the status in your project `CLAUDE.md` and moves on. If not, it walks you through `/ztp-setup` before starting the Discovery phase.
 
-### At literature search (`/discover lit`)
+### At literature search (`/lit-position`)
 
-Before dispatching the librarian agent to search the web, Claude will ask:
+`/discover lit` is a pointer now — the real work happens in **`/lit-position`**, which
+runs in the main session and holds ZotPilot access directly (D3). Optionally seed first:
 
-> *"Do you want me to search your Zotero library first for papers you already have on this topic? This seeds the bibliography with your existing anchors and tells the librarian what's already covered."*
+> *"Run `/seed-papers [topic]` to pre-search your Zotero library before `/lit-position`?
+> This writes your existing anchors to `references.bib` so the search doesn't
+> re-discover what you already have."*
 
 If yes, the workflow is:
 
 ```
-1. Claude searches ChromaDB via ZotPilot MCP for the core topic
+1. /seed-papers searches ChromaDB via ZotPilot MCP for the core topic
 2. Shows you a ranked candidate table — title, year, journal, relevance
 3. You confirm which papers to include
-4. Claude exports BibTeX entries → bibliography_base.bib
-5. Claude writes annotation summaries → quality_reports/literature/{project}/zotero_seed.md
-6. Librarian agent reads those files, sees what's covered, extends outward via web search
+4. Claude exports BibTeX entries → references.bib
 ```
 
-**No PDFs are copied.** Papers stay indexed in ChromaDB/Zotero. The `bibliography_base.bib` file is the handoff — it tells the librarian what anchor papers already exist so it fills genuine gaps rather than re-discovering what you already have.
+Then `/lit-position`:
 
-### Why the librarian can't query ChromaDB directly
+```
+1. ztp-research: search the local Zotero index first (rules/literature-search-order.md),
+   ingest only what the library lacks
+2. ztp-review: synthesize claims and passages from the local corpus
+3. Writes annotated_bibliography.md, frontier_map.md, positioning.md
+4. Dispatches lit-critic — an independent, scored review of all three artifacts (D-15)
+```
 
-The librarian agent's tools are `Read, Write, Grep, Glob, WebSearch, WebFetch` — it has no MCP access and cannot query ChromaDB. Only the main Claude session (the one you're talking to) can hit ZotPilot. The `bibliography_base.bib` + `zotero_seed.md` files are the bridge:
+**No PDFs are copied by the seed step.** Papers stay indexed in ChromaDB/Zotero.
+`references.bib` is the handoff — it tells `/lit-position` what anchor papers already
+exist so it fills genuine gaps rather than re-discovering what you already have.
+
+### Why there's no bridge file anymore
+
+The retired pipeline dispatched a restricted-tool **librarian agent** (`Read, Write,
+Grep, Glob, WebSearch, WebFetch` — no MCP access) that could not query ChromaDB
+itself, so a `bibliography_base.bib` + `zotero_seed.md` hand-off file was the only way
+results reached it. `/seed-papers` and `/lit-position` are **skills**, not agent
+dispatches — they run in the main session and can call `mcp__zotpilot__*` tools
+directly. The only file-based hand-off left is `references.bib` itself, and it exists
+because the manuscript's bibliography needs a file on disk, not because a
+tool-restricted agent needs one:
 
 ```
 ChromaDB / Ollama embeddings
-    ↓  main session queries via ZotPilot MCP
-bibliography_base.bib  +  zotero_seed.md   ← written before librarian runs
-    ↓  librarian reads via Read tool
-Web search extends outward from known anchors
+    ↓  main session queries via ZotPilot MCP — no bridge file required
+references.bib          ← written by /seed-papers, read by /lit-position and /write
     ↓
-quality_reports/literature/{project}/annotated_bibliography.md
+quality_reports/literature/{project}/annotated_bibliography.md, frontier_map.md, positioning.md
+    ↓
+lit-critic reviews all three
 ```
 
 ### What `master_supporting_docs/` is for
 
-The `master_supporting_docs/` folder exists for papers **not in your Zotero library** — manually downloaded PDFs, unpublished working papers, draft manuscripts a colleague sent you. The librarian can read these as full text. For anything already indexed in ChromaDB, `bibliography_base.bib` is the right path and no files need to move.
+The `master_supporting_docs/` folder exists for papers **not in your Zotero library** — manually downloaded PDFs, unpublished working papers, draft manuscripts a colleague sent you. `/lit-position` can read these as full text via `Read`/`Glob`. For anything already indexed in ChromaDB, `references.bib` is the right path and no files need to move.
 
 ---
 
@@ -660,7 +726,7 @@ No global state remains after these steps.
 
 ```
 Layer 0 — Upstream (not owned)
-├── hugosantanna/clo-author        origin of the vendored agents (forked 2026-09-08; no longer a dependency)
+├── hugosantanna/clo-author        origin of the vendored agents (forked 2026-09-08; no longer a dependency) <!-- residue:historical -->
 └── xunhe730/ZotPilot              Zotero MCP server (upstream)
 
 Layer 1 — Custom tools (each repo owns its versioning)
