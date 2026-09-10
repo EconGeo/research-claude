@@ -72,19 +72,31 @@ this file is that move.**
 - **`check_install --all` had been red since 06:22 today** and nobody had run it: membership
   counted `hooks/__pycache__` as an unlinked upstream item. `bf79fd1` gave the residue `find`
   that exclusion and missed the membership loop above it. Fixed, merged `1513246`.
-- **New defect, NOT yet fixed — `session_logs/` has no authority.**
-  `hooks/log-reminder.py` tells sessions to create `quality_reports/session_logs/<date>_*.md`,
-  and `hooks/pre-compact.py` (×2) and `hooks/post-compact-restore.py` READ that directory for
-  context recovery — but `rules/logging.md`, read in full, defines exactly four artifacts and
-  never mentions it. So compaction recovery reads a directory nothing is instructed to write.
-  Two independent nested sessions flagged it before it was verified. Decide whether
-  `logging.md` gains a fifth artifact or the hooks point at `SESSION_REPORT.md`.
-- Verified green on main after all of the above: `check_fork` PASS · 62 tests OK ·
-  `run_fixture` (mechanical) PASS · `check_install --all` PASS six repos ·
-  `audit_graph` dangling 0 · roster [] · never-invoked [].
-- Still open: §2a (109 prose literals), §2d (upstream ZotPilot), the `session_logs/` question
-  above, and a full green `--live` run (the last one proved the mechanism, then hit the wall
-  clock mid-round-2).
+- **`session_logs/` had no authority — ✅ FIXED (`c238c45`).** `hooks/log-reminder.py` told
+  sessions to create `quality_reports/session_logs/<date>_*.md`, and `hooks/pre-compact.py`
+  (×2) and `hooks/post-compact-restore.py` READ that directory for context recovery — but
+  `rules/logging.md`, read in full, defines exactly four artifacts and never mentions it.
+  **Resolved toward the hooks, not a fifth artifact.** `rules/session-handoff.md` — which the
+  original note had not consulted — settles it: continuity "is already designed" around
+  `SESSION_REPORT.md` and the research journal, and "the fix is not another document"; it uses
+  the phrase "becomes a second session log" for the failure it wards off. The evidence agreed:
+  `SESSION_REPORT.md` exists in all six paper repos and each yields three decisions to the new
+  parser, while `session_logs/` existed in **one** of six (POGM4, 2 files) despite the nudge
+  being wired into all six `settings.json`. Those two files are left as history; nothing reads
+  them. Red-first `tests/test_compaction_hooks.py` (13 tests, 12 red first); its last test
+  forbids the string in any shipped hook, so the directory cannot creep back.
+  Two side-effects worth knowing:
+  - `pre-compact.py` now parses the **latest entry's** `**Decisions:**` block only. The old
+    code scanned the last 50 lines for loose markers including a bare `•`, which matched any
+    bullet; and a superseded entry's decision is history, not current state.
+  - `check_fork`'s `path-resolves` caught bare `rules/*.md` in the new prose. Shipped-tree
+    references must be `.claude/`-prefixed — worth remembering for any comment written here.
+- Verified green on main after all of the above: `check_fork` PASS · **75 tests OK** (62 + 13
+  for the compaction hooks) · `run_fixture` (mechanical) PASS · `check_install --all` PASS six
+  repos · `audit_graph` dangling 0 · roster [] · never-invoked [].
+- Still open: §2a (109 prose literals), §2d (upstream ZotPilot), and a full green `--live` run
+  (the last one proved the mechanism, then hit the wall clock mid-round-2). The
+  `session_logs/` question above is closed.
 
 ### Loose ends this handoff never mentioned (added 2026-09-10)
 
