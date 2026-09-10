@@ -6,7 +6,7 @@ description: >
   artifacts ZotPilot does not — frontier_map.md and positioning.md. Use when starting
   a project, writing an introduction, or defending a contribution claim.
   Local-first per .claude/rules/literature-search-order.md.
-allowed-tools: Read,Write,Edit,Grep,Glob,WebSearch,WebFetch
+allowed-tools: Read,Write,Edit,Grep,Glob,WebSearch,WebFetch,Agent
 ---
 
 # Literature Positioning
@@ -32,7 +32,7 @@ local Zotero index first, external databases only for what the library lacks.
    and the *setting* terms separately — a paper using your method in another
    setting and a paper on your setting with another method are different kinds of
    neighbour, and you need both.
-2. Invoke `ztp-research` for the topic. It handles external search → candidate
+2. Invoke `/ztp-research` for the topic. It handles external search → candidate
    selection → PDF ingest → tagging → indexing.
 3. Follow citation chains on anything scoring 4 or 5 below: check its reference
    list, and check who has cited it since.
@@ -41,7 +41,7 @@ local Zotero index first, external databases only for what the library lacks.
 
 ## Step 2 — Synthesize (`ztp-review`)
 
-Invoke `ztp-review` over the local corpus to pull claims and passages. Stay local
+Invoke `/ztp-review` over the local corpus to pull claims and passages. Stay local
 here; this step reads what Step 1 ingested.
 
 ## Step 3 — `annotated_bibliography.md`
@@ -87,25 +87,23 @@ what it adds that they do not. Then stress-test it:
 - A contribution that is only "newer data" or "another country" is a data update,
   not a contribution. Label it honestly; some papers genuinely are updates.
 
-## Step 6 — Self-check
+## Step 6 — Pre-flight (creator's own check, not the score)
 
-Score the output against the six categories inherited from the retired
-`librarian-critic`: <!-- residue:historical -->
+Before dispatching the critic, confirm the three artifacts exist and that `positioning.md`
+answers the closest paper's redundancy sentence from Step 5. Fix gaps now; do not lower the
+claim to close one.
 
-1. **Coverage** — missing subfields, adjacent literatures, seminal papers, or the
-   econometric-methods papers the strategy depends on?
-2. **Journal quality** — is more than half the corpus unpublished working papers?
-   Are the top generals and the relevant field journals represented?
-3. **Scope calibration** — too narrow to position against, or too broad to focus?
-4. **Recency** — anything from the last two years missing? Scooping risks named?
-   Working-paper versions superseded by published ones?
-5. **Categorization** — are the proximity scores defensible? Does the frontier map
-   actually locate a gap, or does it just list?
-6. **Defensibility** — does `positioning.md` survive Step 5's stress test against
-   the closest paper?
+## Step 7 — Dispatch `lit-critic`
 
-Report the score and the gaps. Do not quietly fix a coverage gap by lowering the
-claim.
+`python3 .claude/scripts/pipeline.py log lit-position` (standalone), then dispatch
+**lit-critic** (`.claude/agents/lit-critic.md`) on `quality_reports/literature/<project>/`. It
+cold-reads the three files, checks coverage against the local Zotero index, scores the six
+categories (`.claude/skills/review/config/scoring-rubrics.md`, Lit-Critic) and writes
+`quality_reports/reviews/lit-critic_<date>.md`. Record:
+`python3 .claude/scripts/pipeline.py state record-score literature <score> --critic lit-critic --report <path>`.
+Below 80 → return to Step 1 for the named gaps (max 3 rounds, `pipeline.py state strike lit-position`);
+strike three → User: "the critic requires coverage of X, which the library lacks and external
+search did not find — narrow the claim or extend the search?"
 
 ---
 
