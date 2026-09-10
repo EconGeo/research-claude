@@ -81,6 +81,17 @@ run pairing-empty-sid     bash -c "
   echo \"\$a\" | grep -q '\"decision\": \"block\"' && echo \"\$b\" | grep -q '\"decision\": \"block\"'
 "
 
+# ── D-14: hooks emit on the documented JSON channel, not bare stderr (Task 7.1) ──
+# $T has no quality_reports/session_logs/ yet — the fixture's own state dir is keyed
+# on $T's path, so the "no log" advisory fires fresh here regardless of what earlier
+# checks above did.
+run hook-log-reminder     bash -c "echo '{\"cwd\":\"$T\"}' | CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/log-reminder.py' | grep -q '\"hookSpecificOutput\"'"
+
+echo 'setwd("/tmp")' > "$T/hook-lint-fixture.R"
+run hook-post-edit-lint   bash -c "echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$T/hook-lint-fixture.R\"}}' | '$RC/hooks/post-edit-lint.sh' | grep -q '\"hookSpecificOutput\"'"
+
+run hook-pre-compact      bash -c "echo '{\"trigger\":\"auto\"}' | CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/pre-compact.py' | grep -q '\"systemMessage\"'"
+
 if [[ "$LIVE" == true ]]; then
   echo "── live tier"
   run live-pipeline bash -c "cd '$T' && claude -p '/pipeline run --until analyze --yes' --permission-mode acceptEdits >/dev/null 2>&1"
