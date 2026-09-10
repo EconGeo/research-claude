@@ -227,4 +227,36 @@ class TestRegistryCheck(unittest.TestCase):
         for c in ["registry-complete", "registry-authority", "registry-rendered", "weights-sum", "registry-parse-agree"]:
             self.assertIn(f"[{c}]", out)
 
+class TestProducerHint(FixtureCase):
+    """A failing predicate must name the skill that produces it — `pipeline/SKILL.md` promises
+    `status` reports "what is missing AND which skill produces it". The `producer` key is
+    declared per predicate, including on predicates nested inside an `any_of`, so the
+    composition must carry those hints out rather than swallow them."""
+    def positioning(self):
+        d = self.t / "quality_reports" / "literature" / "fixture"; d.mkdir(parents=True)
+        (d / "positioning.md").write_text("# Positioning\n")
+
+    def test_any_of_branches_name_their_producers(self):
+        """The red: strategist's any_of declares a producer on BOTH branches."""
+        run("state", "init", root=self.t)
+        rc, out = run("pre", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("run `/lit-position`", out)
+        self.assertIn("run `/discover data`", out)
+
+    def test_flat_predicate_still_names_its_producer(self):
+        """Control: a top-level predicate's hint already worked and must keep working."""
+        self.positioning(); run("state", "init", root=self.t)
+        run("state", "record-score", "literature", "40", "--critic", "lit-critic", "--report", "r.md", root=self.t)
+        rc, out = run("pre", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("run `/lit-position`", out)
+
+    def test_satisfied_any_of_emits_no_hint(self):
+        """A hint on a branch of an any_of that is already satisfied would tell the user to
+        run a skill they do not need."""
+        self.positioning(); run("state", "init", root=self.t)
+        rc, out = run("pre", "strategist", root=self.t)
+        self.assertEqual(rc, 0, out); self.assertNotIn("run `", out)
+
+
 if __name__ == "__main__": unittest.main()
