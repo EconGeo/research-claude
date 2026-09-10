@@ -121,14 +121,59 @@ Nothing else in the six repos moved.
 
 ---
 
+## Stage 8 migrations — what happened
+
+The plan's per-repo lines were written months before execution, and three of the six had moved.
+Each was checked before anything was deleted.
+
+**POGM4 (8.1).** `scripts/R/` — 16 scripts — archived to `archive/scripts_R_reference/`. The plan
+expected the manuscript to reference it nowhere; it referenced it four times. None was a
+`source()`: three comments and a `stopifnot` message pointing at `lock_market_list.R`, which
+regenerates a CSV the manuscript reads. Archiving it wholesale would have left an error message
+telling a user to run a file that no longer existed. It is data preparation, not analysis, so it
+moved to `scripts/acquire/` and stays live; all four pointers were repointed. `execute: cache:
+false` is now a declared deviation rather than an undocumented one.
+
+**zoning2026 (8.2).** The migration the plan describes **was already done**. `paper/manuscript.qmd`
+(3,870 lines) has zero `\input{}` and zero `source()`; it computes inline and reads only
+`data/raw/`. The 21 `.tex` fragments were read by exactly one file — `manuscript_quarto_pdf.qmd`,
+which the project's own `CLAUDE.md` marked "DEPRECATED — do not edit or render". So this was
+removal of dead weight, not a port: the deprecated manuscript and its `.pdf`/`.tex` deleted,
+`paper/tables/` deleted, `scripts/R/` (23 scripts) archived. `scripts/python/` kept — its 11 files
+are downloaders, which the contract permits as acquisition.
+`CLAUDE.md` had described `paper/tables/` as "read by manuscript.qmd". It was not; only the
+deprecated file read them. Corrected.
+
+**affordable_housing_2026 (8.3).** Legacy state file renamed and its two scores ported.
+
+**NAR_settlement (8.5).** `compare_golden.sh` documented as a verification aid — it computes
+nothing, it reads two files and calls `cmp`, so the one-manuscript contract does not reach it.
+
+**BRI (8.6).** Nothing to migrate. `pipeline.py manuscript` refuses, correctly, with the
+declaration message.
+
+**Three things the plan called for that were NOT done, because the tree contradicted the
+instruction.** Each is a judgment, and each is reversible if judged wrong:
+
+- **ESG's seven analysis scripts stay.** Its manuscript is a 154-line skeleton whose abstract
+  reads `PLACEHOLDER — rewritten at Stage G, after the results set is frozen (plan F-3)`. The
+  project is mid-analysis under its own staged plan. Folding its scripts into the manuscript now
+  would fight that plan, not serve it.
+- **`ESG/scripts/generate_dashboard.py` stays.** D-18 deleted the dashboard layer from the
+  *shipped pipeline*. This is a project's own tool, documented in its `CLAUDE.md`, preserving
+  authored content in `dashboard_state.json`. Deleting it would orphan that state.
+- **POGM4's `.claude/commands/{zotero-notes,zotero-review}.md` stay.** The plan offered removal or
+  conversion, conditional on whether they are still used. That could not be established: they do
+  Zotero-to-Obsidian reading notes, `obsidian-digest-sync` was dropped from the shipped tree, and
+  nothing replaces them. They break no gate.
+
 ## Not done, and deliberately
 
 | Item | Why |
 |---|---|
-| zoning2026: 21 `.tex` fragments into chunks, 41 prose literals | Substantive research refactoring; a wrong number changes a claim. Wants a human reading the diff. |
-| ESG: 7 numbered analysis scripts into chunks, 14 literals | Same class. |
-| POGM4: archive `scripts/R` (16 scripts), remove `.claude/WORKFLOW_QUICK_REF.md` and `commands/` | Held while a live session was mid-round in that project. |
-| NAR_settlement: 54 prose literals | The plan anticipated 2. Most are not results — `17 August 2024` is the settlement date, `Section 6.2` and `Sonnet 4.6` are cross-references. Each needs an allowlist row with a real reason. Bulk-adding 54 rows to turn a gate green is the failure this pipeline exists to prevent. |
+| Prose literals: NAR 54, ESG 14, zoning2026 41 | The plan anticipated 2 for NAR. Most are not results — `17 August 2024` is the settlement date, `Section 6.2` and `Sonnet 4.6` are cross-references. Each needs an allowlist row with a real reason, decided one at a time. Bulk-adding rows to turn a gate green is the failure this pipeline exists to prevent. |
+| ESG's seven analysis scripts | Project is mid-analysis under its own staged plan; see above. |
+| Remove the repair worktree (8.7 Step 4) | It is the ground this session runs on. Must be done from a shell rooted at the shared checkout. |
 | ZotPilot fork PR (Task 6.4) | Pushes and merges on a shared remote. |
 | Stage 7b's `~/Research` half | The shared `journal-profiles.md` still says `JHE` where the repo now says `JHousE`; the two disagree until renamed. |
 | `/pipeline` driver, live | Never run. The largest single artifact built — a skill plus eleven references — and the abstract test exercised `/write`, not the driver. |
