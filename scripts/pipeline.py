@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """pipeline.py — executable lifecycle for the research pipeline (stdlib, Python 3.9).
 
-Reads .claude/rules/registry.yaml (or rules/registry.yaml when --root is the research-claude
-checkout), the project's CLAUDE.md `manuscript:` declaration, quality_reports/pipeline_state.json
-and quality_reports/agent_dispatch.jsonl. See rules/lifecycle.md for the contract.
+Reads .claude/rules/registry.yaml (the same file at the repo root, without the .claude/
+prefix, when --root is the research-claude checkout itself), the project's CLAUDE.md
+`manuscript:` declaration, quality_reports/pipeline_state.json and
+quality_reports/agent_dispatch.jsonl. See .claude/rules/lifecycle.md for the contract.
 """
 from __future__ import annotations
 import argparse, datetime as dt, fnmatch, glob, json, re, subprocess, sys

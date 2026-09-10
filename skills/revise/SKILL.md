@@ -1,6 +1,6 @@
 ---
 name: revise
-description: R&R cycle — classify referee comments and route to appropriate agents. Replaces /respond-to-referee.
+description: R&R cycle — classify referee comments and route to appropriate agents. Replaces the old respond-to-referee command.
 argument-hint: "[referee-report file path] [paper path (optional)]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Agent
 ---

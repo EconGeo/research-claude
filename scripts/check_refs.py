@@ -49,6 +49,13 @@ SLASH_ALLOW = {"compact", "clear", "help", "init", "memory", "config", "permissi
                # (rules/permissions.md, rules/registry.yaml, skills/write/SKILL.md) — SLASH's
                # lookbehind excludes word chars/-/./`  but not `*`, so the glob's `*/positioning.md`
                # reads as a slash invocation. Fix round 1, Task 3b.8.
+               "skill",  # scripts/registry_lib.py:137 "producer must be a /skill invocation" —
+               # generic placeholder prose for "a slash-prefixed name", not a reference to a
+               # skill literally named `skill` (no registry producer ever reads "/skill").
+               # Fix round 2, Task 3b.8. A bare `/learn` candidate for this set was investigated
+               # and rejected: skills/tools/SKILL.md:98 documents a real `/tools learn`
+               # subcommand, so hooks/context-monitor.py's nudge text was corrected to say
+               # `/tools learn` instead of being suppressed here.
                }
 TOOLS_LINE = re.compile(r"^(allowed-)?tools:\s*(.*)$")
 

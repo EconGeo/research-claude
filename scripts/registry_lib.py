@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""registry_lib.py — load and validate rules/registry.yaml (stdlib, Python 3.9).
+"""registry_lib.py — load and validate .claude/rules/registry.yaml (stdlib, Python 3.9).
 
 The registry is written in a restricted YAML subset so hooks and gates can read it under
 /usr/bin/python3 with no PyYAML: block mappings, block lists, single-line scalars, `[]`,

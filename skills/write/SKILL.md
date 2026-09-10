@@ -1,6 +1,6 @@
 ---
 name: write
-description: Draft academic paper sections using paragraph-level argument moves. Cleanup pass strips AI patterns after drafting. Replaces /draft-paper and /humanizer.
+description: Draft academic paper sections using paragraph-level argument moves. Cleanup pass strips AI patterns after drafting. Replaces the old draft-paper and humanizer commands.
 argument-hint: "[section or mode: intro | strategy | results | conclusion | abstract | full | humanize | style-guide] [file path (optional)]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Agent
 ---

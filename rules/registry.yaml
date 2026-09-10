@@ -1,9 +1,11 @@
-# rules/registry.yaml — the declaration registry (D-2, D-10). AUTHORITATIVE.
-# Rendered to rules/permissions.md by scripts/render_registry.py (check_fork: registry-rendered).
-# Read by scripts/pipeline.py, scripts/check_fork.sh and skills/pipeline/SKILL.md.
+# .claude/rules/registry.yaml — the declaration registry (D-2, D-10). AUTHORITATIVE.
+# Rendered to .claude/rules/permissions.md by this repo's render_registry.py (not shipped
+# to projects; check_fork: registry-rendered).
+# Read by .claude/scripts/pipeline.py, this repo's check_fork.sh (not shipped), and
+# skills/pipeline/SKILL.md (Task 5.4).
 # No other file states a creator→critic pair or a weight (check_fork: registry-authority).
 #
-# Restricted YAML on purpose (parsed by scripts/registry_lib.py without PyYAML): block
+# Restricted YAML on purpose (parsed by .claude/scripts/registry_lib.py without PyYAML): block
 # mappings, block lists, single-line scalars, `[]` for an empty list, `#` comments.
 # No anchors, no flow collections, no multi-line strings.
 schema_version: 1
@@ -13,7 +15,7 @@ limits:
   rounds_overall: 5
   verification_retries: 2
 
-# Quality components (rules/quality.md mirrors these weights; check_fork: weights-sum).
+# Quality components (.claude/rules/quality.md mirrors these weights; check_fork: weights-sum).
 components:
   literature:
     weight: 10

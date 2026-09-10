@@ -3,7 +3,7 @@
 Context Usage Monitor Hook
 
 Monitors approximate context usage and provides progressive, de-duplicated nudges:
-- At 40%, 55%, 65%: suggest /learn for skill extraction
+- At 40%, 55%, 65%: suggest /tools learn for skill extraction
 - At 80%: info-level note (auto-compact approaching)
 - At 90%: caution-level note (finish the current task at full quality)
 
@@ -183,12 +183,12 @@ def run_context_monitor() -> int:
 
     shown = get_shown_thresholds()
 
-    # Check /learn thresholds (40%, 55%, 65%)
+    # Check /tools learn thresholds (40%, 55%, 65%)
     for threshold in LEARN_THRESHOLDS:
         if percentage >= threshold and threshold not in shown["learn"]:
             emit(
-                f"💡 Context ~{percentage:.0f}% (approx) — if a reusable discovery emerged, consider /learn before auto-compaction.",
-                f"Context usage is approximately {percentage:.0f}% (coarse proxy). If a non-obvious discovery or reusable workflow emerged this session, consider running /learn to persist it as a skill before auto-compaction.",
+                f"💡 Context ~{percentage:.0f}% (approx) — if a reusable discovery emerged, consider /tools learn before auto-compaction.",
+                f"Context usage is approximately {percentage:.0f}% (coarse proxy). If a non-obvious discovery or reusable workflow emerged this session, consider running /tools learn to persist it as a skill before auto-compaction.",
             )
             mark_threshold_shown("learn", threshold)
             return 0  # Only show one message at a time
