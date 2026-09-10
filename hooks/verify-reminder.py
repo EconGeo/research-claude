@@ -2,7 +2,7 @@
 """
 Verification Reminder Hook
 
-Non-blocking reminder that fires on Write/Edit to academic files (.tex, .qmd, .R)
+Non-blocking reminder that fires on Write/Edit to academic files (.qmd, .R)
 to remind about compiling/rendering before marking a task as done.
 
 Hook Event: PostToolUse (matcher: "Write|Edit")
@@ -30,7 +30,6 @@ from pathlib import Path
 
 # Files that need verification
 VERIFY_EXTENSIONS = {
-    ".tex": "compile with /compile-latex",
     ".qmd": "render with quarto render",
     ".R": "run to verify output"
 }

@@ -2,6 +2,7 @@
 
 **Date:** 2026-09-08
 **Status:** Decided (D1, D3 of the Quarto-native fork)
+**Superseded in part 2026-09-08** by `2026-09-08_d1-superseded.md`: D1 stands for the *agent*; the registry, lifecycle and governance rules return. D3 stands for the *collector*; its critic returns as `lit-critic` (see `2026-09-08_d3-addendum-lit-critic.md`).
 
 **Decision:** delete `orchestrator`, `guide-writer`, `librarian`, `librarian-critic`,
 and with them `rules/permissions.md`, `rules/lifecycle.md`, `rules/workflow.md`.

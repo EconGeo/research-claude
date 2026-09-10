@@ -1,6 +1,8 @@
 #!/bin/bash
+# Opt-in (R-7): wire it in settings.json only after editing PROTECTED_PATTERNS for this project
 # Block accidental edits to protected files
 # Customize PROTECTED_PATTERNS below for your project
+# Hook Event: PreToolUse
 INPUT=$(cat)
 TOOL=$(echo "$INPUT" | jq -r '.tool_name')
 FILE=""

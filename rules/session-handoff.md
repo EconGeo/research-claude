@@ -55,7 +55,7 @@ When a project does have one:
 - **It is REGENERATED at every checkpoint, never appended to.** `SESSION_REPORT.md` is
   append-only history; `HANDOFF.md` is a replaced snapshot of *now*. A handoff that
   accumulates becomes a second session log and stops being trustworthy.
-- Use `templates/handoff.md` for structure.
+- Use `.claude/templates/handoff.md` for structure.
 - It never contradicts the plan. The plan is authoritative for *what to do*; the
   handoff is authoritative for *where things stand*. A disagreement is a bug to fix in
   the same checkpoint, not a state to live with.

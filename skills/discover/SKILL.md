@@ -1,8 +1,8 @@
 ---
 name: discover
-description: Discovery phase combining research interviews, literature search, data discovery, and ideation. Routes to appropriate agents based on arguments. Replaces /interview-me, /lit-review, /find-data, /research-ideation.
+description: Discovery phase combining research interviews, a pointer to /lit-position for literature, data discovery, and ideation. Routes to appropriate agents based on arguments. Replaces the old interview-me, lit-review, find-data and research-ideation commands.
 argument-hint: "[mode: interview | lit | data | ideate] [topic or query]"
-allowed-tools: Read,Grep,Glob,Write,Edit,WebSearch,WebFetch,Task
+allowed-tools: Read,Grep,Glob,Write,Edit,WebSearch,WebFetch,Agent
 ---
 
 # Discover
@@ -59,62 +59,33 @@ After interview (5-8 exchanges), produce three outputs:
 Fill in field, target journals, common data sources, identification strategies, field conventions, seminal references, and referee concerns based on the interview.
 
 **Output 3: Decision Record** → `quality_reports/decisions/discovery_[topic].md`
-Using `templates/decision-record.md`, record:
+Using `.claude/skills/strategize/templates/decision-record.md`, record:
 - **Decision:** The research question chosen
 - **Alternatives:** Other angles, framings, or questions that came up during the interview
 - **Why rejected:** For each alternative, why this framing was preferred (scope, data availability, novelty, feasibility)
 - **Key assumptions:** What must hold for this question to be answerable
 - **What would invalidate:** What would force a pivot (e.g., "if the policy change turns out to have been anticipated")
 
-### `/discover lit [topic]` — Literature Review
-Search and synthesize academic literature.
+### `/discover lit` — superseded by `/lit-position` (D3)
 
-**Agents:** Librarian (collector) → librarian-critic (reviewer)
-**Output:** Annotated bibliography + BibTeX entries + frontier map
+Literature search and positioning live in **`/lit-position`**, the ZotPilot bridge
+skill. Run that instead:
 
-Workflow:
-1. Read `.claude/references/domain-profile.md` for field journals and seminal references
-2. Check `master_supporting_docs/` for uploaded papers
-3. Read `bibliography_base.bib` for papers already in the project
-4. Dispatch Librarian to search:
-   - Top-5 journals (AER, Econometrica, QJE, JPE, REStud)
-   - Field journals from domain-profile.md
-   - NBER/SSRN/IZA working papers
-   - **Citation chains** — forward and backward citation tracking from key papers. Follow: (a) backward citations (what do the key papers cite?), and (b) forward citations (who cites the key papers?). This is often the most productive search vector.
-5. Assign **proximity scores** to each paper:
-   - **1** — Directly competes (same question, similar method)
-   - **2** — Closely related (same question, different method or setting)
-   - **3** — Related (overlapping topic, different angle)
-   - **4** — Background (provides theory, method, or context)
-   - **5** — Tangentially related (useful framing only)
-6. Dispatch librarian-critic to check coverage, gaps, recency, scope
-7. If gaps found, re-dispatch Librarian for targeted search (max 1 round)
-8. Save to `quality_reports/lit_review_[topic].md`
-9. Generate interactive HTML bibliography and refresh dashboard:
-```bash
-python3 scripts/generate_html_report.py literature quality_reports/lit_review_[topic].md
-python3 scripts/generate_dashboard.py
 ```
-Open the HTML report for the user: `open quality_reports/lit_review_[topic].html`
-
-**Unverified citations:** If you cannot verify a citation, mark the BibTeX entry with `% UNVERIFIED`. Do NOT fabricate or guess citation details. Note when working papers have been published — cite the published version.
-
-Output format for each paper:
-
-```markdown
-### [Author (Year)] — [Short Title]
-- **Journal:** [venue]
-- **Proximity:** [1-5 score]
-- **Main contribution:** [1-2 sentences]
-- **Identification strategy:** [DiD / IV / RDD / SC / descriptive]
-- **Key finding:** [result with effect size]
-- **Relevance:** [why it matters for our research]
+/lit-position [topic]
 ```
+
+It searches the local Zotero corpus first per `.claude/rules/literature-search-order.md`,
+ingests only what the library lacks, and produces `annotated_bibliography.md`,
+`frontier_map.md`, and `positioning.md` — with proximity scoring and an independent
+lit-critic review (D3, D-15).
+
+If a bibliography seed is wanted first, run `/seed-papers`.
 
 ### `/discover data [requirements]` — Data Discovery
 Find and assess datasets for the research question.
 
-**Agents:** Explorer (finder) → explorer-critic (assessor)
+**Agents:** Explorer (finder), then explorer-critic (assessor)
 **Output:** Ranked data sources with feasibility grades
 
 Workflow:
@@ -143,9 +114,14 @@ Workflow:
    3. **External validity** — Can we generalize from this sample?
    4. **Identification compatibility** — Does this data support the proposed design?
    5. **Known issues** — Documented problems with this dataset in the literature
-7. Save exploration to `quality_reports/data_exploration_[topic].md`
 
-**Rejected datasets:** Include a rejection table:
+   Save the critic's report to `quality_reports/reviews/explorer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score data <score> --critic explorer-critic --report quality_reports/reviews/explorer-critic_<date>.md`.
+7. Save to `quality_reports/data-assessment/<project>/`:
+   - `data_sources.md` — the per-dataset report from Step 5: name, provider, access level, key variables, coverage, feasibility grade (A-D), strengths and limitations, plus the rejection table below. This is the file the downstream gate (`strategist.requires` in `.claude/rules/registry.yaml`) keys on, so it must be the one that always exists.
+   - `data_dictionary.md` — the variables needed (Step 3: treatment, outcome, controls, time period, geography) crossed with what each dataset in Step 5 actually supplies for them
+   - `access_instructions.md` — how to obtain each viable dataset: application route, cost, timeline, IRB/DUA/FSRDC requirements, drawn from Step 5's access level and feasibility grade
+
+**Rejected datasets:** Include a rejection table in `data_sources.md`:
 
 | Dataset | Reason for Rejection | Deal-breaker? |
 |---------|---------------------|---------------|
@@ -169,13 +145,13 @@ Generate:
 
 | Resource | Path | What It Contains |
 |----------|------|-----------------|
-| Research spec | `discover/templates/research-spec.md` | 8-section research specification output format |
-| Interview flow | `discover/templates/interview-flow.md` | 6-category conversational structure for interview mode |
-| Lit review entry | `discover/templates/lit-review-entry.md` | Per-paper annotation format with proximity scoring |
-| Data assessment | `discover/templates/data-assessment.md` | Data source evaluation with 5-point critique and feasibility grades |
-| Research ideas | `discover/templates/research-ideas.md` | Ideation output format with feasibility/novelty ranking |
-| PDF processing | `discover/references/pdf-processing.md` | Safe workflow for reading reference papers |
-| Gotchas | `discover/gotchas.md` | Known failure points and edge cases |
+| Research spec | `.claude/skills/discover/templates/research-spec.md` | 8-section research specification output format |
+| Interview flow | `.claude/skills/discover/templates/interview-flow.md` | 6-category conversational structure for interview mode |
+| Lit review entry | `.claude/skills/discover/templates/lit-review-entry.md` | Per-paper annotation format with proximity scoring |
+| Data assessment | `.claude/skills/discover/templates/data-assessment.md` | Data source evaluation with 5-point critique and feasibility grades |
+| Research ideas | `.claude/skills/discover/templates/research-ideas.md` | Ideation output format with feasibility/novelty ranking |
+| PDF processing | `.claude/skills/discover/references/pdf-processing.md` | Safe workflow for reading reference papers |
+| Gotchas | `.claude/skills/discover/gotchas.md` | Known failure points and edge cases |
 
 ---
 
@@ -189,4 +165,4 @@ Generate:
 - **Data feasibility matters:** A perfect dataset you can't access is useless. Always assign A/B/C/D grades.
 - **5-point data critique:** Measurement validity, sample selection, external validity, identification compatibility, known issues. Never skip this.
 - **Domain-profile aware:** Always read `.claude/references/domain-profile.md` first for field calibration.
-- **Worker-critic pairing:** Librarian + librarian-critic, Explorer + explorer-critic. Never skip the critic.
+- **Worker-critic pairing:** Explorer + explorer-critic for data discovery; never skip the critic. Literature discovery is `/lit-position`, not this skill.

@@ -50,8 +50,9 @@ def check_freeze(tool_name: str, tool_input: dict, guards: dict) -> tuple:
 
     project_dir = os.environ.get("CLAUDE_PROJECT_DIR", "")
 
-    # .claude/ is always editable
-    if "/.claude/" in file_path or file_path.endswith("/.claude"):
+    # .claude/ is editable EXCEPT its own guard state file — a blanket exemption
+    # would let a frozen session edit session-guards.json and unfreeze itself.
+    if "/.claude/" in file_path and not file_path.endswith("/.claude/state/session-guards.json"):
         return True, ""
 
     # Check against allowed paths
@@ -154,4 +155,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception:
+        # Fail open — never block Claude due to a hook bug
+        sys.exit(0)

@@ -6,10 +6,12 @@ The single `.qmd` file is the source of truth for all analysis, tables, figures,
 No external R analysis scripts. No results registry. No ground-truth CSV.
 The rendered PDF is the paper.
 
-> **File name:** the manuscript is `manuscript_<project>.qmd`, where `<project>` is the
-> project directory basename (e.g. `manuscript_myproject.qmd` in the `myproject/`
-> project). Examples below use `manuscript_<project>.qmd` as a placeholder. See
-> This file is the canonical statement of that convention.
+> **File name and declaration.** A new project is scaffolded with `manuscript_<project>.qmd`
+> (`<project>` = the directory basename). Whatever the file is called, the project's `CLAUDE.md`
+> declares it on a line of its own: `manuscript: manuscript_<project>.qmd`. Every predicate in
+> `.claude/scripts/pipeline.py`, every hook and every skill resolves "the manuscript" through
+> that line, and `check_install.sh` fails when it is absent or names more than one file. Examples
+> below write `manuscript_<project>.qmd` and mean the declared manuscript.
 
 ---
 
@@ -32,8 +34,8 @@ External R scripts are permitted **only** for:
 - Raw file downloads from restricted sources (WRDS, Census restricted-use, etc.)
 
 All data cleaning, wrangling, estimation, robustness checks, tables, and figures
-live inside `manuscript_<project>.qmd` as cached code chunks. There is no `scripts/R/`
-analysis directory, no `00_master.R`, and no `results_ground_truth.csv`.
+live inside `manuscript_<project>.qmd` as cached code chunks. There is no `scripts/R/` <!-- residue:prohibition -->
+analysis directory, no `00_master.R`, and no `results_ground_truth.csv`. <!-- residue:prohibition -->
 
 ---
 
@@ -68,6 +70,9 @@ link-citations: true
 # Word output, when added, sets its own APA csl inside the docx: block (see quarto-word.md).
 ---
 ```
+
+`templates/quarto-preamble.tex` is seeded into every project by `apply.sh`
+(`seeds/quarto-preamble.tex`); edit the project copy, never the seed.
 
 `execute: cache: true` is **required** globally. Individual chunks override with
 `cache: false` only for genuinely fast operations (printing objects, inline setup).
@@ -106,12 +111,12 @@ Without it, a changed raw file will not invalidate the cached panel.
 ```r
 #| label: build-panel
 #| cache: true
-#| cache.extra: !expr list(file.mtime(here("data/raw/permits.csv")),
-#|                         file.mtime(here("data/raw/wrluri.csv")))
-panel <- read_csv(here("data/raw/permits.csv")) |>
-  left_join(read_csv(here("data/raw/wrluri.csv")), by = "cbsa") |>
+#| cache.extra: !expr list(file.mtime(here("data/raw/outcomes.csv")),
+#|                         file.mtime(here("data/raw/treatment_index.csv")))
+panel <- read_csv(here("data/raw/outcomes.csv")) |>
+  left_join(read_csv(here("data/raw/treatment_index.csv")), by = "unit_id") |>
   filter(year >= 2000) |>
-  mutate(log_permits = log(permits + 1))
+  mutate(log_y = log(y + 1))
 ```
 
 Use `!expr list(...)` for multiple files. Use `file.mtime()` not `file.info()`.
@@ -124,11 +129,11 @@ Use `!expr list(...)` for multiple files. Use `file.mtime()` not `file.info()`.
 #| dependson: "build-panel"
 att_result <- att_gt(
   data        = panel,
-  yname       = "log_permits",
+  yname       = "log_y",
   tname       = "year",
-  idname      = "cbsa",
+  idname      = "unit_id",
   gname       = "treat_year",
-  clustervars = "cbsa"
+  clustervars = "unit_id"
 )
 es <- aggte(att_result, type = "dynamic")
 ```
@@ -143,7 +148,7 @@ if `estimate-main` depends on `build-panel`, and `table-main` depends on
 #| label: fig-event-study
 #| cache: true
 #| dependson: "estimate-main"
-#| fig-cap: "Event Study: Effect of Zoning Reform on Permitting. *Notes:* ..."
+#| fig-cap: "Event Study: Effect of the Treatment on the Outcome. *Notes:* ..."
 #| fig-width: 6
 #| fig-height: 4
 ggplot(es_df, aes(x = t, y = att, ymin = att - 1.96*se, ymax = att + 1.96*se)) +
@@ -156,12 +161,12 @@ ggplot(es_df, aes(x = t, y = att, ymin = att - 1.96*se, ymax = att + 1.96*se)) +
 #| label: tbl-main-results
 #| cache: true
 #| dependson: "estimate-main"
-#| tbl-cap: "Main Results: Effect of Zoning Reform on Log Permits"
+#| tbl-cap: "Main Results: Effect of the Treatment on the Log Outcome"
 modelsummary(
   list("Baseline" = m1, "Controls" = m2, "Never-Treated" = m3),
   booktabs = TRUE,
   stars    = c("*" = 0.10, "**" = 0.05, "***" = 0.01),
-  notes    = "Clustered SEs at the CBSA level. Sample: 2000–2020."
+  notes    = "Clustered SEs at the unit level. Sample: 2000–2020."
 )
 ```
 
@@ -294,7 +299,7 @@ Invoked when the reviewed artifact is `manuscript_<project>.qmd` and this rule i
 | Full dependency chain not documented in setup chunk | −3 |
 | Prose number hardcoded (not an inline `r` expression) | −10 per instance |
 | `source()` call inside any chunk | −10 |
-| Analysis R script present in `scripts/R/` beyond acquisition scripts | −5 per script |
+| Analysis script outside `scripts/acquire/` (any language) | −5 per script |
 | `_cache/` absent from `.gitignore` | −5 |
 | Figure chunk missing `#\| fig-cap:` | −5 |
 | Table chunk missing `booktabs = TRUE` | −5 |

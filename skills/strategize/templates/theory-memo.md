@@ -1,6 +1,6 @@
 # Theory Memo Template
 
-**Purpose:** Prose overview produced by the theorist agent. Accompanies the formal LaTeX files (assumptions.tex, results.tex, proofs.tex). Explains what is proved, under what assumptions, and what remains open.
+**Purpose:** Prose overview produced by the theorist agent. Accompanies the `# Theory` section and proofs appendix written directly into the manuscript. Explains what is proved, under what assumptions, and what remains open.
 
 ---
 
@@ -26,12 +26,12 @@
 
 | Object | Status | Where |
 |--------|--------|-------|
-| Identification result | [complete / partial / not needed] | results.tex, Theorem [N] |
-| Consistency | [complete / partial / not needed] | results.tex, Theorem [N] |
-| Asymptotic normality | [complete / partial / not needed] | results.tex, Theorem [N] |
-| Influence function | [complete / partial / not needed] | results.tex, Lemma [N] |
-| Bootstrap validity | [complete / partial / not needed] | results.tex, Theorem [N] |
-| Comparative statics | [complete / partial / not needed] | results.tex, Proposition [N] |
+| Identification result | [complete / partial / not needed] | manuscript `# Theory` section, `@thm-` cross-reference |
+| Consistency | [complete / partial / not needed] | manuscript `# Theory` section, `@thm-` cross-reference |
+| Asymptotic normality | [complete / partial / not needed] | manuscript `# Theory` section, `@thm-` cross-reference |
+| Influence function | [complete / partial / not needed] | manuscript `# Theory` section, `@lem-` cross-reference |
+| Bootstrap validity | [complete / partial / not needed] | manuscript `# Theory` section, `@thm-` cross-reference |
+| Comparative statics | [complete / partial / not needed] | manuscript `# Theory` section, `@prp-` cross-reference |
 
 ---
 
@@ -78,8 +78,7 @@
 
 | File | Contents |
 |------|----------|
-| `assumptions.tex` | Numbered assumption block, ready for paper |
-| `results.tex` | Definitions, lemmas, propositions, theorems in LaTeX |
-| `proofs.tex` | Full proofs with justified steps |
+| Manuscript `# Theory` section | Numbered assumption block, definitions, lemmas, propositions, theorems, cross-referenced via `@thm-`/`@lem-`/`@prp-` |
+| Manuscript proofs appendix | Full proofs with justified steps |
 | `notation_glossary.md` | Every symbol, its type, and its meaning |
 ```

@@ -51,7 +51,7 @@ model <- att_gt(
   tname = "year",
   idname = "unit_id",
   gname = "group",
-  data = df,
+  data = panel,
   control_group = "nevertreated"
 )
 ```

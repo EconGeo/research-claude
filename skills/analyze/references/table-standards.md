@@ -1,8 +1,8 @@
 # Table Standards
 
 Publication-quality tables in the Quarto-native pipeline. Tables are **chunks in
-`manuscript_<project>.qmd`**, not `.tex` fragments written to disk and `\input{}`
-somewhere else. There is no `paper/tables/` directory and nothing exports a bare
+`manuscript_<project>.qmd`**, not `.tex` fragments written to disk and `\input{}` <!-- residue:prohibition -->
+somewhere else. There is no `paper/tables/` directory and nothing exports a bare <!-- residue:prohibition -->
 `tabular`.
 
 **Mechanics live in the format rules, not here.** This file covers the judgment
@@ -24,7 +24,7 @@ Both, always:
 - Reference it as `@tbl-label`; never write "Table 3"
 
 Journal-specific conventions (significance stars, note format) adapt to the target
-journal — see `journal-profiles.md`.
+journal — see `.claude/references/journal-profiles.md`.
 
 ---
 
@@ -49,13 +49,14 @@ journal — see `journal-profiles.md`.
 |---------|-----------|
 | **Working papers (default)** | Stars: `*` p < 0.10, `**` p < 0.05, `***` p < 0.01, declared in the note |
 | **AEA journals** (AER, AEJ:Applied, AEJ:Policy, AER:Insights) | No significance stars. Standard errors in parentheses; exact p-values or confidence intervals for key results. |
-| **All other journals** | Stars acceptable. Follow `journal-profiles.md`. |
+| **All other journals** | Stars acceptable. Follow `.claude/references/journal-profiles.md`. |
 
 ```r
 #| label: tbl-main
 #| tbl-cap: "Effect of Treatment on Log Wages"
 modelsummary(
   models,
+  booktabs = TRUE,
   stars = c("*" = 0.10, "**" = 0.05, "***" = 0.01),  # set FALSE for AEA journals
   coef_rename = c(treatment = "Treatment", log_income = "Log income"),
   gof_map = c("nobs", "r.squared", "adj.r.squared"),
@@ -140,7 +141,7 @@ Keep the table in an appendix when a referee will want the exact numbers.
 | `stargazer` | Deprecated workflow; use `modelsummary` or `fixest::etable` |
 | `xtable` without booktabs | Not journal quality |
 | Raw variable names in labels | Human-readable labels required (`coef_rename`) |
-| Writing a `.tex` fragment to disk | Tables are chunks in the manuscript; there is no `paper/tables/` |
+| Writing a `.tex` fragment to disk | Tables are chunks in the manuscript; nothing is exported to a separate tables directory |
 | `kableExtra` in Word output | Produces LaTeX/HTML, not a Word table — use flextable |
 | Chunk label without a `tbl-` prefix | Quarto will not number or cross-reference it |
 | A number typed into prose from a rendered table | INV-11 — use an inline `` `r ` `` expression against the model object |

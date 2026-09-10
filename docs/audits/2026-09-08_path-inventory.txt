@@ -1,0 +1,506 @@
+D-4 PATH INVENTORY — research-claude, branch pipeline-repair, 2026-09-09 (Task 3.1)
+================================================================================
+
+Stage 3b's eight tasks work from this file. Every row is a pipeline path reference that
+does not resolve as written. Rows that already resolve ("ok") are not listed.
+
+Revised in fix round 1 (2026-09-09): eight rows retired, see NOTE 9.
+
+MEASURED TOTALS
+---------------
+  check_paths.py --root . --list   total=208  unresolved=5  unprefixed=90
+                                   -> 95 non-ok rows
+  audit_graph.py . /tmp/g.json     dangling path refs : 55
+                                   -> 65 line-level rows (a token repeated in one file is
+                                      one audit_graph row but several lines to edit)
+  UNION                            127 rows
+
+  Both figures are POST every gate-tooling change made by Task 3.1 (commits 9c01be7,
+  301afb2, 370f3fb and the fix-round-1 commit). At the task's starting point, e0c6c90,
+  they were: check_paths total=270 unresolved=5 unprefixed=152 (157 non-ok rows);
+  audit_graph 73 dangling. docs/audits/2026-09-08_stage0-red.md carries the row-level
+  before/after and the justification for every dropped row, in both rounds.
+
+HOW TO READ IT
+--------------
+Columns:  <file>:<line>  <reference as the checker saw it>  <seen-by>  <class>  <target/action>
+
+  seen-by   both         | both checkers report it
+            check_paths  | only check_paths.py --list
+            audit_graph  | only audit_graph.py's dangling_paths
+
+  class     rewrite         edit the reference to the named target
+            delete          remove the reference (illustrative example, deleted tool, or a
+                            D-18/D-21/D-22/D-24 deletion that takes the whole file or block)
+            exempt          legitimate as written; do NOT prefix it. Either it is a
+                            project-level path already in the checkers' exempt sets, or the
+                            line NAMES a path in order to forbid/describe it and wants a
+                            `<!-- residue:prohibition -->` marker. The action column says which.
+            false-positive  DO NOT TOUCH. A checker regex artefact. Acting on these would
+                            flatten a correct glob or placeholder and CREATE a dangling
+                            reference in order to satisfy a broken regex.
+            pending         correct as written; the target is a file a LATER stage creates
+                            (Stage 4: lit-critic, the /pipeline skill, the two hooks). No edit.
+                            ("pending" is a fifth class the brief did not name — see NOTE 5.)
+
+CLASS COUNTS
+------------
+  rewrite          60
+  delete           35
+  exempt           22
+  pending           6
+  false-positive    4
+                  ---
+                  127
+
+SEEN-BY COUNTS
+--------------
+  both           33
+  check_paths    62   (check_paths sees these; audit_graph does not)
+  audit_graph    32   (audit_graph sees these; check_paths does not — see NOTE 1)
+
+NOTES
+-----
+NOTE 1 — WHY THE INVENTORY IS A UNION, NOT `check_paths --list` ALONE.
+  check_paths.py's PATH_RE opens with a negative lookbehind `(?<![A-Za-z0-9_./-])`, so a
+  reference that begins mid-path is invisible to it. Every agent file writes its bundled
+  resources skill-relative — `analyze/templates/pre-code-report.md`,
+  `strategize/templates/decision-record.md`, `review/templates/code-review-16-categories.md`
+  — and the character before `templates/` is `/`, which the lookbehind rejects. Thirty of
+  these live in agents/coder.md, agents/writer.md, agents/strategist.md, agents/theorist.md
+  and the five critics. audit_graph.py's PATH_RE has a lookbehind that ALLOWS `/`, so it sees
+  all of them. An inventory built from `check_paths --list` alone would omit them, Stage 3b
+  would never rewrite them, and Task 3b.8's dangling criterion would fail at the end of a
+  long stage with no obvious cause.
+
+NOTE 2 — READ THE TOTALS WITH `grep '^total='`, NOT `tail -1`.
+  check_paths.py prints the totals line BEFORE its PASS/FAIL line and before the vendored
+  WARN rows, so `tail -1` lands on a WARN row about submodules/ai-audit.
+
+NOTE 3 — THE ARITHMETIC TO `dangling = 0`, AND WHY IT REACHES SIX, NOT ZERO.
+  Task 3b.8's stated exit criterion is `audit_graph.py dangling = 0`. Applying every
+  `rewrite` and every `delete` row in this inventory, plus the file-level
+  `<!-- residue:historical -->` marker Task 3b.7 puts on rules/registry-verification-gate.md,
+  clears 49 of the 55 dangling rows audit_graph reports today. SIX REMAIN, and all six are
+  `pending` rows — correct references to the four files Stage 4 creates:
+
+      rules/agents.md          -> hooks/critic-pairing.py
+      rules/logging.md         -> hooks/dispatch-log.py
+      scripts/check_fork.sh    -> agents/lit-critic.md
+      scripts/check_fork.sh    -> skills/pipeline/SKILL.md
+      scripts/check_fork.sh    -> hooks/critic-pairing.py
+      scripts/check_fork.sh    -> hooks/dispatch-log.py
+
+  So Task 3b.8 should expect `dangling path refs : 6`, with those six enumerated, and
+  `dangling = 0` becomes reachable only after Task 4.3 and the hooks task. Reading 6 as a
+  failure and "fixing" it would mean editing four correct lines or marking a `present`
+  assertion the gate needs visible.
+
+  Fix round 1 removed two other sources from this arithmetic, which is why it is six rather
+  than fourteen: audit_graph.py now carries the same project-level exempt sets check_paths.py
+  has (7 rows), and its PATH_RE lookbehind no longer tail-matches inside a longer directory
+  name (1 row). Both were rows no content edit could ever have cleared. See NOTE 9.
+
+NOTE 4 — audit_graph.py's PATH_RE LOOKBEHIND.
+  Its PATH_RE now opens with `(?<![A-Za-z0-9_.-])`, which excludes `-` and word characters but
+  deliberately ALLOWS `/`. Consequence: skill-relative references (NOTE 1) are still seen,
+  and so is a `.claude/`-prefixed one, but a tail match inside a longer directory name is
+  not — `zotpilot-skills/VENDORED.md` is not a reference to `skills/`, and
+  `master_supporting_docs/published_paper_1.tex` is not a reference to `docs/`. Measured when
+  applied: drops exactly those two rows, adds none.
+
+NOTE 5 — A FIFTH CLASS, `pending`.
+  The brief named four classes. Six rows fit none of them: they are already written correctly
+  and simply name a file a later stage creates (agents/lit-critic.md, skills/pipeline/SKILL.md,
+  hooks/dispatch-log.py, hooks/critic-pairing.py). Calling them `rewrite` would send a
+  repairer to edit a correct line. They are `pending`: no edit, self-healing — and they are
+  exactly the six rows NOTE 3's arithmetic leaves standing.
+
+NOTE 6 — CONFIRMATION REQUESTED BY THE BRIEF (step 2).
+  The D-4 rewrite target for a skill's own file is `.claude/skills/<skill>/<sub>/<file>` and
+  check_paths.py's RESOLVE table handles it with no change: `.claude/skills/analyze/templates/
+  chunk-structure.md` -> tail `skills/analyze/templates/chunk-structure.md` -> RESOLVE["skills"]
+  base "skills" -> `skills/analyze/templates/chunk-structure.md`. Verified against a file that
+  exists today (`skills/analyze/templates/pre-code-report.md` resolves ok); the same lookup
+  will resolve chunk-structure.md once Task 3b.1 creates it. Nothing to change in the checker.
+
+NOTE 7 — THE EXEMPT-SET CHANGES MADE BY THIS TASK.
+  check_paths.py gained `"scripts/acquire"` in EXEMPT_EXACT — the directory named WITHOUT a
+  trailing slash. EXEMPT_PREFIX already covered `scripts/acquire/<file>`, but prose that names
+  the directory itself tokenises as the bare path and was reported unprefixed in four places
+  (hooks/README.md:71, rules/data-manifest.md:46, rules/quarto-empirical.md:267,
+  skills/submit/templates/audit-10-checks.md:41).
+  audit_graph.py gained EXEMPT_PREFIX and EXEMPT_EXACT mirroring check_paths.py's, so the two
+  tools agree on what "project-level" means (fix round 1). Keep them identical: an addition on
+  either side wants the same addition on the other.
+
+NOTE 8 — TWO ROWS NEED A SOURCE-FILE FIX, NOT AN EDIT WHERE THEY APPEAR.
+  rules/permissions.md is GENERATED by scripts/render_registry.py (`render()`, the
+  "Rendered from `rules/registry.yaml` by `scripts/render_registry.py`." line). Editing
+  permissions.md by hand makes check_fork's `registry-rendered` FAIL. Fix the string in
+  render_registry.py and re-render.
+
+NOTE 9 — EIGHT ROWS RETIRED IN FIX ROUND 1, AND WHY EACH WAS NEVER A WORKLIST ITEM.
+  These appeared in the first version of this inventory. No checker reports them any more, so
+  they are not worklist items; they are recorded here so the reasoning is not lost.
+
+    agents/coder.md:136          templates/ai-use-log.md           exempt
+    agents/writer.md:115         templates/ai-use-log.md           exempt
+    rules/ai-disclosure.md:42    templates/ai-use-log.md           exempt
+    rules/quarto-empirical.md:57 templates/quarto-preamble.tex     exempt
+    rules/quarto-pdf.md:23       templates/quarto-preamble.tex     exempt
+    rules/data-manifest.md:29    scripts/acquire/01_download_nza.py exempt
+    rules/data-manifest.md:38    scripts/acquire/01_download_cbp.py exempt
+      -> All seven are project-level paths that exist in an INSTALLED project and never in
+         this repo (apply.sh seeds them from seeds/). check_paths.py already exempted all
+         seven; audit_graph.py now does too. Every one is explicitly kept as written by the
+         3b.1 and 3b.7 briefs. DO NOT PREFIX THEM.
+
+    references/personal-style-guide.md:22  docs/published_paper_1.tex  false-positive
+      -> Source text is `master_supporting_docs/published_paper_1.tex`, a correct project-level
+         example. Only audit_graph's then-unanchored PATH_RE saw it, as a tail match. Fixed at
+         the regex (NOTE 4). Task 3b.6 still rewrites this line to `.qmd or .pdf` for the
+         one-manuscript model, which is a content change, not a path fix — and note that it
+         would NOT have cleared the old false positive, because .qmd is in PATH_RE too.
+
+================================================================================
+
+
+
+---- agents/ ------------------------------------------------------------------
+
+agents/coder-critic.md:39                       templates/code-review-16-categories.md       audit_graph  rewrite
+        | .claude/skills/review/templates/code-review-16-categories.md  [3b.4]
+agents/coder-critic.md:84                       scripts/R                                    check_paths  exempt
+        | prohibition line: names scripts/R/ in order to forbid it. Add <!-- residue:prohibition -->
+        | [3b.4]
+agents/coder.md:16                              templates/pre-code-report.md                 audit_graph  rewrite
+        | .claude/skills/analyze/templates/pre-code-report.md  [3b.1 step 2 names this row]
+agents/coder.md:67                              templates/paper-to-code-map.md               audit_graph  rewrite
+        | .claude/skills/analyze/templates/paper-to-code-map.md  [3b.1]
+agents/coder.md:68                              templates/pre-code-report.md                 audit_graph  rewrite
+        | .claude/skills/analyze/templates/pre-code-report.md  [3b.1]
+agents/coder.md:69                              templates/r-script-structure.R               audit_graph  delete
+        | 3b.1 deletes skills/analyze/templates/r-script-structure.R; drop the resource row
+agents/coder.md:70                              templates/python-script-structure.py         audit_graph  delete
+        | 3b.1 deletes skills/analyze/templates/python-script-structure.py; drop the resource row
+agents/coder.md:71                              templates/results-summary.md                 audit_graph  delete
+        | 3b.1 deletes skills/analyze/templates/results-summary.md; drop the resource row
+agents/coder.md:72                              references/table-standards.md                audit_graph  rewrite
+        | .claude/skills/analyze/references/table-standards.md  [3b.1]
+agents/coder.md:73                              references/figure-standards.md               audit_graph  rewrite
+        | .claude/skills/analyze/references/figure-standards.md  [3b.1]
+agents/coder.md:84                              scripts/R                                    check_paths  delete
+        | inside ## Project Layout, which 3b.1 deletes entirely (lines 79-98)
+agents/editor.md:20                             templates/journal-profile-template.md        check_paths  rewrite
+        | .claude/templates/journal-profile-template.md  (file exists; apply.sh links templates/)
+        | [3b.4]
+agents/explorer-critic.md:37                    templates/data-review-6-categories.md        audit_graph  rewrite
+        | .claude/skills/review/templates/data-review-6-categories.md  [3b.4]
+agents/storyteller-critic.md:39                 templates/talk-review-6-categories.md        audit_graph  rewrite
+        | .claude/skills/review/templates/talk-review-6-categories.md  [3b.4]
+agents/strategist.md:16                         templates/pre-strategy-report.md             audit_graph  rewrite
+        | .claude/skills/strategize/templates/pre-strategy-report.md  [3b.4]
+agents/strategist.md:69                         templates/strategy-memo.md                   audit_graph  rewrite
+        | .claude/skills/strategize/templates/strategy-memo.md  [3b.4]
+agents/strategist.md:70                         templates/pre-strategy-report.md             audit_graph  rewrite
+        | .claude/skills/strategize/templates/pre-strategy-report.md  [3b.4]
+agents/strategist.md:72                         templates/robustness-plan.md                 audit_graph  rewrite
+        | .claude/skills/strategize/templates/robustness-plan.md  [3b.4]
+agents/strategist.md:73                         templates/decision-record.md                 audit_graph  rewrite
+        | .claude/skills/strategize/templates/decision-record.md  [3b.4]
+agents/strategist.md:75                         references/pap-interview-flow.md             audit_graph  rewrite
+        | .claude/skills/strategize/references/pap-interview-flow.md  [3b.4]
+agents/theorist-critic.md:39                    templates/theory-review-4-phases.md          audit_graph  rewrite
+        | .claude/skills/review/templates/theory-review-4-phases.md  [3b.4]
+agents/theorist.md:62                           templates/theory-memo.md                     audit_graph  rewrite
+        | .claude/skills/strategize/templates/theory-memo.md  [3b.4]
+agents/theorist.md:63                           templates/decision-record.md                 audit_graph  rewrite
+        | .claude/skills/strategize/templates/decision-record.md  [3b.4]
+agents/verifier.md:41                           scripts/R/FILENAME.R                         both         delete
+        | script-tree residue in a `Rscript ...` example; 3b.4 rewrites verifier.md in full
+agents/writer-critic.md:39                      templates/manuscript-review-8-categories.md  audit_graph  rewrite
+        | .claude/skills/review/templates/manuscript-review-8-categories.md  [3b.4]
+agents/writer-critic.md:65                      templates/rmd-preamble.tex                   both         delete
+        | Rmd/LaTeX residue; no such file, and D-21 retires the Rmd path. 3b.4 rewrites writer-
+        | critic.md in full
+agents/writer.md:24                             templates/style-extraction-protocol.md       audit_graph  rewrite
+        | .claude/skills/write/templates/style-extraction-protocol.md  [3b.4]
+agents/writer.md:70                             templates/section-templates.md               audit_graph  rewrite
+        | .claude/skills/write/templates/section-templates.md  [3b.4]
+agents/writer.md:71                             templates/paragraph-moves.md                 audit_graph  rewrite
+        | .claude/skills/write/templates/paragraph-moves.md  [3b.4]
+agents/writer.md:72                             templates/cleanup-patterns.md                audit_graph  rewrite
+        | .claude/skills/write/templates/cleanup-patterns.md  [3b.4]
+agents/writer.md:73                             templates/style-extraction-protocol.md       audit_graph  rewrite
+        | .claude/skills/write/templates/style-extraction-protocol.md  [3b.4]
+agents/writer.md:74                             templates/drafting-gates.md                  audit_graph  rewrite
+        | .claude/skills/write/templates/drafting-gates.md  [3b.4]
+agents/writer.md:75                             references/notation-protocol.md              audit_graph  rewrite
+        | .claude/skills/write/references/notation-protocol.md  [3b.4]
+
+---- hooks/ -------------------------------------------------------------------
+
+hooks/README.md:7                               templates/settings.json                      both         rewrite
+        | seeds/settings.json  — apply.sh copies seeds/settings.json ->
+        | <project>/.claude/settings.json; no templates/settings.json exists. SWEEP GAP:
+        | hooks/README.md is in no 3b task's file list
+hooks/README.md:70                              scripts/R                                    check_paths  exempt
+        | prohibition line: 'analysis lives in .qmd chunks rather than scripts/R/*.R'. Add <!--
+        | residue:prohibition -->. SWEEP GAP: file in no 3b task list
+
+---- references/ --------------------------------------------------------------
+
+references/coding-standards-rmd.md:100          scripts/R                                    check_paths  delete
+        | whole file deleted by 3b.6 (D-21)
+references/coding-standards-rmd.md:103          scripts/R                                    check_paths  delete
+        | whole file deleted by 3b.6 (D-21)
+references/discipline-cards.md:143              .claude/references/audit-pet-peeves.md       both         delete
+        | 3b.6 deletes the audit-pet-peeves clause on 143 and 144 (pools live in
+        | .claude/agents/editor.md). The only genuinely UNRESOLVED .claude/ row in the tree
+references/prompt-formatting-core.md:5          skills/prompt-references/formatting-core.md  both         delete
+        | whole file deleted by 3b.6 (D-24)
+
+---- rules/ -------------------------------------------------------------------
+
+rules/agents.md:13                              .claude/hooks/critic-pairing.py              both         pending
+        | already correct as written; resolves when the hooks task creates hooks/critic-pairing.py
+        | (check_fork d1-restored, currently FAIL). No edit
+rules/content-standards.md:125                  templates/exploration-readme.md              both         delete
+        | inside 103-157, which 3b.7 replaces wholesale with the .qmd explorations model (D-22); no
+        | README template in the replacement, and none exists in the repo
+rules/content-standards.md:131                  templates/archive-readme.md                  both         delete
+        | inside 103-157, replaced by 3b.7 (D-22); no such file exists
+rules/data-manifest.md:15                       templates/data_manifest.md                   both         rewrite
+        | seeds/data_manifest.md — the repo ships it there; apply.sh copies it to
+        | <project>/data/raw/data_manifest.md. SWEEP GAP: 3b.7 lists lines 25-28, 86-87 and 94, not 15
+rules/html-dashboard.md:148                     templates/html/base/styles.css               check_paths  delete
+        | whole file deleted by 3b.7 (D-18)
+rules/logging.md:57                             .claude/hooks/dispatch-log.py                both         pending
+        | already correct; resolves when the hooks task creates hooks/dispatch-log.py. No edit
+rules/permissions.md:3                          rules/registry.yaml                          check_paths  rewrite
+        | .claude/rules/registry.yaml — BUT permissions.md is GENERATED: edit
+        | scripts/render_registry.py line 'Rendered from `rules/registry.yaml` by ...' and re-render,
+        | or registry-rendered FAILs
+rules/permissions.md:3                          scripts/render_registry.py                   check_paths  exempt
+        | render_registry.py is repo-maintenance (not in scripts/SHIPPED) and never installs into a
+        | project, so it must NOT be .claude/-prefixed. Reword in render_registry.py to a non-path
+        | form ('rendered in the research-claude repo'), or mark the emitted line
+rules/quarto-empirical.md:37                    scripts/R                                    check_paths  exempt
+        | prohibition line ('There is no scripts/R/'). 3b.7 explicitly assigns <!--
+        | residue:prohibition --> to the 35-36 sentence naming scripts/R/
+rules/quarto-empirical.md:299                   scripts/R                                    check_paths  exempt
+        | deduction row naming the forbidden location; 3b.7 rewrites it and assigns <!--
+        | residue:prohibition --> explicitly
+rules/registry-verification-gate.md:26          scripts/R/00_master.R                        both         exempt
+        | 3b.7 inserts <!-- residue:historical --> as line 1, which exempts the WHOLE file in
+        | check_paths, check_refs and (as of this task) audit_graph. No per-row edit
+rules/registry-verification-gate.md:33          scripts/R                                    check_paths  exempt
+        | 3b.7 inserts <!-- residue:historical --> as line 1, which exempts the WHOLE file in
+        | check_paths, check_refs and (as of this task) audit_graph. No per-row edit
+rules/registry-verification-gate.md:35          scripts/R                                    check_paths  exempt
+        | 3b.7 inserts <!-- residue:historical --> as line 1, which exempts the WHOLE file in
+        | check_paths, check_refs and (as of this task) audit_graph. No per-row edit
+rules/registry-verification-gate.md:36          scripts/R/00_master.R                        both         exempt
+        | 3b.7 inserts <!-- residue:historical --> as line 1, which exempts the WHOLE file in
+        | check_paths, check_refs and (as of this task) audit_graph. No per-row edit
+rules/registry-verification-gate.md:50          scripts/R/0                                  check_paths  false-positive
+        | DO NOT TOUCH. Source text is the glob `scripts/R/0[3-9]*.R`; PATH_RE's tail cannot consume
+        | `[` or `*` and backtracks to `scripts/R/0`. Same class as R-21. Cleared anyway by the file-
+        | level historical marker 3b.7 adds
+rules/registry-verification-gate.md:50          scripts/R/1                                  check_paths  false-positive
+        | DO NOT TOUCH. Source text is the glob `scripts/R/1*.R` (see above)
+rules/registry-verification-gate.md:58          scripts/R/output/results_ground_truth.csv    check_paths  exempt
+        | 3b.7 inserts <!-- residue:historical --> as line 1, which exempts the WHOLE file in
+        | check_paths, check_refs and (as of this task) audit_graph. No per-row edit
+rules/registry-verification-gate.md:66          scripts/R                                    check_paths  exempt
+        | 3b.7 inserts <!-- residue:historical --> as line 1, which exempts the WHOLE file in
+        | check_paths, check_refs and (as of this task) audit_graph. No per-row edit
+rules/registry-verification-gate.md:76          scripts/R/00_master.R                        both         exempt
+        | 3b.7 inserts <!-- residue:historical --> as line 1, which exempts the WHOLE file in
+        | check_paths, check_refs and (as of this task) audit_graph. No per-row edit
+rules/registry-verification-gate.md:104         scripts/R/00_master.R                        both         exempt
+        | 3b.7 inserts <!-- residue:historical --> as line 1, which exempts the WHOLE file in
+        | check_paths, check_refs and (as of this task) audit_graph. No per-row edit
+rules/registry-verification-gate.md:119         scripts/R/output/results_ground_truth.csv    check_paths  exempt
+        | 3b.7 inserts <!-- residue:historical --> as line 1, which exempts the WHOLE file in
+        | check_paths, check_refs and (as of this task) audit_graph. No per-row edit
+rules/registry.yaml:1                           rules/registry.yaml                          check_paths  rewrite
+        | .claude/rules/registry.yaml — registry.yaml is linked into projects at that path
+rules/registry.yaml:2                           rules/permissions.md                         check_paths  rewrite
+        | .claude/rules/permissions.md
+rules/registry.yaml:2                           scripts/render_registry.py                   check_paths  exempt
+        | repo-maintenance script, never shipped. Reword to a non-path form rather than marking the
+        | line, because the same line also carries a rewritable ref (rules/permissions.md) and a
+        | marker would exempt the whole line
+rules/registry.yaml:3                           scripts/check_fork.sh                        check_paths  exempt
+        | repo-maintenance script, never shipped. Reword (same line also carries two rewritable refs)
+rules/registry.yaml:3                           scripts/pipeline.py                          check_paths  rewrite
+        | .claude/scripts/pipeline.py (SHIPPED)
+rules/registry.yaml:3                           skills/pipeline/SKILL.md                     check_paths  rewrite
+        | .claude/skills/pipeline/SKILL.md — created by the Stage 4 pipeline task; rewrite now,
+        | resolves then
+rules/registry.yaml:6                           scripts/registry_lib.py                      check_paths  rewrite
+        | .claude/scripts/registry_lib.py (SHIPPED)
+rules/registry.yaml:16                          rules/quality.md                             check_paths  rewrite
+        | .claude/rules/quality.md
+rules/session-handoff.md:58                     templates/handoff.md                         check_paths  rewrite
+        | .claude/templates/handoff.md  (file exists; apply.sh links templates/)
+
+---- scripts/ -----------------------------------------------------------------
+
+scripts/check_fork.sh:67                        agents/lit-critic.md                         audit_graph  pending
+        | `present d1-restored` assertion, deliberately NOT marked: the file MUST exist. Created by
+        | Task 4.3. Leaving it visible is the point
+scripts/check_fork.sh:67                        skills/pipeline/SKILL.md                     audit_graph  pending
+        | `present d1-restored`; created by the Stage 4 pipeline task
+scripts/check_fork.sh:68                        hooks/critic-pairing.py                      audit_graph  pending
+        | `present d1-restored`; created by the hooks task
+scripts/check_fork.sh:68                        hooks/dispatch-log.py                        audit_graph  pending
+        | `present d1-restored`; created by the hooks task
+scripts/pipeline.py:4                           rules/registry.yaml                          check_paths  exempt
+        | the docstring deliberately names BOTH forms ('.claude/rules/registry.yaml (or
+        | rules/registry.yaml when --root is the research-claude repo)'). Add <!-- residue:prohibition
+        | --> rather than rewriting
+scripts/pipeline.py:6                           rules/lifecycle.md                           check_paths  rewrite
+        | .claude/rules/lifecycle.md — pipeline.py is SHIPPED and runs with --root = a project
+scripts/pipeline.py:239                         rules/permissions.md                         check_paths  exempt
+        | AUTH_ALLOW, repo-relative by design (see above)
+scripts/pipeline.py:239                         rules/quality.md                             check_paths  exempt
+        | AUTH_ALLOW, repo-relative by design (see above)
+scripts/pipeline.py:239                         rules/registry.yaml                          check_paths  exempt
+        | AUTH_ALLOW is compared against paths relative to the RESEARCH-CLAUDE ROOT: registry_check()
+        | is reachable only from check_fork.sh (it shells out to scripts/render_registry.py, which
+        | exists only in the repo). Prefixing would break registry-authority. Mark the line
+scripts/registry_lib.py:2                       rules/registry.yaml                          check_paths  exempt
+        | docstring names the repo file it validates. Mark the line, or reword to 'the declaration
+        | registry'. registry_lib.py IS shipped, so it stays in scope for the gate
+
+---- seeds/ -------------------------------------------------------------------
+
+seeds/settings.json:2                           hooks/README.md                              check_paths  rewrite
+        | .claude/hooks/README.md — hooks/ is linked into every project
+
+---- skills/ ------------------------------------------------------------------
+
+skills/analyze/SKILL.md:60                      scripts/R                                    check_paths  delete
+        | 3b.1 rewrites skills/analyze/SKILL.md in full; no script tree
+skills/analyze/SKILL.md:94                      scripts/generate_html_report.py              both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/analyze/SKILL.md:95                      scripts/generate_dashboard.py                both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/analyze/SKILL.md:142                     scripts/R/output/model_fit.rds               check_paths  delete
+        | 3b.1 full rewrite; INV-23, nothing written to disk
+skills/analyze/SKILL.md:143                     scripts/R/output/main_results.rds            check_paths  delete
+        | 3b.1 full rewrite; INV-23
+skills/analyze/templates/pre-code-report.md:18  .claude/references/coding-standards          check_paths  false-positive
+        | DO NOT TOUCH (ruling R-21). Source text is `.claude/references/coding-standards-{lang}.md`;
+        | PATH_RE's tail cannot consume `{` and must end on a word char, so it backtracks. Resolves to
+        | four real files (-r, -python, -julia, -rmd)
+skills/analyze/templates/results-summary.md:92  scripts/R/output                             check_paths  delete
+        | whole file deleted by 3b.1
+skills/checkpoint/SKILL.md:177                  scripts/generate_dashboard.py                both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/discover/SKILL.md:62                     templates/decision-record.md                 both         rewrite
+        | .claude/skills/strategize/templates/decision-record.md  (the template is strategize-owned)
+        | [3b.5]
+skills/discover/SKILL.md:95                     scripts/generate_html_report.py              both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/discover/SKILL.md:96                     scripts/generate_dashboard.py                both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/lit-position/SKILL.md:8                  rules/literature-search-order.md             check_paths  rewrite
+        | .claude/rules/literature-search-order.md  (file exists)  [3b.5]
+skills/review/SKILL.md:109                      scripts/generate_html_report.py              both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/review/SKILL.md:113                      scripts/generate_dashboard.py                both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/review/SKILL.md:208                      scripts/generate_html_report.py              both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/review/SKILL.md:209                      scripts/generate_dashboard.py                both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/review/SKILL.md:256                      scripts/generate_html_report.py              both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/review/SKILL.md:257                      scripts/generate_dashboard.py                both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/review/SKILL.md:322                      templates/manuscript-review-8-categories.md  check_paths  rewrite
+        | .claude/skills/review/templates/manuscript-review-8-categories.md  [3b.3]
+skills/review/SKILL.md:323                      templates/code-review-16-categories.md       check_paths  rewrite
+        | .claude/skills/review/templates/code-review-16-categories.md  [3b.3]
+skills/review/SKILL.md:324                      templates/theory-review-4-phases.md          check_paths  rewrite
+        | .claude/skills/review/templates/theory-review-4-phases.md  [3b.3]
+skills/review/SKILL.md:325                      templates/talk-review-6-categories.md        check_paths  rewrite
+        | .claude/skills/review/templates/talk-review-6-categories.md  [3b.3]
+skills/review/SKILL.md:326                      templates/data-review-6-categories.md        check_paths  rewrite
+        | .claude/skills/review/templates/data-review-6-categories.md  [3b.3]
+skills/review/SKILL.md:327                      templates/disposition-pool.md                check_paths  rewrite
+        | .claude/skills/review/templates/disposition-pool.md  [3b.3]
+skills/review/SKILL.md:328                      templates/referee-report-template.md         check_paths  rewrite
+        | .claude/skills/review/templates/referee-report-template.md  [3b.3]
+skills/revise/SKILL.md:79                       templates/response-tracker.md                check_paths  rewrite
+        | .claude/skills/revise/templates/response-tracker.md  [3b.5]
+skills/revise/SKILL.md:80                       templates/response-letter.md                 both         rewrite
+        | .claude/skills/revise/templates/response-letter.qmd — NOTE THE EXTENSION: the repo ships
+        | .qmd, the reference says .md. Rewriting to .md would leave it dangling  [3b.5]
+skills/revise/SKILL.md:81                       templates/diplomatic-disagreement.md         check_paths  rewrite
+        | .claude/skills/revise/templates/diplomatic-disagreement.md  [3b.5]
+skills/strategize/SKILL.md:65                   scripts/generate_html_report.py              both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/strategize/SKILL.md:66                   scripts/generate_dashboard.py                both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/strategize/SKILL.md:69                   templates/decision-record.md                 check_paths  rewrite
+        | .claude/skills/strategize/templates/decision-record.md  [3b.5]
+skills/submit/SKILL.md:73                       scripts/generate_html_report.py              both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/submit/SKILL.md:74                       scripts/generate_dashboard.py                both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/submit/SKILL.md:85                       templates/submission-checklist.md            check_paths  rewrite
+        | .claude/skills/submit/templates/submission-checklist.md  [3b.5]
+skills/submit/SKILL.md:86                       templates/cover-letter.tex                   check_paths  delete
+        | skills/submit/templates/cover-letter.tex is a d1-deletion (check_fork asserts it absent);
+        | drop the row rather than re-pointing it
+skills/submit/SKILL.md:87                       templates/replication-readme.md              check_paths  rewrite
+        | .claude/skills/submit/templates/replication-readme.md  [3b.5]
+skills/submit/SKILL.md:88                       templates/audit-10-checks.md                 check_paths  rewrite
+        | .claude/skills/submit/templates/audit-10-checks.md  [3b.5]
+skills/submit/templates/audit-10-checks.md:43   scripts/R                                    check_paths  exempt
+        | prohibition line ('not in scripts/R/ — a stray analysis script is an orphan by
+        | construction'). Add <!-- residue:prohibition -->
+skills/tools/SKILL.md:22                        scripts/generate_dashboard.py                both         delete
+        | deleted tool (check_refs DELETED_SCRIPTS; D-18 dashboard family). Remove the invocation, do
+        | not re-point it. Task 6.2 greps for a zero count
+skills/tools/SKILL.md:68                        scripts/02_estimate.R                        both         delete
+        | script-tree residue in a `/tools lint` example; the one-manuscript model has no analysis
+        | scripts outside scripts/acquire/  [3b.5]
+skills/tools/SKILL.md:72                        .claude/references/coding-standards          check_paths  false-positive
+        | DO NOT TOUCH (ruling R-21). Source text is `.claude/references/coding-standards-*.md`; same
+        | backtrack on `*`
+skills/write/SKILL.md:181                       templates/section-templates.md               check_paths  rewrite
+        | .claude/skills/write/templates/section-templates.md  [3b.2]
+skills/write/SKILL.md:182                       templates/paragraph-moves.md                 check_paths  rewrite
+        | .claude/skills/write/templates/paragraph-moves.md  [3b.2]
+skills/write/SKILL.md:183                       templates/cleanup-patterns.md                check_paths  rewrite
+        | .claude/skills/write/templates/cleanup-patterns.md  [3b.2]
+skills/write/SKILL.md:184                       templates/style-extraction-protocol.md       check_paths  rewrite
+        | .claude/skills/write/templates/style-extraction-protocol.md  [3b.2]
+skills/write/SKILL.md:185                       templates/drafting-gates.md                  check_paths  rewrite
+        | .claude/skills/write/templates/drafting-gates.md  [3b.2]
+skills/write/SKILL.md:186                       references/notation-protocol.md              check_paths  rewrite
+        | .claude/skills/write/references/notation-protocol.md  [3b.2]
+
+================================================================================
+END — 127 rows.

@@ -27,6 +27,9 @@ format:
     cite-method: biblatex
 ```
 
+`templates/quarto-preamble.tex` is seeded into every project by `apply.sh`
+(`seeds/quarto-preamble.tex`); edit the project copy, never the seed.
+
 `cite-method: biblatex` makes the PDF render citations through biblatex/biber, not
 pandoc citeproc. **The document-level `csl:` field is ignored for PDF output** — it
 only affects Word (see `quarto-word.md`).
@@ -99,7 +102,7 @@ Use pandoc syntax (works in both prose and Quarto):
 | `[@smith2024]` | (Smith, 2024) |
 | `[@smith2024, p. 12]` | (Smith, 2024, p. 12) |
 
-Never use `\citet{}` / `\citep{}` — LaTeX-only, renders as raw text in any non-PDF
+Never use `\citet{}` / `\citep{}` — LaTeX-only, renders as raw text in any non-PDF <!-- residue:prohibition -->
 output (and breaks the single-source model the moment you also render to Word).
 
 ---
@@ -124,6 +127,6 @@ coder-critic — not duplicated here.
 - `pdf-engine:` not `xelatex` (-3)
 - Missing `cite-method: biblatex` (-3)
 - Missing `include-in-header:` (-3)
-- `\citet{}` / `\citep{}` in prose (-3 per, max -10)
+- `\citet{}` / `\citep{}` in prose (-3 per, max -10) <!-- residue:prohibition -->
 - kableExtra table missing `escape = FALSE` when names/notes contain LaTeX (-3)
 - Tables rendered with flextable in PDF output — wrong package (-5)

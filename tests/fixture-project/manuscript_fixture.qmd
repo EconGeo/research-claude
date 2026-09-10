@@ -1,0 +1,134 @@
+---
+title: "Fixture: A Synthetic Staggered Adoption"
+author:
+  - name: "Fixture Author"
+    affiliation: "Fixture University"
+    email: "fixture@example.edu"
+date: today
+abstract: |
+  A forty-unit synthetic panel with a staggered treatment. The document exists so that
+  every pipeline gate can be tested against a manuscript that follows the contract.
+format:
+  pdf:
+    pdf-engine: xelatex
+    include-in-header: "templates/quarto-preamble.tex"
+    toc: false
+    number-sections: true
+    keep-tex: false
+    cite-method: biblatex
+execute:
+  echo: false
+  message: false
+  warning: false
+  cache: true
+bibliography: "references.bib"
+link-citations: true
+# No top-level csl: the PDF path renders citations via biblatex (cite-method above).
+---
+
+```{r}
+#| label: setup
+#| cache: false
+#| include: false
+library(here)
+library(tidyverse)
+library(fixest)
+library(modelsummary)
+library(kableExtra)
+
+set.seed(20260908L)
+
+# Paper-to-code naming map
+#   Y_it  -> outcome      (data/raw/panel.csv: outcome)
+#   D_it  -> treated      (data/raw/panel.csv: treated)
+#   alpha_i -> unit FE    (absorbed)
+#   gamma_t -> year FE    (absorbed)
+# Dependency chain:
+#   build-panel -> estimate-main -> tbl-main
+#                                -> fig-trends
+```
+
+```{r}
+#| label: build-panel
+#| cache: true
+#| cache.extra: !expr list(file.mtime(here("data/raw/panel.csv")))
+panel <- read_csv(here("data/raw/panel.csv"), show_col_types = FALSE)
+n_distinct_units <- n_distinct(panel$unit)
+n_years <- n_distinct(panel$year)
+share_treated_units <- mean(tapply(panel$treated, panel$unit, max))
+```
+
+# Introduction
+
+This fixture documents a synthetic staggered adoption in the spirit of @fixture2026.
+The panel covers `r n_distinct_units` units observed over `r n_years` years.
+
+# Data
+
+Half of the units adopt in 2016; the treated share of units is
+`r round(share_treated_units, 2)`. The first and last panel years are 2011 and 2020.
+
+# Empirical Strategy
+
+$$
+Y_{it} = \alpha_i + \gamma_t + \beta D_{it} + \varepsilon_{it}
+$$ {#eq-twfe}
+
+@eq-twfe is a two-way fixed effects specification with standard errors clustered by unit.
+
+# Results
+
+```{r}
+#| label: estimate-main
+#| cache: true
+#| dependson: "build-panel"
+m_main <- feols(outcome ~ treated | unit + year, data = panel, cluster = ~unit)
+beta_hat <- coef(m_main)[["treated"]]
+se_hat   <- se(m_main)[["treated"]]
+```
+
+The estimated effect is `r round(beta_hat, 3)` (SE `r round(se_hat, 3)`), shown in @tbl-main;
+@fig-trends plots the raw means.
+
+```{r}
+#| label: tbl-main
+#| cache: true
+#| dependson: "estimate-main"
+#| tbl-cap: "Effect of Treatment on the Outcome"
+modelsummary(
+  list("TWFE" = m_main),
+  output   = "kableExtra",
+  booktabs = TRUE,
+  stars    = c("*" = 0.10, "**" = 0.05, "***" = 0.01),
+  notes    = "Standard errors clustered by unit in parentheses. Synthetic data.",
+  escape   = FALSE
+)
+```
+
+```{r}
+#| label: fig-trends
+#| cache: true
+#| dependson: "build-panel"
+#| fig-cap: "Mean Outcome by Year and Treatment Group. *Notes:* Synthetic data; treated units adopt in the sixth year."
+#| fig-width: 6
+#| fig-height: 4
+panel |>
+  mutate(group = if_else(unit <= 20, "Treated", "Control")) |>
+  group_by(group, year) |>
+  summarise(outcome = mean(outcome), .groups = "drop") |>
+  ggplot(aes(year, outcome, colour = group)) +
+  geom_line() +
+  labs(x = "Year", y = "Mean outcome", colour = NULL) +
+  theme_minimal(base_family = "serif")
+```
+
+# Conclusion
+
+The point estimate of `r round(beta_hat, 3)` recovers the design's true effect within
+sampling error.
+
+## AI Use Statement {.unnumbered}
+
+No generative AI was used in the preparation of this fixture beyond the pipeline under test.
+
+# References {.unnumbered}

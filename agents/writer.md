@@ -21,7 +21,7 @@ If the personal style guide is still a template: **STOP drafting.** Ask the user
 
 The Writer operates in two modes:
 - **Drafting mode (default):** Given approved code output (coder-critic score >= 80) and the strategy memo, draft paper sections.
-- **Style-extraction mode:** Given a corpus of the user's prior papers, produce `.claude/references/personal-style-guide.md`. See `write/templates/style-extraction-protocol.md`.
+- **Style-extraction mode:** Given a corpus of the user's prior papers, produce `.claude/references/personal-style-guide.md`. See `.claude/skills/write/templates/style-extraction-protocol.md`.
 
 ---
 
@@ -41,7 +41,8 @@ The Writer operates in two modes:
 
 **Before drafting Results:**
 1. Read the estimation chunks in `manuscript_<project>.qmd` and the objects they bind
-2. Read `quality_reports/results_summary.md` (produced by `/analyze`)
+2. Read the manuscript's rendered tables and figures (render first if stale) to see what
+   the estimation chunks actually produced — this is a reading step, not a source for prose
 3. Identify: point estimates, standard errors, significance levels, sample sizes —
    and the **expression** that yields each one
 4. Narrate from these actual numbers — never from the strategy memo's predictions
@@ -67,12 +68,12 @@ Identify the paper type from the strategy memo before drafting. The type determi
 
 When invoked by a skill, read the templates it provides. Core resources:
 
-- **Section templates:** `write/templates/section-templates.md` — structure per section, per paper type
-- **Paragraph moves:** `write/templates/paragraph-moves.md` — 7 argument-move types
-- **Cleanup patterns:** `write/templates/cleanup-patterns.md` — 24 AI patterns to strip
-- **Style extraction:** `write/templates/style-extraction-protocol.md` — corpus sampling protocol
-- **Drafting gates:** `write/templates/drafting-gates.md` — Gate 1/2/3 approval checkpoints
-- **Notation:** `write/references/notation-protocol.md` — Y_it, D_it, X_it conventions
+- **Section templates:** `.claude/skills/write/templates/section-templates.md` — structure per section, per paper type
+- **Paragraph moves:** `.claude/skills/write/templates/paragraph-moves.md` — 7 argument-move types
+- **Cleanup patterns:** `.claude/skills/write/templates/cleanup-patterns.md` — 24 AI patterns to strip
+- **Style extraction:** `.claude/skills/write/templates/style-extraction-protocol.md` — corpus sampling protocol
+- **Drafting gates:** `.claude/skills/write/templates/drafting-gates.md` — Gate 1/2/3 approval checkpoints
+- **Notation:** `.claude/skills/write/references/notation-protocol.md` — Y_it, D_it, X_it conventions
 
 Read these on demand — they are Level 3 resources loaded when needed, not always.
 

@@ -1,0 +1,27 @@
+── criterion 6: no LaTeX / multi-file pipeline residue ──
+PASS [latex-residue]
+── criterion 7: no project nouns, no non-standard manuscript filename ──
+PASS [project-identity]
+PASS [project-nouns]
+── criteria 1-3: the fork is structural ──
+PASS [clo-author-submodule] submodules/clo-author gone
+PASS [pipeline-precedence] rules/pipeline-precedence.md gone
+PASS [gitmodules]
+PASS [apply.sh]
+── criterion 8: the coder-critic merge kept both halves ──
+PASS [cc-zoning-half]
+PASS [cc-pogm-half]
+── D1: the orchestration graph is gone ──
+PASS [d1-deletions] agents/orchestrator.md gone
+PASS [d1-deletions] agents/guide-writer.md gone
+PASS [d1-deletions] agents/librarian.md gone
+PASS [d1-deletions] agents/librarian-critic.md gone
+PASS [d1-deletions] rules/permissions.md gone
+PASS [d1-deletions] rules/lifecycle.md gone
+PASS [d1-deletions] rules/workflow.md gone
+PASS [d1-deletions] rules/working-paper-format.md gone
+PASS [d1-deletions] rules/meta-governance.md gone
+PASS [d1-deletions] root-skills gone
+── C1: no ~/Courses domain leak ──
+PASS [course-leak]
+✓ check_fork: PASS

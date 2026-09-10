@@ -41,6 +41,7 @@ Then scan:
 - `CLAUDE.md` header for the project name
 - `quality_reports/plans/` for files modified today
 - `quality_reports/session_logs/` for files modified today (if the project uses session logs)
+- `quality_reports/pipeline_state.json` — `python3 .claude/scripts/pipeline.py state show`; the staleness sweep in `.claude/rules/session-handoff.md` compares the plan's status claims against it
 - The conversation context for key decisions, corrections, or learnings that qualify for auto-memory
 
 ### Step 2: Detect Obsidian Configuration
@@ -152,7 +153,7 @@ Append only if agent work happened this session (writer, coder, strategist, etc.
 
 Follow the project's `obsidian-config.md` for vault path and project mapping. Then:
 
-1. Add journal entry to the matched project note via Obsidian MCP (`obsidian_get_file_contents` → modify → `obsidian_delete_file` + `obsidian_append_content`). Reverse chronological — newest first, after `## Journal` heading.
+1. Add journal entry to the matched project note via Obsidian MCP (`mcp__obsidian-files__read_note` → modify → `mcp__obsidian-files__write_note`). Reverse chronological — newest first, after `## Journal` heading.
 2. Update the dashboard (`Home.md`) only if something changed (stage transition, status update, Next Action change, Days in Stage recalc). Sync General Kanban if the project is research-tracked.
 3. Append to today's daily journal (`Journal/YYYY-MM-DD.md`). Create from template if it doesn't exist.
 
@@ -170,12 +171,10 @@ Entry format for project note journal:
 
 Keep it tight — 3–5 bullets per section max.
 
-### Step 4e. Refresh Project Dashboard
+### Step 4f. HANDOFF.md
 
-Regenerate the project dashboard to capture latest session state:
-```bash
-python3 scripts/generate_dashboard.py
-```
+If the project has one, regenerate it from `.claude/templates/handoff.md` (never append;
+`.claude/rules/session-handoff.md` §2).
 
 ### Step 5: Confirm
 
@@ -186,7 +185,6 @@ Checkpoint saved:
 - Memory: [updated/created N files | no changes]
 - SESSION_REPORT.md: [entry added]
 - research_journal.md: [entry added | skipped — no agent work]
-- Dashboard: [refreshed]
 - Obsidian: [entry added to Project Name | not configured]
 ```
 
@@ -222,10 +220,10 @@ Do NOT run this on every checkpoint — only when the user explicitly opts in.
 
 | Resource | Path | What It Contains |
 |----------|------|-----------------|
-| Session report entry | `checkpoint/templates/session-report-entry.md` | Append format for SESSION_REPORT.md |
-| Research journal entry | `checkpoint/templates/research-journal-entry.md` | Append format for research_journal.md |
-| Memory entry types | `checkpoint/templates/memory-entry-types.md` | 4 memory types with when-to-save guidance |
-| Gotchas | `checkpoint/gotchas.md` | Known failure points and edge cases |
+| Session report entry | `.claude/skills/checkpoint/templates/session-report-entry.md` | Append format for SESSION_REPORT.md |
+| Research journal entry | `.claude/skills/checkpoint/templates/research-journal-entry.md` | Append format for research_journal.md |
+| Memory entry types | `.claude/skills/checkpoint/templates/memory-entry-types.md` | 4 memory types with when-to-save guidance |
+| Gotchas | `.claude/skills/checkpoint/gotchas.md` | Known failure points and edge cases |
 
 ---
 
@@ -236,7 +234,7 @@ Do NOT run this on every checkpoint — only when the user explicitly opts in.
 - **Don't duplicate.** Check existing memory files before creating new ones. Check if today's journal entry already covers this project.
 - **Keep the defaults local.** Memory, SESSION_REPORT and the research journal work out of the box. Obsidian integration is opt-in and gated behind local config.
 - **`.claude/state/obsidian-config.md` is local-only.** It contains user-specific paths and mappings; `.gitignore` keeps it out of commits.
-- **Dashboard is source of truth** for Obsidian project stages (when Obsidian is active). Don't contradict it.
+- **The Obsidian `Home.md` dashboard is the source of truth for project stages** (when Obsidian is active). Don't contradict it.
 - **Memory is for future conversations.** Don't save things only useful right now.
 - **Minimal user friction.** One confirmation prompt, not five. Default to "looks right? saving."
 
@@ -244,4 +242,4 @@ Do NOT run this on every checkpoint — only when the user explicitly opts in.
 
 ## Precedence
 
-If the user has a user-level `checkpoint` skill at `~/.claude/skills/checkpoint/`, this project-level skill takes precedence when invoked from within clo-author. The user-level skill continues to work for projects that don't have this file.
+If the user has a user-level `checkpoint` skill at `~/.claude/skills/checkpoint/`, this project-level skill takes precedence when invoked from within a research-claude project. The user-level skill continues to work for projects that don't have this file.

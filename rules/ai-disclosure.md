@@ -63,7 +63,7 @@ If the file does not exist, create it first using `templates/ai-use-log.md`.
 - **Sections affected:** Code, Tables, Figures
 - **Human review required:** Yes — author must verify all results and test code before submission
 
-### 2026-05-29 — librarian (Claude claude-sonnet-4-6)
+### 2026-05-29 — librarian (Claude claude-sonnet-4-6) <!-- residue:historical -->
 - **Task:** Literature search on ESG and commercial real estate returns
 - **Sections affected:** Literature
 - **Human review required:** Yes — author must verify all cited papers independently
@@ -106,7 +106,7 @@ In `manuscript_<project>.qmd`, place it as
 ```
 
 at the end of the document — after References, before the Appendix. Use
-`{.unnumbered}`, not bookdown's `{-}`.
+`{.unnumbered}`, not bookdown's `{-}`. <!-- residue:prohibition -->
 
 ---
 

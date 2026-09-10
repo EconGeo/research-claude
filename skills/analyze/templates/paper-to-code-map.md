@@ -1,12 +1,12 @@
 # Paper-to-Code Naming Map
 
-**Purpose:** Establish a 1:1 mapping between the paper's mathematical notation and the code's variable names. Every symbol in the manuscript has exactly one code name. This map is produced in the Pre-Code Report, included as a comment block in `01_setup.R`, and reproduced in `results_summary.md`.
+**Purpose:** Establish a 1:1 mapping between the paper's mathematical notation and the code's variable names. Every symbol in the manuscript has exactly one code name. This map is produced in the Pre-Code Report and included as the comment block in the `setup` chunk.
 
 ---
 
 ## Template
 
-Copy this into `01_setup.R` as a comment block and fill in project-specific entries:
+Copy this into the `setup` chunk as a comment block and fill in project-specific entries:
 
 ```r
 # ============================================================
@@ -35,7 +35,7 @@ Copy this into `01_setup.R` as a comment block and fill in project-specific entr
 3. **The Source column documents provenance.** Where does this variable come from? Raw data column? Constructed how?
 4. **Match is exact.** If the paper calls it $D_{it}$, the code variable is `treatment` (or `treat` — pick one and stick with it). Never `treated`, `Treatment`, `is_treated`, and `treat` in different scripts.
 5. **The map is established in the Pre-Code Report** before any code is written. Mid-script name invention is a coder-critic deduction.
-6. **Include in results summary.** The writer agent reads this map to connect code output to paper claims.
+6. **The writer reads the setup chunk.** Prose notation must match this map (INV-7).
 
 ---
 

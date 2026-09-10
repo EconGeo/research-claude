@@ -1,0 +1,476 @@
+# .claude/rules/registry.yaml — the declaration registry (D-2, D-10). AUTHORITATIVE.
+# Rendered to .claude/rules/permissions.md by this repo's render_registry.py (not shipped
+# to projects; check_fork: registry-rendered).
+# Read by .claude/scripts/pipeline.py, this repo's check_fork.sh (not shipped), and
+# .claude/skills/pipeline/SKILL.md (Task 5.4).
+# No other file states a creator→critic pair or a weight (check_fork: registry-authority).
+#
+# Restricted YAML on purpose (parsed by .claude/scripts/registry_lib.py without PyYAML): block
+# mappings, block lists, single-line scalars, `[]` for an empty list, `#` comments.
+# No anchors, no flow collections, no multi-line strings.
+schema_version: 1
+
+limits:
+  rounds_per_pair: 3
+  rounds_overall: 5
+  verification_retries: 2
+
+# Quality components (.claude/rules/quality.md mirrors these weights; check_fork: weights-sum).
+components:
+  literature:
+    weight: 10
+    scored_by: lit-critic
+  data:
+    weight: 10
+    scored_by: explorer-critic
+  strategy:
+    weight: 25
+    scored_by: strategist-critic
+  theory:
+    weight: 20
+    scored_by: theorist-critic
+    conditional: true
+  code:
+    weight: 15
+    scored_by: coder-critic
+  manuscript:
+    weight: 10
+    scored_by: writer-critic
+  referees:
+    weight: 25
+    scored_by: editor
+  replication:
+    weight: 5
+    scored_by: verifier
+
+agents:
+
+  # ── Discovery ────────────────────────────────────────────────────────────
+  lit-position:
+    role: creator
+    kind: skill
+    parallel_group: discovery
+    requires: []
+    produces:
+      - type: path
+        glob: quality_reports/literature/*/annotated_bibliography.md
+      - type: path
+        glob: quality_reports/literature/*/frontier_map.md
+      - type: path
+        glob: quality_reports/literature/*/positioning.md
+    critic: lit-critic
+    escalation_target: user
+    component: literature
+    quality_weight: 10
+    conditional: false
+    writes:
+      - quality_reports/literature/
+
+  lit-critic:
+    role: critic
+    kind: agent
+    parallel_group: discovery
+    requires:
+      - type: path
+        glob: quality_reports/literature/*/positioning.md
+        producer: /lit-position
+    produces:
+      - type: path
+        glob: quality_reports/reviews/lit-critic_*.md
+    critic: none
+    escalation_target: user
+    component: literature
+    quality_weight: 0
+    conditional: false
+    writes:
+      - quality_reports/reviews/
+
+  explorer:
+    role: creator
+    kind: agent
+    parallel_group: discovery
+    requires: []
+    produces:
+      - type: path
+        glob: quality_reports/data-assessment/*/data_sources.md
+      - type: path
+        glob: quality_reports/data-assessment/*/data_dictionary.md
+      - type: path
+        glob: quality_reports/data-assessment/*/access_instructions.md
+    critic: explorer-critic
+    escalation_target: user
+    component: data
+    quality_weight: 10
+    conditional: false
+    writes:
+      - quality_reports/data-assessment/
+
+  explorer-critic:
+    role: critic
+    kind: agent
+    parallel_group: discovery
+    requires:
+      - type: path
+        glob: quality_reports/data-assessment/*/data_sources.md
+        producer: /discover data
+    produces:
+      - type: path
+        glob: quality_reports/reviews/explorer-critic_*.md
+    critic: none
+    escalation_target: user
+    component: data
+    quality_weight: 0
+    conditional: false
+    writes:
+      - quality_reports/reviews/
+
+  # ── Strategy ─────────────────────────────────────────────────────────────
+  strategist:
+    role: creator
+    kind: agent
+    parallel_group: strategy
+    requires:
+      - type: any_of
+        of:
+          - type: path
+            glob: quality_reports/literature/*/positioning.md
+            producer: /lit-position
+          - type: path
+            glob: quality_reports/data-assessment/*/data_sources.md
+            producer: /discover data
+      - type: score-if-scored
+        component: literature
+        min: 80
+        producer: /lit-position
+      - type: score-if-scored
+        component: data
+        min: 80
+        producer: /discover data
+    produces:
+      - type: path
+        glob: quality_reports/strategy/*/strategy_memo.md
+      - type: section
+        file: quality_reports/strategy/*/strategy_memo.md
+        heading: Estimand
+      - type: section
+        file: quality_reports/strategy/*/strategy_memo.md
+        heading: Specification
+      - type: section
+        file: quality_reports/strategy/*/strategy_memo.md
+        heading: Assumptions
+      - type: section
+        file: quality_reports/strategy/*/strategy_memo.md
+        heading: Robustness Plan
+      - type: section
+        file: quality_reports/strategy/*/strategy_memo.md
+        heading: Threats
+    critic: strategist-critic
+    escalation_target: user
+    component: strategy
+    quality_weight: 25
+    conditional: false
+    writes:
+      - quality_reports/strategy/
+
+  strategist-critic:
+    role: critic
+    kind: agent
+    parallel_group: strategy
+    requires:
+      - type: path
+        glob: quality_reports/strategy/*/strategy_memo.md
+        producer: /strategize
+    produces:
+      - type: path
+        glob: quality_reports/reviews/strategist-critic_*.md
+    critic: none
+    escalation_target: user
+    component: strategy
+    quality_weight: 0
+    conditional: false
+    writes:
+      - quality_reports/reviews/
+
+  theorist:
+    role: creator
+    kind: agent
+    parallel_group: strategy
+    requires:
+      - type: score
+        component: strategy
+        min: 80
+    produces:
+      - type: section
+        file: manuscript
+        heading: Theory
+      - type: path
+        glob: quality_reports/theory/*/theory_memo.md
+      - type: path
+        glob: quality_reports/theory/*/notation_glossary.md
+      - type: render
+    critic: theorist-critic
+    escalation_target: user
+    component: theory
+    quality_weight: 20
+    conditional: true
+    writes:
+      - manuscript
+      - quality_reports/theory/
+
+  theorist-critic:
+    role: critic
+    kind: agent
+    parallel_group: strategy
+    requires:
+      - type: section
+        file: manuscript
+        heading: Theory
+        producer: /strategize theory
+    produces:
+      - type: path
+        glob: quality_reports/reviews/theorist-critic_*.md
+    critic: none
+    escalation_target: user
+    component: theory
+    quality_weight: 0
+    conditional: true
+    writes:
+      - quality_reports/reviews/
+
+  # ── Execution ────────────────────────────────────────────────────────────
+  data-engineer:
+    role: creator
+    kind: agent
+    parallel_group: execution
+    requires:
+      - type: score
+        component: strategy
+        min: 80
+    produces:
+      - type: path
+        glob: data/raw/data_manifest.md
+      - type: render
+    critic: coder-critic
+    escalation_target: strategist-critic
+    component: code
+    quality_weight: 0
+    scored_under: code
+    conditional: false
+    writes:
+      - manuscript
+      - data/raw/data_manifest.md
+
+  coder:
+    role: creator
+    kind: agent
+    parallel_group: execution
+    requires:
+      - type: score
+        component: strategy
+        min: 80
+    produces:
+      - type: chunk
+        label_glob: tbl-*
+        min: 1
+      - type: chunk
+        label_glob: fig-*
+        min: 1
+      - type: render
+      - type: prose-check
+    critic: coder-critic
+    escalation_target: strategist-critic
+    component: code
+    quality_weight: 15
+    conditional: false
+    writes:
+      - manuscript
+
+  coder-critic:
+    role: critic
+    kind: agent
+    parallel_group: execution
+    requires:
+      - type: chunk
+        label_glob: tbl-*
+        min: 1
+        producer: /analyze
+    produces:
+      - type: path
+        glob: quality_reports/reviews/coder-critic_*.md
+    critic: none
+    escalation_target: strategist-critic
+    component: code
+    quality_weight: 0
+    conditional: false
+    writes:
+      - quality_reports/reviews/
+
+  writer:
+    role: creator
+    kind: agent
+    parallel_group: execution
+    requires:
+      - type: score
+        component: code
+        min: 80
+      - type: chunk
+        label_glob: tbl-*
+        min: 1
+        producer: /analyze
+      - type: render
+    produces:
+      - type: render
+      - type: prose-check
+    critic: writer-critic
+    escalation_target: user
+    component: manuscript
+    quality_weight: 10
+    conditional: false
+    writes:
+      - manuscript
+
+  writer-critic:
+    role: critic
+    kind: agent
+    parallel_group: execution
+    requires:
+      - type: render
+        producer: /write
+    produces:
+      - type: path
+        glob: quality_reports/reviews/writer-critic_*.md
+      - type: path
+        glob: quality_reports/reviews/claim_evidence_*.md
+    critic: none
+    escalation_target: user
+    component: manuscript
+    quality_weight: 0
+    conditional: false
+    writes:
+      - quality_reports/reviews/
+
+  # ── Peer review ──────────────────────────────────────────────────────────
+  editor:
+    role: infrastructure
+    kind: agent
+    parallel_group: peer-review
+    requires:
+      - type: score
+        component: manuscript
+        min: 80
+      - type: score
+        component: code
+        min: 80
+    produces:
+      - type: path
+        glob: quality_reports/peer_review_*/desk_review.md
+      - type: path
+        glob: quality_reports/peer_review_*/editorial_decision.md
+    critic: none
+    escalation_target: user
+    component: referees
+    quality_weight: 0
+    conditional: false
+    writes:
+      - quality_reports/peer_review_
+
+  domain-referee:
+    role: referee
+    kind: agent
+    parallel_group: peer-review
+    requires:
+      - type: path
+        glob: quality_reports/peer_review_*/desk_review.md
+        producer: /review --peer
+    produces:
+      - type: path
+        glob: quality_reports/peer_review_*/referee_domain.md
+    critic: none
+    escalation_target: editor
+    component: referees
+    quality_weight: 12.5
+    conditional: false
+    writes:
+      - quality_reports/peer_review_
+
+  methods-referee:
+    role: referee
+    kind: agent
+    parallel_group: peer-review
+    requires:
+      - type: path
+        glob: quality_reports/peer_review_*/desk_review.md
+        producer: /review --peer
+    produces:
+      - type: path
+        glob: quality_reports/peer_review_*/referee_methods.md
+    critic: none
+    escalation_target: editor
+    component: referees
+    quality_weight: 12.5
+    conditional: false
+    writes:
+      - quality_reports/peer_review_
+
+  # ── Presentation (advisory) ──────────────────────────────────────────────
+  storyteller:
+    role: creator
+    kind: agent
+    parallel_group: presentation
+    requires:
+      - type: score
+        component: manuscript
+        min: 80
+    produces:
+      - type: path
+        glob: talks/*_talk.qmd
+      - type: render
+        file: talks/*_talk.qmd
+    critic: storyteller-critic
+    escalation_target: writer
+    component: none
+    quality_weight: 0
+    conditional: false
+    writes:
+      - talks/
+
+  storyteller-critic:
+    role: critic
+    kind: agent
+    parallel_group: presentation
+    requires:
+      - type: path
+        glob: talks/*_talk.qmd
+        producer: /talk
+    produces:
+      - type: path
+        glob: quality_reports/reviews/storyteller-critic_*.md
+    critic: none
+    escalation_target: writer
+    component: none
+    quality_weight: 0
+    conditional: false
+    writes:
+      - quality_reports/reviews/
+
+  # ── Submission ───────────────────────────────────────────────────────────
+  verifier:
+    role: infrastructure
+    kind: agent
+    parallel_group: submission
+    requires:
+      - type: score
+        component: overall
+        min: 95
+    produces:
+      - type: path
+        glob: quality_reports/verification_report.md
+      - type: render
+      - type: prose-check
+    critic: none
+    escalation_target: user
+    component: replication
+    quality_weight: 5
+    conditional: false
+    writes:
+      - quality_reports/verification_report.md

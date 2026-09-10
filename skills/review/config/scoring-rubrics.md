@@ -10,9 +10,12 @@ Consolidated deduction tables from all critic agents. Each critic starts at 100 
 
 | Issue | Deduction |
 |-------|-----------|
-| Paper doesn't compile | -20 |
+| Manuscript does not render | -20 |
 | Causal language without identification (INV-8) | -20 |
-| No claim-source map (INV-22) | -15 |
+| Claim CONTRADICTED by its evidence (Claim–Evidence Table) | -25 per |
+| Claim UNSUPPORTED (no evidence in the manuscript) | -15 per |
+| Claim OVERSTATED | -10 per |
+| Claim UNVERIFIABLE | -5 per |
 | Numbers in text don't match tables (INV-11) | -10 per, max -30 |
 | Strategy section misrepresents the actual design | -15 |
 | Missing table notes on any table (INV-1) | -5 per, max -15 |
@@ -25,10 +28,8 @@ Consolidated deduction tables from all critic agents. Each critic starts at 100 
 | Voice tone mismatch (when style guide exists) | -10 |
 | AI vocabulary (3+ instances) | -2 per, max -10 |
 | Missing JEL codes or keywords (INV-6) | -5 |
-| Claim-source map entries missing | -5 per, max -20 |
-| Broken links in claim-source map | -10 per |
 | Sentence length median off by >5 words | -5 |
-| Wrong document class or formatting | -5 |
+| Format block violates `quarto-pdf.md`/`quarto-word.md` | -5 |
 | Uniform sentence length (no variation) | -5 |
 
 ### Minor (polish)
@@ -41,52 +42,43 @@ Consolidated deduction tables from all critic agents. Each critic starts at 100 
 | Rule of three | -3 |
 | Paragraph openings don't match style guide | -3 per, max -9 |
 | Unresolved references | -3 per |
-| Overfull hbox warnings | -1 per, max -5 |
+| Render warnings | -1 per, max -5 |
 
 ---
 
-## Coder-Critic (Code Review)
+## Coder-Critic (Manuscript Chunks)
+
+Starts at 100. The blocking table is `.claude/rules/quarto-empirical.md` "What the Coder-Critic
+Checks" — it is not restated here; cite it by row. Additional rows:
 
 ### Critical (strategic)
-
 | Issue | Deduction |
-|-------|-----------|
+|---|---|
 | Domain-specific bugs (clustering, estimand) | -30 |
-| Code doesn't match strategy memo | -25 |
-| Scripts don't run | -25 |
+| Chunks do not implement the strategy memo | -25 |
+| Render fails on any chunk | -25 |
 | Sign of main result implausible | -20 |
-| Hardcoded absolute paths | -20 |
 | Missing robustness checks from memo | -15 |
 | Wrong clustering level | -15 |
-| Optimizer didn't converge (structural) | -15 |
-| No paper-to-code naming map | -10 |
+| Optimizer did not converge (structural) | -15 |
+| Naming map absent from the setup chunk | -10 |
 
-### Major (code quality)
-
+### Major (numerical discipline)
 | Issue | Deduction |
-|-------|-----------|
-| No `set.seed()` / not reproducible | -10 |
-| Missing RDS saves | -10 |
+|---|---|
 | Float comparison with `==` | -10 |
-| No CDF clamping (when computing CDFs) | -10 |
-| No inverse link guards | -10 |
-| Magnitude implausible (10x literature) | -10 |
-| Missing outputs (tables/figures) | -10 |
-| Growing lists in loops (no pre-allocation) | -5 |
-| Missing function preconditions (`stopifnot`) | -5 |
+| No CDF clamping / no inverse-link guards | -10 |
+| Magnitude implausible (10× literature) | -10 |
+| Growing vectors in loops (INV-17) | -5 |
+| Missing `stopifnot()` preconditions on setup-chunk helpers | -5 |
 
-### Minor (polish)
-
+### Minor
 | Issue | Deduction |
-|-------|-----------|
-| Missing figure/table generation | -5 |
-| Non-reproducible output | -5 |
-| Stale outputs | -5 |
-| No documentation headers | -5 |
-| No project layout (no numbered scripts) | -5 |
-| Console output pollution | -3 |
-| Poor comment quality | -3 |
-| Inconsistent style | -2 |
+|---|---|
+| Stale cache (`fresh` predicate fails after a raw-file change) | -5 |
+| Chunk label not in the documented DAG | -3 |
+| Console output in a chunk (`print()` for status) | -3 |
+| Inconsistent naming | -2 |
 | Prohibited patterns (LOW severity) | -1 per |
 
 ---
@@ -140,7 +132,7 @@ The strategist-critic does not use a point-deduction rubric. Instead, it classif
 | | Orphan claim (stated in paper, not supported by any theorem) | -10 |
 | **Exposition** | Proof strategy missing | -3 |
 | | Appendix reference broken | -2 |
-| | Theorem environment doesn't match preamble | -2 |
+| | Theorem environment is not a Quarto `::: {#thm-…}` block | -2 |
 
 ---
 
@@ -165,21 +157,6 @@ The strategist-critic does not use a point-deduction rubric. Instead, it classif
 
 ---
 
-## Librarian-Critic (Literature Review)
-
-| Issue | Deduction |
-|-------|-----------|
-| Missing seminal paper in the field | -20 |
-| No coverage of methods literature | -15 |
-| Over-reliance on working papers (>50%) | -10 |
-| Missing recent papers (last 2 years) | -10 |
-| Scope too narrow | -10 |
-| No frontier map / gap identification | -10 |
-| Proximity scores inconsistent | -5 |
-| Missing BibTeX entries | -5 per paper |
-
----
-
 ## Explorer-Critic (Data Assessment Review)
 
 | Issue | Deduction |
@@ -191,6 +168,22 @@ The strategist-critic does not use a point-deduction rubric. Instead, it classif
 | Access timeline unrealistic | -10 |
 | Missing identification compatibility check | -10 |
 | No discussion of external validity | -5 |
+
+---
+
+## Lit-Critic (Literature Positioning)
+
+| Issue | Deduction |
+|---|---|
+| Seminal paper in the field missing | -20 |
+| Methods literature the strategy depends on not covered | -15 |
+| A paper in the local Zotero index on the same question is missing | -10 per, max -30 |
+| Over-reliance on working papers (>50%) | -10 |
+| Missing papers from the last 2 years / scooping risk unnamed | -10 |
+| Scope too narrow or too broad to position | -10 |
+| Frontier map lists rather than locates a gap | -10 |
+| Positioning does not survive the closest paper's redundancy sentence | -15 |
+| Proximity scores inconsistent | -5 |
 
 ---
 

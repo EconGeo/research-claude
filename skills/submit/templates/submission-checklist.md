@@ -14,17 +14,17 @@
 - [ ] Notation consistent throughout (INV-7)
 - [ ] Numbers in text match tables (INV-11)
 - [ ] Compiles cleanly with no warnings
-- [ ] `biblatex` + `biber`, not `natbib` (INV-9)
-- [ ] `hyperref` second-to-last, `cleveref` after (INV-10)
-- [ ] No `Figure~\ref{}` -- use `\cref{}` throughout
+- [ ] pandoc `@key` citations; `cite-method: biblatex` on the PDF path; no top-level `csl:` (INV-9)
+- [ ] When a preamble is supplied, hyperref second-to-last, cleveref after (INV-10)
+- [ ] No hardcoded figure/table numbers -- use `@fig-`/`@tbl-` cross-references throughout
 
 ## Replication Package
 - [ ] README follows AEA template
-- [ ] All scripts run from clean state
+- [ ] `scripts/acquire/*` run from a clean state
 - [ ] Data dictionary included
 - [ ] Computational requirements documented
 - [ ] License specified
-- [ ] Master script exists and runs end-to-end
+- [ ] `quarto render <manuscript>` runs end-to-end
 
 ## Submission Materials
 - [ ] Cover letter drafted

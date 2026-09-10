@@ -35,9 +35,9 @@ same thing everywhere. Different concepts get different symbols.
 **INV-8.** Every causal claim has a corresponding identification section. No causal
 language in descriptive papers.
 
-**INV-9.** Citations are pandoc `@key` syntax against the `bibliography:` field, with
-a `csl:`. For PDF output, `cite-method: biblatex`. Never raw `\citet{}` / `\citep{}`
-in prose — it renders as literal text in Word.
+**INV-9.** Citations are pandoc `@key` syntax against the `bibliography:` field. The
+PDF path uses `cite-method: biblatex` and has **no top-level `csl:`**; a `docx:`
+block carries its own APA `csl:`. Never raw `\citet{}` / `\citep{}` in prose <!-- residue:prohibition -->
 
 **INV-10.** Any custom LaTeX preamble supplied via `include-in-header:` loads
 `hyperref` second-to-last and `cleveref` immediately after it. Applies only when the
@@ -53,8 +53,8 @@ Panel labels ("Panel A: …") inside multi-panel figures are fine.
 
 **INV-13.** Tables and figures are produced by labelled chunks inside
 `manuscript_<project>.qmd` — `tbl-` prefix for tables, `fig-` for figures. Nothing is
-written to a file and included by hand; there is no `paper/tables/` or
-`paper/figures/`.
+written to a file and included by hand; there is no `paper/tables/` or <!-- residue:prohibition -->
+`paper/figures/`. <!-- residue:prohibition -->
 
 ## Code
 
@@ -70,8 +70,9 @@ or computation.
 **INV-17.** No growing vectors/lists in loops. Pre-allocate result containers or use
 vectorized operations.
 
-**INV-18.** Output files go to the path specified by the Output Organization setting
-in `CLAUDE.md`.
+**INV-18.** Code writes nothing outside the render's own `_cache/` and `_files/`
+directories. No chunk writes a file by hand; acquisition scripts write only to
+`data/raw/`.
 
 **INV-19.** No prohibited functions: `setwd()` / `os.chdir()` / `cd()`,
 `rm(list = ls())`, `install.packages()` in scripts, `attach()` / `detach()`.
@@ -105,11 +106,12 @@ kept rather than reused so older reports and reviews still resolve.
 
 | Invariant | Enforced by |
 |---|---|
-| INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required |
-| INV-14, INV-15, INV-16, INV-19 | lint hook + `verifier` |
-| INV-23, INV-24 | `coder-critic` Correctness Layer, against `data/raw/data_manifest.md` |
-| INV-9, INV-13 | `quarto render` fails or degrades visibly |
-| INV-1..INV-8, INV-10, INV-12, INV-17, INV-18, INV-20..INV-21 | `reviewer-judgment` — no script checks these |
+| INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required; verifier check 4b |
+| INV-14, INV-15, INV-16, INV-19 | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) + `coder-critic` (chunk-level: `set.seed()`, cache setup, `source()`) + verifier (mandatory gate) |
+| INV-23, INV-24 | `coder-critic` against `data/raw/data_manifest.md`; verifier check 7 (Submission mode) for INV-24 |
+| INV-9, INV-13 | `quarto render` fails or degrades visibly; writer-critic category 5 |
+| INV-18 | `coder-critic` category 13 (manuscript-model) |
+| INV-1..INV-8, INV-10, INV-12, INV-17, INV-20..INV-21 | `reviewer-judgment` — no script checks these |
 
 **`quarto render` exiting 0 enforces nothing about literals.** It proves every inline
 expression *evaluated*. Treating a clean render as proof of numerical consistency is

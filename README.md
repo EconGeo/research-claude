@@ -1,8 +1,8 @@
 # research-claude: AI-Powered Research Workstation
 
 A Quarto-native, multi-agent research pipeline for empirical academic work — 17 agents,
-19 skills and 15 rules, plus ZotPilot (Zotero MCP server), ai-audit (prose quality tools),
-and journal-digest (weekly literature monitor).
+17 skills and 19 rules, plus ZotPilot (Zotero MCP server) and ai-audit (prose quality
+tools).
 
 **This repo is the pipeline**, not a composer of other people's. It is installed into a
 paper project by *symlink*, so one edit here reaches every project at once.
@@ -23,13 +23,12 @@ paper project by *symlink*, so one edit here reaches every project at once.
 
 | Source | What it provides |
 |--------|-----------------|
-| **this repo** | The research pipeline itself: `agents/` (strategist, writer, coder, referees, editor, data-engineer, theorist, verifier and their critics), `skills/` (`/discover`, `/strategize`, `/analyze`, `/write`, `/review`, `/revise`, `/submit`, `/talk`, `/lit-position`, `/promote`, …), `rules/`, `references/`, `hooks/` |
+| **this repo** | The research pipeline itself: `agents/` (strategist, writer, coder, referees, editor, data-engineer, theorist, verifier and their critics), `skills/` (`/discover`, `/strategize`, `/analyze`, `/write`, `/review`, `/revise`, `/submit`, `/talk`, `/lit-position`, `/pipeline`, `/promote`, …), `rules/`, `references/`, `hooks/`, `seeds/` (scaffolding copied into new projects), `scripts/` (the four listed in `scripts/SHIPPED` install into a project; the rest are pipeline-dev tooling), `tests/` (`run_fixture.sh` + the unit suite) |
 | `EconGeo/ZotPilot` | Zotero MCP server — embeds your library into a local ChromaDB so Claude searches it semantically, ingests papers, and cross-references citations (our fork of [xunhe730/ZotPilot](https://github.com/xunhe730/ZotPilot)). Skills vendored in `zotpilot-skills/` |
-| `EconGeo/ai-audit` | Prose audit skills: `/humanize` (AI-voice tells) + `/verify-claims` (hallucination check) — live submodule |
-| `EconGeo/journal-digest` | Weekly journal monitor: RSS/CrossRef fetch + Claude in-session synthesis — live submodule |
+| `EconGeo/ai-audit` | Prose audit skills: `/humanize` (AI-voice tells) + `/verify-claims` (hallucination check) — vendored in `ai-audit/`, not a submodule |
 
-The agents originate in [clo-author](https://github.com/hugosantanna/clo-author) by Hugo
-Santanna, which research-claude was built on as a submodule until 2026-09-08. They are now
+The agents originate in [clo-author](https://github.com/hugosantanna/clo-author) by Hugo <!-- residue:historical -->
+Santanna, which research-claude was built on as a submodule until 2026-09-08. They are now <!-- residue:historical -->
 vendored and maintained here: de-LaTeXed for the Quarto pipeline, and enriched with the
 improvements that had accumulated in individual paper projects.
 
@@ -117,7 +116,6 @@ install.packages(c(
 ```bash
 git clone https://github.com/EconGeo/research-claude.git ~/Academic/research-claude
 cd ~/Academic/research-claude
-git submodule update --init      # top-level only — do NOT use --recursive
 
 # Link the pipeline into your project
 ./apply.sh --project-dir ~/path/to/your-project --link
@@ -156,11 +154,15 @@ None is ever overwritten if it already exists. The manuscript itself and
 `apply.sh` does not touch your Python environments or register MCP servers — those
 require judgment about paths (Steps 7–8).
 
-> **Submodules:** two, both small — `ai-audit` and `journal-digest`.
-> `git submodule update --init` (non-recursive) is all `apply.sh` needs. The ZotPilot
-> skills are **not** a submodule — they are vendored in `zotpilot-skills/`, and the MCP
-> server installs separately (Step 7), so cloning this repo does not drag in ZotPilot's
-> heavy Chrome-connector toolchain.
+> **No submodules.** Cloning this repo is enough — there is no `git submodule update`
+> step. `ai-audit` (agents + skills for `/humanize` and `/verify-claims`) and the
+> ZotPilot skills are both **vendored**, in `ai-audit/` and `zotpilot-skills/`
+> respectively, never a submodule. The ZotPilot MCP server itself installs separately
+> (Step 7, `pip install`), so cloning this repo does not drag in its heavy Chrome-connector
+> toolchain either. A submodule needs `git submodule update --init` and silently yields an
+> EMPTY directory when a clone skips that step — this repo used to carry two (`ai-audit`
+> and `journal-digest`); both are gone as of 2026-09-09, one vendored and one dropped
+> outright (see below).
 
 ### Coauthors and archival reproduction
 
@@ -180,6 +182,17 @@ manuscript was written with pipeline SHA abc123.*
 The two modes deliberately use **different checkouts**. Pinning the shared checkout
 would silently pin every project on your machine to one paper's locked commit.
 
+> **A lock pinned at or before commit `5d9fa0f`** (the last commit before `ai-audit` was
+> vendored) will silently install with `/humanize` and `/verify-claims` missing. At that
+> commit, `submodules/ai-audit` is still a submodule gitlink; a fresh, non-recursive
+> `git clone` (what `bootstrap-pipeline.sh` now does) checks it out as an **empty
+> directory**, and that old commit's `apply.sh` finds nothing under it and links
+> nothing — no error, nothing in the output beyond the `ai-audit/` line header. If a
+> project's `/humanize` or `/verify-claims` skill is unexpectedly absent, check
+> `.claude/pipeline.lock`'s `commit=` line: re-pin to a commit at or after `6c2d025`
+> (where `ai-audit/` is a real vendored directory, not a submodule) or run
+> `./bootstrap-pipeline.sh --tip` once to pick up main.
+
 ### How to change the pipeline
 
 | You want to… | Do this |
@@ -195,7 +208,7 @@ design exists to end.
 
 ### Rules installed into `.claude/rules/`
 
-Beyond the submodule agents and skills, research-claude ships its own pipeline rules that Claude reads as standing project conventions:
+Beyond the vendored ai-audit agents and skills, research-claude ships its own pipeline rules that Claude reads as standing project conventions:
 
 | Rule | What it enforces |
 |------|------------------|
@@ -474,39 +487,19 @@ Then in Chrome: `chrome://extensions/` → **Developer mode** on → **Load unpa
 
 ---
 
-## Step 9 — Set up journal-digest (optional)
+## Optional — Obsidian knowledge base (`/checkpoint`)
 
-```bash
-# Install with --with-digest flag
-./apply.sh --project-dir ~/path/to/your-project --with-digest
+If you keep an [Obsidian](https://obsidian.md) vault, `/checkpoint` can write into it,
+turning session wrap-up into a durable, cross-linked project journal: when you wrap a
+session, `/checkpoint` appends a journal entry to the matching Obsidian project note
+(plus the Obsidian Home.md row and daily-journal entry), alongside its usual memory +
+`SESSION_REPORT.md` updates.
 
-# Create the Python env
-micromamba create -n journal-digest python=3.12 -c conda-forge
-micromamba run -n journal-digest pip install -r ~/path/to/your-project/journal-digest/requirements.txt
-
-# Edit config.py with your journals, keywords, Zotero paths
-nano ~/path/to/your-project/journal-digest/config.py
-
-# Test
-micromamba run -n journal-digest python ~/path/to/your-project/journal-digest/run_gather.py --dry-run
-```
-
-See [EconGeo/journal-digest](https://github.com/EconGeo/journal-digest) for full setup including LaunchAgent (weekly scheduling).
-
----
-
-## Optional — Obsidian knowledge base (journal-digest + `/checkpoint`)
-
-If you keep an [Obsidian](https://obsidian.md) vault, two parts of the pipeline can write into it, turning Claude's session output into a durable, cross-linked knowledge base instead of a pile of dated files:
-
-1. **`/checkpoint` → project journal.** When you wrap a session, `/checkpoint` appends a journal entry to the matching Obsidian project note (plus a dashboard row and daily-journal entry), alongside its usual memory + `SESSION_REPORT.md` updates.
-2. **journal-digest → literature knowledge base.** After journal-digest produces a weekly digest (Step 9), the **`/obsidian-digest-sync`** skill files the synthesized digest into your vault — a preview-gated *Extract → Resolve → Preview → Push → Confirm* flow that writes nothing until you approve the manifest. Each notable paper becomes a note, `[[wikilink]]`-crosslinked to related papers, your prior work, **the datasets and variables it uses**, and the project it bears on. Over weeks this compounds into a navigable map of your field *and* the data behind it. Edit `.claude/skills/obsidian-digest-sync/references/TAG-TAXONOMY.md` to swap the example areas/concepts/datasets for your field's terms.
-
-Both are **opt-in and gated** — nothing touches your vault unless you configure it. If `.claude/state/obsidian-config.md` is absent or the Obsidian MCP isn't connected, `/checkpoint` silently skips the vault and only updates memory + scaffold files.
+This is **opt-in and gated** — nothing touches your vault unless you configure it. If `.claude/state/obsidian-config.md` is absent or the Obsidian MCP isn't connected, `/checkpoint` silently skips the vault and only updates memory + scaffold files.
 
 ### Setup
 
-1. **Connect a filesystem Obsidian MCP server (recommended).** Install [mcpvault](https://github.com/bitbonsai/mcpvault) — it reads and writes your vault directly on disk, so it needs **no Obsidian app running and no community plugins**. This is what the `/checkpoint` and journal-digest skills call. Register it in `.mcp.json` alongside ZotPilot, pointing at your vault root:
+1. **Connect a filesystem Obsidian MCP server (recommended).** Install [mcpvault](https://github.com/bitbonsai/mcpvault) — it reads and writes your vault directly on disk, so it needs **no Obsidian app running and no community plugins**. This is what `/checkpoint` calls. Register it in `.mcp.json` alongside ZotPilot, pointing at your vault root:
    ```json
    {
      "mcpServers": {
@@ -518,7 +511,7 @@ Both are **opt-in and gated** — nothing touches your vault unless you configur
    }
    ```
    The skills use this server's tools (`read_note`, `write_note`, `search_notes`, `list_all_tags`, …).
-2. **Optional — live-app server.** If you *also* want Claude to drive the **running** Obsidian app (execute commands, open files, periodic notes), install the **Local REST API** community plugin (Settings → Community plugins) and additionally register a REST-based server such as [mcp-obsidian](https://github.com/MarkusPfundstein/mcp-obsidian) as a *second* MCP server. This one **requires the Obsidian desktop app to be open** and is **not** needed for the knowledge-base workflows below.
+2. **Optional — live-app server.** If you *also* want Claude to drive the **running** Obsidian app (execute commands, open files, periodic notes), install the **Local REST API** community plugin (Settings → Community plugins) and additionally register a REST-based server such as [mcp-obsidian](https://github.com/MarkusPfundstein/mcp-obsidian) as a *second* MCP server. This one **requires the Obsidian desktop app to be open** and is **not** needed for the journal workflow above.
 3. Create the config from the template `apply.sh` installed to `.claude/state/obsidian-config.md.example`:
    ```text
    # In Claude Code, from your project:
@@ -528,37 +521,14 @@ Both are **opt-in and gated** — nothing touches your vault unless you configur
    ```
    The real `obsidian-config.md` is gitignored by design — your vault paths and mappings stay local.
 
-### The digest → crosslinked knowledge base loop
-
-```
-journal-digest (Tier 1, automated)  →  digests/YYYY-MM-DD_raw.md
-        ↓  open in Claude Code (Tier 2), Obsidian MCP connected
-Claude synthesizes and files into the vault:
-   • one note per notable paper (abstract, why it matters, connections)
-   • a ## Data block: dataset(s) as [[wikilinks]] + key variables used
-   • [[wikilinks]] to related papers and your MY_PUBLICATIONS
-   • linked from the relevant Obsidian project note
-        ↓  repeat each week
-A cumulative, navigable literature map — and a data-discovery index over it
-```
-
-**Each note records the data behind the paper.** Tier-2 analysis (Step 9's prompt) extracts the dataset(s) and key variables each article uses; the filing step writes them into a `## Data` block, with datasets as `[[wikilinks]]`:
-
-```markdown
-## Data
-- **Datasets:** [[HMDA]], [[Zillow ZTRAX]]
-- **Key variables:** loan-denial rate, LTV, census-tract median income
-- **Unit / coverage:** census tract · 2010–2020
-- **Access:** public (FFIEC) · proprietary (Zillow)
-```
-
-Because each dataset is a wikilink, Obsidian's backlinks turn `[[HMDA]]` into a hub that lists **every paper you've filed that used HMDA**. So when you start a project needing data on a topic, you open the dataset note (or search a variable) and immediately see what's already been used and where to get it — data discovery, not just literature discovery. To do the same for papers **already** in your library — not just newly digested ones — run `/ztp-data-tag`, which extracts the same fields and writes them back to Zotero as tags + a Data note (piloting one collection first).
-
-Because the notes are crosslinked, value compounds: a new paper on, say, zoning supply elasticity automatically connects to everything — and every dataset — you've already filed on the topic. This is a Claude-in-session workflow enabled by the Obsidian MCP — journal-digest writes plain markdown; Claude does the synthesis and filing.
+To build a data-discovery index over your **existing** library — not through the vault,
+directly against Zotero — run `/ztp-data-tag`: it extracts each paper's datasets and key
+variables and writes them back as tags + a structured Data note, piloting one collection
+first. See its entry in the skills table below.
 
 ---
 
-## Step 10 — Verify the full stack
+## Step 9 — Verify the full stack
 
 After all steps, check:
 
@@ -570,7 +540,6 @@ After all steps, check:
 - [ ] `/humanize` and `/verify-claims` skills available
 - [ ] `quarto render` produces output from a test `.qmd` file
 - [ ] `xelatex` compiles a test `.tex` file
-- [ ] `journal-digest` (if installed): `python run_gather.py --dry-run` completes without errors
 - [ ] Obsidian (if used): `.claude/state/obsidian-config.md` exists and the Obsidian MCP tools appear in `/tools`
 
 ---
@@ -581,10 +550,12 @@ Once installed, the main entry points are:
 
 | Skill | When to use |
 |-------|------------|
+| `/pipeline` | Run the whole pipeline end to end, or resume it — see [The pipeline driver](#the-pipeline-driver) below |
 | `/ztp-research` | Find and ingest new papers into your Zotero library |
 | `/ztp-review` | Synthesize papers already in your library |
 | `/ztp-data-tag` | Backfill dataset/variable tags + a structured Data note onto papers already in your Zotero library (pilots one collection first) |
-| `/seed-papers` | Pre-search your Zotero library to seed a bibliography before `/discover lit` |
+| `/seed-papers` | Pre-search your Zotero library to seed `references.bib` before `/lit-position` |
+| `/lit-position` | Position the project against the literature (frontier map + positioning claim) |
 | `/strategize` | Design your identification strategy |
 | `/write` | Draft paper sections |
 | `/review-paper` | Manuscript review (single-pass, adversarial, or simulated peer review) |
@@ -592,9 +563,53 @@ Once installed, the main entry points are:
 | `/humanize` | Detect AI-voice tells before submission |
 | `/analyze` | End-to-end data analysis (R / Python / Julia) |
 
-Each skill's `SKILL.md` in `skills/` is its own reference. `/promote` and
-`/lit-position` are research-claude's own; the rest were vendored from clo-author on
+Each skill's `SKILL.md` in `skills/` is its own reference. `/promote`, `/lit-position` <!-- residue:historical -->
+and `/pipeline` are research-claude's own; the rest were vendored from clo-author on <!-- residue:historical -->
 2026-09-08 and rewritten for the Quarto pipeline.
+
+---
+
+## The pipeline driver
+
+`/pipeline` runs the research pipeline end to end, or resumes it after a break. It
+never hand-evaluates whether a stage is ready: it reads `rules/registry.yaml` — the
+declared stages, their `REQUIRES`/`PRODUCES`, component weights, and escalation
+targets — through `scripts/pipeline.py`, dispatches that stage's creator → critic
+agent pair, and holds an approval gate before moving on.
+
+```bash
+/pipeline status                    # what's done, what's next, current score
+/pipeline run --until write --yes   # run through the write stage, no gate pauses
+/pipeline resume                    # after /compact or a new session
+```
+
+Stages run in `REQUIRES` order, never a hardcoded sequence: `setup` → `literature` →
+`data` → `strategy` → `theory` (conditional) → `analyze` → `write` → `review` →
+`submit`, with `talk` parallel and advisory.
+
+- **The registry**, `rules/registry.yaml`, is the single declared source for which
+  stage needs which artifact, the creator/critic pair for each, and the weights that
+  roll up into the overall score. `/pipeline` reads it; it never encodes the graph
+  itself.
+- **State** lives in `quality_reports/pipeline_state.json` (seeded from
+  `templates/pipeline-state.json`) — per-component scores, strikes, and what is
+  currently blocked. It is the source of truth; the research journal is written
+  from it, not the other way around.
+- **The dispatch log**, `quality_reports/agent_dispatch.jsonl`, is written by
+  `hooks/dispatch-log.py` on every agent dispatch. `post <creator>` checks a stage's
+  entries here to confirm its critic actually ran before letting the pipeline advance.
+- **`tests/run_fixture.sh`** is the end-to-end check: it copies `tests/fixture-project/`
+  into a scratch directory, commits it, and runs the mechanical tier (no LLM calls,
+  a simulated dispatch log); `--live` additionally drives a real `claude -p
+  '/pipeline ...'` run through the copy. Every check is individually named so a
+  failure can be cited directly.
+
+A stage skill can still be invoked standalone (e.g. running `/write` directly rather
+than through `/pipeline`) — it skips the `pre` dependency check but never skips its
+critic, and still writes to the dispatch log and state file, so a later `/pipeline`
+run sees what happened. Escalation is three strikes per creator→critic pair, then the
+registry's named `ESCALATION_TARGET` with a specific question — never a disagreement.
+See `skills/pipeline/SKILL.md` for the full contract.
 
 ---
 
@@ -612,42 +627,62 @@ When you kick off a new project, Claude will ask:
 
 If ZotPilot is already indexed, Claude records the status in your project `CLAUDE.md` and moves on. If not, it walks you through `/ztp-setup` before starting the Discovery phase.
 
-### At literature search (`/discover lit`)
+### At literature search (`/lit-position`)
 
-Before dispatching the librarian agent to search the web, Claude will ask:
+`/discover lit` is a pointer now — the real work happens in **`/lit-position`**, which
+runs in the main session and holds ZotPilot access directly (D3). Optionally seed first:
 
-> *"Do you want me to search your Zotero library first for papers you already have on this topic? This seeds the bibliography with your existing anchors and tells the librarian what's already covered."*
+> *"Run `/seed-papers [topic]` to pre-search your Zotero library before `/lit-position`?
+> This writes your existing anchors to `references.bib` so the search doesn't
+> re-discover what you already have."*
 
 If yes, the workflow is:
 
 ```
-1. Claude searches ChromaDB via ZotPilot MCP for the core topic
+1. /seed-papers searches ChromaDB via ZotPilot MCP for the core topic
 2. Shows you a ranked candidate table — title, year, journal, relevance
 3. You confirm which papers to include
-4. Claude exports BibTeX entries → bibliography_base.bib
-5. Claude writes annotation summaries → quality_reports/literature/{project}/zotero_seed.md
-6. Librarian agent reads those files, sees what's covered, extends outward via web search
+4. Claude exports BibTeX entries → references.bib
 ```
 
-**No PDFs are copied.** Papers stay indexed in ChromaDB/Zotero. The `bibliography_base.bib` file is the handoff — it tells the librarian what anchor papers already exist so it fills genuine gaps rather than re-discovering what you already have.
+Then `/lit-position`:
 
-### Why the librarian can't query ChromaDB directly
+```
+1. ztp-research: search the local Zotero index first (rules/literature-search-order.md),
+   ingest only what the library lacks
+2. ztp-review: synthesize claims and passages from the local corpus
+3. Writes annotated_bibliography.md, frontier_map.md, positioning.md
+4. Dispatches lit-critic — an independent, scored review of all three artifacts (D-15)
+```
 
-The librarian agent's tools are `Read, Write, Grep, Glob, WebSearch, WebFetch` — it has no MCP access and cannot query ChromaDB. Only the main Claude session (the one you're talking to) can hit ZotPilot. The `bibliography_base.bib` + `zotero_seed.md` files are the bridge:
+**No PDFs are copied by the seed step.** Papers stay indexed in ChromaDB/Zotero.
+`references.bib` is the handoff — it tells `/lit-position` what anchor papers already
+exist so it fills genuine gaps rather than re-discovering what you already have.
+
+### Why there's no bridge file anymore
+
+The retired pipeline dispatched a restricted-tool **librarian agent** (`Read, Write,
+Grep, Glob, WebSearch, WebFetch` — no MCP access) that could not query ChromaDB
+itself, so a `bibliography_base.bib` + `zotero_seed.md` hand-off file was the only way
+results reached it. `/seed-papers` and `/lit-position` are **skills**, not agent
+dispatches — they run in the main session and can call `mcp__zotpilot__*` tools
+directly. The only file-based hand-off left is `references.bib` itself, and it exists
+because the manuscript's bibliography needs a file on disk, not because a
+tool-restricted agent needs one:
 
 ```
 ChromaDB / Ollama embeddings
-    ↓  main session queries via ZotPilot MCP
-bibliography_base.bib  +  zotero_seed.md   ← written before librarian runs
-    ↓  librarian reads via Read tool
-Web search extends outward from known anchors
+    ↓  main session queries via ZotPilot MCP — no bridge file required
+references.bib          ← written by /seed-papers, read by /lit-position and /write
     ↓
-quality_reports/literature/{project}/annotated_bibliography.md
+quality_reports/literature/{project}/annotated_bibliography.md, frontier_map.md, positioning.md
+    ↓
+lit-critic reviews all three
 ```
 
 ### What `master_supporting_docs/` is for
 
-The `master_supporting_docs/` folder exists for papers **not in your Zotero library** — manually downloaded PDFs, unpublished working papers, draft manuscripts a colleague sent you. The librarian can read these as full text. For anything already indexed in ChromaDB, `bibliography_base.bib` is the right path and no files need to move.
+The `master_supporting_docs/` folder exists for papers **not in your Zotero library** — manually downloaded PDFs, unpublished working papers, draft manuscripts a colleague sent you. `/lit-position` can read these as full text via `Read`/`Glob`. For anything already indexed in ChromaDB, `references.bib` is the right path and no files need to move.
 
 ---
 
@@ -655,11 +690,15 @@ The `master_supporting_docs/` folder exists for papers **not in your Zotero libr
 
 ```bash
 cd research-claude
-git submodule update --remote            # pull latest from all upstreams
-./apply.sh --update --project-dir ~/path/to/your-project
+git pull                                                    # pull the latest pipeline
+./apply.sh --project-dir ~/path/to/your-project --link      # pick up newly added items
 ```
 
-`apply.sh --update` runs `git submodule update --remote` before installing, so you always get the latest version of each submodule.
+Editing propagates the moment you save (D8) — the `apply.sh --link` above is only for
+*membership*: per-item symlinks don't create a link for something added upstream until
+`apply.sh` runs again in the project. To refresh the vendored trees themselves —
+distinct from research-claude's own commits — run `./scripts/sync-zotpilot-skills.sh` and
+`./scripts/sync-ai-audit.sh`.
 
 ---
 
@@ -679,13 +718,6 @@ rm -rf ~/.local/share/zotpilot/            # removes ChromaDB index
 ```
 Also remove the **ZotPilot Connector** from Chrome: open `chrome://extensions/` and click **Remove** on the ZotPilot Connector entry.
 
-**Remove journal-digest:**
-```bash
-micromamba env remove -n journal-digest
-rm -rf ~/path/to/your-project/journal-digest/
-launchctl unload ~/Library/LaunchAgents/com.YOUR_USERNAME.journal-digest.plist  # if scheduled
-```
-
 No global state remains after these steps.
 
 ---
@@ -694,13 +726,12 @@ No global state remains after these steps.
 
 ```
 Layer 0 — Upstream (not owned)
-├── hugosantanna/clo-author        origin of the vendored agents (forked 2026-09-08; no longer a dependency)
+├── hugosantanna/clo-author        origin of the vendored agents (forked 2026-09-08; no longer a dependency) <!-- residue:historical -->
 └── xunhe730/ZotPilot              Zotero MCP server (upstream)
 
 Layer 1 — Custom tools (each repo owns its versioning)
 ├── EconGeo/ZotPilot               fork: multi-library indexing + token-aware chunking + bge-large/Ollama + BBT 7+  (server: pip-installed; skills: vendored)
-├── EconGeo/ai-audit               /humanize + /verify-claims + ai-disclosure   (submodule)
-└── EconGeo/journal-digest         weekly journal monitor (RSS + CrossRef)       (submodule)
+└── EconGeo/ai-audit               /humanize + /verify-claims                    (vendored, not a submodule)
 
 Layer 2 — This repo (compose via apply.sh)
 └── EconGeo/research-claude        ← you are here
@@ -708,24 +739,27 @@ Layer 2 — This repo (compose via apply.sh)
 
 ### Why link instead of copy?
 
-`research-claude` pins `ai-audit` and `journal-digest` to tested commits via git
-submodules. ZotPilot is handled differently: its server installs separately (Step 7,
-`pip install` from the fork), and its Claude skills are **vendored** in
-`zotpilot-skills/` — ~68 KB of skill files instead of the fork's 224 MB Chrome
-connector.
+`research-claude` carries no git submodules — it used to carry two (`ai-audit` and
+`journal-digest`), and both are gone. A submodule needs `git submodule update --init` and
+silently yields an EMPTY directory when a clone or a coauthor skips that step, which
+defeats the point of a public template a coauthor bootstraps with a clone and no access
+grant. `ai-audit`'s agents and skills are **vendored** in `ai-audit/` instead — the same
+treatment ZotPilot's Claude skills already got in `zotpilot-skills/` (~68 KB of skill
+files instead of the fork's 224 MB Chrome connector; ZotPilot's *server* still installs
+separately, Step 7, `pip install` from the fork). `journal-digest` — a standalone tool,
+not part of this pipeline — was dropped outright.
 
 The pipeline itself lives *here*, and `apply.sh --link` installs it by symlink:
 
 ```bash
 git clone https://github.com/EconGeo/research-claude.git ~/Academic/research-claude
-cd ~/Academic/research-claude && git submodule update --init   # two small submodules
+cd ~/Academic/research-claude
 ./apply.sh --project-dir ~/my-project --link
 ```
 
 Upgrading is `git pull` — every linked project is updated the moment it lands, with no
-per-project re-install. For the submodules,
-`git submodule update --remote && ./apply.sh --update --project-dir ~/my-project --link`;
-`./scripts/sync-zotpilot-skills.sh` refreshes the vendored ZotPilot skills.
+per-project re-install. `./scripts/sync-zotpilot-skills.sh` and `./scripts/sync-ai-audit.sh`
+refresh the two vendored trees from their upstream repos.
 
 **Why this replaced copying.** research-claude used to *copy* three sources into each
 project's `.claude/`. Six papers held six full copies, and value flowed out of the

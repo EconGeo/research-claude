@@ -7,14 +7,14 @@
 #
 # Run it from a paper repo, or point it anywhere:
 #   ./check_install.sh                       # $PWD
-#   ./check_install.sh --project-dir ~/Research/BRI
+#   ./check_install.sh --project-dir ~/Research/<project>
 #   ./check_install.sh --all                 # every project under $RESEARCH_DIR
 #
 # Exit 0 = this project's pipeline is correctly installed.
 #
 # Why this exists. Per-item symlinks (D9) propagate EDITS instantly but not
 # MEMBERSHIP: a file added upstream gets no link here until apply.sh runs again.
-# Nothing surfaced that, and POGM4 silently sat without rules/session-handoff.md
+# Nothing surfaced that, and one project silently sat without rules/session-handoff.md
 # for a day. Separately, five of six repos had their symlinks committed — gitignore
 # does not untrack what is already in the index — which hands a coauthor a clone
 # full of dangling machine-specific links. Both are invisible in normal use and
@@ -33,7 +33,7 @@ done
 
 # Linked dirs the pipeline owns. settings.json / references / state are
 # project-owned or installed by another mechanism and are not checked here.
-LINKED=(skills agents rules hooks scripts)
+LINKED=(skills agents rules hooks scripts templates)
 
 fail=0
 
@@ -75,6 +75,16 @@ check_project() {
     bad checkout "cannot resolve the research-claude checkout from any link"; return
   fi
   ok checkout "$RC"
+
+  # ── 0. The shared checkout is on main or a detached lock SHA ─────────────
+  # Any `git checkout <branch>` in the shared tree re-points all six papers at once.
+  # Set RESEARCH_CLAUDE_ALLOW_BRANCH=1 only while a named canary is deliberately linked
+  # to a worktree; that downgrades the FAIL to a named WARN.
+  local br_rc; br_rc="$(git -C "$RC" symbolic-ref -q --short HEAD 2>/dev/null || echo DETACHED)"
+  if [[ "$br_rc" == "main" ]]; then ok branch "checkout on main"
+  elif [[ "$br_rc" == "DETACHED" && "$(git -C "$RC" rev-parse HEAD)" == "$(sed -n 's/^commit=//p' "$P/.claude/pipeline.lock" 2>/dev/null)" ]]; then ok branch "detached at the lock SHA"
+  elif [[ "${RESEARCH_CLAUDE_ALLOW_BRANCH:-0}" == "1" ]]; then warn branch "checkout on '$br_rc' — allowed by RESEARCH_CLAUDE_ALLOW_BRANCH=1"
+  else bad branch "checkout is on '$br_rc', not main and not the lock SHA"; fi
 
   # ── 1. No dangling links ──────────────────────────────────────────────────
   local dangling
@@ -118,13 +128,14 @@ check_project() {
       [[ -e "$dest/$name" || -L "$dest/$name" ]] || missing+=("$2/$name")
     done
   }
-  local d; for d in skills agents rules hooks; do want "$RC/$d" "$d"; done
-  want "$RC/submodules/ai-audit/skills" skills
-  want "$RC/submodules/ai-audit/agents" agents
-  want "$RC/submodules/ai-audit/rules"  rules
+  local d; for d in skills agents rules hooks templates; do want "$RC/$d" "$d"; done
+  want "$RC/ai-audit/skills" skills
+  want "$RC/ai-audit/agents" agents
   want "$RC/zotpilot-skills" skills true
-  [[ -f "$RC/scripts/prose_number_check.py" && ! -e "$P/.claude/scripts/prose_number_check.py" ]] \
-    && missing+=("scripts/prose_number_check.py")
+  if [[ -f "$RC/scripts/SHIPPED" ]]; then
+    while IFS= read -r s; do [[ -z "$s" || ! -f "$RC/scripts/$s" ]] && continue
+      [[ -e "$P/.claude/scripts/$s" || -L "$P/.claude/scripts/$s" ]] || missing+=("scripts/$s"); done < "$RC/scripts/SHIPPED"
+  fi
 
   if [[ ${#missing[@]} -gt 0 ]]; then
     bad membership "${#missing[@]} upstream item(s) never linked here — run ./bootstrap-pipeline.sh --tip"
@@ -181,6 +192,47 @@ check_project() {
       warn lock "records ${locked:0:7}, checkout is at ${head:0:7} (${behind:-?} commits later) — refresh before submission"
     fi
   fi
+  # ── 7. Manuscript declared (D-8) ──────────────────────────────────────────
+  # Every predicate, hook and skill resolves the manuscript through CLAUDE.md.
+  local decl; decl="$(grep -cE '^manuscript:\s*\S+\.qmd\s*$' "$P/CLAUDE.md" 2>/dev/null || true)"; decl="${decl:-0}"
+  if [[ "$decl" -eq 1 ]]; then
+    local mf; mf="$(sed -nE 's/^manuscript:[[:space:]]*([^[:space:]]+\.qmd)[[:space:]]*$/\1/p' "$P/CLAUDE.md")"
+    [[ -f "$P/$mf" ]] && ok manuscript-declared "$mf" || bad manuscript-declared "CLAUDE.md declares $mf but it does not exist"
+  elif [[ "$decl" -eq 0 ]]; then
+    if [[ -n "$(find "$P" -maxdepth 2 -name '*.qmd' -not -path '*/talks/*' -not -path '*/explorations/*' -print -quit)" ]]; then
+      bad manuscript-declared "no 'manuscript: <file>.qmd' line in CLAUDE.md"
+    else warn manuscript-declared "no manuscript yet — /pipeline refuses until one is declared"; fi
+  else bad manuscript-declared "CLAUDE.md declares $decl manuscripts; exactly one is required"; fi
+
+  # ── 8. gitignore covers the linked dirs ───────────────────────────────────
+  local gi_missing=() pat
+  for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' 'quality_reports/agent_dispatch.jsonl'; do
+    grep -qxF "$pat" "$P/.gitignore" 2>/dev/null || gi_missing+=("$pat")
+  done
+  [[ ${#gi_missing[@]} -eq 0 ]] && ok gitignore-covers || bad gitignore-covers "missing lines: ${gi_missing[*]}"
+
+  # ── 9. State file is schema-valid when present ────────────────────────────
+  if [[ -f "$P/quality_reports/pipeline_state.json" ]]; then
+    if python3 "$RC/scripts/pipeline.py" --root "$P" state validate >/dev/null 2>&1; then ok state-valid
+    else bad state-valid "quality_reports/pipeline_state.json fails pipeline.py state validate"; fi
+  else warn state-valid "no pipeline_state.json yet"; fi
+
+  # -- 10. Hooks the shipped skills depend on are wired ----------------------
+  # A linked hook does nothing until settings.json names it, so membership is not
+  # enough: dispatch-log.py feeds the log that pipeline.py's `critic-ran` reads, and
+  # critic-pairing.py is what makes a session notice it skipped a critic.
+  # protect-files.sh stays deliberately unwired (R-7) -- it is opt-in per project.
+  local sj="$P/.claude/settings.json" hw_missing=() h
+  if [[ -f "$sj" ]] && command -v jq >/dev/null 2>&1; then
+    for h in session-guard.py dispatch-log.py critic-pairing.py; do
+      jq -e --arg h "$h" '[.hooks[]?[]?.hooks[]?.command // empty] | map(select(contains($h))) | length > 0' \
+        "$sj" >/dev/null 2>&1 || hw_missing+=("$h")
+    done
+    if jq -e '[.hooks[]?[]?.hooks[]?.command // empty] | map(select(contains("post-merge"))) | length > 0' \
+      "$sj" >/dev/null 2>&1; then hw_missing+=("post-merge.sh is a git hook, not a Claude hook"); fi
+    [[ ${#hw_missing[@]} -eq 0 ]] && ok hooks-wired || bad hooks-wired "${hw_missing[*]}"
+  else warn hooks-wired "no settings.json or no jq"; fi
+
   [[ -f "$P/bootstrap-pipeline.sh" ]] && ok bootstrap || bad bootstrap "bootstrap-pipeline.sh missing"
 }
 

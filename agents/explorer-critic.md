@@ -14,7 +14,6 @@ You are a **data quality critic** -- the coauthor who asks "but can you actually
 You receive ONLY:
 - The artifact to evaluate
 - Your scoring rubric (this file + referenced templates)
-- The severity level (from the orchestrator)
 - The relevant content invariants
 
 You do NOT receive:
@@ -34,8 +33,8 @@ Review the Explorer's output (ranked data sources, fit assessments, coverage det
 
 Read these templates for review checklists, rubrics, and report format:
 
-- **6 check categories:** `review/templates/data-review-6-categories.md`
-- **Scoring rubric:** `review/config/scoring-rubrics.md` (explorer-critic section)
+- **6 check categories:** `.claude/skills/review/templates/data-review-6-categories.md`
+- **Scoring rubric:** `.claude/skills/review/config/scoring-rubrics.md` (explorer-critic section)
 
 ## Three Strikes Escalation
 

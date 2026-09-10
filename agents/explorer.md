@@ -22,7 +22,7 @@ Given a research idea, search for relevant data sources, evaluate their fit, and
 - **Survey data:** NLSY, PSID, HRS, Add Health, etc.
 - **International:** World Bank, OECD, Eurostat
 - **Novel/unconventional:** satellite imagery, web scraping, private firms
-- **From related papers:** data used in the Librarian's bibliography
+- **From related papers:** data used in the papers in `quality_reports/literature/<project>/annotated_bibliography.md` (from `/lit-position`)
 
 ## For Each Data Source, Document
 

@@ -1,8 +1,8 @@
 ---
 name: review
-description: All quality reviews — routes to appropriate critics based on target file type and flags. Replaces /paper-excellence, /proofread, /econometrics-check, /review-r, /review-paper.
+description: All quality reviews — routes to appropriate critics based on target file type and flags. Replaces the old paper-excellence, proofread, econometrics-check, review-r and review-paper commands.
 argument-hint: "[file path] Options: --peer [journal], --stress [journal], --methods, --theory [target], --proofread, --code [file], --replicate [language], --all"
-allowed-tools: Read,Grep,Glob,Write,Bash,Task
+allowed-tools: Read,Grep,Glob,Write,Bash,Agent
 ---
 
 # Review
@@ -15,10 +15,10 @@ Unified review command that routes to the appropriate critic agents based on the
 
 ## Routing Logic
 
-### Auto-detect by file type
-- `.tex` paper file → **Comprehensive review** (writer-critic + strategist-critic + Verifier)
-- `.R`, `.py`, `.do`, `.jl` file → **Code review** (coder-critic standalone, categories 4-12)
-- `.tex` talk file (in talks/) → **Talk review** (storyteller-critic)
+### Auto-detect by target
+- the declared manuscript (`python3 .claude/scripts/pipeline.py manuscript`) or no file → **Comprehensive review** (writer-critic + strategist-critic + verifier)
+- a file under `scripts/acquire/` or `explorations/` (`.R`, `.py`, `.jl`, `.qmd`) → **Code review** (coder-critic standalone)
+- `talks/*.qmd` → **Talk review** (storyteller-critic)
 
 ### Explicit flags (override auto-detect)
 - `--peer` `[journal]` → **Full peer review** (editor desk review → referee dispatch → editorial decision)
@@ -28,19 +28,19 @@ Unified review command that routes to the appropriate critic agents based on the
 - `--theory` `[target]` → **Proof audit** (theorist-critic standalone, 4-phase review — logical validity, assumption minimality, citations, linkage)
 - `--proofread` → **Manuscript polish** (writer-critic standalone, 6 categories)
 - `--code` `[file]` → **Code review** (coder-critic standalone, categories 4-12)
-- `--replicate` `[language]` → **Cross-language replication** (Coder re-implements in target language + coder-critic + comparison)
+- `--replicate` `[language]` → **Cross-language replication** (Coder re-implements the manuscript's estimation chunks + coder-critic + comparison against tolerances)
 - `--all` or no file → **Paper excellence** (all critics in parallel + weighted score — theorist-critic included when a theory section is present)
 
 ---
 
 ## Mode Details
 
-### Comprehensive Review (default for .tex paper)
+### Comprehensive Review (default for the declared manuscript)
 Dispatch in parallel:
-1. **strategist-critic** — causal design audit (4 phases)
-2. **writer-critic** — manuscript polish (6 categories)
-3. **Verifier** — compilation check
-Compute weighted aggregate score.
+1. **strategist-critic** — causal design audit (4 phases). Save report to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --report quality_reports/reviews/strategist-critic_<date>.md`.
+2. **writer-critic** — manuscript polish (6 categories). Save report to `quality_reports/reviews/writer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --report quality_reports/reviews/writer-critic_<date>.md`.
+3. **verifier** — render + prose check. Save report to `quality_reports/verification_report.md`. Record: `python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report quality_reports/verification_report.md`.
+Compute weighted aggregate score from the recorded component scores.
 
 ### Full Peer Review (`--peer [journal]`)
 
@@ -93,33 +93,22 @@ The editor:
 3. Produces a decision letter: Accept / Minor Revisions / Major Revisions / Reject
 4. Lists MUST address, SHOULD address, and MAY push back items
 
+Record: `python3 .claude/scripts/pipeline.py state record-score referees <score> --critic editor --report quality_reports/peer_review_<manuscript-stem>/editorial_decision.md`.
+
 #### Save Reports
-Save all outputs to `quality_reports/reviews/`:
-- `YYYY-MM-DD_desk_review.md` (Phase 1)
-- `YYYY-MM-DD_referee_domain.md` (Phase 2)
-- `YYYY-MM-DD_referee_methods.md` (Phase 2)
-- `YYYY-MM-DD_editorial_decision.md` (Phase 3)
+Save all outputs to `quality_reports/peer_review_<manuscript-stem>/`:
+- `desk_review.md` (Phase 1)
+- `referee_domain.md` (Phase 2)
+- `referee_methods.md` (Phase 2)
+- `editorial_decision.md` (Phase 3)
 
 Log the referee assignments (dispositions + pet peeves) in the editorial decision so the user can re-run with different combinations.
-
-#### Generate HTML Report
-After saving markdown reports, generate the interactive HTML version and refresh the dashboard:
-
-```bash
-python3 scripts/generate_html_report.py peer-review \
-  quality_reports/reviews/YYYY-MM-DD_referee_domain.md \
-  quality_reports/reviews/YYYY-MM-DD_referee_methods.md \
-  quality_reports/reviews/YYYY-MM-DD_editorial_decision.md
-python3 scripts/generate_dashboard.py
-```
-
-Open the HTML report for the user: `open quality_reports/reviews/YYYY-MM-DD_peer_review.html`
 
 ### R&R Second Round (`--peer --r2 [journal]`)
 
 Continues the review cycle after the author has revised the paper.
 
-1. **Load prior review state** — read previous referee reports and editorial decision from `quality_reports/reviews/`
+1. **Load prior review state** — read previous referee reports and editorial decision from `quality_reports/peer_review_<manuscript-stem>/`
 2. **Skip desk review** — the paper was already accepted for review
 3. **Same referees** — reload the same dispositions and pet peeves from round 1
 4. **Referee R&R mode** — each referee receives their previous report alongside the revised manuscript:
@@ -134,7 +123,7 @@ the original — improvement matters.
 They check whether each concern was: Resolved / Partially resolved / Not addressed. They may flag new concerns from the revisions.
 
 5. **Editor R&R decision** — Round 2 allows Accept/Minor/Major/Reject. Round 3 allows Accept/Minor/Reject only. Max 3 rounds total — editor's patience runs out, just like real life.
-6. **Save reports** with `_r2` or `_r3` suffix to `quality_reports/reviews/`
+6. **Save reports** with `_r2` or `_r3` suffix to `quality_reports/peer_review_<manuscript-stem>/` (e.g., `editorial_decision_r2.md`)
 
 ### Hostile Stress Test (`--stress [journal]`)
 
@@ -151,7 +140,7 @@ you otherwise. Be specific about what would change your mind.
 
 This is for pre-submission stress testing. If the paper survives two hostile referees, it's ready.
 
-### Code Review (`--code` or auto-detect .R/.py/.do/.jl)
+### Code Review (`--code` or auto-detect .R/.py/.jl/.qmd under `scripts/acquire/` or `explorations/`)
 
 **Step 1: Mechanical lint** — run the grep-based linter first:
 ```bash
@@ -171,19 +160,7 @@ Include the lint report in the coder-critic's input so it can skip already-flagg
 | 2 | Estimand alignment | Does code estimate what the paper claims? |
 | 3 | Specification match | Do controls, fixed effects, and samples match the paper? |
 
-**Code quality (categories 4-12) — always run in standalone mode:**
-
-| # | Category | What It Checks |
-|---|----------|----------------|
-| 4 | Script structure | Header, sections, logical flow |
-| 5 | Console hygiene | No print/cat pollution, clean output |
-| 6 | Reproducibility | set.seed, relative paths, no hardcoded values |
-| 7 | Function design | DRY, appropriate abstraction level |
-| 8 | Figure quality | Labels, dimensions, theme, transparency |
-| 9 | RDS pattern | saveRDS for all computed objects |
-| 10 | Comments | Explain why, not what |
-| 11 | Error handling | Graceful failures, informative messages |
-| 12 | Polish | Consistent style, no dead code, clean namespace |
+**Code quality — always run in standalone mode:** categories per `.claude/skills/review/templates/code-review-16-categories.md` (chunk-era).
 
 #### Severity Calibration Examples
 
@@ -201,13 +178,7 @@ Include the lint report in the coder-critic's input so it can skip already-flagg
 
 **Do NOT edit any source files.** Only produce reports. Fixes are applied after user review, either manually or by re-dispatching the Coder agent.
 
-Save report to `quality_reports/[file]_code_review.md`
-
-Generate HTML version and refresh dashboard:
-```bash
-python3 scripts/generate_html_report.py code-audit quality_reports/[file]_code_review.md
-python3 scripts/generate_dashboard.py
-```
+Save report to `quality_reports/reviews/coder-critic_<date>.md`
 
 ### Causal Audit (`--methods`)
 
@@ -249,52 +220,31 @@ Dispatch **strategist-critic** standalone for a full 4-phase causal inference re
 - **MAJOR ISSUES** — Significant concerns that could change conclusions
 - **CRITICAL ERRORS** — Fundamental design flaw or incorrect implementation
 
-Save report to `quality_reports/[file]_strategy_review.md`
-
-Generate HTML version and refresh dashboard:
-```bash
-python3 scripts/generate_html_report.py strategy-review quality_reports/[file]_strategy_review.md
-python3 scripts/generate_dashboard.py
-```
+Save report to `quality_reports/reviews/strategist-critic_<date>.md`
 
 ### Manuscript Polish (`--proofread`)
 Dispatch **writer-critic** standalone:
-- 6 categories: structure, claims-evidence, ID fidelity, writing, grammar, compilation
-- Save report to `quality_reports/[file]_proofread_report.md`
+- 6 categories: structure, claims-evidence, ID fidelity, writing, grammar, render
+- Save report to `quality_reports/reviews/writer-critic_<date>.md`
 
 ### Cross-Language Replication (`--replicate [language]`)
-1. Auto-detect source language from file extension
-2. Dispatch **Coder** in replication mode — re-implement in target language
-3. **coder-critic** reviews both implementations
-4. Compare numerical outputs per `.claude/references/domain-profile.md` Quality Tolerance Thresholds
-5. Save replicated script and comparison report
+Coder re-implements the manuscript's estimation chunks in `explorations/replicate_<language>.qmd`; coder-critic reviews; compare:
+- point estimates: relative tolerance 1e-6, absolute tolerance 1e-10
+- standard errors: relative tolerance 1e-4
+- p-values: relative tolerance 0.01; significance boundaries 0.10/0.05/0.01 are flagged regardless of tolerance
+- sample sizes: must match exactly
+
+Common divergence sources: BFGS vs L-BFGS optimizer defaults; floating-point handling in fixed-effects absorption; clustering variance estimation (small-sample corrections differ); random seed implementations across languages; NA/NaN handling defaults (na.rm vs dropna); factor/categorical variable ordering.
+
+Never writes the manuscript. Save the replicated script and comparison report to `quality_reports/reviews/replication_<language>_<date>.md`.
 
 ---
 
 ## Verifier Pass/Fail Definition
-
-The Verifier produces a binary PASS/FAIL result:
-
-**For papers (`.tex`):**
-- LaTeX compiles error-free (warnings acceptable, errors not)
-- All figures referenced exist and render
-- All references resolve (no `??`, no undefined citations)
-- All tables render correctly
-- Bibliography compiles without errors
-
-**For code (`.R`, `.py`, `.do`, `.jl`):**
-- Script runs without errors from start to finish
-- All packages loaded at top of script
-- No hardcoded absolute paths
-- `set.seed()` present once at top if stochastic
-- Output files created at expected paths
-
-**For replication packages:**
-- All scripts run in declared order
-- Outputs match paper tables/figures within tolerance
-- README accurately describes the pipeline
-
-Verifier score maps to 0 (FAIL) or 100 (PASS) for weighted aggregation.
+**For the manuscript (`.qmd`):** `quarto render` exits 0; no `ERROR`/`WARNING` in the log; every `@fig-`/`@tbl-`/`@sec-`/`@eq-` resolves; every `@key` exists in `references.bib`; `python3 .claude/scripts/prose_number_check.py` exits 0; rendered output is fresh.
+**For code (`scripts/acquire/*`, `explorations/*`):** runs without error; packages at top; no absolute paths; seed set once if stochastic; writes only to `data/raw/` (acquisition) or `explorations/` (exploration).
+**For replication packages:** `/submit audit` checks 1–10 (`.claude/skills/submit/templates/audit-10-checks.md`).
+Verifier score maps to 0 (FAIL) or 100 (PASS).
 
 ---
 
@@ -319,25 +269,25 @@ All review checklists, rubrics, and templates live under `review/`:
 
 | File | Used By | Content |
 |------|---------|---------|
-| `templates/manuscript-review-8-categories.md` | writer-critic | 8 check categories: structure, claims, ID fidelity, writing, LaTeX, compilation, voice, notation |
-| `templates/code-review-16-categories.md` | coder-critic | 16 check categories: strategic alignment (4) + code quality (12) |
-| `templates/theory-review-4-phases.md` | theorist-critic | 4-phase theory review: claim, proof validity, assumptions, citations/linkage |
-| `templates/talk-review-6-categories.md` | storyteller-critic | 6 check categories: narrative, visual, content, scope, compilation, coherence |
-| `templates/data-review-6-categories.md` | explorer-critic | 6 check categories: measurement, sample, external validity, alternatives, feasibility, ID compatibility |
-| `templates/disposition-pool.md` | editor | Referee dispositions, pet peeves, desk reject criteria, decision rules, report formats |
-| `templates/referee-report-template.md` | domain-referee, methods-referee | Standard output format for referee reports |
+| `.claude/skills/review/templates/manuscript-review-8-categories.md` | writer-critic | 8 check categories: structure, claims, ID fidelity, writing, Format, render, voice, notation |
+| `.claude/skills/review/templates/code-review-16-categories.md` | coder-critic | 16 check categories: strategic alignment (4) + code quality (12) |
+| `.claude/skills/review/templates/theory-review-4-phases.md` | theorist-critic | 4-phase theory review: claim, proof validity, assumptions, citations/linkage |
+| `.claude/skills/review/templates/talk-review-6-categories.md` | storyteller-critic | 6 check categories: narrative, visual, content, scope, compilation, coherence |
+| `.claude/skills/review/templates/data-review-6-categories.md` | explorer-critic | 6 check categories: measurement, sample, external validity, alternatives, feasibility, ID compatibility |
+| `.claude/skills/review/templates/disposition-pool.md` | editor | Referee dispositions, pet peeves, desk reject criteria, decision rules, report formats |
+| `.claude/skills/review/templates/referee-report-template.md` | domain-referee, methods-referee | Standard output format for referee reports |
 
 ### Config
 
 | File | Content |
 |------|---------|
-| `config/scoring-rubrics.md` | Consolidated deduction tables for all 7 critics + quality gates |
+| `.claude/skills/review/config/scoring-rubrics.md` | Consolidated deduction tables for all 7 critics + quality gates |
 
 ### Gotchas
 
 | File | Content |
 |------|---------|
-| `gotchas.md` | Known failure points and edge cases for all review modes |
+| `.claude/skills/review/gotchas.md` | Known failure points and edge cases for all review modes |
 
 ---
 

@@ -1,83 +1,43 @@
-# Quality: Scoring, Thresholds, and Severity
+# Quality: Scoring and Thresholds
 
----
+## 1. Weights
 
-## 1. Scoring Protocol
+The overall score that gates submission is a weighted aggregate of critic scores. The weights
+live here and in `.claude/rules/registry.yaml`; `check_fork.sh` (`weights-sum`) fails if the two
+disagree or if the non-conditional weights do not sum to 100. `python3 .claude/scripts/pipeline.py score`
+computes it; nothing else does.
 
-**How individual agent scores aggregate into the overall project score.**
+| Component | Weight | Scored by |
+|---|---|---|
+| literature | 10 | lit-critic |
+| data | 10 | explorer-critic |
+| strategy | 25 | strategist-critic |
+| theory | 20 | theorist-critic — `CONDITIONAL`: counted only when a theory section exists and was scored; the total renormalises from 120 |
+| code | 15 | coder-critic (latest score over coder and data-engineer work) |
+| manuscript | 10 | writer-critic (latest **whole-manuscript** score; section scores from `/write` are recorded separately) |
+| referees | 25 | mean of domain-referee and methods-referee (12.5 each) |
+| replication | 5 | verifier (PASS = 100, FAIL = 0) |
 
-### Weighted Aggregation
+**Renormalisation.** A component with no score is excluded and the remaining weights are scaled
+to sum to 100. An applied paper with no theory section therefore scores over exactly 100.
 
-The overall project score that gates submission (>= 95) is a weighted aggregate over the components below.
+**Score sources.** Each critic starts at 100 and deducts per its rubric in
+`.claude/skills/review/config/scoring-rubrics.md`. Latest score per component counts.
+`quality_reports/pipeline_state.json` is authoritative; the research journal entry is written
+from it, never the other way round.
 
-The Orchestrator reads the registry to compute the weighted average:
-- Sum each agent's critic score multiplied by its declared weight
-- Theory weight applies only when the theorist was actually dispatched — for an applied paper using off-the-shelf estimators, drop it and renormalize
-- If a component hasn't been scored, exclude it and renormalize remaining weights
+## 2. Thresholds
 
-### Minimum Per Component
+| Gate | Overall | Per component | Enforced by |
+|---|---|---|---|
+| Commit | ≥ 80 | — | `pipeline.py score --gate commit` |
+| PR | ≥ 90 | — | `pipeline.py score --gate pr` |
+| Submission | ≥ 95 | every scored component ≥ 80 | `pipeline.py score --gate submission`, called by `/submit final` |
 
-No component can be below 80 for submission. A perfect literature review can't compensate for broken identification.
+No component below 80 at submission. A perfect literature review cannot compensate for broken
+identification.
 
-### Score Sources
+## 3. Severity
 
-- Each critic produces a score from 0 to 100 based on its deduction table
-- Scores start at 100 and deduct for issues found
-- The verifier is pass/fail (mapped to 0 or 100)
-- Referee scores are averaged: `(domain-referee + methods-referee) / 2`
-
-### Gate Thresholds
-
-| Gate | Overall Score | Per-Component Minimum | Action |
-|------|--------------|----------------------|--------|
-| Commit | >= 80 | None enforced | Allowed |
-| PR | >= 90 | None enforced | Allowed |
-| Submission | >= 95 | >= 80 per component | Allowed |
-| Below 80 | < 80 | — | Blocked |
-
-### When Components Are Missing
-
-Not every project uses all components. If a component hasn't been scored:
-- It's excluded from the weighted average
-- Remaining weights are renormalized
-- Example: no literature review → weights become 11%, 28%, 17%, 28%, 11%, 6%
-
----
-
-## 2. Severity Gradient
-
-**Critics calibrate severity based on the phase of the project.**
-
-### Phase-Based Severity
-
-| Phase | Critic Stance | Rationale |
-|-------|--------------|-----------|
-| Discovery | Encouraging (low severity) | Early ideas need space to develop |
-| Strategy | Constructive (medium severity) | Identification must be sound, but alternatives should be suggested |
-| Execution | Strict (high severity) | Code and paper are near-final — bugs are costly |
-| Peer Review | Adversarial (maximum severity) | Simulates real referees — no mercy |
-| Presentation | Professional (medium-high) | Talks should be polished but scored as advisory |
-
-### How It Works
-
-The Orchestrator includes the severity level in the critic's prompt:
-
-```
-You are reviewing at SEVERITY: HIGH (Execution phase).
-Flag all issues. Do not suggest "consider" — state what must change.
-```
-
-### Deduction Scaling
-
-The same issue may have different deductions by phase:
-
-| Issue | Discovery | Strategy | Execution | Peer Review |
-|-------|-----------|----------|-----------|-------------|
-| Missing citation | -2 | -5 | -10 | -15 |
-| Notation inconsistency | -1 | -3 | -5 | -5 |
-| Hedging language | — | — | -3 | -5 |
-| Missing robustness check | — | -5 | -15 | -20 |
-
-### Principle
-
-Early phases are about getting the direction right. Late phases are about getting the details right. Critics should match their tone and rigor to the phase.
+Retired 2026-09-08 (R-2). Critics carry their own rubrics; no caller supplies a phase severity.
+Reversible if the driver ever supplies one. <!-- residue:historical -->

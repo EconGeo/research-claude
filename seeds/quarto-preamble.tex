@@ -1,0 +1,20 @@
+% quarto-preamble.tex — LaTeX preamble for the PDF output of the declared manuscript
+% (quarto-empirical pipeline). Citations are handled by Quarto via cite-method: biblatex;
+% do NOT load biblatex here. Working-paper formatting only.
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\usepackage{microtype}
+\usepackage{amssymb, amsmath, amsfonts, mathtools}
+\usepackage{booktabs, array, makecell}
+\usepackage{siunitx}
+\usepackage{rotating, tabularx}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf, justification=justified}
+\interfootnotelinepenalty=10000
+\setlength{\footnotesep}{0.5cm}

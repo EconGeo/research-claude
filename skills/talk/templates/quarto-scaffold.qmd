@@ -5,7 +5,6 @@ institute: "[Institution]"
 date: "[Date/Venue]"
 format:
   revealjs:
-    theme: [default, custom.scss]
     slide-number: true
     navigation-mode: linear
     controls: true
@@ -14,15 +13,12 @@ format:
     center: false
     auto-stretch: true
     fig-align: center
-    fig-format: pdf
     code-fold: true
     scrollable: false
-    smaller: false
     transition: none
     width: 1600
     height: 900
-bibliography: ../../Bibliography_base.bib
-csl: apa.csl
+bibliography: ../references.bib
 ---
 
 ## Research Question {.center}
@@ -39,110 +35,51 @@ csl: apa.csl
 
 ## Roadmap
 
-1. Motivation & Background
-2. Data
-3. Empirical Strategy
-4. Results
-5. Robustness
-6. Implications
-
----
-
-## {.center}
-
-::: {.r-fit-text}
-**Motivation**
-:::
+1. Motivation  2. Data  3. Empirical Strategy  4. Results  5. Robustness  6. Implications
 
 ## [Motivating Fact or Puzzle]
 
-![](../../paper/figures/fig_motivation.pdf){fig-align="center" width="80%"}
+{{< embed manuscript_<project>.qmd#fig-motivation >}}
 
 ::: {.notes}
-Speaker notes go here.
-:::
-
----
-
-## {.center}
-
-::: {.r-fit-text}
-**Data**
+Speaker notes.
 :::
 
 ## Data
 
-| | Mean | SD | N |
-|---|---|---|---|
-| [Variable 1] | | | |
-| [Variable 2] | | | |
-
-::: {.aside}
-Source: [Dataset name], [years].
-:::
-
----
-
-## {.center}
-
-::: {.r-fit-text}
-**Empirical Strategy**
-:::
+{{< embed manuscript_<project>.qmd#tbl-summary >}}
 
 ## Identification
 
 $$
-Y_{it} = \alpha + \beta D_{it} + X_{it}'\gamma + \mu_i + \lambda_t + \varepsilon_{it}
+Y_{it} = \alpha_i + \gamma_t + \beta D_{it} + X_{it}'\theta + \varepsilon_{it}
 $$
 
 - $\beta$: [what it captures]
 - Key assumption: [identification assumption]
 
----
-
-## {.center}
-
-::: {.r-fit-text}
-**Results**
-:::
-
 ## Main Result
 
-![](../../paper/figures/fig_main_result.pdf){fig-align="center" width="80%"}
+{{< embed manuscript_<project>.qmd#fig-main >}}
 
 ## [Result Interpretation]
 
-- Point estimate: [magnitude]
+- Point estimate: [magnitude — read from the embedded table, never retyped]
 - [Economic interpretation]
+
+. . .
+
 - [Comparison to literature]
-
----
-
-## {.center}
-
-::: {.r-fit-text}
-**Robustness**
-:::
 
 ## [Robustness Check 1]
 
-![](../../paper/figures/fig_robustness.pdf){fig-align="center" width="80%"}
-
----
-
-## {.center}
-
-::: {.r-fit-text}
-**Conclusion**
-:::
+{{< embed manuscript_<project>.qmd#tbl-robustness >}}
 
 ## Takeaway
 
 1. [Main finding]
 2. [Policy implication or mechanism]
 3. [What's next]
-
----
 
 ## {.center .appendix}
 
@@ -152,6 +89,8 @@ $$
 
 ## Backup: [Topic]
 
+::: {.fragment}
 [Content for Q&A]
+:::
 
 ## References

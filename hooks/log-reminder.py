@@ -3,9 +3,9 @@
 Session Log Reminder Hook for Claude Code
 
 A Stop hook that tracks how many responses have passed since the session
-log was last updated, and nudges Claude to update the log via stderr
-advisories. **Never blocks** — always exits 0 without writing a decision
-to stdout. Two advisory triggers (fired at most once per session each):
+log was last updated, and nudges Claude to update the log. **Never
+blocks** — always exits 0 without writing a `decision` to stdout. Two
+advisory triggers (fired at most once per session each):
   1. No session log exists under quality_reports/session_logs/ at all.
   2. THRESHOLD responses have passed without the most-recent log being
      touched.
@@ -15,7 +15,14 @@ Design rationale: a previous version of this hook emitted
 disrupted autonomous flows. Reminders are now advisory only — the user
 remains responsible for deciding when to write the log.
 
+Output contract (Stop, exit 0): the advisory is JSON on stdout —
+`systemMessage` (shown to the user) and `hookSpecificOutput.additionalContext`
+(injected into Claude's context). Plain stderr would reach the user but not
+Claude, and the format would be undefined. See https://code.claude.com/docs/en/hooks.
+
 Adapted from: https://gist.github.com/michaelewens/9a1bc5a97f3f9bbb79453e5b682df462
+
+Hook Event: Stop
 
 Usage (in .claude/settings.json):
     "Stop": [{ "hooks": [{ "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/log-reminder.py" }] }]
@@ -104,16 +111,21 @@ def main():
     latest_log, current_mtime = find_latest_log(project_dir)
     today = datetime.now().strftime("%Y-%m-%d")
 
-    # Case 1: No session log exists — advisory reminder to stderr, never blocks.
+    # Case 1: No session log exists — advisory reminder on the documented
+    # JSON channel, never blocks.
     if latest_log is None:
         if not state.get("no_log_reminded", False):
             state["no_log_reminded"] = True
             save_state(state_path, state)
-            sys.stderr.write(
-                f"\n[session-log] No session log yet. Consider creating "
+            msg = (
+                f"[session-log] No session log yet. Consider creating "
                 f"quality_reports/session_logs/{today}_description.md "
-                f"to capture goal + key context.\n"
+                f"to capture goal + key context."
             )
+            print(json.dumps({
+                "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": msg},
+                "systemMessage": msg,
+            }))
         sys.exit(0)
 
     # Case 2: Log was updated since last check — reset everything
@@ -128,10 +140,14 @@ def main():
     if state["counter"] >= THRESHOLD and not state["reminded"]:
         state["reminded"] = True
         save_state(state_path, state)
-        sys.stderr.write(
-            f"\n[session-log] {state['counter']} responses without updating "
-            f"{latest_log.name}. Consider appending recent progress.\n"
+        msg = (
+            f"[session-log] {state['counter']} responses without updating "
+            f"{latest_log.name}. Consider appending recent progress."
         )
+        print(json.dumps({
+            "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": msg},
+            "systemMessage": msg,
+        }))
         sys.exit(0)
 
     save_state(state_path, state)

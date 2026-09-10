@@ -14,8 +14,7 @@ allowed-tools: Read, Bash
 # ztp-data-tag — Backfill the data field across your Zotero library
 
 This skill reads papers already indexed in ZotPilot and records, for each one, the
-**datasets and key variables it uses** — the same schema journal-digest captures for new
-papers. It stores the result two ways on each Zotero item:
+**datasets and key variables it uses**. It stores the result two ways on each Zotero item:
 
 - **Namespaced tags** — `dataset:hmda`, `var:loan-denial-rate`, plus a `data-tagged`
   marker — for filtering in Zotero and ZotPilot, and `[[wikilink]]`-style hubs in Obsidian.
@@ -24,7 +23,7 @@ papers. It stores the result two ways on each Zotero item:
 It is **opt-in**: nothing runs until the user asks, and it always pilots one collection
 and confirms before writing a batch.
 
-## Schema (shared with journal-digest)
+## Schema
 
 ```json
 {"datasets": [], "variables": [], "unit": "", "timespan": "", "access": "", "source": "full-text|abstract-only"}
@@ -38,9 +37,8 @@ and confirms before writing a batch.
 - `source` — "full-text" if extracted from the indexed PDF, "abstract-only" if only the
   abstract was available (lower confidence — flag these for the user).
 
-The first five keys are identical to journal-digest's `Data` field, so Obsidian hubs and
-any parser treat digest-filed and library-backfilled papers the same. `source` is an
-extra quality flag.
+`source` is a quality flag layered on top of the five-key schema above, so any downstream
+parser or Obsidian hub can treat every backfilled paper uniformly.
 
 ## Preconditions (check first; stop with guidance if unmet)
 
@@ -48,7 +46,8 @@ extra quality flag.
    If absent, tell the user to set up ZotPilot (`/ztp-setup`) and stop.
 2. **Write credentials configured** — tags and notes need `zotero_api_key` +
    `zotero_user_id`. If `mcp__zotpilot__manage_tags` / `mcp__zotpilot__create_note`
-   fail for missing keys, stop and point the user to README Step 7 (write-ops config).
+   fail for missing keys, stop and point the user to the ZotPilot install step in the
+   research-claude README ("Step 7 — Install and configure ZotPilot") (write-ops config).
 3. **Library indexed** — run `mcp__zotpilot__get_index_stats`. If many items are
    unindexed, warn that abstract-only extraction will be weaker for them.
 
@@ -176,5 +175,5 @@ it may span multiple sessions; the marker tag makes it resumable.
   project. (Tags/notes persist in Zotero immediately; ChromaDB only reflects them after a
   re-index, which is needed for search but not for this skip check.)
 - **Flag weak extractions.** Mark `source: abstract-only` items so the user can review.
-- **Same five shared keys as journal-digest** — keep `datasets/variables/unit/timespan/access`
-  identical so Obsidian hubs and any parser treat digest and library papers uniformly.
+- **Keep the five-key schema stable** — `datasets/variables/unit/timespan/access` — so
+  Obsidian hubs and any parser treat every backfilled paper uniformly.

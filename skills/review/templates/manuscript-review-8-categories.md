@@ -8,7 +8,7 @@ Extracted from `writer-critic.md`. Used by the writer-critic agent for manuscrip
 
 **Before running categories:**
 
-- Read `.claude/rules/content-invariants.md` -- enforce INV-1 through INV-13 and INV-22. Cite invariant numbers (e.g., "violates INV-3") in report alongside deductions.
+- Read `.claude/rules/content-invariants.md` -- enforce INV-1 through INV-13. Cite invariant numbers (e.g., "violates INV-3") in report alongside deductions.
 - Read `.claude/rules/quarto-pdf.md` and `.claude/rules/quarto-word.md` -- enforce the blocking deductions listed there for the manuscript's output format.
 - Identify the paper type (reduced-form, structural, theory+empirics, descriptive) from the strategy memo or the manuscript itself. This determines which checks apply.
 
@@ -43,12 +43,7 @@ Extracted from `writer-critic.md`. Used by the writer-critic agent for manuscrip
 - Effect sizes stated with units ("4.2 percentage points", not "the coefficient is significant")
 - Comparisons to prior literature include specific magnitudes from cited papers
 - No stale numbers (values that don't match current output files)
-
-**Claim-source map verification (INV-22):**
-- Does `quality_reports/claim_source_map_{project}.md` exist? If not: -15
-- Every numerical claim in the manuscript has a map entry? -5 per missing
-- Map entries point to files that exist? -10 per broken link
-- Numbers in the map match the manuscript? -5 per mismatch
+- **Claim–Evidence Table (mandatory):** build it per `.claude/skills/review/templates/claim-evidence-table.md`; deductions per verdict. Save it; cite its path in the report.
 
 ---
 
@@ -99,7 +94,7 @@ Run the 24-pattern AI detection check from the Writer's cleanup pass:
 
 ---
 
-## 5. LaTeX and Format
+## 5. Format
 
 Format deductions are owned by the format rules — do not restate them here.
 Enforce the blocking lists in `.claude/rules/quarto-pdf.md` (PDF output) and
@@ -110,10 +105,11 @@ Enforce the blocking lists in `.claude/rules/quarto-pdf.md` (PDF output) and
 | Issue | Deduction |
 |-------|-----------|
 | Missing `bibliography:` in YAML | -5 |
-| Missing `csl:` in YAML | -3 |
+| Top-level `csl:` present on the PDF path (must be inside `docx:` only) | -3 |
 | Section heading without a `{#sec-...}` anchor | -2 per, max -10 |
+| Displayed equation without a `{#eq-...}` label | -2 per, max -10 |
 | Hardcoded figure/table number instead of `@fig-` / `@tbl-` | -3 per, max -10 |
-| `\@ref()` bookdown syntax instead of Quarto `@` syntax | -3 per, max -10 |
+| Legacy R Markdown cross-reference syntax instead of Quarto `@` syntax | -3 per, max -10 |
 | Missing JEL codes or keywords after the abstract (INV-6) | -5 |
 | Abstract exceeds 150 words (INV-5) | -3 |
 | Missing table notes (INV-1) | -5 per table, max -15 |
@@ -171,7 +167,7 @@ If the style guide is still a template, report: "Voice fidelity not scored -- st
 
 ## Standalone Mode
 
-When invoked via `/review [file.tex]` or `/review --proofread`, run categories **4, 5, 6, 8 only** (writing quality + LaTeX + compilation + notation). No strategy alignment -- just prose and format quality.
+When invoked via `/review --proofread`, run categories **4, 5, 6, 8 only** (writing quality + format + render + notation). No strategy alignment -- just prose and format quality.
 
 When invoked via `/review --all` or `/review --peer`, run all 8 categories.
 
@@ -191,20 +187,19 @@ When invoked via `/review --all` or `/review --peer`, run all 8 categories.
 ## Claims and Evidence: [SUPPORTED/GAPS/UNSUPPORTED]
 ## Identification Fidelity: [FAITHFUL/OVERCLAIMED/MISREPRESENTED]
 ## Writing Quality: [CLEAN/AI PATTERNS FOUND/NEEDS REWRITE]
-## LaTeX and Format: [COMPLIANT/ISSUES/NON-COMPLIANT]
-## Compilation: [PASS/WARNINGS/FAIL]
+## Format: [COMPLIANT/ISSUES/NON-COMPLIANT]
+## Render: [PASS/WARNINGS/FAIL]
 ## Voice Fidelity: [MATCH/DRIFT/NOT SCORED]
 ## Notation Consistency: [CONSISTENT/INCONSISTENCIES]
+
+## Claim–Evidence Table
+- Path:
+- Rows: N (SUPPORTED a / OVERSTATED b / UNSUPPORTED c / CONTRADICTED d / UNVERIFIABLE e)
 
 ## Score Breakdown
 - Starting: 100
 - [Deductions with invariant citations]
 - **Final: XX/100**
-
-## Claim-Source Map Status
-- Map exists: [YES/NO]
-- Claims mapped: [X/Y]
-- Broken links: [list]
 
 ## Escalation Status: [None / Strike N of 3]
 ```

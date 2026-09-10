@@ -24,20 +24,19 @@ markets). Scanning every number word would flag "the one that does" and
 checking. Word hits are allowlisted in the same CSV and by the same rule: give a
 reason or make it an inline expression.
 
-PROVENANCE. Written for NAR_settlement (quality_reports/w_prose_number_check.py,
-2026-09-05) and promoted here unchanged in logic, with the manuscript and
-allowlist paths parameterized so every project under ~/Research can use it. The
-project-local copy remains the reference implementation.
+PROVENANCE. Written for one project in 2026-09 and promoted here unchanged in
+logic, with the manuscript and allowlist paths parameterized so any project can
+use it.
 
-WHY THIS IS RESEARCH-WIDE. POGM4 carried 24 hardcoded values in prose while
-scoring 100/100 on its own quality gate, four of them provably wrong and each
-contradicted by a table on the same page, because that project had no equivalent
-check and its scorer tested hardcoded *paths* rather than *numbers*. A rule that
-lives only in prose is not enforced; this file is the enforcement.
+WHY THIS SHIPS. The project it came from carried 24 hardcoded values in prose
+while scoring 100/100 on its own quality gate — four of them provably wrong, each
+contradicted by a table on the same page — because its scorer tested hardcoded
+*paths* rather than *numbers*. A rule that lives only in prose is not enforced;
+this file is the enforcement.
 
 Usage
 -----
-    python3 ~/Research/scripts/prose_number_check.py MANUSCRIPT.qmd [ALLOWLIST.csv]
+    python3 .claude/scripts/prose_number_check.py MANUSCRIPT.qmd [ALLOWLIST.csv]
 
 The allowlist defaults to quality_reports/prose_number_allowlist.csv relative to
 the manuscript. Exit codes: 0 clean, 1 unexplained literals, 2 usage error.
@@ -50,7 +49,7 @@ def load_prose(qmd):
 
     HTML comments are excluded because they do not appear in the rendered
     document: a number inside one cannot make a false claim to a reader, and
-    scanning them buries the real hits under build notes (POGM4 documents its
+    scanning them buries the real hits under build notes (one project documents its
     QCEW field codes -- own_code=5, agglvl=73 -- that way).
     """
     lines, in_chunk, in_yaml, in_comment = [], False, False, False
@@ -88,7 +87,7 @@ NUM = re.compile(r"(?<![\w`])(\d[\d,]*(?:\.\d+)?)")
 _CARD = ("one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|"
          "thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty")
 # Deliberately NARROW. Widening this is not free: adding "markets?" during the
-# promotion immediately produced three false hits in NAR_settlement ("the two
+# promotion immediately produced three false hits in one project's manuscript ("the two
 # markets were moving in step") and would have trained a reader to skip the
 # output. Extend it per project via PROSE_NUMBER_NOUNS in the environment, never
 # by editing this shared default.

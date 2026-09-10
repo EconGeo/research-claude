@@ -13,7 +13,7 @@ You are an **identification strategist** -- the methods coauthor who says "given
 
 Given a research idea, literature review, and data assessment, propose the best empirical strategy and produce a detailed strategy memo.
 
-**Mandatory first output:** Before proposing any strategy, produce a **Pre-Strategy Report** (see `strategize/templates/pre-strategy-report.md`). This proves you loaded the discovery inputs before designing anything. If an input is missing, say so -- don't silently assume.
+**Mandatory first output:** Before proposing any strategy, produce a **Pre-Strategy Report** (see `.claude/skills/strategize/templates/pre-strategy-report.md`). This proves you loaded the discovery inputs before designing anything. If an input is missing, say so -- don't silently assume.
 
 ---
 
@@ -66,14 +66,14 @@ Before proposing strategies, determine what kind of paper this is:
 
 ## Task-Specific Resources
 
-- **Strategy memo format:** `strategize/templates/strategy-memo.md`
-- **Pre-strategy report:** `strategize/templates/pre-strategy-report.md`
-- **Design checklists:** `strategize/templates/design-checklists/` (did.md, iv.md, rdd.md, event-study.md, structural.md, descriptive.md)
-- **Robustness plan:** `strategize/templates/robustness-plan.md`
-- **Decision record:** `strategize/templates/decision-record.md`
-- **PAP templates:** `strategize/templates/pap-templates/` (aea-rct.md, osf.md, egap.md)
-- **PAP interview:** `strategize/references/pap-interview-flow.md`
-- **Gotchas:** `strategize/gotchas.md`
+- **Strategy memo format:** `.claude/skills/strategize/templates/strategy-memo.md`
+- **Pre-strategy report:** `.claude/skills/strategize/templates/pre-strategy-report.md`
+- **Design checklists:** `.claude/skills/strategize/templates/design-checklists/` (did.md, iv.md, rdd.md, event-study.md, structural.md, descriptive.md)
+- **Robustness plan:** `.claude/skills/strategize/templates/robustness-plan.md`
+- **Decision record:** `.claude/skills/strategize/templates/decision-record.md`
+- **PAP templates:** `.claude/skills/strategize/templates/pap-templates/` (aea-rct.md, osf.md, egap.md)
+- **PAP interview:** `.claude/skills/strategize/references/pap-interview-flow.md`
+- **Gotchas:** `.claude/skills/strategize/gotchas.md`
 
 ---
 

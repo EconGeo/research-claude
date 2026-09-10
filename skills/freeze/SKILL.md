@@ -6,14 +6,14 @@ user-invocable: true
 
 # Freeze -- Session-Scoped Edit Guard
 
-Blocks Write and Edit operations on files outside the specified directories. Use when reviewing code (freeze everything except notes), when writing (freeze scripts), or when editing data pipelines (freeze paper/).
+Blocks Write and Edit operations on files outside the specified directories. Use when reviewing code (freeze everything except notes), when writing (freeze `explorations/`), or when editing data pipelines (freeze `data/raw/`).
 
 ## Usage
 
 ```
-/freeze paper/          # Only allow edits in paper/
-/freeze scripts/ data/  # Only allow edits in scripts/ and data/
-/freeze off             # Deactivate all freeze guards
+/freeze explorations/       # Only allow edits in explorations/
+/freeze data/raw/ talks/    # Only allow edits in data/raw/ and talks/
+/freeze off                 # Deactivate all freeze guards
 ```
 
 ## How It Works
@@ -33,7 +33,7 @@ When the user invokes `/freeze [dirs]`:
 {
   "freeze": {
     "active": true,
-    "allowed_paths": ["paper/", "scripts/"],
+    "allowed_paths": ["explorations/", "data/raw/"],
     "activated_at": "2026-05-09T14:30:00",
     "reason": "User invoked /freeze"
   }
@@ -52,6 +52,6 @@ When the user invokes `/freeze off`:
 ## Gotchas
 
 - Freeze is session-scoped -- it resets when the conversation ends
-- The guard file persists on disk but the hook checks a session flag
+- The guard file persists on disk; the hook reads `.claude/state/session-guards.json` on every PreToolUse
 - `.claude/` is always editable (can't freeze yourself out of config changes)
 - Paths are relative to the project root

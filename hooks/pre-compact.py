@@ -30,9 +30,9 @@ from pathlib import Path
 from datetime import datetime
 import hashlib
 
-# Colors for terminal output
-CYAN = "\033[0;36m"
-GREEN = "\033[0;32m"
+# Colors for the exit-2 block path only (stderr, terminal-rendered). The
+# normal-path message goes out as JSON (systemMessage) and must not carry
+# ANSI escapes as literal noise — see format_compaction_message().
 YELLOW = "\033[0;33m"
 NC = "\033[0m"  # No color
 
@@ -216,26 +216,26 @@ def append_to_session_log(project_dir: str, trigger: str) -> None:
 
 
 def format_compaction_message(plan_info: dict | None, decisions: list[str]) -> str:
-    """Format the pre-compaction message."""
+    """Format the pre-compaction message. Plain text — no ANSI escapes, since
+    this now goes out as a JSON `systemMessage`, not a terminal print."""
     lines = []
-    lines.append(f"\n{YELLOW}⚡ Context compaction starting{NC}")
+    lines.append("⚡ Context compaction starting")
     lines.append("")
 
     if plan_info:
-        lines.append(f"{GREEN}Current state saved:{NC}")
+        lines.append("Current state saved:")
         lines.append(f"  Plan: {plan_info['plan_name']} ({plan_info['status']})")
         if plan_info.get("current_task"):
             lines.append(f"  Next task: {plan_info['current_task']}")
 
     if decisions:
         lines.append("")
-        lines.append(f"{GREEN}Recent decisions captured:{NC}")
+        lines.append("Recent decisions captured:")
         for d in decisions:
             lines.append(f"  • {d[:80]}...")
 
     lines.append("")
-    lines.append(f"{CYAN}State will be restored after compaction.{NC}")
-    lines.append("")
+    lines.append("State will be restored after compaction.")
 
     return "\n".join(lines)
 
@@ -287,9 +287,9 @@ def main() -> int:
     # Append note to session log
     append_to_session_log(project_dir, trigger)
 
-    # Print to stderr (PreCompact normally ignores stdout; stderr is
-    # shown to user)
-    print(format_compaction_message(plan_info, decisions), file=sys.stderr)
+    # Emit on the documented JSON channel (systemMessage) instead of stderr,
+    # whose format is undefined and which Claude does not see.
+    print(json.dumps({"systemMessage": format_compaction_message(plan_info, decisions)}))
 
     return 0
 

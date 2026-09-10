@@ -1,6 +1,0 @@
-[submodule "submodules/ai-audit"]
-	path = submodules/ai-audit
-	url = https://github.com/EconGeo/ai-audit.git
-[submodule "submodules/journal-digest"]
-	path = submodules/journal-digest
-	url = https://github.com/EconGeo/journal-digest.git

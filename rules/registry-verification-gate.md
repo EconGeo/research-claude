@@ -1,6 +1,8 @@
-# Write Gate: Registry Verification Before Any Manuscript Writing
+<!-- residue:historical -->
+# Legacy: Registry Verification Write Gate (registry-pattern projects only — not the pipeline registry)
 
 > **Legacy rule — registry-pattern projects only.**
+> "Registry" here means a results registry (`results_ground_truth.csv`), not `rules/registry.yaml`.
 > For new projects, use the Quarto empirical pipeline (`quarto-empirical.md`),
 > which eliminates the registry entirely. This rule applies to projects that
 > pre-date that standard, or that explicitly choose the
@@ -20,7 +22,7 @@ numbers that are invisible to code review, test suites, and coder-critics.
 ## The Gate Checklist (Non-Negotiable)
 
 Before dispatching any writer agent or writing any manuscript section, the
-orchestrator must confirm all five items:
+dispatching skill must confirm all five items:
 
 ```
 [ ] 1. PIPELINE COMPLETE: Rscript scripts/R/00_master.R ran to exit code 0.
@@ -96,10 +98,10 @@ if (length(stale) > 0) {
 
 ## Enforcement
 
-The gate is checked by the orchestrator before writer dispatch. The writer agent
-must not be dispatched until the orchestrator has confirmed all five items.
+The gate is checked by the dispatching skill before writer dispatch. The writer agent
+must not be dispatched until the dispatching skill has confirmed all five items.
 
-If the user says "just write it" or "skip the gate," the orchestrator should:
+If the user says "just write it" or "skip the gate," the dispatching skill should:
 1. Report which gate items are open
 2. Offer to run the pipeline now (Rscript scripts/R/00_master.R)
 3. If the user explicitly overrides, write a WARNING in the session log and proceed

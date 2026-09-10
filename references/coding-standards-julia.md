@@ -20,13 +20,13 @@ These standards apply to all Julia code produced by the Coder agent. Derived fro
 | `StatsBase` | Weighted statistics, ECDF |
 | `LinearAlgebra` | Matrix operations |
 | `Random` | RNG management |
-| `PGFPlotsX` or `CairoMakie` | Figures (LaTeX-native or publication quality) |
+| `CairoMakie` | Figures (Quarto embeds its output for PDF and Word) |
 | `Distributed` / `ThreadsX` | Parallelization |
 | `FixedEffectModels` | Panel regression with high-dimensional FE |
 
 ### Preferred Figure Backend
 
-**`PGFPlotsX`** produces native LaTeX/PGF output matching the paper's fonts. `CairoMakie` acceptable for complex layouts.
+**`CairoMakie`** — Quarto embeds its output for both the PDF and Word render targets.
 
 ---
 

@@ -287,6 +287,96 @@ Skills: `/new-project`, `/review-paper`, `/audit-replication`, `/data-deposit`, 
 `/prompt`, `/prompt-only`, `/interview-me`, `/research-ideation`, `/preregister`, `/seven-pass-review`, `/devils-advocate`,
 `/promote-memory`, `/data-analysis`, `/tools compile`.
 
+## Addendum (found during repair)
+
+Found running the widened residue grep for baseline snapshot
+`docs/audits/baseline-2026-09-08/` (2026-09-08, Task 0.1): the sweep's own row for
+`writer.md` (§1, line 49) reads "Quarto-native throughout; `Bibliography_base` absent;
+INV-22 marked retired" and marks the file **✓ clean**. It is not.
+
+| File | Lines | Class | Finding |
+|---|---|---|---|
+| `writer.md` | 44 | 4 | "Read `quality_reports/results_summary.md` (produced by `/analyze`)" — a separate handoff file read as a Results-drafting prerequisite; the same class-4 "contradicts the one-manuscript model" issue already flagged at `coder.md:60`, `analyze/SKILL.md:59`, and `analyze/gotchas.md:35` for the file `writer.md` reads here |
+
+Checked systematically (fix round 1): every row in §1–§8 whose Class column is `✓`
+was cross-referenced against `docs/audits/baseline-2026-09-08/residue_grep.txt`, by
+grepping the grep output for each such row's filename(s) — not by a whole-document
+read alone, since the first pass missed a partial-range case (below). Two shapes of
+✓ row exist in this document:
+
+- **Whole-file ✓** (Lines column is `—`): `writer.md` (gap found, above),
+  `talk/SKILL.md`, `promote/SKILL.md`, `analyze/references/figure-standards.md`,
+  `analyze/config/replication-tolerances.json`, `write/templates/cleanup-patterns.md`,
+  `revise/templates/{response-letter.qmd,response-tracker.md,gotchas.md}`,
+  `review/templates/{data-review,disposition-pool,referee-report-template,talk-review}.md`,
+  `talk/{gotchas.md}`, `templates/{format-constraints.md,narrative-arcs.md}`,
+  `discover/templates/*`, `strategize/{gotchas,references,design-checklists,
+  pap-templates,pre-strategy-report,robustness-plan,decision-record}`,
+  `coding-standards-python.md`, `literature-search-order.md`, `shared-pipeline.md`,
+  `session-handoff.md`. None of these (other than `writer.md`) has a hit in the
+  grep output.
+- **Partial-range ✓** (Lines column names a span within a file that is otherwise
+  not clean): exactly one such row exists in §1–§8 — `coder-critic.md` line 53,
+  `44–88`, "Correctness Layer + Quarto Empirical Mode are correct and are the
+  model." This is a second gap (below). (The apparent ✓ marks in §7's hooks table,
+  e.g. `log-reminder.py`, `notify.sh`, `pre-compact.py`, are a different table
+  schema — Contract/Output-channel columns, not a residue Class column — and do
+  not assert a file or line-range is free of the multi-file/LaTeX/Rmd residue this
+  grep targets; they are out of scope for this check.)
+
+**Second entry — `coder-critic.md:44–88` is not actually all clean:**
+
+| File | Lines | Class | Finding |
+|---|---|---|---|
+| `coder-critic.md` | 84 | 1 | "no analysis `.R` script in `scripts/R/` beyond acquisition (−5 per)" — inside the range the sweep marks ✓ (44–88) |
+| `coder-critic.md` | 87 | 1 | "This mode supersedes Rmd Mode for `.qmd` targets. (The Rmd Mode invariant numbers below predate the current content-invariants and apply only to genuine `.Rmd` projects.)" — also inside 44–88 |
+
+Both are **documentation gaps in the sweep, not unscheduled repair work**: both
+lines are already scheduled for treatment by the repair plan's Task 3b.4 Step 2
+(plan line 3377) — line 84 gains a `<!-- residue:prohibition -->` marker, and the
+"This mode supersedes Rmd Mode..." sentence is deleted along with the whole
+`## Rmd Mode` section. This row exists so the sweep's ✓ on 44–88 is not trusted at
+face value later, not to add new work.
+
+**Third entry — `analyze/references/figure-standards.md` is not free of the
+`manuscript-model` pattern, found running `scripts/check_refs.py --criterion
+manuscript-model` (Task 0.5, 2026-09-08) against the whole-file ✓ mark at §3 line
+127 ("clean (prohibitions only)"):**
+
+| File | Lines | Class | Finding |
+|---|---|---|---|
+| `analyze/references/figure-standards.md` | 29 | 1 (prohibition) | "Never `ggsave()` to a file and include it by hand." |
+| `analyze/references/figure-standards.md` | 175 | 1 (prohibition) | "`ggsave()` inside a manuscript chunk \| Quarto emits the figure; saving it to disk produces a stale duplicate and breaks Word output" |
+
+Read in full: both lines are prohibition prose — exactly what the sweep's own
+"(prohibitions only)" qualifier already says is present. The gap is not in the
+sweep's classification (it is right) but in the file: neither line carries a
+trailing `<!-- residue:prohibition -->` marker, so `check_refs.py`'s
+`MANUSCRIPT_MODEL` regex has no way to distinguish "here is the forbidden
+pattern, don't do it" prose from a real instance and flags both. (A third hit at
+line 5 — "Nothing is `ggsave()`d to disk" — is the same shape and is covered by
+the same fix.) This row exists so the ✓ is not read as "the checker will pass on
+this file"; it will not, until the three lines are marked. Recorded here per the
+plan's Global Constraint rather than fixed, since Task 0.5/0.6 may not edit
+`references/`.
+
+**Fourth entry — `rules/session-handoff.md` is not free of an unprefixed pipeline path,
+found running `scripts/check_paths.py --root . --list` (Task 0.6, 2026-09-08) against the
+whole-file ✓ mark at §6 line 222 ("literature-search-order.md, shared-pipeline.md,
+session-handoff.md | — | ✓ | clean"):**
+
+| File | Lines | Class | Finding |
+|---|---|---|---|
+| `rules/session-handoff.md` | 58 | 3 (UNPREFIXED) | "Use `templates/handoff.md` for structure." — bare `templates/` path, not `.claude/`-prefixed |
+
+Read in full: the file is otherwise genuinely clean of the classes the sweep's residue
+grep was built to catch (multi-file/LaTeX/deleted-thing/etc.), which is why the ✓ holds
+up against that grep. But `templates/handoff.md` at line 58 is a real D-4 violation — it
+is a shipped pipeline path missing the `.claude/` prefix the repair requires everywhere.
+`literature-search-order.md` and `shared-pipeline.md` (the other two files on the same ✓
+row) produced no hits from `check_paths.py` and remain clean. Recorded here per the
+plan's Global Constraint rather than fixed, since Task 0.5/0.6 may not edit `rules/`.
+
 ## 12. Counts
 
 | Layer | Files read | Files clean | Residue rows (classes 1–7) | Hook/contract rows |

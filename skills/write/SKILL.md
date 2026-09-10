@@ -1,8 +1,8 @@
 ---
 name: write
-description: Draft academic paper sections using paragraph-level argument moves. Cleanup pass strips AI patterns after drafting. Replaces /draft-paper and /humanizer.
+description: Draft academic paper sections using paragraph-level argument moves. Cleanup pass strips AI patterns after drafting. Replaces the old draft-paper and humanizer commands.
 argument-hint: "[section or mode: intro | strategy | results | conclusion | abstract | full | humanize | style-guide] [file path (optional)]"
-allowed-tools: Read,Grep,Glob,Write,Edit,Task
+allowed-tools: Read,Grep,Glob,Write,Edit,Agent
 ---
 
 # Write
@@ -26,13 +26,12 @@ Workflow:
 #### 1. Context Gathering
 
 Before drafting, read all available context:
-1. Read existing paper draft in `paper/` (if it exists)
+1. `python3 .claude/scripts/pipeline.py manuscript` — read the declared manuscript in full: YAML, the `setup` chunk's naming map, every chunk label, every section already drafted
 2. Read `master_supporting_docs/` for notes, outlines, research specs
-3. Read most recent `quality_reports/research_spec_*.md` or `quality_reports/lit_review_*.md`
+3. Read `quality_reports/strategy/<project>/strategy_memo.md` and `quality_reports/literature/<project>/positioning.md`
 4. Read `.claude/references/domain-profile.md` for field conventions
-5. Check `Bibliography_base.bib` for available citations
-6. Scan `paper/tables/` and `paper/figures/` for generated output
-7. Read `quality_reports/results_summary.md` if it exists (from Coder)
+5. Read `references.bib` — every `@key` you write must exist there
+6. List the `tbl-` and `fig-` chunks and the objects the estimation chunks define — those are what prose may cite
 
 #### 2. Paper Type Detection
 
@@ -57,32 +56,14 @@ Based on `$ARGUMENTS`:
 - **`model`**: Draft model section (structural or theory+empirics papers only)
 - **No argument**: Ask user which section to draft
 
-#### 4. Dispatch Writer
+#### 4. Dispatch writer
+Dispatch **writer** with the paper type, the section, and the argument-move templates. It writes the section into the declared manuscript under its `#` heading; every number is an inline expression (INV-11). Standalone: `python3 .claude/scripts/pipeline.py log writer`.
 
-Dispatch Writer with paper type and argument-move templates for the target section. The writer drafts using paragraph types (motivation, result statement, mechanism, etc.), applies design-specific moves, then runs the cleanup pass. Write the section into `manuscript_<project>.qmd` under its `#` heading. Every number is an inline `` `r ` `` expression against a live object — never a typed literal (INV-11).
+#### 5. Dispatch writer-critic (every mode that touches prose)
+Dispatch **writer-critic** in section mode on the section just written. It produces a scored report at `quality_reports/reviews/writer-critic_<date>.md` and the Claim–Evidence Table at `quality_reports/reviews/claim_evidence_<project>_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --report <path> --scope section:<name>`. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question. `/write humanize` is prose and gets the critic — in its own mode section below, in proofread mode; `/write style-guide` produces no prose and is the only exempt mode.
 
-#### 5. Quality Self-Check
-
-Before presenting the draft:
-- [ ] Paper type identified and correct template used
-- [ ] Every paragraph has an identifiable purpose (argument move type)
-- [ ] Findings lead sentences — not buried after setup
-- [ ] Design-specific elements present (see writer.md for checklists per design)
-- [ ] Every displayed equation is numbered (`\label{eq:...}`)
-- [ ] All `\cite{}` keys exist in `Bibliography_base.bib`
-- [ ] Introduction contribution paragraph names specific papers
-- [ ] Effect sizes stated with units
-- [ ] No banned hedging phrases
-- [ ] Notation consistent throughout
-- [ ] All tables/figures referenced actually exist in `paper/tables/` or `paper/figures/`
-- [ ] Results narrated correctly for output type (tables, event study figures, counterfactuals)
-- [ ] Personal style guide loaded (not template) — or user prompted to run `/write style-guide`
-- [ ] Claim-source map produced for all numerical claims (`quality_reports/claim_source_map_{project}.md`)
-- [ ] Results/Conclusion only drafted after verifying actual output files exist
-
-#### 6. Present to User
-
-Present sections through drafting gates, pausing for approval at each:
+#### 6. Present to user
+Only after the critic's score. Sections go through the drafting gates (`.claude/skills/write/templates/drafting-gates.md`), each gate closing with a score, pausing for approval at each:
 
 **GATE 1:** Introduction + Literature positioning → present, wait for approval
 **GATE 2:** Data + Empirical Strategy (or Model) → present, wait for approval
@@ -91,7 +72,7 @@ Present sections through drafting gates, pausing for approval at each:
 For single-section drafts, present the section directly. For `full`, use all three gates.
 
 Flag items that need attention:
-- **BLOCKED items:** Results/Conclusion cannot be drafted without output files
+- **BLOCKED items:** Results/Conclusion cannot be drafted without an estimation chunk and a clean render
 - **VERIFY items:** Citations that need user confirmation
 - **VOICE items:** Style guide not yet extracted (drafting blocked until resolved)
 
@@ -103,13 +84,13 @@ One-shot extraction of the user's writing voice from their published or drafted 
 - Once at the start of a project, after pointing at a directory of the user's prior papers
 - After publishing a new paper that shifts voice (re-run to refresh the profile)
 
-**Input:** `$ARGUMENTS` — path to a directory containing prior papers (.tex or .pdf). If omitted, defaults to `master_supporting_docs/` and scans for .tex/.pdf files.
+**Input:** `$ARGUMENTS` — path to a directory containing prior papers (`.qmd`, `.docx`, `.pdf`, `.tex`). If omitted, defaults to `master_supporting_docs/` and scans for `.qmd`/`.docx`/`.pdf`/`.tex` files.
 
 **Agent:** Writer (style-extraction mode)
 **Output:** `.claude/references/personal-style-guide.md`
 
 Workflow:
-1. **Discover corpus.** List .tex and .pdf files in the target directory. If fewer than 2 papers found, flag and ask before proceeding (style extraction on a single paper overfits).
+1. **Discover corpus.** List `.qmd`, `.docx`, `.pdf`, `.tex` files in the target directory. If fewer than 2 papers found, flag and ask before proceeding (style extraction on a single paper overfits).
 2. **Sample strategically.** For each paper, extract:
    - The full introduction
    - The first two paragraphs of each major section
@@ -146,6 +127,8 @@ Strips 24 patterns across 4 categories:
 - Rhetorical: rule-of-three, negative parallelisms, em dash overuse
 - Formatting: excessive bullet points, promotional language
 
+After the cleanup pass, dispatch **writer-critic** in **proofread mode** (`.claude/agents/writer-critic.md` — categories 4, 5, 6, 8 only: writing quality, format, render, notation; not section mode, which would score identification fidelity and claims-evidence on prose it never saw drafted). Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --report <path> --scope section:<file>`. The `section:` prefix is mandatory — without it the score falls through to the component branch and overwrites the whole-manuscript score instead of scoping to this file. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question.
+
 ---
 
 ## Section Standards
@@ -163,12 +146,11 @@ Strips 24 patterns across 4 categories:
 
 ---
 
-## LaTeX Conventions
+## Quarto Conventions
 
-- `\citet{}` for textual citations ("Smith (2024) shows...")
-- `\citep{}` for parenthetical citations ("...is well documented (Smith, 2024)")
-- `booktabs` rules (`\toprule`, `\midrule`, `\bottomrule`) — never `\hline`
-- Notation protocol: `Y_{it}`, `D_{it}`, `\gamma_i`, `\delta_t`, `\varepsilon_{it}`
+- `@key` for textual citations ("@smith2024 shows..."), `[@key]` parenthetical (INV-9)
+- `@tbl-label`, `@fig-label`, `@eq-label`, `@sec-label` — never a typed number
+- Notation protocol: `.claude/skills/write/references/notation-protocol.md`
 
 ---
 
@@ -178,18 +160,19 @@ Loaded on demand by the writer agent:
 
 | Resource | Path | When |
 |----------|------|------|
-| Section templates | `templates/section-templates.md` | Always -- defines section structure |
-| Paragraph moves | `templates/paragraph-moves.md` | Always -- defines argument types |
-| Cleanup patterns | `templates/cleanup-patterns.md` | After drafting -- cleanup pass |
-| Style extraction | `templates/style-extraction-protocol.md` | `/write style-guide` mode |
-| Drafting gates | `templates/drafting-gates.md` | Full draft mode |
-| Notation protocol | `references/notation-protocol.md` | Strategy + results sections |
+| Section templates | `.claude/skills/write/templates/section-templates.md` | Always -- defines section structure |
+| Paragraph moves | `.claude/skills/write/templates/paragraph-moves.md` | Always -- defines argument types |
+| Cleanup patterns | `.claude/skills/write/templates/cleanup-patterns.md` | After drafting -- cleanup pass |
+| Style extraction | `.claude/skills/write/templates/style-extraction-protocol.md` | `/write style-guide` mode |
+| Drafting gates | `.claude/skills/write/templates/drafting-gates.md` | Full draft mode |
+| Notation protocol | `.claude/skills/write/references/notation-protocol.md` | Strategy + results sections |
 
 See also: `gotchas.md` for known failure points and edge cases.
 
 ---
 
 ## Principles
+- **Never a draft without its critic.** The score comes before the user sees the section.
 - **This is the user's paper, not Claude's.** Match their voice and style.
 - **Never fabricate results.** Use TBD placeholders.
 - **Citations must be verifiable.** Only cite confirmed papers.

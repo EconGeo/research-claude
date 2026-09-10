@@ -1,8 +1,8 @@
 ---
 name: tools
-description: Utility commands — commit, compile, validate-bib, lint, journal, context-status, deploy, learn. Replaces individual utility skills.
-argument-hint: "[subcommand: commit | compile | validate-bib | lint | journal | context | deploy | learn | upgrade] [args]"
-allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Task
+description: Utility commands — commit, render, validate-bib, lint, journal, context-status, learn. Replaces individual utility skills.
+argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | context | learn] [args]"
+allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
 # Tools
@@ -14,20 +14,6 @@ Utility subcommands for project maintenance and infrastructure.
 ---
 
 ## Subcommands
-
-### `/tools dashboard [--open]` — Project Dashboard
-Regenerate the project dashboard HTML file.
-
-```bash
-python3 scripts/generate_dashboard.py
-```
-
-If `--open` is specified (or by default), open the dashboard in the browser:
-```bash
-open project_dashboard.html
-```
-
-The dashboard scans the entire project — paper sections, data, scripts, quality reports, bibliography, plans — and renders an interactive HTML overview. Regenerate it after any significant work.
 
 ### `/tools commit [message]` — Git Commit
 Stage changes, create commit, optionally create PR and merge.
@@ -65,9 +51,10 @@ Run grep-based checks on R/Python/Julia scripts against the coding standards' pr
 "$CLAUDE_PROJECT_DIR"/.claude/hooks/lint-scripts.sh [target]
 ```
 
-- **Single file:** `/tools lint scripts/02_estimate.R`
-- **Directory:** `/tools lint scripts/` (recursive)
-- **Default:** `/tools lint` (lints `scripts/`)
+- **Single file:** `/tools lint scripts/acquire/01_download.py`
+- **Directory:** `/tools lint scripts/acquire/` (recursive)
+- **Default:** `/tools lint` (lints `scripts/acquire/` and `explorations/`)
+- **`.qmd` file:** also lints the R chunks of a `.qmd` (`.claude/scripts/qmd_chunks.py`)
 
 **What it checks (drawn from `.claude/references/coding-standards-*.md`):**
 
@@ -108,56 +95,8 @@ Shows chronological record of agent actions, phase transitions, scores, decision
 Show current context status and session health.
 Check context usage, whether auto-compact is approaching, what state will be preserved.
 
-### `/tools deploy` — Deploy Guide Site
-Render Quarto guide site and publish to GitHub Pages.
-```bash
-cd guide && quarto publish gh-pages --no-browser
-```
-
 ### `/tools learn` — Extract Learnings
 Extract reusable knowledge from the current session. Auto-memory handles corrections automatically; this is for multi-step workflows worth turning into a full skill.
-
-### `/tools upgrade` — Upgrade Clo-Author Infrastructure
-Upgrade an existing project to the latest clo-author architecture.
-
-**What it does:**
-1. Clone the latest clo-author release into a temp directory
-2. Save the user's filled-in domain-profile.md and any custom journal profiles
-3. Delete the old `.claude/` directory
-4. Copy the new `.claude/` in
-5. Restore the user's domain-profile.md and custom journal profiles
-6. Optionally copy new `templates/`
-7. Report what changed
-
-**Workflow:**
-```
-Step 1: DOWNLOAD
-  - Clone latest clo-author into /tmp/clo-author-upgrade
-  - Or: gh release download --repo hugosantanna/clo-author
-
-Step 2: PRESERVE USER CUSTOMIZATIONS
-  - Save .claude/references/domain-profile.md if filled in (not just placeholders)
-  - Save any custom journal profiles the user added to journal-profiles.md
-  - Save .claude/settings.json (user's permissions and hooks)
-  - Save .claude/settings.local.json if it exists
-
-Step 3: REPLACE
-  - Delete old .claude/ entirely
-  - Copy new .claude/ from the downloaded release
-  - Restore saved customizations from Step 2
-
-Step 4: DO NOT TOUCH
-  - paper/, scripts/, data/, explorations/, quality_reports/
-  - CLAUDE.md, Bibliography_base.bib, README.md, .gitignore
-  - Any other user content
-
-Step 5: REPORT
-  - List what was updated (new agents, skills, rules)
-  - List what was preserved (domain profile, settings, custom profiles)
-  - Clean up temp directory
-```
-
-**No git merge. No upstream remote. No conflicts.** Just delete and replace `.claude/`.
 
 ---
 
@@ -173,4 +112,3 @@ Step 5: REPORT
 - **Each subcommand is lightweight.** No multi-agent orchestration needed.
 - **Render is one step.** `quarto render` handles citations and cross-references; there is no multi-pass build to manage.
 - **validate-bib catches drift.** Run before commits to catch broken citations.
-- **Upgrade preserves content.** Infrastructure changes, your paper doesn't.

@@ -1,0 +1,109 @@
+agents/coder-critic.md:84:- No `source()` call in any chunk (−10); no analysis `.R` script in `scripts/R/` beyond acquisition (−5 per)
+agents/coder-critic.md:87:This mode supersedes Rmd Mode for `.qmd` targets. (The Rmd Mode invariant numbers below predate the current content-invariants and apply only to genuine `.Rmd` projects.)
+agents/coder-critic.md:91:When the target is `manuscript.Rmd` or when reviewing code chunks extracted from it:
+agents/coder-critic.md:93:**Detect by:** the file ends in `.Rmd`, OR the artifact is code chunks from `manuscript.Rmd`.
+agents/writer.md:44:2. Read `quality_reports/results_summary.md` (produced by `/analyze`)
+agents/verifier.md:41:Rscript scripts/R/FILENAME.R 2>&1 | tail -20
+agents/verifier.md:49:- Every `\input{}`, `\include{}` reference resolves to an existing file
+agents/verifier.md:50:- Every referenced table in `paper/tables/` exists
+agents/verifier.md:51:- Every referenced figure in `paper/figures/` exists
+agents/writer-critic.md:52:When the artifact is `manuscript.Rmd` (not a `.tex` file):
+agents/writer-critic.md:54:**Detect by:** the file ends in `.Rmd` or `.qmd`, OR the artifact contains `bookdown::pdf_document2` in YAML.
+agents/writer-critic.md:59:- Citation checks: flag `\citet{}` / `\citep{}` in prose (should be `@key` / `[@key]`)
+agents/coder.md:59:- All outputs to `paper/tables/` and `paper/figures/`
+agents/coder.md:60:- `results_summary.md` with key findings, effect sizes, interpretation notes for the Writer
+agents/coder.md:84:scripts/R/
+agents/coder.md:85:  00_master.R              # Runs everything in sequence
+agents/coder.md:128:- **by-script (default):** `paper/figures/main_regression/figure1.pdf`
+agents/coder.md:129:- **by-purpose:** `paper/figures/estimation/coefplot_main.pdf`
+agents/data-engineer.md:53:- Save as both `.pdf` (paper) and `.png` (slides/web) to `paper/figures/`
+agents/data-engineer.md:68:- Save to `paper/tables/`
+skills/write/gotchas.md:8:- Writer sometimes invents citation keys not in `Bibliography_base.bib`. Always verify generated `\cite{}` keys against the actual bib file.
+agents/theorist.md:53:**Foundational references:** Check `.claude/references/domain-profile.md` first. Cross-check every citation against `Bibliography_base.bib`.
+skills/write/templates/drafting-gates.md:32:- `paper/tables/` must contain at least one `.tex` file with actual numbers
+skills/write/templates/drafting-gates.md:33:- `paper/figures/` must contain at least one `.pdf` or `.png` figure
+skills/write/SKILL.md:33:5. Check `Bibliography_base.bib` for available citations
+skills/write/SKILL.md:34:6. Scan `paper/tables/` and `paper/figures/` for generated output
+skills/write/SKILL.md:35:7. Read `quality_reports/results_summary.md` if it exists (from Coder)
+skills/write/SKILL.md:71:- [ ] Every displayed equation is numbered (`\label{eq:...}`)
+skills/write/SKILL.md:72:- [ ] All `\cite{}` keys exist in `Bibliography_base.bib`
+skills/write/SKILL.md:77:- [ ] All tables/figures referenced actually exist in `paper/tables/` or `paper/figures/`
+skills/write/SKILL.md:168:- `\citet{}` for textual citations ("Smith (2024) shows...")
+skills/write/SKILL.md:169:- `\citep{}` for parenthetical citations ("...is well documented (Smith, 2024)")
+skills/write/templates/style-extraction-protocol.md:48:Scan the sampled papers for `\cite{}`, `\citet{}`, `\citep{}` commands referencing the author's own prior work. List any citation keys found. Cross-check each against `Bibliography_base.bib` in the current project. If any self-citation keys are missing from the bib, include a `## Self-Citation Gaps` appendix in the style guide output listing them -- so future `/write` calls don't invent or drop those references.
+skills/tools/SKILL.md:151:  - CLAUDE.md, Bibliography_base.bib, README.md, .gitignore
+skills/submit/templates/submission-checklist.md:19:- [ ] No `Figure~\ref{}` -- use `\cref{}` throughout
+skills/submit/templates/audit-10-checks.md:43:  not in `scripts/R/` (a stray analysis script is an orphan by construction)
+skills/submit/templates/replication-readme.md:25:| `02_analysis.R` | `data/cleaned/` | `paper/tables/` | Main analysis |
+skills/submit/templates/replication-readme.md:32:4. Output appears in `paper/tables/` and `paper/figures/`
+skills/review/templates/theory-review-4-phases.md:127:Cross-check against `Bibliography_base.bib`.
+skills/review/templates/code-review-16-categories.md:24:- Does a naming map exist (in `01_setup.R` or `results_summary.md`)?
+skills/review/templates/code-review-16-categories.md:62:- Numbered script structure (`00_master.R` through `0N_*.R`)?
+skills/review/templates/manuscript-review-8-categories.md:116:| `\@ref()` bookdown syntax instead of Quarto `@` syntax | -3 per, max -10 |
+skills/analyze/SKILL.md:58:- Stage 3: Publication-ready output (tables to `paper/tables/`, figures to `paper/figures/`)
+skills/analyze/SKILL.md:59:- Produce `results_summary.md` with all estimates, SEs, and key statistics (MANDATORY)
+skills/analyze/SKILL.md:60:- Save scripts to `scripts/R/` (or appropriate language directory)
+skills/analyze/SKILL.md:104:1. **Results summary** — key estimates with SEs and interpretation (from `results_summary.md`)
+skills/analyze/SKILL.md:106:3. **Output files** — tables in `paper/tables/`, figures in `paper/figures/`
+skills/analyze/SKILL.md:130:dir.create("paper/tables", recursive = TRUE, showWarnings = FALSE)
+skills/analyze/SKILL.md:131:dir.create("paper/figures", recursive = TRUE, showWarnings = FALSE)
+skills/analyze/SKILL.md:142:# saveRDS(model_fit, "scripts/R/output/model_fit.rds")
+skills/analyze/SKILL.md:143:# saveRDS(main_results, "scripts/R/output/main_results.rds")
+skills/analyze/SKILL.md:150:Every analysis run MUST produce `results_summary.md` containing:
+skills/analyze/gotchas.md:35:- `results_summary.md` is mandatory. Without it, the writer agent cannot draft the results section.
+skills/analyze/references/table-standards.md:4:`manuscript_<project>.qmd`**, not `.tex` fragments written to disk and `\input{}`
+skills/analyze/references/table-standards.md:5:somewhere else. There is no `paper/tables/` directory and nothing exports a bare
+skills/analyze/references/table-standards.md:143:| Writing a `.tex` fragment to disk | Tables are chunks in the manuscript; there is no `paper/tables/` |
+skills/analyze/templates/pre-code-report.md:59:**Output directory:** [paper/tables/ and paper/figures/ — confirm by-script or by-purpose from CLAUDE.md]
+skills/analyze/templates/paper-to-code-map.md:3:**Purpose:** Establish a 1:1 mapping between the paper's mathematical notation and the code's variable names. Every symbol in the manuscript has exactly one code name. This map is produced in the Pre-Code Report, included as a comment block in `01_setup.R`, and reproduced in `results_summary.md`.
+skills/analyze/templates/results-summary.md:82:| `paper/tables/[name].tex` | [what it shows] | Table [N] |
+skills/analyze/templates/results-summary.md:87:| `paper/figures/[name].pdf` | [what it shows] | Figure [N] |
+skills/analyze/templates/results-summary.md:92:| `scripts/R/output/[name].rds` | [what it contains] |
+skills/analyze/templates/python-script-structure.py:7:Outputs: [paper/tables/reg_main.tex, paper/figures/event_study.pdf]
+skills/analyze/templates/python-script-structure.py:62:# with open(TABLE_DIR / "reg_main.tex", "w") as f:
+skills/analyze/templates/r-script-structure.R:7:# Outputs: [paper/tables/reg_main.tex, paper/figures/event_study.pdf]
+skills/analyze/templates/r-script-structure.R:56:# writeLines(tex_output, here("paper", "tables", "reg_main.tex"))
+skills/talk/references/slide-design-principles.md:31:- Use `\pause` for sequential reveals when the logical flow requires it
+skills/talk/references/slide-design-principles.md:33:- Use `\only<>` for equation buildup in structural model presentations
+skills/talk/templates/quarto-scaffold.qmd:24:bibliography: ../../Bibliography_base.bib
+skills/talk/templates/quarto-scaffold.qmd:59:![](../../paper/figures/fig_motivation.pdf){fig-align="center" width="80%"}
+skills/talk/templates/quarto-scaffold.qmd:111:![](../../paper/figures/fig_main_result.pdf){fig-align="center" width="80%"}
+skills/talk/templates/quarto-scaffold.qmd:129:![](../../paper/figures/fig_robustness.pdf){fig-align="center" width="80%"}
+rules/ai-disclosure.md:109:`{.unnumbered}`, not bookdown's `{-}`.
+rules/quarto-pdf.md:102:Never use `\citet{}` / `\citep{}` — LaTeX-only, renders as raw text in any non-PDF
+rules/quarto-pdf.md:127:- `\citet{}` / `\citep{}` in prose (-3 per, max -10)
+rules/content-invariants.md:39:a `csl:`. For PDF output, `cite-method: biblatex`. Never raw `\citet{}` / `\citep{}`
+rules/content-invariants.md:56:written to a file and included by hand; there is no `paper/tables/` or
+rules/content-invariants.md:57:`paper/figures/`.
+rules/quarto-empirical.md:35:live inside `manuscript_<project>.qmd` as cached code chunks. There is no `scripts/R/`
+rules/quarto-empirical.md:36:analysis directory, no `00_master.R`, and no `results_ground_truth.csv`.
+rules/quarto-empirical.md:297:| Analysis R script present in `scripts/R/` beyond acquisition scripts | −5 per script |
+rules/registry-verification-gate.md:26:[ ] 1. PIPELINE COMPLETE: Rscript scripts/R/00_master.R ran to exit code 0.
+rules/registry-verification-gate.md:33:[ ] 3. SCRIPT INVENTORY: Every .R file in scripts/R/ that produces an RDS
+rules/registry-verification-gate.md:34:       output is called via source() in 00_master.R. Run:
+rules/registry-verification-gate.md:35:         comm -23 <(ls scripts/R/[0-9]*.R | sort) \
+rules/registry-verification-gate.md:36:                  <(grep 'source(here' scripts/R/00_master.R | \
+rules/registry-verification-gate.md:50:         - Any analysis script (scripts/R/0[3-9]*.R, scripts/R/1*.R)
+rules/registry-verification-gate.md:58:registry_mtime   <- file.mtime(here::here("scripts/R/output/results_ground_truth.csv"))
+rules/registry-verification-gate.md:68:analysis_scripts <- analysis_scripts[!grepl("00_master", analysis_scripts)]
+rules/registry-verification-gate.md:76:  message("Re-run scripts/R/00_master.R before writing.")
+rules/registry-verification-gate.md:104:2. Offer to run the pipeline now (Rscript scripts/R/00_master.R)
+rules/registry-verification-gate.md:119:1. Open `scripts/R/output/results_ground_truth.csv`. Read all keys.
+rules/registry-verification-gate.md:158:write_csv(build_table(result), "tables/tab_main.tex")
+rules/registry-verification-gate.md:166:write_csv(build_table(result), "tables/tab_main.tex")
+rules/registry-verification-gate.md:176:Every R script that produces an RDS output must be reachable from `00_master.R`
+rules/registry-verification-gate.md:182:1. Add it to `00_master.R` in the correct sequence (before the ground-truth assembler)
+rules/registry-verification-gate.md:184:3. Verify the stage runs cleanly end-to-end in `00_master.R`
+rules/registry-verification-gate.md:186:**Never commit a new analysis script without adding it to `00_master.R`.**
+rules/registry-verification-gate.md:197:02..NN_*.R  [all sourced in 00_master.R, in order]
+references/coding-standards-rmd.md:3:These standards apply to code chunks in `manuscript.Rmd`.
+references/coding-standards-rmd.md:11:Every `manuscript.Rmd` must begin with a setup chunk immediately after the YAML:
+references/coding-standards-rmd.md:100:**Do NOT** run data preparation inside `manuscript.Rmd`. Data prep lives in `scripts/R/`:
+references/coding-standards-rmd.md:103:scripts/R/
+references/coding-standards-rmd.md:156:| File exported to `paper/tables/` | Renders inline in document |
+references/coding-standards-rmd.md:157:| `\begin{table}` wrapper in `main.tex` | bookdown creates the float |
+references/coding-standards-rmd.md:158:| Caption in `main.tex` | `title = "..."` argument |
+references/coding-standards-rmd.md:177:- `dev = "pdf"` for vector output (PDF target); bookdown sets this automatically for PDF
+references/coding-standards-rmd.md:208:| `\citet{}` / `\citep{}` in prose | LaTeX-only commands | `@key` / `[@key]` |
+references/coding-standards-rmd.md:212:| Chunk label with underscore | bookdown label issue | Use kebab-case |
+hooks/README.md:70:pipeline, where analysis lives in `.qmd` chunks rather than `scripts/R/*.R`.
