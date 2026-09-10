@@ -24,7 +24,7 @@ that took real work to find.
 **Read §2 and §3 before trusting a gate.** Three checkers have known, permanent blind spots.
 A green gate does not mean what you might assume in the specific cases named there.
 
-Rulings are numbered R-1…R-122 in the order they were made. Where a later ruling reversed an
+Rulings are numbered R-1…R-126 in the order they were made. Where a later ruling reversed an
 earlier one, both are shown — the reversal is usually the more interesting record.
 
 ---
@@ -679,7 +679,7 @@ outward-facing.
 | `git submodule deinit -f submodules/ai-audit submodules/journal-digest` and a `.git/modules` clean on `main` (not done from the worktree — shared `.git/config`/`.git/modules`, see R-1) | Submodule removal task |
 | Reword `rules/registry.yaml`'s 8-row self-documentation header and the 6 dual-context docstring rows in `pipeline.py`/`registry_lib.py` so `path-resolves` reaches green without a new exempt set | Task 3b.8 |
 | Add the `artifact-paths` gate: flag any `quality_reports/` path matching no registry glob, with an allow-list for genuine convenience artifacts | R-112 |
-| Resolve the `.claude/references/coding-standards` double-reference left dangling by deleting `references/coding-standards-rmd.md` in Stage 3 | Task 5.1/5.2 sweep |
+| ~~Resolve the `.claude/references/coding-standards` double-reference left dangling by deleting `references/coding-standards-rmd.md`~~ — **withdrawn (R-125): the premise was false.** `coding-standards-{r,python,julia}.md` all exist; only the Rmd file was deleted, correctly. The two hits are R-21's documented truncation of `-{lang}` and `-*`, four sections above. Fixed in `PATH_RE` at Task 7.3, not by editing the references. | R-125 |
 | Implement the enumerated (but not yet applied) `SKILL.md` "Replaces /X" frontmatter rewordings for the 18 genuine `skill-refs` hits | Task 3b.8 |
 
 ---
@@ -869,3 +869,7 @@ worth having.
 | R-120 | Fixture `settings.json` must NOT be committed — `apply.sh`'s `copy_seed` never overwrites, so a committed copy would test a permanently stale seed |
 | R-121 | `last_component` is derived from timestamp order, valid only while R-49's format holds |
 | R-122 | A retired skill's name shadowed a live one extending it; the gate misfire degraded a shipped file before it was fixed |
+| R-123 | Task 6.4 (ZotPilot fork PR) deferred to the maintainer — it pushes and merges on a shared remote. Nothing is blocked: its residue is WARN-tier vendored-tree text |
+| R-124 | `skills/dashboard/` deleted only after confirming every other `dashboard` hit refers to the Obsidian `Home.md` note, a different artifact |
+| R-125 | **Withdraws a §5 deferred item.** The `coding-standards` "dangling refs" were R-21 truncation false positives; the three real files exist. Fixed in `PATH_RE`, not in the references |
+| R-126 | Task 7.5's six-repo wiring and Task 7b.1's `~/Research` work deferred — that tree is read-only for this session. The in-tree halves (`hooks-wired`, `seeds/settings.json`, the profile/card files) still ship |
