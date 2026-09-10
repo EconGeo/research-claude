@@ -106,9 +106,12 @@ Workflow:
    5. **Known issues** — Documented problems with this dataset in the literature
 
    Save the critic's report to `quality_reports/reviews/explorer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score data <score> --critic explorer-critic --report quality_reports/reviews/explorer-critic_<date>.md`.
-7. Save exploration to `quality_reports/data_exploration_[topic].md`
+7. Save to `quality_reports/data-assessment/<project>/`:
+   - `data_sources.md` — the per-dataset report from Step 5: name, provider, access level, key variables, coverage, feasibility grade (A-D), strengths and limitations, plus the rejection table below. This is the file the downstream gate (`strategist.requires` in `.claude/rules/registry.yaml`) keys on, so it must be the one that always exists.
+   - `data_dictionary.md` — the variables needed (Step 3: treatment, outcome, controls, time period, geography) crossed with what each dataset in Step 5 actually supplies for them
+   - `access_instructions.md` — how to obtain each viable dataset: application route, cost, timeline, IRB/DUA/FSRDC requirements, drawn from Step 5's access level and feasibility grade
 
-**Rejected datasets:** Include a rejection table:
+**Rejected datasets:** Include a rejection table in `data_sources.md`:
 
 | Dataset | Reason for Rejection | Deal-breaker? |
 |---------|---------------------|---------------|
