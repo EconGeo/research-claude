@@ -125,11 +125,22 @@ this file is that move.**
     **Note the trap:** the note's window is 2014--2024 while the panel is 2012--2024, so
     `min(panel$year)` would have been the wrong expression there. The other 37 got rows with
     reasons in `paper/quality_reports/prose_number_allowlist.csv`. Commit `41af5dc`.
-- **Two things §2a surfaced and did not fix.**
-  1. **The allowlist path is manuscript-dir-relative.** zoning2026 keeps its manuscript in
-     `paper/`, so the shipped scanner looks in `paper/quality_reports/` and the allowlist had
-     to go there rather than beside the project's other `quality_reports/`. Nothing is broken;
-     it is a wart in `prose_number_check.py`'s default and worth a deliberate ruling.
+- **Two things §2a surfaced; the first is now fixed.**
+  1. **✅ FIXED — the allowlist path was manuscript-dir-relative.** `prose_number_check.py`
+     resolved its default allowlist beside the *manuscript*, but `quality_reports/` is a
+     *project* directory — `pipeline_state.json`, `agent_dispatch.jsonl` and `reviews/` all
+     resolve from the project root, and `rules/quarto-empirical.md` (read in full) already
+     called the allowlist "per-project". It now walks up from the manuscript to the nearest
+     directory carrying a `.claude`, falling back to the manuscript's own directory outside a
+     project, so a manuscript in `paper/` reads the project's one allowlist. zoning2026's file
+     moved back to `quality_reports/` (`105e95a`).
+     **The second half of that fix is the one that matters more.** A missing allowlist and an
+     allowlist that simply lacks a row produced the *same* output — which is how NAR's 54
+     already-adjudicated literals were reported as unexplained. An absent allowlist now says
+     so, an explicitly-named allowlist that does not exist is a usage error (exit 2) rather
+     than a silently empty one, and the resolved path is printed on success as well as
+     failure. Red-first `tests/test_prose_number_check.py` (8 tests, 3 red first).
+     This is R-135 again: the gate was stating a property it had not tested.
   2. **`_NOUN` does not cover the nouns this literature counts.** zoning2026's prose says
      "nine states adopted strong measures", "eight moderate measures", "sixteen affected
      MSAs", "Fifty MSAs that span state boundaries", "five states" — every one a count off an

@@ -223,7 +223,12 @@ for a sweep whose largest p is 0.003. Three separate critic passes read past the
 Reading does not catch this class; searching does.
 
 The checker requires a per-project allowlist at
-`quality_reports/prose_number_allowlist.csv` (columns: `literal,reason`). Literals
+`quality_reports/prose_number_allowlist.csv` (columns: `literal,reason`). **Per-project
+means the project root**, which is where the checker looks — it walks up from the
+manuscript to the nearest directory carrying a `.claude`, so a manuscript in `paper/`
+still reads the project's one allowlist, not `paper/quality_reports/`. If that file is
+absent the checker says so rather than reporting every literal as unexplained; a missing
+allowlist and an incomplete one are different findings. Literals
 that cannot come from your R — calendar years, docket numbers, a figure quoted from
 a cited paper — belong there with a written reason. The standard is not that
 literals are forbidden; it is that each surviving one is a decision someone made on

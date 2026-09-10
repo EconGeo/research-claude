@@ -38,10 +38,37 @@ Usage
 -----
     python3 .claude/scripts/prose_number_check.py MANUSCRIPT.qmd [ALLOWLIST.csv]
 
-The allowlist defaults to quality_reports/prose_number_allowlist.csv relative to
-the manuscript. Exit codes: 0 clean, 1 unexplained literals, 2 usage error.
+The allowlist defaults to quality_reports/prose_number_allowlist.csv at the
+PROJECT root -- the nearest directory at or above the manuscript that carries a
+.claude directory -- falling back to the manuscript's own directory outside a
+project. Exit codes: 0 clean, 1 unexplained literals, 2 usage error.
 """
 import re, csv, sys, os, collections
+
+
+def project_root(qmd):
+    """Nearest ancestor of the manuscript carrying a .claude directory.
+
+    quality_reports/ is a PROJECT directory: pipeline_state.json,
+    agent_dispatch.jsonl and reviews/ all resolve from the project root, and
+    quarto-empirical.md calls this allowlist "per-project". Resolving it beside
+    the MANUSCRIPT instead was wrong for any project that keeps its manuscript
+    in a subdirectory -- one kept its allowlist in quality_reports/ while this
+    scanner looked in paper/quality_reports/, found nothing, and reported all
+    41 of its literals as unexplained.
+
+    Falls back to the manuscript's own directory when nothing above it is a
+    project, so the script still works on a loose .qmd.
+    """
+    here = os.path.dirname(os.path.abspath(qmd))
+    d = here
+    while True:
+        if os.path.isdir(os.path.join(d, ".claude")):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            return here
+        d = parent
 
 
 def load_prose(qmd):
@@ -107,9 +134,13 @@ def main(argv):
     if not os.path.exists(qmd):
         print(f"error: manuscript not found: {qmd}")
         return 2
-    allow_path = argv[2] if len(argv) == 3 else os.path.join(
-        os.path.dirname(os.path.abspath(qmd)),
-        "quality_reports", "prose_number_allowlist.csv")
+    named = len(argv) == 3
+    allow_path = argv[2] if named else os.path.join(
+        project_root(qmd), "quality_reports", "prose_number_allowlist.csv")
+    if named and not os.path.exists(allow_path):
+        # A path someone typed is a typo, not an empty allowlist.
+        print(f"error: allowlist not found: {allow_path}")
+        return 2
 
     allow = {}
     if os.path.exists(allow_path):
@@ -133,6 +164,17 @@ def main(argv):
         print("PROSE NUMBER CHECK FAILED —", len(unexplained), "unexplained literals")
         print(f"  manuscript: {qmd}")
         print(f"  allowlist:  {allow_path}")
+        if not os.path.exists(allow_path):
+            # Distinguishing the two is the whole point. One project's 54
+            # "unexplained literals" were all adjudicated, with written reasons,
+            # in a file this scanner never opened because it was named something
+            # else. Reporting a missing allowlist as a wall of unexplained
+            # literals states a property that was never tested.
+            print("  NOTE: that file does not exist. Every literal below is "
+                  "unexplained because there is\n        nothing to explain it "
+                  "in -- not because an allowlist was consulted and came up "
+                  "short.\n        Create it with the header row "
+                  "`literal,reason`.")
         print("  Make each an inline `r` expression, or add it to the allowlist "
               "with a reason.\n")
         for lit, occ in unexplained.items():
@@ -141,6 +183,9 @@ def main(argv):
 
     print(f"Prose number check PASSED: {len(hits)} distinct literals, all allowlisted "
           f"with a reason; {sum(len(v) for v in hits.values())} occurrences.")
+    # Name the file that was read. A green from an allowlist resolved somewhere
+    # unexpected is the same defect as a red from one that was never found.
+    print(f"  allowlist:  {allow_path}")
     if stale:
         print("  note: allowlist entries no longer present in the prose:",
               ", ".join(sorted(stale)))
