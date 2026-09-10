@@ -10,9 +10,16 @@ LIVE=false; KEEP=false
 for a in "$@"; do case "$a" in --live) LIVE=true;; --keep) KEEP=true;; esac; done
 
 T="$(mktemp -d)"; H="$(mktemp -d)"; export T H RC
+# The live tier gets its OWN copy. Sharing $T with the mechanical tier is not a tidiness
+# question: the mechanical checks write five coder/coder-critic lines and a code=85.0 score
+# into $T, so every "did the live run do anything?" assertion passes on that residue without
+# claude contributing a thing — and worse, the sequence deliberately ENDS on an unpaired
+# `coder` (pairing-empty-sid), which critic-pairing.py then fires on at the live session's
+# Stop, blocking a session that dispatched nothing. Observed both, 2026-09-10.
+L=""; [[ "$LIVE" == true ]] && L="$(mktemp -d)"
 # H: an isolated fake HOME for critic-pairing.py's checks below. Its sentinel file lives
 # under Path.home()/.claude/sessions/ (R-114) — never the developer's real home directory.
-[[ "$KEEP" == true ]] || trap 'rm -rf "$T" "$H"' EXIT
+[[ "$KEEP" == true ]] || trap 'rm -rf "$T" "$H" ${L:+"$L"}' EXIT
 cp -R "$RC/tests/fixture-project/." "$T/"
 git -C "$T" init -q && git -C "$T" add -A && git -C "$T" -c user.name=fx -c user.email=fx@x commit -qm "fixture"
 fail=0
@@ -135,11 +142,102 @@ run session-guard-allows-rules bash -c "[ -z \"\$(echo '{\"tool_name\":\"Edit\",
 rm -f "$T/.claude/state/session-guards.json"
 
 if [[ "$LIVE" == true ]]; then
-  echo "── live tier"
-  run live-pipeline bash -c "cd '$T' && claude -p '/pipeline run --until analyze --yes' --permission-mode acceptEdits >/dev/null 2>&1"
-  run live-dispatch-log test -s "$T/quality_reports/agent_dispatch.jsonl"
+  echo "── live tier (clean copy: $L)"
+  cp -R "$RC/tests/fixture-project/." "$L/"
+  git -C "$L" init -q && git -C "$L" add -A && git -C "$L" -c user.name=fx -c user.email=fx@x commit -qm "fixture"
+  run live-link "$RC/apply.sh" --project-dir "$L" --link
+  run live-clean-log bash -c "[ ! -e '$L/quality_reports/agent_dispatch.jsonl' ]"
+
+  # ── seed ONLY the stage a temp dir cannot run ──────────────────────────────────────────
+  # literature is the sole creator with `kind: skill`: it delegates to /lit-position, which
+  # calls /ztp-research + /ztp-review, i.e. ZotPilot against a real Zotero library. A
+  # mktemp -d has none, so the stage correctly stops and asks rather than inventing a
+  # bibliography (observed 2026-09-10 — the run exited cleanly after ~3.5 min having
+  # dispatched nothing). Because `run` walks stages in REQUIRES order, `--until analyze`
+  # necessarily starts there, so the live tier could never reach the stages worth testing.
+  #
+  # Seeding literature's OUTPUT leaves data → strategy → analyze to run for real. Every one
+  # of those creators is `kind: agent`, so that path is what exercises this tier's whole
+  # point: Agent dispatch → SubagentStop → dispatch-log.py, critic-pairing.py, post, scoring.
+  #
+  # This is INPUT state and is deliberately NOT the residue problem that produced the false
+  # green: it seeds an artifact and a score, and NEVER the dispatch log — so
+  # live-dispatch-log and live-critic-ran still measure only what the live run itself did.
+  mkdir -p "$L/quality_reports/literature/fixture" "$L/quality_reports/reviews"
+  cat > "$L/quality_reports/literature/fixture/positioning.md" <<'SEED'
+# Positioning — seeded fixture input
+
+Stands in for `/lit-position` output so the driver can reach the stages a temp dir can
+actually run. Not a claim about any real literature.
+
+**Gap.** No published estimate of the fixture's synthetic treatment effect.
+**Contribution.** Estimates it on the fixture panel.
+SEED
+  echo '# lit-critic — seeded fixture input' > "$L/quality_reports/reviews/lit-critic_seed.md"
+  python3 "$RC/scripts/pipeline.py" --root "$L" state init >/dev/null 2>&1
+  python3 "$RC/scripts/pipeline.py" --root "$L" state record-score literature 88 \
+    --critic lit-critic --report quality_reports/reviews/lit-critic_seed.md >/dev/null 2>&1
+  # Prove the seed did its job BEFORE claude runs: strategy is now reachable.
+  run live-seed-reaches-strategy python3 "$RC/scripts/pipeline.py" --root "$L" pre strategist
+
+  LIVE_LOG="$L/live-pipeline.log"
+  # Measured 2026-09-10: strategist took 12 min and strategist-critic another 12. A stage
+  # that strikes (score < 80) re-dispatches both, so ONE stage can want ~50 min; --until
+  # analyze wants ~90+. Default to the narrowest scope that still exercises the entire
+  # chain — dispatch → SubagentStop → dispatch-log → critic → score → strike — and let a
+  # fuller run be asked for explicitly.
+  LIVE_UNTIL="${LIVE_UNTIL:-strategy}"
+  LIVE_TIMEOUT="${LIVE_TIMEOUT:-3600}"
+  if ! command -v claude >/dev/null 2>&1; then
+    bad live-claude-present "claude not on PATH — the live tier cannot run"
+  else
+    ok live-claude-present
+    # cd into the project FIRST: skills resolve from the cwd's .claude/, and research-claude
+    # itself has no .claude/skills/, so running from the script's cwd makes every /skill an
+    # "Unknown command". No timeout(1) on macOS; perl's alarm(2) survives exec, so the
+    # watchdog outlives the replacement of perl by claude (SIGALRM ends it at exit 142).
+    # stream-json, not the default text: `claude -p` text output is written only at the END,
+    # so SIGALRM killed a 30-minute run and left a 0-line transcript — the run that finally
+    # exercised the whole chain reported "claude produced no output at all". Streaming means
+    # a killed run still leaves everything it had emitted.
+    ( cd "$L" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "$LIVE_TIMEOUT" \
+        claude -p "/pipeline run --until $LIVE_UNTIL --yes" --permission-mode acceptEdits \
+        --output-format stream-json --verbose \
+    ) >"$LIVE_LOG" 2>&1
+    lrc=$?
+    # `claude -p` EXITS 0 ON AN UNKNOWN COMMAND (tested 2026-09-10: a bogus /command prints
+    # "Unknown command: ..." and returns 0), so the exit code alone cannot tell a real run
+    # from one that never started. Read the transcript.
+    live_bad=0
+    if [[ $lrc -eq 142 ]]; then
+      # FIRST: a timeout also produces an empty/short transcript, so testing emptiness ahead
+      # of it reported every timeout as "claude produced no output at all" (observed).
+      bad live-pipeline "TIMED OUT after ${LIVE_TIMEOUT}s — raise LIVE_TIMEOUT, or lower LIVE_UNTIL"; live_bad=1
+    elif grep -qi 'Unknown command:' "$LIVE_LOG"; then
+      bad live-pipeline "claude did not recognise the command"; live_bad=1
+    elif [[ ! -s "$LIVE_LOG" ]]; then
+      bad live-pipeline "empty transcript — claude produced no output at all"; live_bad=1
+    elif [[ $lrc -ne 0 ]]; then
+      bad live-pipeline "exit $lrc"; live_bad=1
+    else
+      ok live-pipeline
+    fi
+    echo "    transcript: $LIVE_LOG ($(wc -l <"$LIVE_LOG" 2>/dev/null | tr -d ' ') lines)"
+    [[ $live_bad -eq 0 ]] || { echo "    ── last 25 lines"; tail -25 "$LIVE_LOG" 2>/dev/null | sed 's/^/    | /'; }
+  fi
+
+  # These now mean something: $L was empty of dispatch state until claude ran, so any entry
+  # is necessarily the live run's.
+  run live-dispatch-log test -s "$L/quality_reports/agent_dispatch.jsonl"
+  run live-state-valid  python3 "$RC/scripts/pipeline.py" --root "$L" state validate
+  echo "    ── what actually ran"
+  if python3 "$RC/tests/live_summary.py" "$L" "$RC" | sed 's/^/    /'; then
+    ok  live-critic-ran
+  else
+    bad live-critic-ran "no declared critic completed — see the summary above"
+  fi
 fi
 
 [[ $fail -eq 0 ]] && echo "✓ run_fixture: PASS" || echo "✗ run_fixture: FAIL"
-[[ "$KEEP" == true ]] && echo "kept: $T"
+[[ "$KEEP" == true ]] && { echo "kept: $T"; [[ -n "$L" ]] && echo "kept (live): $L"; }
 exit $fail
