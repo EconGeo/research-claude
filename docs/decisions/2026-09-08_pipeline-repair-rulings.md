@@ -24,7 +24,7 @@ that took real work to find.
 **Read §2 and §3 before trusting a gate.** Three checkers have known, permanent blind spots.
 A green gate does not mean what you might assume in the specific cases named there.
 
-Rulings are numbered R-1…R-120 in the order they were made. Where a later ruling reversed an
+Rulings are numbered R-1…R-122 in the order they were made. Where a later ruling reversed an
 earlier one, both are shown — the reversal is usually the more interesting record.
 
 ---
@@ -443,6 +443,30 @@ for genuine unregistered convenience artifacts. Carried to Stage 7 as a new crit
 
 ---
 
+### R-122 · A retired skill's name can shadow a live one that extends it
+
+`check_refs.py`'s `deleted-things` criterion flags references to retired skills. Its pattern
+ended in `\b`, and `\b` matches between `t` and `-` because `-` is a non-word character — so
+the retired `/new-project` matched the **live** `/new-project-ztp`.
+
+The damage was not the false red. An implementer, told not to edit the checker, worked around it
+by writing the live skill's name without its leading slash in
+`skills/pipeline/references/setup.md` — so the driver's setup reference could not name the skill
+in the form a session would type, and `audit_graph.py` went on listing `new-project-ztp` under
+*skills never invoked*. A gate misfire had suppressed a real signal and degraded a shipped file.
+
+Fixed by replacing the trailing `\b` with `(?![A-Za-z0-9_-])`, verified against four forms: it
+still catches `the retired /new-project skill` and `/new-project.`, and no longer matches
+`/new-project-ztp` in bare or backticked form. A sweep for other live names shadowed by a retired
+prefix found none, so the class is closed rather than the instance.
+
+**This is not a loosening.** The rule that a gate is never moved to make a red go away (R-93)
+concerns a *genuine* hit. Here the hit was demonstrably false — the skill is live, on disk, and
+dispatched. Correcting a proven false positive is what keeps a gate worth obeying; a gate that
+forces a workaround gets worked around next time, without anyone asking.
+
+---
+
 ## §3. Defects found and fixed
 
 | # | Defect | Where it came from |
@@ -697,6 +721,22 @@ Recorded, judged non-blocking, and left for triage:
   tree as structures, adding one line to each saying the pairing is declared in the registry — a
   future editor adding a new row to that table without a corresponding registry entry would not
   be caught by anything.
+- **R-121:** `post-compact-restore.py`'s `last_component` is *derived*, not read — the state file
+  has no such key. It is the `components` entry whose `at` sorts greatest, which is only valid
+  because `now()` emits fixed-width UTC timestamps so lexicographic order equals chronological
+  order (R-49). Relaxing that format would break this silently. The reasoning is in the
+  function's own docstring as well as here.
+- `hooks-readme`'s 10 remaining hits, itemised for whoever closes them: six hooks carry no
+  `Hook Event:` line (`post-edit-lint.sh`, `lint-scripts.sh`, `protect-files.sh`,
+  `post-merge.sh`, `log-reminder.py`, `notify.sh`); two table rows name a stale event
+  (`session-guard.py` says SessionStart, the hook says PreToolUse; `post-compact-restore.py`
+  says PostCompact, the hook says SessionStart); and three are a **checker defect** — the row
+  regex reads any first backticked cell as a filename, so the second "how to block" table, whose
+  first column is an event name, is scanned as if `hooks/PreToolUse` were a file.
+- `hooks/README.md`'s "how to block" table states that `PreCompact, Stop` block only by exit 2.
+  A Stop hook also honours a top-level `{"decision":"block","reason":...}` — which is what
+  `hooks/critic-pairing.py` emits. Verified against the current hooks documentation, fetched
+  rather than recalled. Until corrected, the README contradicts a shipped hook.
 
 ---
 
@@ -827,3 +867,5 @@ worth having.
 | R-118 | **Corrected:** two code paths believed to be live user-visible crashes were already caught by an existing `main()` wrapper; the added `__main__` guard is redundant-but-good, not a crash fix |
 | R-119 | Deliberate scope extension: `hooks/session-guard.py` had the same unguarded hole as its two siblings and was fixed alongside them |
 | R-120 | Fixture `settings.json` must NOT be committed — `apply.sh`'s `copy_seed` never overwrites, so a committed copy would test a permanently stale seed |
+| R-121 | `last_component` is derived from timestamp order, valid only while R-49's format holds |
+| R-122 | A retired skill's name shadowed a live one extending it; the gate misfire degraded a shipped file before it was fixed |
