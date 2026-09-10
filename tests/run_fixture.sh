@@ -9,8 +9,10 @@ RC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 LIVE=false; KEEP=false
 for a in "$@"; do case "$a" in --live) LIVE=true;; --keep) KEEP=true;; esac; done
 
-T="$(mktemp -d)"; export T RC
-[[ "$KEEP" == true ]] || trap 'rm -rf "$T"' EXIT
+T="$(mktemp -d)"; H="$(mktemp -d)"; export T H RC
+# H: an isolated fake HOME for critic-pairing.py's checks below. Its sentinel file lives
+# under Path.home()/.claude/sessions/ (R-114) — never the developer's real home directory.
+[[ "$KEEP" == true ]] || trap 'rm -rf "$T" "$H"' EXIT
 cp -R "$RC/tests/fixture-project/." "$T/"
 git -C "$T" init -q && git -C "$T" add -A && git -C "$T" -c user.name=fx -c user.email=fx@x commit -qm "fixture"
 fail=0
@@ -50,6 +52,19 @@ expect_fail conflicts-red    python3 "$RC/scripts/pipeline.py" --root "$T" confl
 run         score            python3 "$RC/scripts/pipeline.py" --root "$T" score
 run render                bash -c "cd '$T' && quarto render manuscript_fixture.qmd >/dev/null 2>&1"
 run prose-check           python3 "$RC/scripts/prose_number_check.py" "$T/manuscript_fixture.qmd"
+
+# ── critic-pairing.py Stop hook (Task 5.2): a creator that ran without its critic ──
+# coder-critic already ran (paired) above; log coder again so its last completion is
+# newer than coder-critic's, recreating the unpaired condition on purpose.
+echo '{"session_id":"","cwd":"'"$T"'"}' > "$T/.pairing-payload.json"
+echo '{"session_id":"","cwd":"'"$T"'","stop_hook_active":true}' > "$T/.pairing-payload-active.json"
+python3 "$RC/scripts/pipeline.py" --root "$T" log coder >/dev/null
+run pairing-block         bash -c "CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/critic-pairing.py' < '$T/.pairing-payload.json' | grep -q '\"decision\": \"block\"'"
+run pairing-once          bash -c "CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/critic-pairing.py' < '$T/.pairing-payload.json' | { ! grep -q '\"decision\"'; }"
+run pairing-active-guard  bash -c "[ -z \"\$(CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/critic-pairing.py' < '$T/.pairing-payload-active.json')\" ]"
+sleep 1
+python3 "$RC/scripts/pipeline.py" --root "$T" log coder-critic >/dev/null
+run pairing-clean         bash -c "[ -z \"\$(CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/critic-pairing.py' < '$T/.pairing-payload.json')\" ]"
 
 if [[ "$LIVE" == true ]]; then
   echo "── live tier"
