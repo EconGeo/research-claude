@@ -4,11 +4,43 @@
 worktree-isolated and could no longer reach git or write into the checkout.
 **For:** a fresh session rooted at `/Users/andrew.mueller/Academic/research-claude`.
 
-**First:** move this file into the repo and commit it, or delete it once acted on.
+**First:** move this file into the repo and commit it, or delete it once acted on. **Done —
+this file is that move.**
 
-```bash
-mv ~/pipeline-repair-handoff.md docs/2026-09-10_final-cleanup-handoff.md
-```
+---
+
+## Progress log (appended by later sessions; the sections below are as written)
+
+**2026-09-10, session `01LyzZ`:**
+
+- **§1 done.** Stash dropped (verified byte-identical to
+  `docs/audits/2026-09-08_stash-discover-lit.patch` first); `fix/critic-dispatch` deleted
+  after diffing `cd1d47a` — its 9a is subsumed by `audit_graph.py`'s
+  `agents_named_not_on_roster` (7 dirs vs its 2) and its 9b by `check_refs.py`'s
+  `deleted-things` (`orchestrator` is in `DELETED_AGENTS`, 8 dirs vs its 3); both ran green.
+  The branch code was also stale — it globbed the removed `submodules/ai-audit/agents/`.
+  Recover with `git branch fix/critic-dispatch cd1d47a` (~90 days). Commit `4cf76a8`.
+- **§2f partially exercised.** `/pipeline status` run in POGM4 — the driver's first
+  execution. `status` works end to end; `run` still untouched and `run_fixture.sh --live`
+  still never run. **Do not run `/pipeline run` in a paper repo:** POGM4's state file is
+  three days old, so every stage reads unstarted and the driver would start from
+  `literature` and point `writer` at a 3,694-line manuscript already through three referee
+  rounds. The fixture is the vehicle.
+- **New defect found and fixed** by that run: an `any_of` swallowed its branches'
+  `producer` hints, so `pre strategist` — the one stage a user reads `status` to unblock —
+  named no skill to run. Red-first test, `producer_hint()` shared by both call sites.
+  Commit `eeb21da`, merged `616d719`. Not in §6's blind-spot list.
+- **§2e done.** `JHousE` now in all three real copies (repo, `~/Research/.claude/`, ESG's
+  local). NAR's copy has no housing entry at all. **`JHE` deliberately kept** in the Health
+  Economics entries and in `NAR_settlement/.claude/references/domain-profile.md:24`, whose
+  neighbours are Health Affairs / AJHE / JHR / Medical Care — a global rename corrupts it.
+  Consumer updated: `zoning2026/CLAUDE.md:134`. Backup of the unversioned shared file at
+  `~/Research/.claude/journal-profiles.md.bak-2026-09-10`. Commits: ESG `ce7c32b`,
+  zoning2026 `342e870`.
+- **`ReStud` casing: no bug.** All copies already read `REStud`. §2e's second half is closed.
+- Still open: §2a (109 prose literals), §2d (upstream ZotPilot), §2f's live tier.
+  Before running `--live`, note line 139 discards the transcript with `>/dev/null 2>&1` and
+  asserts only exit-0 plus a non-empty log — a red on the first-ever run would be undebuggable.
 
 ---
 
