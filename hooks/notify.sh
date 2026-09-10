@@ -1,6 +1,7 @@
 #!/bin/bash
 # Cross-platform desktop notification when Claude needs attention
 # Triggers on: permission prompts, idle prompts, auth events
+# Hook Event: Notification
 set -uo pipefail
 
 INPUT="$(cat)"

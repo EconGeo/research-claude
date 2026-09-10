@@ -68,9 +68,11 @@ def get_session_dir() -> Path:
     return session_dir
 
 
-def read_cache() -> dict:
-    """Read the context monitor cache."""
-    cache_file = get_session_dir() / "context-monitor-cache.json"
+def read_cache(session_id: str) -> dict:
+    """Read the context monitor cache. Keyed per Claude Code session_id so
+    thresholds reset per session instead of persisting across every session
+    that ever ran in this project."""
+    cache_file = get_session_dir() / f"context-monitor-{session_id}.json"
     if not cache_file.exists():
         return {}
     try:
@@ -79,16 +81,16 @@ def read_cache() -> dict:
         return {}
 
 
-def save_cache(data: dict) -> None:
-    """Save the context monitor cache."""
-    cache_file = get_session_dir() / "context-monitor-cache.json"
+def save_cache(data: dict, session_id: str) -> None:
+    """Save the context monitor cache, keyed per session_id."""
+    cache_file = get_session_dir() / f"context-monitor-{session_id}.json"
     try:
         cache_file.write_text(json.dumps(data, indent=2))
     except IOError:
         pass
 
 
-def estimate_context_percentage(hook_input: dict) -> float:
+def estimate_context_percentage(hook_input: dict, session_id: str) -> float:
     """
     Estimate context usage as a percentage (0-100). COARSE PROXY.
 
@@ -108,17 +110,17 @@ def estimate_context_percentage(hook_input: dict) -> float:
             pass
 
     # Fallback: tool-call counter (very rough)
-    cache = read_cache()
+    cache = read_cache(session_id)
     tool_calls = cache.get("tool_calls", 0) + 1
     cache["tool_calls"] = tool_calls
-    save_cache(cache)
+    save_cache(cache, session_id)
     max_calls = _env_int("CLAUDE_CONTEXT_MAX_TOOL_CALLS", DEFAULT_MAX_TOOL_CALLS)
     return min((tool_calls / max_calls) * 100, 100)
 
 
-def is_throttled(percentage: float) -> bool:
+def is_throttled(percentage: float, session_id: str) -> bool:
     """Check if we should skip this check due to throttling."""
-    cache = read_cache()
+    cache = read_cache(session_id)
     last_check = cache.get("last_check_time", 0)
     now = time.time()
 
@@ -128,13 +130,13 @@ def is_throttled(percentage: float) -> bool:
 
     # Update last check time
     cache["last_check_time"] = now
-    save_cache(cache)
+    save_cache(cache, session_id)
     return False
 
 
-def get_shown_thresholds() -> dict:
+def get_shown_thresholds(session_id: str) -> dict:
     """Get which thresholds have already been shown in this session."""
-    cache = read_cache()
+    cache = read_cache(session_id)
     return {
         "learn": cache.get("shown_learn", []),
         "warn_80": cache.get("shown_warn_80", False),
@@ -142,9 +144,9 @@ def get_shown_thresholds() -> dict:
     }
 
 
-def mark_threshold_shown(threshold_type: str, value: int | bool = True) -> None:
+def mark_threshold_shown(threshold_type: str, session_id: str, value: int | bool = True) -> None:
     """Mark a threshold as shown."""
-    cache = read_cache()
+    cache = read_cache(session_id)
     if threshold_type == "learn":
         shown = cache.get("shown_learn", [])
         if value not in shown:
@@ -152,7 +154,7 @@ def mark_threshold_shown(threshold_type: str, value: int | bool = True) -> None:
         cache["shown_learn"] = shown
     else:
         cache[f"shown_{threshold_type}"] = value
-    save_cache(cache)
+    save_cache(cache, session_id)
 
 
 def emit(system_message: str, claude_context: str) -> None:
@@ -174,14 +176,19 @@ def run_context_monitor() -> int:
     except (json.JSONDecodeError, IOError):
         hook_input = {}
 
+    # Per-session cache key, read before any cache access — thresholds
+    # therefore reset per session_id instead of persisting across every
+    # session that ever ran in this project.
+    session_id = hook_input.get("session_id", "default") or "default"
+
     # Estimate current context usage (coarse proxy)
-    percentage = estimate_context_percentage(hook_input)
+    percentage = estimate_context_percentage(hook_input, session_id)
 
     # Check throttling
-    if is_throttled(percentage):
+    if is_throttled(percentage, session_id):
         return 0
 
-    shown = get_shown_thresholds()
+    shown = get_shown_thresholds(session_id)
 
     # Check /tools learn thresholds (40%, 55%, 65%)
     for threshold in LEARN_THRESHOLDS:
@@ -190,7 +197,7 @@ def run_context_monitor() -> int:
                 f"💡 Context ~{percentage:.0f}% (approx) — if a reusable discovery emerged, consider /tools learn before auto-compaction.",
                 f"Context usage is approximately {percentage:.0f}% (coarse proxy). If a non-obvious discovery or reusable workflow emerged this session, consider running /tools learn to persist it as a skill before auto-compaction.",
             )
-            mark_threshold_shown("learn", threshold)
+            mark_threshold_shown("learn", session_id, threshold)
             return 0  # Only show one message at a time
 
     # Check 90% threshold (critical)
@@ -199,7 +206,7 @@ def run_context_monitor() -> int:
             f"⚠️ Context ~{percentage:.0f}% (approx) — auto-compact approaching. Finish the current task at full quality.",
             f"Context ~{percentage:.0f}% (coarse proxy); auto-compaction is approaching. Complete the current task without cutting corners or skipping verification, and make sure the session log and active plan are saved to disk — no context is lost, but summarize key decisions now.",
         )
-        mark_threshold_shown("warn_90", True)
+        mark_threshold_shown("warn_90", session_id, True)
         return 0  # Non-blocking note (exit 2 would feed stderr to Claude)
 
     # Check 80% threshold (info)
@@ -208,7 +215,7 @@ def run_context_monitor() -> int:
             f"💡 Context ~{percentage:.0f}% (approx) — auto-compact approaching; no rush.",
             f"Context ~{percentage:.0f}% (coarse proxy); auto-compaction will trigger soon. Ensure the session log and active plan are current on disk.",
         )
-        mark_threshold_shown("warn_80", True)
+        mark_threshold_shown("warn_80", session_id, True)
         return 0
 
     return 0

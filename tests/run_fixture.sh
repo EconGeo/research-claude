@@ -92,6 +92,14 @@ run hook-post-edit-lint   bash -c "echo '{\"tool_name\":\"Edit\",\"tool_input\":
 
 run hook-pre-compact      bash -c "echo '{\"trigger\":\"auto\"}' | CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/pre-compact.py' | grep -q '\"systemMessage\"'"
 
+# ── session-guard.py: exemption protects its own state file, not the rest of .claude/ (Task 7.2) ──
+mkdir -p "$T/.claude/state" "$T/.claude/rules"
+echo '{"freeze":{"active":true,"allowed_paths":[]}}' > "$T/.claude/state/session-guards.json"
+run session-guard-denies-state bash -c "echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$T/.claude/state/session-guards.json\"}}' | CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/session-guard.py' | grep -q '\"permissionDecision\": \"deny\"'"
+echo '# scratch' > "$T/.claude/rules/hook-fixture-scratch.md"
+run session-guard-allows-rules bash -c "[ -z \"\$(echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$T/.claude/rules/hook-fixture-scratch.md\"}}' | CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/session-guard.py')\" ]"
+rm -f "$T/.claude/state/session-guards.json"
+
 if [[ "$LIVE" == true ]]; then
   echo "── live tier"
   run live-pipeline bash -c "cd '$T' && claude -p '/pipeline run --until analyze --yes' --permission-mode acceptEdits >/dev/null 2>&1"
