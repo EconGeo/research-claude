@@ -34,6 +34,8 @@ Produces:
 - the declared manuscript, `references.bib`, `templates/`, `data/raw/data_manifest.md`, `scripts/acquire/`, `renv.lock`, README (`.claude/skills/submit/templates/replication-readme.md`) — assembled under `replication/`
 Save to `replication/`
 
+Save the coder-critic's report to `quality_reports/reviews/coder-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --report quality_reports/reviews/coder-critic_<date>.md`.
+
 ### `/submit audit` — Audit Replication Package
 Verify replication package completeness.
 
@@ -51,6 +53,8 @@ Checks:
 8. Execution
 9. Cross-reference
 10. README
+
+Save the report to `quality_reports/verification_report.md`. Record: `python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report quality_reports/verification_report.md`.
 
 ### `/submit final [journal]` — Final Submission Gate
 Full verification + score enforcement + submission checklist.

@@ -37,10 +37,10 @@ Unified review command that routes to the appropriate critic agents based on the
 
 ### Comprehensive Review (default for the declared manuscript)
 Dispatch in parallel:
-1. **strategist-critic** — causal design audit (4 phases)
-2. **writer-critic** — manuscript polish (6 categories)
-3. **verifier** — render + prose check
-Compute weighted aggregate score.
+1. **strategist-critic** — causal design audit (4 phases). Save report to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --report quality_reports/reviews/strategist-critic_<date>.md`.
+2. **writer-critic** — manuscript polish (6 categories). Save report to `quality_reports/reviews/writer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --report quality_reports/reviews/writer-critic_<date>.md`.
+3. **verifier** — render + prose check. Save report to `quality_reports/verification_report.md`. Record: `python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report quality_reports/verification_report.md`.
+Compute weighted aggregate score from the recorded component scores.
 
 ### Full Peer Review (`--peer [journal]`)
 
@@ -92,6 +92,8 @@ The editor:
 2. When referees disagree, takes a side and explains why
 3. Produces a decision letter: Accept / Minor Revisions / Major Revisions / Reject
 4. Lists MUST address, SHOULD address, and MAY push back items
+
+Record: `python3 .claude/scripts/pipeline.py state record-score referees <score> --critic editor --report quality_reports/peer_review_<manuscript-stem>/editorial_decision.md`.
 
 #### Save Reports
 Save all outputs to `quality_reports/peer_review_<manuscript-stem>/`:

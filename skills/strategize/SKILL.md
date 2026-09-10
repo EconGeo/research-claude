@@ -57,6 +57,8 @@ If research spec, literature review, or data assessment are missing, the Strateg
    - Phase 2: Core design validity (assumption checks, sanity checks)
    - Phase 3: Inference soundness (clustering, multiple testing)
    - Phase 4: Polish and completeness (robustness, citations)
+
+   Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --report quality_reports/reviews/strategist-critic_<date>.md`.
 5. If CRITICAL issues found, iterate (max 3 rounds per three-strikes)
 6. Save memo to `quality_reports/strategy_memo_[topic].md`
 7. Save review to `quality_reports/reviews/strategist-critic_<date>.md`
@@ -77,7 +79,7 @@ Draft a pre-analysis plan following AEA/OSF/EGAP standards.
 - If `$ARGUMENTS` includes `interactive`: conduct the guided PAP interview (see below)
 - Otherwise: treat as topic and draft with ASSUMED placeholders marked clearly
 
-**Agents:** Strategist (in PAP mode), optionally strategist-critic
+**Agents:** Strategist (in PAP mode), strategist-critic
 **Output:** Pre-analysis plan document
 
 #### Interactive PAP Interview (6-Question Guided Flow)
@@ -164,9 +166,9 @@ A registered PAP with unchecked assumptions is worse than no PAP. The final sect
 **Do not register until all items are reviewed and confirmed or corrected.**
 ```
 
-#### Optional strategist-critic Review
+#### strategist-critic Review
 
-After PAP creation, optionally dispatch the strategist-critic to review:
+After PAP creation, dispatch the strategist-critic to review:
 - Are identification assumptions clearly stated and defensible?
 - Is the estimator choice appropriate for the design?
 - Are power calculation assumptions reasonable? Show sensitivity.
@@ -174,7 +176,7 @@ After PAP creation, optionally dispatch the strategist-critic to review:
 - Are multiple testing corrections appropriate?
 - Are any [ASSUMED] items potentially problematic if left uncorrected?
 
-Save review to `quality_reports/reviews/strategist-critic_<date>.md`
+Save review to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --report quality_reports/reviews/strategist-critic_<date>.md`. Below 80 → Strategist revises → critic re-reviews; `pipeline.py state strike strategist` per failing round; strike three → User with a specific question.
 
 Save PAP to `quality_reports/pre_analysis_plan_[topic].md`
 
@@ -231,6 +233,8 @@ If strategy memo or paper type is missing, the Theorist flags it and asks before
    - Phase 2: Proof validity (logical, measurability, expansions, identification, asymptotic distribution) — **early-stop on critical gaps**
    - Phase 3: Assumption minimality + statement calibration + notation consistency (INV-7)
    - Phase 4: Citation fidelity + linkage to empirical claims + exposition
+
+   Record: `python3 .claude/scripts/pipeline.py state record-score theory <score> --critic theorist-critic --report quality_reports/reviews/theorist-critic_<date>.md`.
 5. If CRITICAL issues found, iterate (max 3 rounds per three-strikes). Escalation target: User.
 6. Save review to `quality_reports/reviews/theorist-critic_<date>.md`
 7. **Save decision record** → `quality_reports/decisions/theory_[topic].md`

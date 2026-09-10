@@ -104,6 +104,8 @@ Workflow:
    3. **External validity** — Can we generalize from this sample?
    4. **Identification compatibility** — Does this data support the proposed design?
    5. **Known issues** — Documented problems with this dataset in the literature
+
+   Save the critic's report to `quality_reports/reviews/explorer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score data <score> --critic explorer-critic --report quality_reports/reviews/explorer-critic_<date>.md`.
 7. Save exploration to `quality_reports/data_exploration_[topic].md`
 
 **Rejected datasets:** Include a rejection table:
