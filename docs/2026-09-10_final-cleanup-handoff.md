@@ -141,12 +141,31 @@ this file is that move.**
      than a silently empty one, and the resolved path is printed on success as well as
      failure. Red-first `tests/test_prose_number_check.py` (8 tests, 3 red first).
      This is R-135 again: the gate was stating a property it had not tested.
-  2. **`_NOUN` does not cover the nouns this literature counts.** zoning2026's prose says
-     "nine states adopted strong measures", "eight moderate measures", "sixteen affected
-     MSAs", "Fifty MSAs that span state boundaries", "five states" — every one a count off an
-     exhibit, every one invisible to the scanner. `PROSE_NUMBER_NOUNS` is the supported
-     extension point (per the script's own comment, widening the shared default is not free).
-     Each hit needs adjudicating, so it is its own task.
+  2. **✅ FIXED — `_NOUN` did not cover the nouns this literature counts.** A project now
+     declares its own countable nouns in its `CLAUDE.md`, beside the `manuscript:` line:
+     `prose-number-nouns: states? msas? outcomes? specifications? families`. They EXTEND the
+     shared default rather than replacing it; `PROSE_NUMBER_NOUNS` still overrides for a
+     one-off run; whatever is in effect is printed with the result. The env var alone was not
+     enough — it is per-invocation, not per-project, and a gate whose answer depends on who
+     ran it is not a gate. Three supporting changes, each verified against five manuscripts
+     to add and lose nothing under the base nouns: round tens joined the cardinal list
+     (`Fifty MSAs` was below the scanner's twenty ceiling), a `(?<![-\w])` lookbehind keeps a
+     cardinal buried in a hyphenated compound out of it (`leave-one-state-out` fired six
+     times once `states?` was declared), and the docstring stopped listing `markets` among
+     the scanned nouns, which `_NOUN` has never contained.
+     **What it caught, which is the point.** zoning2026: eight spelled-out counts, seven
+     sound, one wrong. Two sentences said "all four outcomes" reject parallel pre-trends "at
+     `sa_pretrend_str` for each" — but that p is `max(sa_wald_ps_all)` over `sa_results`,
+     which `map()`s over `es_outcomes`, **six** entries. Four was the Data section's count of
+     headline outcome *concepts*, applied to a statistic ranging over all six series; and the
+     Section 4 sentence cited `@fig-event-study-bps` for it, a figure that plots
+     `sa_results$bps_total` alone. Both now read the count off the object the p comes from.
+     Commit `66fb3e7`; the scanner change is in this repo.
+     **Not done, deliberately: allowing an adjective between the cardinal and the noun.**
+     Probed on three manuscripts, it found exactly two more real hits (`two falsification
+     tests`, `three distinct designs`) and no noise — but it multiplies the allowlist key
+     space, since `three designs` and `three distinct designs` are one claim under two keys.
+     The narrow adjacency rule is what keeps the keys stable. Left alone on purpose.
 - Still open: a full green `--live` run
   (the last one proved the mechanism, then hit the wall clock mid-round-2). The
   `session_logs/` question above is closed.

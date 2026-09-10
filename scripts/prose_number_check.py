@@ -18,11 +18,23 @@ out, so "the ledger has three verdict classes" is a claim about an exhibit that
 no check can see. It went stale exactly that way -- the ledger had five classes
 and the sentence said three for as long as it took someone to read the CSV. So a
 number WORD is scanned too, but only where it counts the structure of an exhibit
-(rows, tests, classes, columns, cells, designs, exhibits, tables, figures,
-markets). Scanning every number word would flag "the one that does" and
-"two-agent" and train the reader to skip the output, which is worse than not
-checking. Word hits are allowlisted in the same CSV and by the same rule: give a
-reason or make it an inline expression.
+(rows, tests, classes, columns, cells, designs, exhibits, tables, figures).
+Scanning every number word would flag "the one that does" and "two-agent" and
+train the reader to skip the output, which is worse than not checking. Word hits
+are allowlisted in the same CSV and by the same rule: give a reason or make it an
+inline expression.
+
+A project counts its own nouns, though — states, MSAs, outcomes, specifications —
+and those counts go stale exactly like the shared ones. Declare them in the
+project's CLAUDE.md beside the manuscript declaration:
+
+    prose-number-nouns: states? msas? outcomes? specifications?
+
+Separate them with whitespace, commas or `|`; each is a small regex, and they
+EXTEND the shared list rather than replacing it. PROSE_NUMBER_NOUNS in the
+environment overrides the declaration for a one-off run. Whatever is in effect is
+printed with the result, because a gate scanning a narrower set than its reader
+assumes is silently weaker than it looks.
 
 PROVENANCE. Written for one project in 2026-09 and promoted here unchanged in
 logic, with the manuscript and allowlist paths parameterized so any project can
@@ -112,7 +124,11 @@ NUM = re.compile(r"(?<![\w`])(\d[\d,]*(?:\.\d+)?)")
 # Spelled-out cardinals, but only when they count the structure of an exhibit.
 # The noun list is the scope limiter -- see SPELLED-OUT COUNTS above.
 _CARD = ("one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|"
-         "thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty")
+         "thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|"
+         # Round tens: "Fifty MSAs that span state boundaries" is as much a count
+         # off an exhibit as "twelve MSAs", and stopping at twenty missed it.
+         # Verified against five manuscripts: adds nothing under the base nouns.
+         "thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred")
 # Deliberately NARROW. Widening this is not free: adding "markets?" during the
 # promotion immediately produced three false hits in one project's manuscript ("the two
 # markets were moving in step") and would have trained a reader to skip the
@@ -120,10 +136,40 @@ _CARD = ("one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|"
 # by editing this shared default.
 _NOUN = ("rows?|tests?|classes|class|columns?|cells?|designs?|exhibits?|"
          "tables?|figures?")
-_EXTRA = os.environ.get("PROSE_NUMBER_NOUNS", "").strip()
-if _EXTRA:
-    _NOUN = _NOUN + "|" + _EXTRA
-WORDNUM = re.compile(rf"\b({_CARD})[\s-]+({_NOUN})\b", re.I)
+
+DECLARATION = re.compile(r"^prose-number-nouns:\s*(.+?)\s*$", re.M)
+
+
+def extra_nouns(root):
+    """The project's own countable nouns, and where they came from.
+
+    PROSE_NUMBER_NOUNS in the environment is for a one-off run and wins. The
+    durable setting is a `prose-number-nouns:` line in the project's CLAUDE.md,
+    beside the `manuscript:` declaration it belongs with -- an environment
+    variable is not per-project, it is per-invocation, and a gate whose answer
+    depends on who ran it is not a gate.
+    """
+    env = os.environ.get("PROSE_NUMBER_NOUNS", "").strip()
+    if env:
+        return env, "PROSE_NUMBER_NOUNS"
+    claude = os.path.join(root, "CLAUDE.md")
+    if os.path.exists(claude):
+        hits = DECLARATION.findall(open(claude, encoding="utf-8").read())
+        if hits:
+            return "|".join(hits), "CLAUDE.md"
+    return "", ""
+
+
+def wordnum(extra):
+    """Compile the spelled-out-count scanner, extended by `extra`.
+
+    The lookbehind keeps a cardinal buried inside a hyphenated compound out of
+    it: in "leave-one-state-out" the "one" counts nothing, and with `states?`
+    declared that method name would otherwise fire six times in one manuscript
+    and train the reader to skip the output.
+    """
+    nouns = _NOUN + ("|" + "|".join(re.split(r"[|,\s]+", extra)) if extra else "")
+    return re.compile(rf"(?<![-\w])({_CARD})[\s-]+({nouns})\b", re.I)
 
 
 def main(argv):
@@ -142,6 +188,15 @@ def main(argv):
         print(f"error: allowlist not found: {allow_path}")
         return 2
 
+    extra, source = extra_nouns(project_root(qmd))
+    try:
+        wordnum_rx = wordnum(extra)
+    except re.error as e:
+        print(f"error: prose-number-nouns from {source} is not a valid pattern: {e}")
+        print(f"       {extra!r}")
+        return 2
+    note = f"  extra nouns: {extra}  (from {source})" if extra else ""
+
     allow = {}
     if os.path.exists(allow_path):
         for r in csv.DictReader(open(allow_path, encoding="utf-8")):
@@ -153,7 +208,7 @@ def main(argv):
         for m in NUM.finditer(clean):
             ctx = clean[max(0, m.start() - 55):m.end() + 55].strip().replace("\n", " ")
             hits.setdefault(m.group(1), []).append((lineno, ctx))
-        for m in WORDNUM.finditer(clean):
+        for m in wordnum_rx.finditer(clean):
             ctx = clean[max(0, m.start() - 55):m.end() + 55].strip().replace("\n", " ")
             hits.setdefault(m.group(0).lower(), []).append((lineno, ctx))
 
@@ -164,6 +219,8 @@ def main(argv):
         print("PROSE NUMBER CHECK FAILED —", len(unexplained), "unexplained literals")
         print(f"  manuscript: {qmd}")
         print(f"  allowlist:  {allow_path}")
+        if note:
+            print(note)
         if not os.path.exists(allow_path):
             # Distinguishing the two is the whole point. One project's 54
             # "unexplained literals" were all adjudicated, with written reasons,
@@ -186,6 +243,8 @@ def main(argv):
     # Name the file that was read. A green from an allowlist resolved somewhere
     # unexpected is the same defect as a red from one that was never found.
     print(f"  allowlist:  {allow_path}")
+    if note:
+        print(note)
     if stale:
         print("  note: allowlist entries no longer present in the prose:",
               ", ".join(sorted(stale)))

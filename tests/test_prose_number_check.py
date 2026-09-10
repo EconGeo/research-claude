@@ -15,7 +15,7 @@ scanner never opened. Reporting "no allowlist at X" and "this literal is not in
 your allowlist" identically is the failure R-135 names: the gate stated a
 property it had not tested.
 """
-import pathlib, shutil, subprocess, sys, tempfile, unittest
+import os, pathlib, shutil, subprocess, sys, tempfile, unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CHECK = ROOT / "scripts" / "prose_number_check.py"
@@ -136,3 +136,98 @@ class TestExplicitPath(Case):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+QMD_WORDS = """---
+title: "Fixture"
+---
+
+# Body
+
+We estimate nine states and fifty MSAs, and the leave-one-state-out check
+drops each in turn. Three tables report them.
+"""
+
+
+class WordCase(Case):
+    def project_words(self, declaration=None):
+        (self.t / ".claude").mkdir(exist_ok=True)
+        qmd = self.t / "manuscript_fixture.qmd"
+        qmd.write_text(QMD_WORDS)
+        claude = "manuscript: manuscript_fixture.qmd\n"
+        if declaration is not None:
+            claude += f"prose-number-nouns: {declaration}\n"
+        (self.t / "CLAUDE.md").write_text(claude)
+        p = self.t / "quality_reports" / "prose_number_allowlist.csv"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("literal,reason\nthree tables,Structural count of the exhibit set.\n")
+        return qmd
+
+
+class TestDeclaredNouns(WordCase):
+    def test_base_nouns_only_without_a_declaration(self):
+        """No declaration: 'three tables' is scanned, 'nine states' is not."""
+        qmd = self.project_words()
+        rc, out = run(str(qmd))
+        self.assertEqual(rc, 0, out)
+
+    def test_declared_nouns_are_scanned(self):
+        """The project says it counts states; the scanner must then see them."""
+        qmd = self.project_words("states?")
+        rc, out = run(str(qmd))
+        self.assertEqual(rc, 1, out)
+        self.assertIn("nine states", out)
+
+    def test_declaration_extends_rather_than_replaces_the_base(self):
+        qmd = self.project_words("states?")
+        rc, out = run(str(qmd))
+        self.assertEqual(rc, 1)
+        self.assertNotIn("'three tables'", out)   # still allowlisted, still scanned
+
+    def test_effective_extension_is_reported(self):
+        """A gate scanning a wider set than the reader assumes must say so."""
+        qmd = self.project_words("states?")
+        rc, out = run(str(qmd))
+        self.assertIn("extra nouns", out)
+        self.assertIn("CLAUDE.md", out)
+
+    def test_separators_are_forgiving(self):
+        for decl in ("states?|msas?", "states? msas?", "states?, msas?"):
+            with self.subTest(decl=decl):
+                qmd = self.project_words(decl)
+                rc, out = run(str(qmd))
+                self.assertEqual(rc, 1, out)
+                self.assertIn("fifty msas", out.lower())
+
+    def test_a_bad_pattern_is_a_usage_error(self):
+        qmd = self.project_words("states?|(unclosed")
+        rc, out = run(str(qmd))
+        self.assertEqual(rc, 2, out)
+
+    def test_env_var_overrides_the_declaration(self):
+        qmd = self.project_words("states?")
+        env = dict(os.environ, PROSE_NUMBER_NOUNS="msas?")
+        p = subprocess.run([sys.executable, str(CHECK), str(qmd)],
+                           capture_output=True, text=True, env=env)
+        out = p.stdout + p.stderr
+        self.assertEqual(p.returncode, 1, out)
+        self.assertIn("fifty msas", out.lower())
+        # The quoted form is how a FLAGGED literal is printed; the bare phrase
+        # also appears in the context snippet of the hit beside it.
+        self.assertNotIn("'nine states'", out)
+        self.assertIn("PROSE_NUMBER_NOUNS", out)
+
+
+class TestCardinalScope(WordCase):
+    def test_round_tens_count(self):
+        """"Fifty MSAs" is as much a count as "twelve MSAs"."""
+        qmd = self.project_words("msas?")
+        rc, out = run(str(qmd))
+        self.assertEqual(rc, 1)
+        self.assertIn("fifty msas", out.lower())
+
+    def test_cardinal_inside_a_hyphenated_compound_is_not_a_count(self):
+        """leave-one-state-out is a method name; the "one" counts nothing."""
+        qmd = self.project_words("states?")
+        rc, out = run(str(qmd))
+        self.assertNotIn("'one-state", out.lower())
