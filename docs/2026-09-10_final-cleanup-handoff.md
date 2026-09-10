@@ -86,6 +86,35 @@ this file is that move.**
   above, and a full green `--live` run (the last one proved the mechanism, then hit the wall
   clock mid-round-2).
 
+### Loose ends this handoff never mentioned (added 2026-09-10)
+
+Neither is urgent; both are recorded because nothing else points at them.
+
+**1. `affordable_housing_2026` has three absolute symlinks through a lowercase `research`.**
+
+```
+.claude/references/journal-profiles.md      -> /Users/andrew.mueller/research/.claude/references/...
+.claude/references/domain-profile.md        -> /Users/andrew.mueller/research/.claude/references/...
+.claude/references/personal-style-guide.md  -> /Users/andrew.mueller/research/.claude/references/...
+```
+
+Three of that repo's 87 links; the other 84 are fine. The directory is `~/Research`, capital R.
+These resolve **only because macOS is case-insensitive by default** — they break on a
+case-sensitive volume, on Linux, and for any coauthor. `check_install`'s `dangling` criterion
+passes for exactly that reason, so the gate will never catch this. Re-link that repo's
+references with the correctly-cased path. The rulings track it under Task 7b.1 Steps 3-4,
+which also covers replacing ESG's and NAR_settlement's real reference files with symlinks
+after diffing for local edits.
+
+**2. `design/quarto-native-pipeline` is a stale label, not unfinished work.**
+
+`caf4e74`, last touched 2026-09-08. It is **0 commits ahead of main and 131 behind**, and
+`git merge-base --is-ancestor caf4e74 main` is true — every commit on it is already in `main`,
+so it carries nothing unique. `git branch -d design/quarto-native-pipeline` deletes it safely
+(`-d`, not `-D`: git refuses `-d` on an unmerged branch, so the safe form is also the proof).
+Contrast `fix/critic-dispatch`, which genuinely held one unmerged commit and needed `-D` — the
+two look alike in `git branch` output and are not alike.
+
 ---
 
 ## Where things stand
