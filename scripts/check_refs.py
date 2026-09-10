@@ -27,7 +27,7 @@ MANUSCRIPT_MODEL = [
     (re.compile(r'dir\.create\("paper'), 'dir.create("paper'),  # <!-- residue:prohibition -->
 ]
 DELETED_AGENTS = re.compile(r"\b(orchestrator|librarian-critic|librarian|guide-writer|rmd-coder-critic|domain-reviewer)\b", re.I)  # <!-- residue:prohibition -->
-DELETED_SCRIPTS = re.compile(r"generate_(dashboard|html_report)\.py|(^|[^A-Za-z0-9_])guide/|clone .*clo-author|clo-author-upgrade")
+DELETED_SCRIPTS = re.compile(r"generate_(dashboard|html_report)\.py|(^|[^A-Za-z0-9_])guide/|clone .*clo-author|clo-author-upgrade")  # <!-- residue:prohibition -->
 ABSENT_SKILLS = ["new-project", "review-paper", "audit-replication", "data-deposit", "audit-reproducibility",
                  "compile-latex", "prompt", "prompt-only", "interview-me", "research-ideation", "preregister",
                  "seven-pass-review", "devils-advocate", "promote-memory", "data-analysis", "obsidian-digest-sync"]

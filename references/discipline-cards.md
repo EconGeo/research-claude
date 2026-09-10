@@ -133,7 +133,7 @@ Then:
 1. Add the card section above (alphabetically by short-slug).
 2. Add concrete journal profiles to `journal-profiles.md` for at least the top-3 journals.
 3. Add paper types to `methods-referee.md` if your field uses categories not already there (e.g., qualitative-case-study for sociology, mixed-methods for public health).
-4. Cross-reference the new short-slug from `/research-ideation` and `/interview-me` if those skills should respect the new defaults.
+4. Cross-reference the new short-slug from `/discover ideate` and `/discover interview` if those skills should respect the new defaults.
 
 ---
 
