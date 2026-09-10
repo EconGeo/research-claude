@@ -123,14 +123,22 @@ two look alike in `git branch` output and are not alike.
 > **pushed**, and live … `main` is at `7268017`" with 59 tests. All three had gone stale.
 > The progress log above is authoritative where the numbered sections below disagree with it.
 
-The pipeline repair is merged and live. `main` is at `cb15122`. The repair worktree has been
-removed; `git worktree list` shows one checkout.
+The pipeline repair is merged and live. The repair worktree has been removed; `git worktree
+list` shows one checkout.
 
-**`main` is NOT pushed — 11 commits ahead of `origin/main`.** This matters more here than in a
-private repo: research-claude is public precisely so a coauthor can bootstrap with a clone and
-no access grant, and a clone today gets none of this. `./bootstrap-pipeline.sh` in each paper
-repo checks out the lock SHA from the REMOTE, so an unpushed lock SHA is unresolvable for
-anyone but this machine. Push before relying on any of it elsewhere.
+**Pushed and in sync with `origin/main` at the end of session `01LyzZ`, 2026-09-10**
+(`7268017..be1e8d4`). No SHA is pinned here on purpose — the original version of this block
+pinned one and was stale within a day. Run `git status -sb` for the truth.
+
+Why pushing is not optional in this repo: research-claude is public precisely so a coauthor
+can bootstrap from a clone with no access grant, and each paper repo's
+`./bootstrap-pipeline.sh` resolves its `.claude/pipeline.lock` SHA against the **remote**. An
+unpushed commit is therefore unresolvable for anyone but this machine, and the six locks are
+what point at it. Push before relying on any of this elsewhere.
+
+**Follow-on, not yet done:** the six locks still record `8bb6218`, which `check_install`
+reports as a WARN ("refresh before submission"). Now that `main` is pushed those SHAs are at
+least reachable, but they are ~13 commits behind what the projects are actually running.
 
 ```
 ✓ check_fork:    PASS      56 criteria, 0 failures
