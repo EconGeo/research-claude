@@ -752,7 +752,7 @@ from the registry, so they cannot drift from it again.
 
 **R-134 — R-110's fix moved the pair statements out of the regex's reach, not out of the tree.**
 All ten flagged lines were resolved by rewriting `→` as `, then` — the one token `AUTH_ARROW`
-matches. The pairings survive verbatim in meaning, and `rules/agents.md`'s 12-row table still
+matches. The pairings survive verbatim in meaning, and `rules/agents.md`'s 13-row table still
 names the critic for seven of eight creators, directly above a sentence claiming pairs are "not
 restated here". The table is legitimately *dispatch ownership* — keyed by skill, answering "what
 does `/analyze` dispatch?" — so it stays; the **disclaimer** was the false part and now says what
@@ -790,7 +790,6 @@ outward-facing.
 | Declare `manuscript:` in `~/Research/POGM4/CLAUDE.md` | Task 1b.1 Step 2 |
 | Re-link POGM4 to the worktree as the canary | Task 2.5 |
 | ZotPilot fork: fix `seed-papers/SKILL.md`, PR, re-vendor | Task 6.4 |
-| Wire hooks in the six repos' `settings.json` | Task 7.5 Step 3 |
 | Stage 8 entirely — legacy migration, merge, re-link, lock bump, push | Stage 8 |
 | `stash@{0}` and branch `fix/critic-dispatch` still exist (content preserved as a patch and a cherry-pick) | R-5 |
 | The `detached at the lock SHA` branch of the `branch` check is untested | Task 0.8 |
@@ -800,6 +799,9 @@ outward-facing.
 | Add the `artifact-paths` gate: flag any `quality_reports/` path matching no registry glob, with an allow-list for genuine convenience artifacts | R-112 |
 | ~~Resolve the `.claude/references/coding-standards` double-reference left dangling by deleting `references/coding-standards-rmd.md`~~ — **withdrawn (R-125): the premise was false.** `coding-standards-{r,python,julia}.md` all exist; only the Rmd file was deleted, correctly. The two hits are R-21's documented truncation of `-{lang}` and `-*`, four sections above. Fixed in `PATH_RE` at Task 7.3, not by editing the references. | R-125 |
 | **Wire the six repos' `.claude/settings.json` AS PART OF THE MERGE, not after it.** `apply.sh`'s `copy_seed` never overwrites an existing settings file, so the two new hooks reach no existing project on merge. Until each is edited by hand, the dispatch log is written only where a skill explicitly runs `pipeline.py log` — three creators — and `post` fails closed on `creator None` for the rest. This is a prerequisite for the pairing gate being true in production, not a tidy-up | R-136 |
+| Stage 7b's `~/Research` half, all deferred under the read-only constraint: rename `JHE` → `JHousE` in the SHARED `~/Research/.claude/references/journal-profiles.md` (the repo copy is done, and `JHE` there now means Journal of Health Economics only — the two files currently disagree); copy the corrected `discipline-cards.md` out; replace ESG's and NAR_settlement's real reference files with symlinks after diffing for local edits; re-link `affordable_housing_2026`, whose target is a lowercase `/Users/.../research/...` path | Task 7b.1 Steps 3-4 |
+| Check the shared and project-local `journal-profiles.md` copies for the same `ReStud` vs `REStud` casing bug found and fixed in the repo's `discipline-cards.md` — a cross-reference that reads correctly and matches nothing | Task 7b.1 |
+| **Run something real before trusting any of this.** No hook in this branch has fired in a live session and `tests/run_fixture.sh --live` has never run (R-127). The first honest test is Stage 8's `/write abstract` on the canary: it must produce a writer-critic score and a Claim–Evidence Table *before* the draft is shown | R-127, Tasks 5.6/5.7 |
 | Implement the enumerated (but not yet applied) `SKILL.md` "Replaces /X" frontmatter rewordings for the 18 genuine `skill-refs` hits | Task 3b.8 |
 
 ---
