@@ -31,6 +31,7 @@ echo "══ fixture copy: $T"
 run link "$RC/apply.sh" --project-dir "$T" --link
 run templates-linked test -L "$T/.claude/templates/pipeline-state.json"
 run scripts-linked   test -L "$T/.claude/scripts/pipeline.py"
+run settings-seeded  bash -c "grep -q 'dispatch-log.py' '$T/.claude/settings.json' && grep -q 'critic-pairing.py' '$T/.claude/settings.json'"
 
 # ── mechanical checks (extended by later tasks; keep the names stable) ──
 run manuscript-declared   python3 "$RC/scripts/pipeline.py" --root "$T" manuscript

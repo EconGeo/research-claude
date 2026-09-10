@@ -54,6 +54,48 @@ def read_pre_compact_state() -> dict | None:
         return None
 
 
+def find_pipeline_state(project_dir: str) -> dict | None:
+    """Read quality_reports/pipeline_state.json and extract a short summary.
+
+    Field names below (`overall`, `blocked_by`, `updated`) are the state file's own
+    top-level keys — see .claude/scripts/pipeline.py's `empty_state`/`save_state`. There is
+    no top-level "last component" field in the state file itself, so it is derived
+    here: the key of `components` whose `at` timestamp is lexicographically greatest.
+    `now()` in .claude/scripts/pipeline.py documents that its ISO-8601 timestamps are fixed
+    width with a constant UTC offset specifically so lexicographic order ==
+    chronological order, which is what makes that derivation valid.
+    """
+    state_file = Path(project_dir) / "quality_reports" / "pipeline_state.json"
+    if not state_file.exists():
+        return None
+
+    try:
+        state = json.loads(state_file.read_text())
+    except (json.JSONDecodeError, IOError):
+        return None
+
+    if not isinstance(state, dict):
+        return None
+
+    components = state.get("components")
+    last_component = None
+    if isinstance(components, dict) and components:
+        scored = [
+            (c, e.get("at")) for c, e in components.items()
+            if isinstance(e, dict) and e.get("at")
+        ]
+        if scored:
+            last_component = max(scored, key=lambda ce: ce[1])[0]
+
+    return {
+        "path": str(state_file),
+        "overall": state.get("overall"),
+        "blocked_by": state.get("blocked_by"),
+        "last_component": last_component,
+        "updated": state.get("updated"),
+    }
+
+
 def find_active_plan(project_dir: str) -> dict | None:
     """Find the most recent plan file and extract its status."""
     plans_dir = Path(project_dir) / "quality_reports" / "plans"
@@ -109,12 +151,25 @@ def find_recent_session_log(project_dir: str) -> dict | None:
 
 
 def format_restoration_message(
+    pipeline_state: dict | None,
     pre_compact_state: dict | None,
     plan_info: dict | None,
     session_log: dict | None
 ) -> str:
     """Format the (ANSI-free) context restoration message for Claude."""
     lines = ["[Context Restored After Compaction]", ""]
+
+    if pipeline_state:
+        lines.append("Pipeline State:")
+        lines.append(f"  File: {pipeline_state['path']}")
+        lines.append(f"  Overall: {pipeline_state['overall'] if pipeline_state['overall'] is not None else 'n/a'}")
+        if pipeline_state.get("blocked_by"):
+            lines.append(f"  Blocked by: {pipeline_state['blocked_by']}")
+        if pipeline_state.get("last_component"):
+            lines.append(f"  Last component scored: {pipeline_state['last_component']}")
+        if pipeline_state.get("updated"):
+            lines.append(f"  Updated: {pipeline_state['updated']}")
+        lines.append("")
 
     if pre_compact_state:
         lines.append("Pre-Compaction State:")
@@ -142,7 +197,7 @@ def format_restoration_message(
         lines.append("")
 
     lines.append("Recovery Actions:")
-    lines.append("  1. Read the active plan to understand current objectives")
+    lines.append("  1. Read quality_reports/pipeline_state.json (python3 .claude/scripts/pipeline.py state show), then the active plan")
     lines.append("  2. Check git status/diff for uncommitted changes")
     lines.append("  3. Continue from where you left off")
 
@@ -167,14 +222,15 @@ def main() -> int:
         return 0
 
     # Gather context
+    pipeline_state = find_pipeline_state(project_dir)
     pre_compact_state = read_pre_compact_state()
     plan_info = find_active_plan(project_dir)
     session_log = find_recent_session_log(project_dir)
 
     # If we have any context to restore, inject it via the SessionStart contract
     # (clean additionalContext — not raw stdout carrying ANSI escape noise).
-    if pre_compact_state or plan_info or session_log:
-        message = format_restoration_message(pre_compact_state, plan_info, session_log)
+    if pipeline_state or pre_compact_state or plan_info or session_log:
+        message = format_restoration_message(pipeline_state, pre_compact_state, plan_info, session_log)
         print(json.dumps({
             "hookSpecificOutput": {
                 "hookEventName": "SessionStart",
