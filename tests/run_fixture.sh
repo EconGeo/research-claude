@@ -10,9 +10,16 @@ LIVE=false; KEEP=false
 for a in "$@"; do case "$a" in --live) LIVE=true;; --keep) KEEP=true;; esac; done
 
 T="$(mktemp -d)"; H="$(mktemp -d)"; export T H RC
+# The live tier gets its OWN copy. Sharing $T with the mechanical tier is not a tidiness
+# question: the mechanical checks write five coder/coder-critic lines and a code=85.0 score
+# into $T, so every "did the live run do anything?" assertion passes on that residue without
+# claude contributing a thing — and worse, the sequence deliberately ENDS on an unpaired
+# `coder` (pairing-empty-sid), which critic-pairing.py then fires on at the live session's
+# Stop, blocking a session that dispatched nothing. Observed both, 2026-09-10.
+L=""; [[ "$LIVE" == true ]] && L="$(mktemp -d)"
 # H: an isolated fake HOME for critic-pairing.py's checks below. Its sentinel file lives
 # under Path.home()/.claude/sessions/ (R-114) — never the developer's real home directory.
-[[ "$KEEP" == true ]] || trap 'rm -rf "$T" "$H"' EXIT
+[[ "$KEEP" == true ]] || trap 'rm -rf "$T" "$H" ${L:+"$L"}' EXIT
 cp -R "$RC/tests/fixture-project/." "$T/"
 git -C "$T" init -q && git -C "$T" add -A && git -C "$T" -c user.name=fx -c user.email=fx@x commit -qm "fixture"
 fail=0
@@ -135,42 +142,51 @@ run session-guard-allows-rules bash -c "[ -z \"\$(echo '{\"tool_name\":\"Edit\",
 rm -f "$T/.claude/state/session-guards.json"
 
 if [[ "$LIVE" == true ]]; then
-  echo "── live tier"
-  # The transcript is the ONLY evidence of what the driver did. run() prints just the last
-  # three lines of a failing command, and the old `>/dev/null 2>&1` discarded even those — a
-  # red on the largest artifact in the tree said nothing at all. Keep it inside $T so --keep
-  # preserves it alongside the state file and dispatch log it explains.
-  LIVE_LOG="$T/live-pipeline.log"
+  echo "── live tier (clean copy: $L)"
+  cp -R "$RC/tests/fixture-project/." "$L/"
+  git -C "$L" init -q && git -C "$L" add -A && git -C "$L" -c user.name=fx -c user.email=fx@x commit -qm "fixture"
+  run live-link "$RC/apply.sh" --project-dir "$L" --link
+  run live-clean-log bash -c "[ ! -e '$L/quality_reports/agent_dispatch.jsonl' ]"
+
+  LIVE_LOG="$L/live-pipeline.log"
   LIVE_TIMEOUT="${LIVE_TIMEOUT:-1800}"
   if ! command -v claude >/dev/null 2>&1; then
     bad live-claude-present "claude not on PATH — the live tier cannot run"
   else
     ok live-claude-present
-    # No timeout(1) on macOS. perl's alarm(2) survives exec, so the watchdog outlives the
-    # replacement of perl by claude; SIGALRM's default action ends it at exit 142.
-    perl -e 'alarm shift @ARGV; exec @ARGV' "$LIVE_TIMEOUT" \
-      claude -p '/pipeline run --until analyze --yes' --permission-mode acceptEdits \
-      >"$LIVE_LOG" 2>&1
+    # cd into the project FIRST: skills resolve from the cwd's .claude/, and research-claude
+    # itself has no .claude/skills/, so running from the script's cwd makes every /skill an
+    # "Unknown command". No timeout(1) on macOS; perl's alarm(2) survives exec, so the
+    # watchdog outlives the replacement of perl by claude (SIGALRM ends it at exit 142).
+    ( cd "$L" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "$LIVE_TIMEOUT" \
+        claude -p '/pipeline run --until analyze --yes' --permission-mode acceptEdits \
+    ) >"$LIVE_LOG" 2>&1
     lrc=$?
-    case $lrc in
-      0)   ok  live-pipeline ;;
-      142) bad live-pipeline "TIMED OUT after ${LIVE_TIMEOUT}s — re-run with LIVE_TIMEOUT=<seconds>" ;;
-      *)   bad live-pipeline "exit $lrc" ;;
-    esac
-    if [[ $lrc -ne 0 ]]; then
-      echo "    ── last 25 lines of $LIVE_LOG"
-      tail -25 "$LIVE_LOG" 2>/dev/null | sed 's/^/    | /'
+    # `claude -p` EXITS 0 ON AN UNKNOWN COMMAND (tested 2026-09-10: a bogus /command prints
+    # "Unknown command: ..." and returns 0), so the exit code alone cannot tell a real run
+    # from one that never started. Read the transcript.
+    live_bad=0
+    if grep -qi '^Unknown command:' "$LIVE_LOG"; then
+      bad live-pipeline "claude did not recognise the command: $(head -1 "$LIVE_LOG")"; live_bad=1
+    elif [[ ! -s "$LIVE_LOG" ]]; then
+      bad live-pipeline "empty transcript — claude produced no output at all"; live_bad=1
+    else
+      case $lrc in
+        0)   ok  live-pipeline ;;
+        142) bad live-pipeline "TIMED OUT after ${LIVE_TIMEOUT}s — re-run with LIVE_TIMEOUT=<seconds>"; live_bad=1 ;;
+        *)   bad live-pipeline "exit $lrc"; live_bad=1 ;;
+      esac
     fi
     echo "    transcript: $LIVE_LOG ($(wc -l <"$LIVE_LOG" 2>/dev/null | tr -d ' ') lines)"
+    [[ $live_bad -eq 0 ]] || { echo "    ── last 25 lines"; tail -25 "$LIVE_LOG" 2>/dev/null | sed 's/^/    | /'; }
   fi
 
-  run live-dispatch-log test -s "$T/quality_reports/agent_dispatch.jsonl"
-  run live-state-valid  python3 "$RC/scripts/pipeline.py" --root "$T" state validate
-  # What actually ran — printed on red AND green, because "it passed" is not evidence of
-  # which stages executed. Exits non-zero iff no declared critic completed, which is the
-  # one enforcement claim this tier exists to test (pipefail carries that through the sed).
+  # These now mean something: $L was empty of dispatch state until claude ran, so any entry
+  # is necessarily the live run's.
+  run live-dispatch-log test -s "$L/quality_reports/agent_dispatch.jsonl"
+  run live-state-valid  python3 "$RC/scripts/pipeline.py" --root "$L" state validate
   echo "    ── what actually ran"
-  if python3 "$RC/tests/live_summary.py" "$T" "$RC" | sed 's/^/    /'; then
+  if python3 "$RC/tests/live_summary.py" "$L" "$RC" | sed 's/^/    /'; then
     ok  live-critic-ran
   else
     bad live-critic-ran "no declared critic completed — see the summary above"
@@ -178,5 +194,5 @@ if [[ "$LIVE" == true ]]; then
 fi
 
 [[ $fail -eq 0 ]] && echo "✓ run_fixture: PASS" || echo "✗ run_fixture: FAIL"
-[[ "$KEEP" == true ]] && echo "kept: $T"
+[[ "$KEEP" == true ]] && { echo "kept: $T"; [[ -n "$L" ]] && echo "kept (live): $L"; }
 exit $fail
