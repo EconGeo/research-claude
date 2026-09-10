@@ -39,7 +39,17 @@ EXEMPT_EXACT = {"templates/quarto-preamble.tex", "templates/word-reference.docx"
 # an installed project and must never exist in this repo (the repo ships them from seeds/),
 # so audit_graph.py would otherwise report them as dangling for ever.
 # A path token: optional .claude/ prefix, one of the pipeline dirs, then a file-ish tail.
-PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])((?:\.claude/)?(?:skills|agents|rules|references|templates|scripts|hooks)/[A-Za-z0-9_./-]*[A-Za-z0-9_])")
+# R-125: the tail class [A-Za-z0-9_./-]* cannot consume "{" or "*", and the token must end
+# on a word char — so a placeholder ("coding-standards-{lang}.md") or a glob
+# ("coding-standards-*.md") backtracks to a stem that names no file ("coding-standards"),
+# reported as a false UNRESOLVED. The trailing negative lookahead refuses to let the match
+# end at a position from which a run of path-charset characters leads into a "{" or "*" —
+# i.e. it refuses the truncated-stem match entirely rather than accepting it, so a
+# placeholder/glob path is suppressed outright (no row emitted) instead of mis-resolved.
+# It does not suppress a real path merely followed later on the line by an unrelated "*"
+# (markdown emphasis, a bullet, a footnote marker) UNLESS that "*" directly abuts the path
+# through nothing but further path-charset characters — see tests/test_check_paths.py.
+PATH_RE = re.compile(r"(?<![A-Za-z0-9_./-])((?:\.claude/)?(?:skills|agents|rules|references|templates|scripts|hooks)/[A-Za-z0-9_./-]*[A-Za-z0-9_])(?![A-Za-z0-9_./-]*[{*])")
 MARK = re.compile(r"<!-- residue:(prohibition|historical) -->\s*$")
 
 def files(root, dirs):

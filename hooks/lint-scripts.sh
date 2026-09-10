@@ -1,17 +1,22 @@
 #!/bin/bash
-# lint-scripts.sh — Mechanical grep-based linter for R, Python, Julia scripts.
+# lint-scripts.sh — Mechanical grep-based linter for R, Python, Julia scripts,
+# and for the R chunks inside a Quarto .qmd manuscript (D-7: there is no
+# per-script R tree any more — analysis code lives in the one manuscript's chunks).
 # Catches prohibited patterns from coding standards before the coder-critic runs.
 # Exit code: always 0 (advisory). Output goes to stdout for agent consumption.
 #
+# Hook Event: PostToolUse (via post-edit-lint.sh) / CLI
+#
 # Usage:
-#   lint-scripts.sh <file>           # Lint a single file
-#   lint-scripts.sh <dir>            # Lint all scripts in directory (recursive)
-#   lint-scripts.sh                  # Lint scripts/ in current project
+#   lint-scripts.sh <file.R|.py|.jl>  # Lint a single script
+#   lint-scripts.sh <file.qmd>        # Extract R chunks (via `.claude/scripts/qmd_chunks.py`) and lint those
+#   lint-scripts.sh <dir>             # Lint every *.R/*.py/*.jl/*.qmd file in directory (recursive)
+#   lint-scripts.sh                   # Lint scripts/acquire in current project
 
 set -uo pipefail
 
 # --- Resolve target ---
-TARGET="${1:-scripts}"
+TARGET="${1:-scripts/acquire}"
 FILES=()
 
 if [[ -f "$TARGET" ]]; then
@@ -19,15 +24,27 @@ if [[ -f "$TARGET" ]]; then
 elif [[ -d "$TARGET" ]]; then
   while IFS= read -r -d '' f; do
     FILES+=("$f")
-  done < <(find "$TARGET" -type f \( -name "*.R" -o -name "*.py" -o -name "*.jl" \) -print0 2>/dev/null)
+  done < <(find "$TARGET" -type f \( -name "*.R" -o -name "*.py" -o -name "*.jl" -o -name "*.qmd" \) -print0 2>/dev/null)
 else
   echo "LINT: Target not found: $TARGET"
   exit 0
 fi
 
 if [[ ${#FILES[@]} -eq 0 ]]; then
-  echo "LINT: No R/Python/Julia scripts found in $TARGET"
+  echo "LINT: No R/Python/Julia/qmd scripts found in $TARGET"
   exit 0
+fi
+
+# --- .qmd target: extract R chunk bodies to a temp .R file so line numbers
+# survive (`.claude/scripts/qmd_chunks.py`'s whole contract), lint the extract,
+# then rewrite the temp path back to the original .qmd name in the report. ---
+QMD_TMP=""
+QMD_ORIG=""
+if [[ "$TARGET" == *.qmd ]]; then
+  QMD_TMP="$(mktemp -t lint.XXXX).R"
+  python3 "$(dirname "$0")/../scripts/qmd_chunks.py" "$TARGET" > "$QMD_TMP"
+  QMD_ORIG="$TARGET"
+  FILES=("$QMD_TMP")
 fi
 
 TOTAL_ISSUES=0
@@ -135,7 +152,7 @@ lint_file() {
     done < <(grep -nE '1:(length|nrow|ncol|NROW|NCOL)\(' "$file" 2>/dev/null | grep -v '^\s*#' || true)
 
     # set.seed() check — warn if stochastic keywords present but no set.seed
-    if grep -q 'sample(\|rnorm(\|runif(\|rbinom(\|bootstrap\|boot\|replicate(' "$file" 2>/dev/null; then
+    if grep -q 'sample(\|rnorm(\|runif(\|rbinom(\|bootstrap\|\bboot(\|replicate(' "$file" 2>/dev/null; then
       if ! grep -q 'set\.seed(' "$file" 2>/dev/null; then
         add_finding_noline "HIGH" "Stochastic code detected but no set.seed() — add set.seed() at top"
       fi
@@ -241,22 +258,33 @@ lint_file() {
 }
 
 # --- Main ---
-echo "=== LINT REPORT ==="
-echo ""
+run_report() {
+  echo "=== LINT REPORT ==="
+  echo ""
 
-for f in "${FILES[@]}"; do
-  lint_file "$f"
-done
+  for f in "${FILES[@]}"; do
+    lint_file "$f"
+  done
 
-echo ""
-echo "--- Summary ---"
-echo "Files scanned: ${#FILES[@]}"
-echo "Total issues:  $TOTAL_ISSUES (HIGH: $TOTAL_HIGH, MEDIUM: $TOTAL_MEDIUM, LOW: $TOTAL_LOW)"
+  echo ""
+  echo "--- Summary ---"
+  echo "Files scanned: ${#FILES[@]}"
+  echo "Total issues:  $TOTAL_ISSUES (HIGH: $TOTAL_HIGH, MEDIUM: $TOTAL_MEDIUM, LOW: $TOTAL_LOW)"
 
-if [[ $TOTAL_ISSUES -eq 0 ]]; then
-  echo "Status: CLEAN"
+  if [[ $TOTAL_ISSUES -eq 0 ]]; then
+    echo "Status: CLEAN"
+  else
+    echo "Status: $TOTAL_ISSUES issue(s) found — review before committing"
+  fi
+}
+
+if [[ -n "$QMD_TMP" ]]; then
+  # run_report runs in the pipe's subshell; its own TOTAL_* accounting (used
+  # only to print its own summary above) is unaffected by running there.
+  run_report | sed "s|$QMD_TMP|$QMD_ORIG|g"
+  rm -f "$QMD_TMP"
 else
-  echo "Status: $TOTAL_ISSUES issue(s) found — review before committing"
+  run_report
 fi
 
 exit 0

@@ -237,7 +237,11 @@ def run_preds(kind: str, agent: str, root: Path, reg) -> int:
 AUTH_PAIR = re.compile(r"^\|\s*(lit-position|explorer|strategist|theorist|coder|data-engineer|writer|storyteller)\s*\|\s*[a-z-]+-critic\s*\|", re.M)
 AUTH_ARROW = re.compile(r"\b(lit-position|explorer|strategist|theorist|coder|data-engineer|writer|storyteller)\b\s*(\([^)]{0,40}\)\s*)?(→|->|↔)\s*[a-z-]+-critic\b", re.I)
 AUTH_WEIGHT = re.compile(r"(QUALITY_WEIGHT|\bweight)\s*[:=|]\s*\d|\b\d+(\.\d+)?%\s*(of\s+)?(weight|\((literature|data|strategy|theory|code|manuscript|replication))", re.I)
-AUTH_ALLOW = {"rules/registry.yaml", "rules/permissions.md", "rules/quality.md"}
+AUTH_ALLOW = {"rules/registry.yaml", "rules/permissions.md", "rules/quality.md"}  # <!-- residue:prohibition -->
+# The marker above is check_paths.py's convention, reused here (precedent: audit_graph.py's
+# AGENT_RE line): these three strings are runtime values compared against
+# `str(f.relative_to(root))`, which is repo-root-relative by construction — never `.claude/`-
+# prefixed — so D-4's shipped-path-prefix rule does not apply to this set literal.
 
 def registry_check(root: Path) -> int:
     rc = 0; reg = rl.load_registry(root)

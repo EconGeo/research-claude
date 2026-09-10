@@ -90,6 +90,40 @@ run hook-log-reminder     bash -c "echo '{\"cwd\":\"$T\"}' | CLAUDE_PROJECT_DIR=
 echo 'setwd("/tmp")' > "$T/hook-lint-fixture.R"
 run hook-post-edit-lint   bash -c "echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$T/hook-lint-fixture.R\"}}' | '$RC/hooks/post-edit-lint.sh' | grep -q '\"hookSpecificOutput\"'"
 
+# ── lint-scripts.sh reads .qmd chunks via scripts/qmd_chunks.py (Task 7.3) ──
+# Clean: an ordinary modelsummary(booktabs=TRUE) table plus a "reboot your R
+# session" comment — real R-125-adjacent regression for the old bare `boot`
+# pattern, which false-flagged the comment as stochastic code (see
+# docs/audits/... task-7.3-report.md for the red). Must report CLEAN.
+cat > "$T/lint-qmd-clean-fixture.qmd" <<'EOF'
+---
+title: booktabs test
+---
+
+```{r}
+#| label: tbl-x
+# reboot your R session if renv appears stale, then re-render
+modelsummary(m, booktabs = TRUE)
+```
+EOF
+run lint-qmd-clean bash -c "'$RC/hooks/lint-scripts.sh' '$T/lint-qmd-clean-fixture.qmd' | grep -q 'Status: CLEAN'"
+
+# setwd() inside an R chunk must be caught at its correct SOURCE line (line 8
+# here) — the whole point of scripts/qmd_chunks.py blanking non-chunk lines
+# instead of dropping them.
+cat > "$T/lint-qmd-setwd-fixture.qmd" <<'EOF'
+---
+title: setwd test
+---
+
+```{r}
+#| label: fig-y
+x <- 1
+setwd("/Users/x")
+```
+EOF
+run lint-qmd-setwd bash -c "out=\$('$RC/hooks/lint-scripts.sh' '$T/lint-qmd-setwd-fixture.qmd'); echo \"\$out\" | grep -q 'lint-qmd-setwd-fixture.qmd (2 issues)' && echo \"\$out\" | grep -q 'Line 8: setwd() '"
+
 run hook-pre-compact      bash -c "echo '{\"trigger\":\"auto\"}' | CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/pre-compact.py' | grep -q '\"systemMessage\"'"
 
 # ── session-guard.py: exemption protects its own state file, not the rest of .claude/ (Task 7.2) ──

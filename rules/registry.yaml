@@ -2,7 +2,7 @@
 # Rendered to .claude/rules/permissions.md by this repo's render_registry.py (not shipped
 # to projects; check_fork: registry-rendered).
 # Read by .claude/scripts/pipeline.py, this repo's check_fork.sh (not shipped), and
-# skills/pipeline/SKILL.md (Task 5.4).
+# .claude/skills/pipeline/SKILL.md (Task 5.4).
 # No other file states a creator→critic pair or a weight (check_fork: registry-authority).
 #
 # Restricted YAML on purpose (parsed by .claude/scripts/registry_lib.py without PyYAML): block
