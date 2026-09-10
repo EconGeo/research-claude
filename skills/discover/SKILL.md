@@ -1,6 +1,6 @@
 ---
 name: discover
-description: Discovery phase combining research interviews, literature search, data discovery, and ideation. Routes to appropriate agents based on arguments. Replaces the old interview-me, lit-review, find-data and research-ideation commands.
+description: Discovery phase combining research interviews, a pointer to /lit-position for literature, data discovery, and ideation. Routes to appropriate agents based on arguments. Replaces the old interview-me, lit-review, find-data and research-ideation commands.
 argument-hint: "[mode: interview | lit | data | ideate] [topic or query]"
 allowed-tools: Read,Grep,Glob,Write,Edit,WebSearch,WebFetch,Agent
 ---
@@ -66,11 +66,21 @@ Using `.claude/skills/strategize/templates/decision-record.md`, record:
 - **Key assumptions:** What must hold for this question to be answerable
 - **What would invalidate:** What would force a pivot (e.g., "if the policy change turns out to have been anticipated")
 
-### `/discover lit [topic]` — Literature Review
-**Superseded by `/lit-position`.** Search, proximity scoring, coverage self-check,
-frontier mapping and positioning all live in `.claude/skills/lit-position/SKILL.md`
-now — invoke it directly instead of this mode. It is local-Zotero-first per
-`.claude/rules/literature-search-order.md`.
+### `/discover lit` — superseded by `/lit-position` (D3)
+
+Literature search and positioning live in **`/lit-position`**, the ZotPilot bridge
+skill. Run that instead:
+
+```
+/lit-position [topic]
+```
+
+It searches the local Zotero corpus first per `.claude/rules/literature-search-order.md`,
+ingests only what the library lacks, and produces `annotated_bibliography.md`,
+`frontier_map.md`, and `positioning.md` — with proximity scoring and an independent
+lit-critic review (D3, D-15).
+
+If a bibliography seed is wanted first, run `/seed-papers`.
 
 ### `/discover data [requirements]` — Data Discovery
 Find and assess datasets for the research question.
