@@ -171,6 +171,22 @@ The strategist-critic does not use a point-deduction rubric. Instead, it classif
 
 ---
 
+## Lit-Critic (Literature Positioning)
+
+| Issue | Deduction |
+|---|---|
+| Seminal paper in the field missing | -20 |
+| Methods literature the strategy depends on not covered | -15 |
+| A paper in the local Zotero index on the same question is missing | -10 per, max -30 |
+| Over-reliance on working papers (>50%) | -10 |
+| Missing papers from the last 2 years / scooping risk unnamed | -10 |
+| Scope too narrow or too broad to position | -10 |
+| Frontier map lists rather than locates a gap | -10 |
+| Positioning does not survive the closest paper's redundancy sentence | -15 |
+| Proximity scores inconsistent | -5 |
+
+---
+
 ## Quality Gates
 
 | Gate | Overall Score | Per-Component Minimum |
