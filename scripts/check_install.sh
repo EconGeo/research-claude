@@ -166,7 +166,14 @@ check_project() {
                [[ -d "$P/.claude/$d" ]] || continue
                # ! -name, not ! -path '*/.*': every path here is under .claude,
                # so a path test excludes the entire tree.
-               find "$P/.claude/$d" -maxdepth 2 -type f ! -name '.*' 2>/dev/null
+               # -path '*/__pycache__/*': running pipeline.py writes bytecode into the
+               # LINKED .claude/scripts/, so every project grows a .pyc the first time
+               # the pipeline runs. It is generated, never a project override, and a
+               # coauthor's clone neither needs nor should receive it. Excluded here
+               # rather than by a !negation, which would be asking each project to
+               # commit a build artifact.
+               find "$P/.claude/$d" -maxdepth 2 -type f ! -name '.*' \
+                    ! -path '*/__pycache__/*' 2>/dev/null
              done)
     if [[ ${#lost[@]} -gt 0 ]]; then
       bad override-tracked "${#lost[@]} real file(s) under a linked dir are untracked — add a !negation to .gitignore"

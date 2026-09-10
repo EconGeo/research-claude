@@ -147,6 +147,40 @@ def _scorer(comp):
     import registry_lib as _rl
     return _rl.load_registry(ROOT)["components"][comp]["scored_by"]
 
+class TestFreshnessAcrossFormats(FixtureCase):
+    """`fresh` must consider EVERY rendered output, not whichever is newest.
+
+    A live run surfaced this in a real project: a stray .html sat beside the .docx
+    deliverable, rendered_output() returned the newer .html, and `post verifier`
+    reported `ok render` without rendering — a stale deliverable certified by a
+    file of a format the project does not publish.
+    """
+    def _touch(self, path, when):
+        path.write_text("x")
+        os.utime(path, (when, when))
+
+    def test_stale_docx_is_not_saved_by_a_newer_html(self):
+        run("state", "init", root=self.t)
+        ms = self.t / "manuscript_fixture.qmd"
+        base = ms.stat().st_mtime
+        self._touch(ms.with_suffix(".docx"), base - 100)   # stale deliverable
+        self._touch(ms.with_suffix(".html"), base + 100)   # newer, different format
+        rc, out = run("fresh", root=self.t)
+        self.assertNotEqual(rc, 0, f"a stale .docx must not pass: {out}")
+        self.assertIn("manuscript_fixture.docx", out)
+
+    def test_all_outputs_fresh_passes(self):
+        run("state", "init", root=self.t)
+        ms = self.t / "manuscript_fixture.qmd"
+        base = ms.stat().st_mtime
+        # newest input includes everything under data/raw/, not just the .qmd
+        future = time.time() + 10_000
+        self._touch(ms.with_suffix(".docx"), future)
+        self._touch(ms.with_suffix(".html"), future)
+        rc, out = run("fresh", root=self.t)
+        self.assertEqual(rc, 0, out)
+
+
 class TestScoredByEnforced(FixtureCase):
     """`record-score` honours the registry's `scored_by`.
 
