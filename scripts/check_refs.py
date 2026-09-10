@@ -165,7 +165,13 @@ def crit_hooks_readme(root):
     hits = []
     if not readme.exists():
         return report("hooks-readme", ["hooks/README.md missing"])
-    rows = re.findall(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|", readme.read_text(), re.M)
+    # Only rows whose first cell is a hook FILENAME are hook rows. The "Getting the
+    # contract right" table below the hook table also leads with a backticked token —
+    # an EVENT name — and without this the criterion hunts for a file called
+    # hooks/PreToolUse and reports three hits that name nothing wrong.
+    rows = [(n, e) for n, e in
+            re.findall(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|", readme.read_text(), re.M)
+            if n.endswith((".py", ".sh"))]
     for name, event in rows:
         hook = root / "hooks" / name
         if not hook.exists():

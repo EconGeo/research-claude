@@ -27,14 +27,14 @@ Before shipping a skill that depends on a hook, check that the hook is wired.
 
 | Hook | Event | What it does |
 |---|---|---|
-| `session-guard.py` | SessionStart | Session state checks |
-| `pre-compact.py` | PreCompact | Reminds you to persist plan / memory / journal before compaction |
-| `post-compact-restore.py` | PostCompact | Restores context pointers after compaction |
-| `post-edit-lint.sh` | PostToolUse (Edit/Write) | Advisory lint on edited scripts |
-| `lint-scripts.sh` | manual / PostToolUse | Lints analysis scripts against INV-14..19 |
+| `session-guard.py` | PreToolUse | Enforces `/freeze` and `/careful` from `.claude/state/session-guards.json` — including edits to that file itself |
+| `pre-compact.py` | PreCompact | Captures plan / task / decisions for restore; optional one-shot block on a DRAFT plan (`CLAUDE_PRECOMPACT_BLOCK_ON_DRAFT=1`) |
+| `post-compact-restore.py` | SessionStart (compact\|resume) | Surfaces `quality_reports/pipeline_state.json` first, then the active plan and prior context |
+| `post-edit-lint.sh` | PostToolUse (Edit/Write) | Advisory lint on edited scripts and `.qmd` files, emitted as `additionalContext` |
+| `lint-scripts.sh` | PostToolUse (via `post-edit-lint.sh`) / CLI | Lints acquisition scripts and a manuscript's `.qmd` R chunks against INV-14..19 |
 | `protect-files.sh` | PreToolUse | Blocks edits to protected paths |
 | `context-monitor.py` | PostToolUse | Progressive nudges at 40/55/65% (/tools learn), 80% (info), 90% (caution), once per session each |
-| `log-reminder.py` | Stop | Counts responses since the session log was last touched and nudges via stderr. Never blocks |
+| `log-reminder.py` | Stop | Counts responses since the session log was last touched and nudges via `additionalContext`. Never blocks |
 | `verify-reminder.py` | PostToolUse (Write/Edit) | Reminds you to render before calling a task done, on `.qmd`/`.R` edits |
 | `notify.sh` | Notification | Cross-platform desktop notification when Claude needs attention. Fails open without `jq` |
 | `dispatch-log.py` | SubagentStop | Appends every subagent completion to `quality_reports/agent_dispatch.jsonl` — the log `pipeline.py`'s `critic-ran` predicate reads |
@@ -50,7 +50,7 @@ too, because an ignored decision just looks like a hook that chose not to act:
 | Event | To block |
 |---|---|
 | `PreToolUse` | `hookSpecificOutput.permissionDecision: "deny"` + `permissionDecisionReason`. A top-level `{"decision":"block"}` is **not** honoured here. Exit 2 also blocks. |
-| `PreCompact`, `Stop` | Exit 2, reason on stderr. Exit 2 blocks whether or not JSON is printed. |
+| `PreCompact`, `Stop` | Exit 2, reason on stderr. `Stop` **also** honours a top-level `{"decision":"block","reason":…}` — which is what `critic-pairing.py` emits; exit 2 blocks whether or not JSON is printed. |
 | `PostToolUse` | Cannot block — the tool already ran. Use `systemMessage` (user-visible) and `hookSpecificOutput.additionalContext` (Claude-visible). |
 | `SessionStart` | Cannot block. Match on `source` (`startup`, `resume`, `clear`, `compact`, `fork`) — not `type`. |
 
