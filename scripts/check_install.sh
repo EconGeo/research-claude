@@ -217,6 +217,22 @@ check_project() {
     else bad state-valid "quality_reports/pipeline_state.json fails pipeline.py state validate"; fi
   else warn state-valid "no pipeline_state.json yet"; fi
 
+  # -- 10. Hooks the shipped skills depend on are wired ----------------------
+  # A linked hook does nothing until settings.json names it, so membership is not
+  # enough: dispatch-log.py feeds the log that pipeline.py's `critic-ran` reads, and
+  # critic-pairing.py is what makes a session notice it skipped a critic.
+  # protect-files.sh stays deliberately unwired (R-7) -- it is opt-in per project.
+  local sj="$P/.claude/settings.json" hw_missing=() h
+  if [[ -f "$sj" ]] && command -v jq >/dev/null 2>&1; then
+    for h in session-guard.py dispatch-log.py critic-pairing.py; do
+      jq -e --arg h "$h" '[.hooks[]?[]?.hooks[]?.command // empty] | map(select(contains($h))) | length > 0' \
+        "$sj" >/dev/null 2>&1 || hw_missing+=("$h")
+    done
+    if jq -e '[.hooks[]?[]?.hooks[]?.command // empty] | map(select(contains("post-merge"))) | length > 0' \
+      "$sj" >/dev/null 2>&1; then hw_missing+=("post-merge.sh is a git hook, not a Claude hook"); fi
+    [[ ${#hw_missing[@]} -eq 0 ]] && ok hooks-wired || bad hooks-wired "${hw_missing[*]}"
+  else warn hooks-wired "no settings.json or no jq"; fi
+
   [[ -f "$P/bootstrap-pipeline.sh" ]] && ok bootstrap || bad bootstrap "bootstrap-pipeline.sh missing"
 }
 
