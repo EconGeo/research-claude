@@ -1,6 +1,7 @@
-import contextlib, importlib.util, io, json, os, shutil, sys, tempfile, unittest, pathlib
+import contextlib, importlib.util, io, json, os, shutil, subprocess, sys, tempfile, unittest, pathlib
 from unittest import mock
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+HOOK = ROOT / "hooks" / "critic-pairing.py"
 
 def _load_critic_pairing():
     spec = importlib.util.spec_from_file_location("critic_pairing", ROOT / "hooks" / "critic-pairing.py")
@@ -68,6 +69,19 @@ class TestFailOpen(FixtureCase):
         self.assertEqual(rc, 0)
         self.assertEqual(out, "")
 
+    def test_log_line_missing_at_key_does_not_crash(self):
+        """Fix round 2, Finding a: hooks/critic-pairing.py:72-73 — a log line that IS a
+        dict (passes the isinstance guard) but has no "at" key crashes `e["at"]` inside
+        the max(...) generator. `python3 -c` reproduction with the guard temporarily
+        removed (documented in the round-2 report) showed the real KeyError; this asserts
+        the shipped hook (both its own main()->_run() wrapper and the outer
+        if __name__ == "__main__" backstop) never lets it out."""
+        log = self.t / "quality_reports" / "agent_dispatch.jsonl"
+        log.write_text(json.dumps({"agent": "coder"}) + "\n")  # valid dict, no "at"
+        rc, out = self.run_hook(json.dumps({"session_id": "s1", "cwd": str(self.t)}))
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, "")
+
 class TestEmptySessionId(FixtureCase):
     """Fix round 1, Finding 2: the sentinel key is "<sid>:<creator>", keyed by project hash
     only. An empty sid collapses every session's incident onto the same ":<creator>" token,
@@ -93,5 +107,48 @@ class TestEmptySessionId(FixtureCase):
         sessions = self.home / ".claude" / "sessions"
         found = list(sessions.rglob("critic-pairing-blocked.json")) if sessions.exists() else []
         self.assertEqual(found, [])
+
+class TestOuterBackstopEndToEnd(FixtureCase):
+    """Fix round 2 (R-115): hooks/critic-pairing.py's own `if __name__ == "__main__":`
+    block now carries the house fail-open idiom (see hooks/log-reminder.py and four other
+    shipped hooks). Both findings below sit inside `_run()`, which `main()` already wraps
+    in its own try/except — so through the real script entry point these already returned
+    rc 0 even before this round's change (confirmed directly; see the round-2 report). The
+    outer idiom is a second, independent layer for when that internal wrapper is ever
+    bypassed or refactored away, so these tests exercise the actual entry point
+    (subprocess) rather than an in-process `main()` call, which cannot reach the
+    `if __name__` block at all."""
+    def _run_subprocess(self, payload, home):
+        env = dict(os.environ)
+        env["CLAUDE_PROJECT_DIR"] = str(self.t)
+        env["HOME"] = str(home)
+        return subprocess.run([sys.executable, str(HOOK)], input=payload,
+                               capture_output=True, text=True, env=env)
+
+    def test_missing_at_key_end_to_end(self):
+        log = self.t / "quality_reports" / "agent_dispatch.jsonl"
+        log.write_text(json.dumps({"agent": "coder"}) + "\n")
+        p = self._run_subprocess(json.dumps({"session_id": "s1", "cwd": str(self.t)}), self.home)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertEqual(p.stderr, "")
+
+    def test_unwritable_home_end_to_end(self):
+        """Finding b: session_dir()'s mkdir(parents=True, exist_ok=True) sits outside any
+        try. A read-only HOME reproduces the real PermissionError (see round-2 report for
+        the traceback); skipped when running as root, since root ignores POSIX
+        permission bits and the reproduction wouldn't mean anything."""
+        if hasattr(os, "geteuid") and os.geteuid() == 0:
+            self.skipTest("permission bits are meaningless as root")
+        log = self.t / "quality_reports" / "agent_dispatch.jsonl"
+        log.write_text(json.dumps({"at": "2026-09-10T00:00:00.000+00:00", "agent": "coder"}) + "\n")
+        readonly_home = pathlib.Path(tempfile.mkdtemp())
+        os.chmod(readonly_home, 0o555)
+        try:
+            p = self._run_subprocess(json.dumps({"session_id": "s1", "cwd": str(self.t)}), readonly_home)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            self.assertEqual(p.stderr, "")
+        finally:
+            os.chmod(readonly_home, 0o755)
+            shutil.rmtree(readonly_home)
 
 if __name__ == "__main__": unittest.main()
