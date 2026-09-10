@@ -19,6 +19,22 @@ reaches all of them immediately.
 The repo is public; the six paper repos that link to it are private. That is what lets
 a coauthor bootstrap the pipeline with a clone and no access grant.
 
+## Start here — current state and open work
+
+**`docs/2026-09-10_final-cleanup-handoff.md`.** Read its progress log before picking up
+anything; it is the running record of what is done, what was deliberately NOT done and why,
+and what is still open. It supersedes the numbered sections lower in that same file wherever
+they disagree.
+
+Standing pointers it depends on, and which no session should change without reading:
+`docs/decisions/2026-09-08_pipeline-repair-rulings.md` (R-1…R-136 — §1 explains why things
+that look wrong are deliberate, §2 lists permanent gate blind spots) and
+`docs/audits/2026-09-08_repair-signoff.md`.
+
+**Keep this pointer current.** A handoff nothing links to is a handoff nobody reads: the
+2026-09-10 session found the previous one only because the user named the file by hand. When
+a handoff is superseded, repoint this section at the new one rather than adding to a list.
+
 ## Checkpoint / session-report location
 
 **`SESSION_REPORT.md` lives at `docs/SESSION_REPORT.md`, not the repo root.**

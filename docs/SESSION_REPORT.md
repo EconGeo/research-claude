@@ -597,3 +597,46 @@ and my orchestrator count of 34, which searched the stem `orchestrat` and swept 
 Red-test every check by injecting the failure it exists to catch. A number is not evidence
 until you have read what produced it. And when a path assertion fails, question the
 resolution base before the file.
+
+## 2026-09-10 — Handoff §1/§2e, the any_of hint, and the live tier's first real run
+
+**Operations:**
+- Moved `~/pipeline-repair-handoff.md` → `docs/2026-09-10_final-cleanup-handoff.md` (`4cf76a8`).
+- §1: dropped the stash (verified byte-identical to the committed patch first), deleted
+  `fix/critic-dispatch` after diffing `cd1d47a` against the shipped gates.
+- Fixed `any_of` swallowing its branches' `producer` hints (`eeb21da` → `616d719`), red-first.
+- §2e: `JHousE` in all three real `journal-profiles.md` copies; consumer `zoning2026/CLAUDE.md`
+  updated (ESG `ce7c32b`, zoning2026 `342e870`).
+- Built and exercised the live tier (`a70885b`, `d6f4a9e`, `12cbcee` → `dc293d7`).
+- Fixed `check_install` membership counting `hooks/__pycache__` (`3b64af0` → `1513246`).
+- Pushed `7268017..be1e8d4`; `main` in sync with `origin/main`.
+
+**Decisions:**
+- Do NOT run `/pipeline run` in a paper repo — POGM4's state file is younger than the work it
+  tracks, so every stage reads unstarted and `writer` would be pointed at a manuscript already
+  through three referee rounds. The fixture is the vehicle.
+- The live tier asserts MECHANISM, never OUTCOME. Strategy scored 61 on round one; an
+  assertion that a run *reaches* a stage would depend on an LLM clearing 80 on a synthetic
+  fixture, which is not a property of the pipeline.
+- Left §2b/§2c alone — deliberate prior decisions with recorded reasons.
+- Left the live tier RED rather than tuning it green: `--yes` covers approval gates, not a
+  stage asking a substantive question.
+
+**Results:**
+- **The enforcement chain ran for real under the driver for the first time:** `strategist` →
+  `strategist-critic`, both `source: "hook"` (dispatch-log.py on SubagentStop) with a real
+  session id, `strategy=61.0`, `strikes {strategist: 1}`, `overall 68.71`; `critic-pairing.py`
+  correctly did not block a matched pair.
+- Six live-tier defects found and fixed, three of them introduced by this session's own
+  hardening. Full list with mechanisms in the handoff's progress log.
+- `claude -p` **exits 0 on an unknown command** (tested) — exit code is not a usable success
+  signal for it.
+- `check_install --all` had been red since 06:22 and nobody had run it.
+- **Open, not fixed:** `quality_reports/session_logs/` is written by `log-reminder.py` and read
+  by `pre-compact.py`/`post-compact-restore.py`, but `rules/logging.md` never defines it —
+  compaction recovery reads a directory nothing is instructed to write.
+
+**Status:**
+- Done: handoff §1, §2e, §2f (built + exercised); `CLAUDE.md` now points at the handoff.
+- Pending: §2a (109 prose literals), §2d (upstream ZotPilot), the `session_logs/` question,
+  the six `pipeline.lock` files still recording `8bb6218`, and a full green `--live` run.
