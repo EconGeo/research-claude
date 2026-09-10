@@ -12,8 +12,8 @@ declared file does not exist): **stop** and tell the user to declare it — "dec
 `manuscript: <file>.qmd` in CLAUDE.md".
 
 Check whether ZotPilot is configured: is `mcp__zotpilot__get_index_stats` available? If not,
-run the `new-project-ztp` skill (it walks `/ztp-setup`, then indexes the library) before
-continuing — `/lit-position` needs it.
+run `/new-project-ztp` (it walks `/ztp-setup`, then indexes the library) before continuing —
+`/lit-position` needs it.
 
 ```
 python3 .claude/scripts/pipeline.py state init

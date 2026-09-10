@@ -102,7 +102,7 @@ def crit_manuscript_model(root):
     return report("manuscript-model", hits)
 
 def crit_deleted_things(root):
-    absent = re.compile(r"(?<![A-Za-z0-9_/.\-])/(" + "|".join(map(re.escape, ABSENT_SKILLS)) + r")\b")
+    absent = re.compile(r"(?<![A-Za-z0-9_/.\-])/(" + "|".join(map(re.escape, ABSENT_SKILLS)) + r")(?![A-Za-z0-9_-])")
     inv22 = re.compile(r"\bINV-22\b")
     def scan(files):
         out = []
