@@ -107,6 +107,7 @@ Enforce the blocking lists in `.claude/rules/quarto-pdf.md` (PDF output) and
 | Missing `bibliography:` in YAML | -5 |
 | Top-level `csl:` present on the PDF path (must be inside `docx:` only) | -3 |
 | Section heading without a `{#sec-...}` anchor | -2 per, max -10 |
+| Displayed equation without a `{#eq-...}` label | -2 per, max -10 |
 | Hardcoded figure/table number instead of `@fig-` / `@tbl-` | -3 per, max -10 |
 | Legacy R Markdown cross-reference syntax instead of Quarto `@` syntax | -3 per, max -10 |
 | Missing JEL codes or keywords after the abstract (INV-6) | -5 |
