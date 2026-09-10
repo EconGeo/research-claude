@@ -155,8 +155,16 @@ what point at it. Push before relying on any of this elsewhere.
 
 **Follow-on — ✅ DONE 2026-09-10.** The six locks recorded `8bb6218` (~15 commits behind what
 the projects were running) and `check_install` warned "refresh before submission". All six now
-record `452aa4f`, and the gate reads `lock 452aa4f == checkout HEAD` in every repo. Only
-`commit=` and `generated=` were rewritten — `apply.sh`'s full install was not re-run, because
+record `452aa4f`, which was `main` at the moment of the refresh.
+
+**Do not read a WARN here as a regression.** The criterion compares the lock to the shared
+checkout's HEAD, so **every commit to research-claude re-warns all six locks** — the two docs
+commits that recorded this refresh did exactly that, immediately. Equality holds only at the
+instant of a refresh, and chasing it is pointless: `check_install` says so itself — in tip mode
+the lock "is an install-time stamp, so it goes stale as the pipeline advances. That is not an
+error; it is only wrong at submission." Refresh at submission, not on sight of the warning.
+
+Only `commit=` and `generated=` were rewritten — `apply.sh`'s full install was not re-run, because
 membership had not changed and re-running an installer across six repos is a wider blast radius
 than a two-line provenance stamp needs. **Each of the six is now 2–4 commits ahead of its
 remote; some of that predates this refresh, so none were pushed.**
