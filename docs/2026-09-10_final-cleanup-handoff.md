@@ -99,7 +99,10 @@ this file is that move.**
   Nothing parses the lock's `# installed via:` comment — `check_install` reads only
   `^commit=` — so it was left saying `pinned`. Note POGM4 and NAR are on feature branches
   (`rewrite-phase1`, `phase1-event-study`), so their lock commit landed there, not on main.
-- Still open: §2a (109 prose literals), §2d (upstream ZotPilot), and a full green `--live` run
+- **Loose ends 1 and 2 are both done**; the six locks are refreshed and all six repos are
+  pushed and in sync with their remotes.
+- Still open: §2a (109 prose literals), §2d (ZotPilot PR #5 — open, needs a merge), and a full
+  green `--live` run
   (the last one proved the mechanism, then hit the wall clock mid-round-2). The
   `session_logs/` question above is closed.
 
@@ -107,7 +110,18 @@ this file is that move.**
 
 Neither is urgent; both are recorded because nothing else points at them.
 
-**1. `affordable_housing_2026` has three absolute symlinks through a lowercase `research`.**
+**1. ✅ FIXED 2026-09-10 — `affordable_housing_2026`'s three symlinks through a lowercase
+`research`.** Repointed at `/Users/andrew.mueller/Research/.claude/references/`; zero
+lowercase-`research` links remain anywhere under `~/Research`. **No commit was needed** — the
+links are untracked (which is why `check_install`'s `tracked-links` criterion passes), so the
+fix is purely local and will need redoing on any fresh checkout until `apply.sh
+--link-references` is run with the correctly-cased path. Diagnosis confirmed before the fix:
+`stat -f %i` on both cases returns the same inode (`260140894`), so it is one directory reached
+case-insensitively, not two directories with drifting content. Note `stat` without `-L` reports
+the *symlink's* inode, not the target's — the first comparison run this way looked like the
+targets differed when they did not. Original text follows.
+
+**1 (original). `affordable_housing_2026` has three absolute symlinks through a lowercase `research`.**
 
 ```
 .claude/references/journal-profiles.md      -> /Users/andrew.mueller/research/.claude/references/...
@@ -123,7 +137,11 @@ references with the correctly-cased path. The rulings track it under Task 7b.1 S
 which also covers replacing ESG's and NAR_settlement's real reference files with symlinks
 after diffing for local edits.
 
-**2. `design/quarto-native-pipeline` is a stale label, not unfinished work.**
+**2. ✅ DONE 2026-09-10 — `design/quarto-native-pipeline` deleted.** `git branch -d` accepted it
+without complaint, which is itself the proof it held nothing unmerged (was `caf4e74`). Original
+text follows.
+
+**2 (original). `design/quarto-native-pipeline` is a stale label, not unfinished work.**
 
 `caf4e74`, last touched 2026-09-08. It is **0 commits ahead of main and 131 behind**, and
 `git merge-base --is-ancestor caf4e74 main` is true — every commit on it is already in `main`,
@@ -268,14 +286,41 @@ the reason first:
   `scripts/R`. The manuscript points at it in three comments and a `stopifnot` message; archiving
   it would have left an error telling a user to run a missing file.
 
-### 2d. ZotPilot fork PR (Task 6.4)
+### 2d. ZotPilot fork PR (Task 6.4) — ⏸ PR OPEN, AWAITING MERGE
 
-`zotpilot-skills/seed-papers/SKILL.md` names the retired `librarian` seven times and `/discover
-lit` four times. The fix belongs **upstream** in `EconGeo/ZotPilot`, then re-vendored via
-`scripts/sync-zotpilot-skills.sh`.
+**https://github.com/EconGeo/ZotPilot/pull/5** — `fix/retired-librarian-references`, pushed
+2026-09-10. Counts corrected while fixing: `librarian` appears **seven** times (the original
+count was right, but only if you match case-insensitively — `## Notes for Librarian` at line 125
+is invisible to a case-sensitive grep) and `/discover lit` **six**, not four. All in the one
+file. `check_refs` emits exactly 7 WARNs for it, all `deleted agent named`.
 
-`zotpilot-skills/` is vendored verbatim and never edited in place — a local patch is destroyed by
-the next sync. This needs a push and a merge on a shared remote, which is why it was deferred.
+**It is not a name substitution, and a future session must not "simplify" it into one.**
+`/lit-position` does **not** read `bibliography_base.bib` — `skills/lit-position/SKILL.md`, read
+in full, searches the local Zotero index directly and says Zotero, "not a hand-maintained
+`.bib`", is the source of truth. Substituting the new name into the old sentence would have
+replaced a dead reference with a false one. The PR therefore describes what the skill produces,
+adds a "Downstream consumers differ" note, and keeps the architecture note whose premise is
+still true (review subagents have no MCP tools, so a main-session skill must bridge to ChromaDB).
+
+**Blocked on the merge**, which the permission classifier refused in-session (`gh pr merge` and
+`gh pr view` both denied). To finish:
+
+```bash
+gh pr merge 5 --repo EconGeo/ZotPilot --squash --delete-branch
+./scripts/sync-zotpilot-skills.sh        # then update VENDORED.md's commit line
+python3 scripts/check_refs.py --root .   # the 7 seed-papers WARNs should be gone
+```
+
+**The re-vendor is safe:** `claude-skills/` is byte-identical between the vendored commit
+`c60d29b` and upstream `main` (`7590790`) — verified with `git diff c60d29b..main --
+claude-skills`, which is empty — so the sync imports this fix and nothing else.
+
+**Open question the fix surfaced but did not resolve.** Nothing in `skills/`, `rules/` or
+`agents/` references `bibliography_base.bib` or `zotero_seed.md`, yet `skills/discover/SKILL.md`
+still tells users "if a bibliography seed is wanted first, run `/seed-papers`". So seed-papers'
+output has no consumer in this pipeline. Either `/lit-position` should read the seed, or
+`/discover` should stop advertising it. Decide it deliberately; do not let the PR imply it is
+settled.
 Its residue is WARN-tier and blocks nothing.
 
 ### 2e. `JHE` / `JHousE` disagreement — ✅ DONE (ESG `ce7c32b`, zoning2026 `342e870`)
