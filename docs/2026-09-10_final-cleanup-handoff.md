@@ -101,8 +101,8 @@ this file is that move.**
   (`rewrite-phase1`, `phase1-event-study`), so their lock commit landed there, not on main.
 - **Loose ends 1 and 2 are both done**; the six locks are refreshed and all six repos are
   pushed and in sync with their remotes.
-- Still open: §2a (109 prose literals), §2d (ZotPilot PR #5 — open, needs a merge), and a full
-  green `--live` run
+- **§2d closed** (PR #5 merged `a8120c5`, re-vendored `1e780f8`).
+- Still open: §2a (109 prose literals) and a full green `--live` run
   (the last one proved the mechanism, then hit the wall clock mid-round-2). The
   `session_logs/` question above is closed.
 
@@ -286,7 +286,7 @@ the reason first:
   `scripts/R`. The manuscript points at it in three comments and a `stopifnot` message; archiving
   it would have left an error telling a user to run a missing file.
 
-### 2d. ZotPilot fork PR (Task 6.4) — ⏸ PR OPEN, AWAITING MERGE
+### 2d. ZotPilot fork PR (Task 6.4) — ✅ DONE 2026-09-10 (merged `a8120c5`, re-vendored `1e780f8`)
 
 **https://github.com/EconGeo/ZotPilot/pull/5** — `fix/retired-librarian-references`, pushed
 2026-09-10. Counts corrected while fixing: `librarian` appears **seven** times (the original
@@ -302,18 +302,13 @@ replaced a dead reference with a false one. The PR therefore describes what the 
 adds a "Downstream consumers differ" note, and keeps the architecture note whose premise is
 still true (review subagents have no MCP tools, so a main-session skill must bridge to ChromaDB).
 
-**Blocked on the merge**, which the permission classifier refused in-session (`gh pr merge` and
-`gh pr view` both denied). To finish:
-
-```bash
-gh pr merge 5 --repo EconGeo/ZotPilot --squash --delete-branch
-./scripts/sync-zotpilot-skills.sh        # then update VENDORED.md's commit line
-python3 scripts/check_refs.py --root .   # the 7 seed-papers WARNs should be gone
-```
-
-**The re-vendor is safe:** `claude-skills/` is byte-identical between the vendored commit
-`c60d29b` and upstream `main` (`7590790`) — verified with `git diff c60d29b..main --
-claude-skills`, which is empty — so the sync imports this fix and nothing else.
+**Done.** PR #5 squash-merged upstream to `a8120c5`; `scripts/sync-zotpilot-skills.sh` brought
+it down and `zotpilot-skills/VENDORED.md` now records `a8120c5` (`v0.5.0-62-ga8120c5`). The sync
+imported **exactly one file, 21+/14-**, as predicted from `git diff c60d29b..main --
+claude-skills` being empty. `check_refs`'s 7 `deleted agent named` WARNs on seed-papers are
+gone, and no `librarian` or `/discover lit` reference survives under `zotpilot-skills/`
+(case-insensitive). Green after: `check_fork` PASS · 75 tests OK · `run_fixture` PASS ·
+`check_install --all` PASS six repos · `audit_graph` dangling 0.
 
 **Open question the fix surfaced but did not resolve.** Nothing in `skills/`, `rules/` or
 `agents/` references `bibliography_base.bib` or `zotero_seed.md`, yet `skills/discover/SKILL.md`
