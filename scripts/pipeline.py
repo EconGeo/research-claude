@@ -158,6 +158,14 @@ def do_render(root: Path, target: Path) -> Tuple[bool, str]:
     p = subprocess.run(["quarto", "render", str(target.relative_to(root))], cwd=root, capture_output=True, text=True)
     return p.returncode == 0, (p.stderr or p.stdout).strip().splitlines()[-1:] and (p.stderr or p.stdout).strip().splitlines()[-1] or ""
 
+def producer_hint(pred: Dict[str, Any], ok: bool) -> str:
+    """The `— run `/skill`` tail on a failing predicate. Shared by run_preds() and the
+    `any_of` branch of evaluate(): `producer` is declared PER PREDICATE, and an any_of's
+    branches carry their own, so composing a description without consulting each branch's
+    key silently drops exactly the hint the user needs (strategist declared /lit-position
+    and /discover data on its two branches and printed neither)."""
+    return f" — run `{pred['producer']}`" if (not ok and pred.get("producer")) else ""
+
 def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, str]:
     t = pred["type"]; root = ctx.root
     if t == "path":
@@ -236,8 +244,10 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         n = sum(1 for l in chunk_labels(ctx.ms) if fnmatch.fnmatch(l, pred["label_glob"]))
         return n >= int(pred["min"]), f"chunks {pred['label_glob']} ({n} found, need {pred['min']})"
     if t == "any_of":
-        results = [evaluate(q, ctx, post) for q in pred["of"]]
-        return any(r[0] for r in results), "any of: " + " | ".join(r[1] for r in results)
+        results = [(q, evaluate(q, ctx, post)) for q in pred["of"]]
+        passed = any(ok for _, (ok, _d) in results)
+        return passed, "any of: " + " | ".join(
+            d + ("" if passed else producer_hint(q, ok)) for q, (ok, d) in results)
     return False, f"unknown predicate {t}"
 
 def run_preds(kind: str, agent: str, root: Path, reg) -> int:
@@ -249,7 +259,7 @@ def run_preds(kind: str, agent: str, root: Path, reg) -> int:
     rc = 0
     for p in preds:
         ok, desc = evaluate(p, ctx, post=(kind == "post"))
-        hint = f" — run `{p['producer']}`" if (not ok and p.get("producer")) else ""
+        hint = producer_hint(p, ok)
         print(("ok      " if ok else "MISSING ") + desc + hint)
         rc |= 0 if ok else 1
     print(f"{kind} {agent}: " + ("PASS" if rc == 0 else "FAIL"))
