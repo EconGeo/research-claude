@@ -41,7 +41,9 @@ Generate a presentation from the paper.
   get the declared manuscript filename. If `talks/<manuscript filename>` does not already exist,
   create it as a relative symlink to `../<manuscript filename>` before rendering any talk — talks
   embed the manuscript by bare filename, and the embed only resolves when the source is reachable
-  from inside `talks/` (see `docs/audits/2026-09-08_embed-test.md`).
+  from inside `talks/`. (The embed probe that established this lives in the
+  research-claude repo's `docs/audits/`, which is NOT linked into a project — do not
+  expect to find it here.)
 
 **Step 2: Dispatch Storyteller**
 

@@ -24,6 +24,11 @@ def now() -> str:
     against one in agent_dispatch.jsonl (gitignored, local). A local-time string with no offset
     would compare wrong across machines and would go backwards for an hour at every DST
     fall-back. Uniform width and a constant `+00:00` suffix keep lexicographic order == chronological order.
+
+    What this does NOT fix: clock skew. Two machines disagreeing about `now` can still order
+    a local dispatch-log entry against a committed state-file score wrongly, and in the
+    fail-OPEN direction — a creator run on a slow clock can stamp earlier than an older
+    committed score. UTC removes the timezone and DST halves of the problem, not that one.
     """
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="milliseconds")
 

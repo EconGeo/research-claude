@@ -12,7 +12,7 @@ For every creator whose last completion has no later completion of its paired cr
 Session filter: agent_dispatch.jsonl has two writers. dispatch-log.py (this hook's sibling,
 SubagentStop) stamps a "session" key. pipeline.py's `append_log` (the `pipeline.py log <agent>`
 standalone path that every stage skill's non-orchestrated step uses) does NOT — see
-.claude/scripts/pipeline.py:101-103. A line with no "session" key is therefore unattributed, not
+.claude/scripts/pipeline.py's `append_log`. A line with no "session" key is unattributed, not
 foreign: treat it as belonging to every session rather than dropping it, or this hook goes
 blind to exactly the creators dispatched outside the orchestrated loop, which is the group
 most likely to skip a critic. (R-113)
