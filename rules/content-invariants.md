@@ -53,8 +53,8 @@ Panel labels ("Panel A: …") inside multi-panel figures are fine.
 
 **INV-13.** Tables and figures are produced by labelled chunks inside
 `manuscript_<project>.qmd` — `tbl-` prefix for tables, `fig-` for figures. Nothing is
-written to a file and included by hand; there is no `paper/tables/` or
-`paper/figures/`.
+written to a file and included by hand; there is no `paper/tables/` or <!-- residue:prohibition -->
+`paper/figures/`. <!-- residue:prohibition -->
 
 ## Code
 

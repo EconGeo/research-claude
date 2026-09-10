@@ -2,7 +2,7 @@
 
 Publication-quality figures for economics papers. Figures are produced by **chunks
 in `manuscript_<project>.qmd`** — Quarto sizes and embeds them. Nothing is
-`ggsave()`d to disk and re-included by hand.
+`ggsave()`d to disk and re-included by hand. <!-- residue:prohibition -->
 
 **Mechanics live in the format rules:** `.claude/rules/quarto-pdf.md` (vector,
 automatic) and `.claude/rules/quarto-word.md` (PNG at `dpi: 200`,
@@ -26,7 +26,7 @@ automatic) and `.claude/rules/quarto-word.md` (PNG at `dpi: 200`,
 - **Color-independent design** -- the figure must be readable in grayscale.
   Pair color with `shape` and `linetype` so series stay distinguishable when a
   referee prints it
-- **Never `ggsave()` to a file and include it by hand.** Let Quarto render the
+- **Never `ggsave()` to a file and include it by hand.** Let Quarto render the <!-- residue:prohibition -->
   chunk: it emits vector for PDF and PNG for Word automatically. Quarto cannot
   embed a PDF figure in a Word document — a hand-saved `fig.pdf` is exactly the
   bug this rule exists to prevent
@@ -172,7 +172,7 @@ context the axes cannot.
 | `plt.title()` in matplotlib | Same reason |
 | Default ggplot theme (gray background) | Use `theme_minimal` or custom theme |
 | Red/green only color schemes | Not colorblind-friendly |
-| `ggsave()` inside a manuscript chunk | Quarto emits the figure; saving it to disk produces a stale duplicate and breaks Word output |
+| `ggsave()` inside a manuscript chunk | Quarto emits the figure; saving it to disk produces a stale duplicate and breaks Word output | <!-- residue:prohibition -->
 | Chunk label without a `fig-` prefix | Quarto will not number or cross-reference it |
 | Hardcoded "Figure 2" in prose | Use `@fig-label` |
 | Axis labels with underscores | Human-readable labels required |

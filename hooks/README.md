@@ -67,6 +67,6 @@ echo '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/x.R"}}' \
 ```
 
 **Note.** `lint-scripts.sh` and `post-edit-lint.sh` predate the Quarto-native
-pipeline, where analysis lives in `.qmd` chunks rather than `scripts/R/*.R`.
+pipeline, where analysis lives in `.qmd` chunks rather than `scripts/R/*.R`. <!-- residue:prohibition -->
 They still work on the acquisition scripts under `scripts/acquire/`. Enable them
 with that scope in mind.

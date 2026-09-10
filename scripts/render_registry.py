@@ -28,9 +28,10 @@ def pred(p) -> str:
 
 def render(reg) -> str:
     L = ["# Permission Registry (rendered — do not edit)", "",
-         "Rendered from `rules/registry.yaml` by `scripts/render_registry.py`. `check_fork.sh`",
-         "fails if this file differs from the render. The YAML is what `pipeline.py`, the gate",
-         "and `/pipeline` read; this file exists so the registry is readable in a linked project.", "",
+         "Rendered from `.claude/rules/registry.yaml` by this repo's `render_registry.py` (a",
+         "maintainer-only tool, not shipped to projects). `check_fork.sh` fails if this file",
+         "differs from the render. The YAML is what `pipeline.py`, the gate and `/pipeline`",
+         "read; this file exists so the registry is readable in a linked project.", "",
          f"**Limits:** {reg['limits']['rounds_per_pair']} rounds per pair, {reg['limits']['rounds_overall']} overall, "
          f"{reg['limits']['verification_retries']} verification retries.", "", "## Components", "",
          "| Component | Weight | Scored by | Conditional |", "|---|---|---|---|"]

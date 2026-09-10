@@ -1,8 +1,9 @@
 # Permission Registry (rendered — do not edit)
 
-Rendered from `rules/registry.yaml` by `scripts/render_registry.py`. `check_fork.sh`
-fails if this file differs from the render. The YAML is what `pipeline.py`, the gate
-and `/pipeline` read; this file exists so the registry is readable in a linked project.
+Rendered from `.claude/rules/registry.yaml` by this repo's `render_registry.py` (a
+maintainer-only tool, not shipped to projects). `check_fork.sh` fails if this file
+differs from the render. The YAML is what `pipeline.py`, the gate and `/pipeline`
+read; this file exists so the registry is readable in a linked project.
 
 **Limits:** 3 rounds per pair, 5 overall, 2 verification retries.
 

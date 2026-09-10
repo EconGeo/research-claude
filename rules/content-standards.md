@@ -38,7 +38,7 @@ labels, color, size, captions, and the common figure types.
 
 **The two things that are always true:** every figure is a `fig-`-labelled chunk
 with a `#| fig-cap:` and no in-plot title (INV-12/INV-2), and nothing is
-`ggsave()`d to disk for manual inclusion — Quarto emits vector for PDF and PNG for
+`ggsave()`d to disk for manual inclusion — Quarto emits vector for PDF and PNG for <!-- residue:prohibition -->
 Word, and cannot embed a PDF figure in a Word document at all.
 
 ---

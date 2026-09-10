@@ -17,14 +17,14 @@ TEXT_SUFFIX = {".md", ".py", ".sh", ".json", ".R", ".qmd", ".yaml", ".yml", ".te
 MARK = re.compile(r"<!-- residue:(prohibition|historical) -->\s*$")
 
 LATEX_RESIDUE = re.compile(
-    r"paper/tables|paper/figures|paper/sections|main\.tex|scripts/R/|00_master|"
-    r"\\cite[tp]?\{|\\input\{|\\label\{|\\ref\{|\\cref|latexmk|threeparttable|"
-    r"\\doublespacing|Bibliography_base|results_summary\.md|\.Rmd|bookdown|\\pause|\\only<")
+    r"paper/tables|paper/figures|paper/sections|main\.tex|scripts/R/|00_master|"  # <!-- residue:prohibition -->
+    r"\\cite[tp]?\{|\\input\{|\\label\{|\\ref\{|\\cref|latexmk|threeparttable|"  # <!-- residue:prohibition -->
+    r"\\doublespacing|Bibliography_base|results_summary\.md|\.Rmd|bookdown|\\pause|\\only<")  # <!-- residue:prohibition -->
 MANUSCRIPT_MODEL = [
-    (re.compile(r"ggsave\("), "ggsave( — figures are fig- chunks"),
+    (re.compile(r"ggsave\("), "ggsave( — figures are fig- chunks"),  # <!-- residue:prohibition -->
     (re.compile(r"saveRDS\("), "saveRDS( — no intermediate objects outside scripts/acquire"),
     (re.compile(r"writeLines\([^)]*\.tex"), "writeLines to .tex"),
-    (re.compile(r'dir\.create\("paper'), 'dir.create("paper'),
+    (re.compile(r'dir\.create\("paper'), 'dir.create("paper'),  # <!-- residue:prohibition -->
 ]
 DELETED_AGENTS = re.compile(r"\b(orchestrator|librarian-critic|librarian|guide-writer|rmd-coder-critic|domain-reviewer)\b", re.I)  # <!-- residue:prohibition -->
 DELETED_SCRIPTS = re.compile(r"generate_(dashboard|html_report)\.py|(^|[^A-Za-z0-9_])guide/|clone .*clo-author|clo-author-upgrade")
@@ -45,6 +45,10 @@ SLASH_ALLOW = {"compact", "clear", "help", "init", "memory", "config", "permissi
                "assumptions", "results", "proofs",
                # theory-output filename tails (bracket topic placeholder, name, dot-tex) in
                # skills/strategize/SKILL.md — path segments, not skill invocations
+               "positioning",  # tail of the glob quality_reports/literature/*/positioning.md
+               # (rules/permissions.md, rules/registry.yaml, skills/write/SKILL.md) — SLASH's
+               # lookbehind excludes word chars/-/./`  but not `*`, so the glob's `*/positioning.md`
+               # reads as a slash invocation. Fix round 1, Task 3b.8.
                }
 TOOLS_LINE = re.compile(r"^(allowed-)?tools:\s*(.*)$")
 
@@ -104,7 +108,7 @@ def crit_deleted_things(root):
                 elif absent.search(ln):
                     out.append(f"{f.relative_to(root)}:{n}: absent skill invoked")
                 elif inv22.search(ln) and "RETIRED" not in ln and "retired" not in ln and not str(f).endswith("content-invariants.md"):
-                    out.append(f"{f.relative_to(root)}:{n}: INV-22 cited as live")
+                    out.append(f"{f.relative_to(root)}:{n}: INV-22 cited as live")  # <!-- residue:prohibition -->
         return out
     hits = scan(shipped_files(root, SHIP))
     warns = scan(shipped_files(root, VENDORED))

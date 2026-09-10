@@ -106,7 +106,7 @@ In `manuscript_<project>.qmd`, place it as
 ```
 
 at the end of the document — after References, before the Appendix. Use
-`{.unnumbered}`, not bookdown's `{-}`.
+`{.unnumbered}`, not bookdown's `{-}`. <!-- residue:prohibition -->
 
 ---
 
