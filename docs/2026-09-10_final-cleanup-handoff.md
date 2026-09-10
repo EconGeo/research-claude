@@ -90,14 +90,24 @@ this file is that move.**
 
 ## Where things stand
 
-The pipeline repair is **merged, pushed, and live**. `main` is at `7268017`. The repair worktree
-has been removed; `git worktree list` shows one checkout.
+> **Updated 2026-09-10 by session `01LyzZ`.** The block below originally read "merged,
+> **pushed**, and live … `main` is at `7268017`" with 59 tests. All three had gone stale.
+> The progress log above is authoritative where the numbered sections below disagree with it.
+
+The pipeline repair is merged and live. `main` is at `cb15122`. The repair worktree has been
+removed; `git worktree list` shows one checkout.
+
+**`main` is NOT pushed — 11 commits ahead of `origin/main`.** This matters more here than in a
+private repo: research-claude is public precisely so a coauthor can bootstrap with a clone and
+no access grant, and a clone today gets none of this. `./bootstrap-pipeline.sh` in each paper
+repo checks out the lock SHA from the REMOTE, so an unpushed lock SHA is unresolvable for
+anyone but this machine. Push before relying on any of it elsewhere.
 
 ```
 ✓ check_fork:    PASS      56 criteria, 0 failures
-✓ check_install: PASS      six repos
-✓ run_fixture:   PASS      32 checks
-  unittest                 59 tests
+✓ check_install: PASS      six repos      (was red all morning — see the progress log)
+✓ run_fixture:   PASS      32 checks      (mechanical tier; --live is separate and on demand)
+  unittest                 62 tests       (59 + 3 for the any_of producer hints)
   audit_graph              dangling 0 · roster [] · never-invoked []
 ```
 
@@ -116,7 +126,7 @@ declared (BRI excepted — it has no `.qmd` yet and correctly refuses to run).
 
 ---
 
-## 1. Immediate cleanup (this is the ask)
+## 1. Immediate cleanup — ✅ DONE 2026-09-10 (`4cf76a8`). Kept for its reasoning; do not re-run.
 
 ### 1a. Drop the stash
 
@@ -202,7 +212,7 @@ lit` four times. The fix belongs **upstream** in `EconGeo/ZotPilot`, then re-ven
 the next sync. This needs a push and a merge on a shared remote, which is why it was deferred.
 Its residue is WARN-tier and blocks nothing.
 
-### 2e. `JHE` / `JHousE` disagreement
+### 2e. `JHE` / `JHousE` disagreement — ✅ DONE (ESG `ce7c32b`, zoning2026 `342e870`)
 
 `references/journal-profiles.md` in this repo now calls the housing journal `JHousE`, because
 `JHE` was already taken by Journal of Health Economics. **The shared
@@ -212,7 +222,7 @@ disagree. Rename there too.
 While in that file: check for the `ReStud` vs `REStud` casing bug that was found and fixed in this
 repo's `discipline-cards.md` — a cross-reference that reads correctly and matches nothing.
 
-### 2f. Live tier — `run_fixture.sh --live`, Tasks 5.6/5.7
+### 2f. Live tier — ✅ BUILT AND EXERCISED (merged `dc293d7`). Text below predates it.
 
 Still never run. The harness's `--live` path invokes `claude -p '/pipeline run --until analyze
 --yes' --permission-mode acceptEdits` against a fixture copy.
