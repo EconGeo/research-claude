@@ -26,10 +26,21 @@ def session_dir(project: str) -> Path:
     d.mkdir(parents=True, exist_ok=True); return d
 
 def main() -> int:
+    """Fail open, unconditionally: any exception the checks below don't already
+    anticipate must still exit 0, or a Stop-hook crash puts a `<hook name> hook
+    error` banner in front of the user on every single Stop event (Finding 1)."""
+    try:
+        return _run()
+    except Exception:
+        return 0
+
+def _run() -> int:
     try:
         inp = json.load(sys.stdin)
     except Exception:
         return 0
+    if not isinstance(inp, dict):
+        return 0  # valid JSON, not an object — e.g. `42`, `[1,2,3]`, `"text"`, `null`
     if inp.get("stop_hook_active"):
         return 0
     project = os.environ.get("CLAUDE_PROJECT_DIR") or inp.get("cwd") or ""
@@ -42,6 +53,8 @@ def main() -> int:
         reg = rl.load_yaml_subset((root / ".claude" / "rules" / "registry.yaml").read_text())
     except Exception:
         return 0
+    if not isinstance(reg, dict) or not isinstance(reg.get("agents"), dict):
+        return 0  # parses cleanly but lacks (or misshapes) the agents: block — mid-edit/mid-merge
     log_p = root / "quality_reports" / "agent_dispatch.jsonl"
     if not log_p.exists():
         return 0
@@ -50,6 +63,7 @@ def main() -> int:
     for ln in log_p.read_text().splitlines():
         try: e = json.loads(ln)
         except json.JSONDecodeError: continue
+        if not isinstance(e, dict): continue  # same non-object case, one log line at a time
         if not sid or (e.get("session") or "") in ("", sid): entries.append(e)
     unpaired = []
     for creator in rl.creators(reg):
@@ -65,14 +79,22 @@ def main() -> int:
           ". Dispatch the critic and record its score with `python3 .claude/scripts/pipeline.py state record-score` before stopping."
     out = {"systemMessage": "⚠ " + msg, "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": msg}}
     if os.environ.get("RC_CRITIC_PAIRING_ADVISORY") != "1":
-        sentinel = session_dir(project) / "critic-pairing-blocked.json"
-        try: blocked = set(json.loads(sentinel.read_text())) if sentinel.exists() else set()
-        except Exception: blocked = set()
-        fresh = [c for c, _ in unpaired if f"{sid}:{c}" not in blocked]
-        if fresh:
-            try: sentinel.write_text(json.dumps(sorted(blocked | {f'{sid}:{c}' for c in fresh})))
-            except OSError: pass
+        if not sid:
+            # Finding 2: the sentinel key is "<sid>:<creator>", keyed by project hash only. With
+            # sid == "" every incident collapses onto the same ":<creator>" token, so a later
+            # session's genuinely new unpaired creator would find its one block already spent —
+            # permanently, since the sentinel is never pruned. "Once per session" isn't keepable
+            # without a session id, so without one this always blocks and never writes a sentinel.
             out.update({"decision": "block", "reason": msg})
+        else:
+            sentinel = session_dir(project) / "critic-pairing-blocked.json"
+            try: blocked = set(json.loads(sentinel.read_text())) if sentinel.exists() else set()
+            except Exception: blocked = set()
+            fresh = [c for c, _ in unpaired if f"{sid}:{c}" not in blocked]
+            if fresh:
+                try: sentinel.write_text(json.dumps(sorted(blocked | {f'{sid}:{c}' for c in fresh})))
+                except OSError: pass
+                out.update({"decision": "block", "reason": msg})
     print(json.dumps(out))
     return 0
 

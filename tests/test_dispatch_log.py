@@ -1,4 +1,5 @@
-import importlib.util, re, sys, unittest, pathlib
+import importlib.util, io, os, re, shutil, sys, tempfile, unittest, pathlib
+from unittest import mock
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import pipeline
@@ -41,5 +42,22 @@ class TestTimestampAgreement(unittest.TestCase):
         finally:
             sys.path[:] = orig_path
         self.assertRegex(b, TS_RE)
+
+class TestFailOpen(unittest.TestCase):
+    """Fix round 1, Finding 1b: valid JSON that decodes to a non-object (`[1,2,3]`, `42`,
+    `"text"`, `null`) must not crash `inp.get(...)`. A crashing Stop/SubagentStop hook
+    shows the user a `<hook name> hook error` banner on every event, not silence."""
+    def setUp(self):
+        self.t = pathlib.Path(tempfile.mkdtemp())
+    def tearDown(self):
+        shutil.rmtree(self.t)
+    def test_non_object_stdin_does_not_crash_and_writes_nothing(self):
+        dispatch_log = _load_dispatch_log()
+        for bad in ("[1,2,3]", "42", '"text"', "null"):
+            with mock.patch.object(sys, "stdin", io.StringIO(bad)), \
+                 mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": str(self.t)}):
+                rc = dispatch_log.main()
+            self.assertEqual(rc, 0, f"payload {bad!r} should fail open with rc 0")
+        self.assertFalse((self.t / "quality_reports" / "agent_dispatch.jsonl").exists())
 
 if __name__ == "__main__": unittest.main()

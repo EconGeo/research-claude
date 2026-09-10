@@ -56,8 +56,13 @@ run prose-check           python3 "$RC/scripts/prose_number_check.py" "$T/manusc
 # ── critic-pairing.py Stop hook (Task 5.2): a creator that ran without its critic ──
 # coder-critic already ran (paired) above; log coder again so its last completion is
 # newer than coder-critic's, recreating the unpaired condition on purpose.
-echo '{"session_id":"","cwd":"'"$T"'"}' > "$T/.pairing-payload.json"
-echo '{"session_id":"","cwd":"'"$T"'","stop_hook_active":true}' > "$T/.pairing-payload-active.json"
+# A real Stop payload always carries a non-empty session_id — use one here so
+# pairing-block/-once/-active-guard/-clean exercise the sentinel path they are meant to
+# (Fix round 1, Finding 2: an all-empty sid made pairing-once pass for the wrong reason).
+SID="fx-session-1"
+echo '{"session_id":"'"$SID"'","cwd":"'"$T"'"}' > "$T/.pairing-payload.json"
+echo '{"session_id":"'"$SID"'","cwd":"'"$T"'","stop_hook_active":true}' > "$T/.pairing-payload-active.json"
+echo '{"session_id":"","cwd":"'"$T"'"}' > "$T/.pairing-payload-emptysid.json"
 python3 "$RC/scripts/pipeline.py" --root "$T" log coder >/dev/null
 run pairing-block         bash -c "CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/critic-pairing.py' < '$T/.pairing-payload.json' | grep -q '\"decision\": \"block\"'"
 run pairing-once          bash -c "CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/critic-pairing.py' < '$T/.pairing-payload.json' | { ! grep -q '\"decision\"'; }"
@@ -65,6 +70,15 @@ run pairing-active-guard  bash -c "[ -z \"\$(CLAUDE_PROJECT_DIR='$T' HOME='$H' p
 sleep 1
 python3 "$RC/scripts/pipeline.py" --root "$T" log coder-critic >/dev/null
 run pairing-clean         bash -c "[ -z \"\$(CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/critic-pairing.py' < '$T/.pairing-payload.json')\" ]"
+
+# pairing-empty-sid: with no session id to key a sentinel on, the hook must block EVERY
+# time and never suppress (Finding 2) — recreate the unpaired condition, then call twice.
+python3 "$RC/scripts/pipeline.py" --root "$T" log coder >/dev/null
+run pairing-empty-sid     bash -c "
+  a=\$(CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/critic-pairing.py' < '$T/.pairing-payload-emptysid.json')
+  b=\$(CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/critic-pairing.py' < '$T/.pairing-payload-emptysid.json')
+  echo \"\$a\" | grep -q '\"decision\": \"block\"' && echo \"\$b\" | grep -q '\"decision\": \"block\"'
+"
 
 if [[ "$LIVE" == true ]]; then
   echo "── live tier"

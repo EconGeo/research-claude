@@ -29,10 +29,20 @@ def now() -> str:
         return dt.datetime.now(dt.timezone.utc).isoformat(timespec="milliseconds")
 
 def main() -> int:
+    """Fail open, unconditionally — any exception the checks below don't already
+    anticipate must still exit 0 (Finding 1)."""
+    try:
+        return _run()
+    except Exception:
+        return 0
+
+def _run() -> int:
     try:
         inp = json.load(sys.stdin)
     except Exception:
         return 0
+    if not isinstance(inp, dict):
+        return 0  # valid JSON, not an object — e.g. `42`, `[1,2,3]`, `"text"`, `null`
     agent = inp.get("agent_type") or inp.get("agent_name") or inp.get("subagent_type") or ""
     if not agent:
         return 0
