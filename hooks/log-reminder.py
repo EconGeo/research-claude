@@ -2,13 +2,22 @@
 """
 Session Log Reminder Hook for Claude Code
 
-A Stop hook that tracks how many responses have passed since the session
-log was last updated, and nudges Claude to update the log. **Never
-blocks** — always exits 0 without writing a `decision` to stdout. Two
-advisory triggers (fired at most once per session each):
-  1. No session log exists under quality_reports/session_logs/ at all.
-  2. THRESHOLD responses have passed without the most-recent log being
-     touched.
+A Stop hook that tracks how many responses have passed since
+SESSION_REPORT.md was last updated, and nudges Claude to append to it.
+**Never blocks** — always exits 0 without writing a `decision` to stdout.
+Two advisory triggers (fired at most once per session each):
+  1. No SESSION_REPORT.md exists at all.
+  2. THRESHOLD responses have passed without it being touched.
+
+Why SESSION_REPORT.md and not a session-log directory: `.claude/rules/logging.md`
+defines exactly four artifacts, and a session-log directory under
+`quality_reports/` is not among them — an earlier version of this hook nudged
+sessions to create one, which meant compaction recovery read a directory
+nothing had authority to write. `.claude/rules/session-handoff.md` settles the
+direction of the fix: session continuity "is already designed" around
+SESSION_REPORT.md and the research journal, and "the fix is not another
+document." logging.md §Session Report already mandates appending "at end
+of session or before context compression" — exactly this nudge.
 
 Design rationale: a previous version of this hook emitted
 {"decision": "block"} to stop Claude mid-turn. That was effective but
@@ -34,7 +43,6 @@ import json
 import sys
 import hashlib
 from pathlib import Path
-from datetime import datetime
 
 THRESHOLD = 50
 
@@ -86,18 +94,21 @@ def save_state(state_path: Path, state: dict):
     state_path.write_text(json.dumps(state))
 
 
-def find_latest_log(project_dir: str) -> tuple[Path | None, float]:
-    """Find the most recently modified .md file in session_logs/."""
-    log_dir = Path(project_dir) / "quality_reports" / "session_logs"
-    if not log_dir.is_dir():
-        return None, 0.0
+def find_session_report(project_dir: str) -> tuple[Path | None, float]:
+    """Locate SESSION_REPORT.md and return (path, mtime).
 
-    md_files = list(log_dir.glob("*.md"))
-    if not md_files:
-        return None, 0.0
-
-    latest = max(md_files, key=lambda f: f.stat().st_mtime)
-    return latest, latest.stat().st_mtime
+    Root first, then `docs/` — research-claude's own CLAUDE.md relocates the
+    file to `docs/SESSION_REPORT.md` and gitignores a root copy as a backstop,
+    so a root-only lookup would nag forever in the one repo that ships this
+    hook. Paper projects keep it at the root and hit the first branch.
+    """
+    for candidate in (
+        Path(project_dir) / "SESSION_REPORT.md",
+        Path(project_dir) / "docs" / "SESSION_REPORT.md",
+    ):
+        if candidate.is_file():
+            return candidate, candidate.stat().st_mtime
+    return None, 0.0
 
 
 def main():
@@ -108,19 +119,19 @@ def main():
     state_path = get_state_path()
     state = load_state(state_path)
 
-    latest_log, current_mtime = find_latest_log(project_dir)
-    today = datetime.now().strftime("%Y-%m-%d")
+    latest_log, current_mtime = find_session_report(project_dir)
 
-    # Case 1: No session log exists — advisory reminder on the documented
-    # JSON channel, never blocks.
+    # Case 1: No SESSION_REPORT.md exists — advisory reminder on the
+    # documented JSON channel, never blocks.
     if latest_log is None:
         if not state.get("no_log_reminded", False):
             state["no_log_reminded"] = True
             save_state(state_path, state)
             msg = (
-                f"[session-log] No session log yet. Consider creating "
-                f"quality_reports/session_logs/{today}_description.md "
-                f"to capture goal + key context."
+                "[session-log] No SESSION_REPORT.md yet. Consider creating it "
+                "with the header .claude/rules/logging.md specifies "
+                "(`# Session Report — [Project Name]`) and appending this "
+                "session's operations, decisions and results."
             )
             print(json.dumps({
                 "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": msg},
@@ -141,8 +152,8 @@ def main():
         state["reminded"] = True
         save_state(state_path, state)
         msg = (
-            f"[session-log] {state['counter']} responses without updating "
-            f"{latest_log.name}. Consider appending recent progress."
+            f"[session-log] {state['counter']} responses without appending to "
+            f"{latest_log.name}. Consider recording recent progress."
         )
         print(json.dumps({
             "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": msg},

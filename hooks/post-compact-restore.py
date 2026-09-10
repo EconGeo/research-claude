@@ -134,19 +134,41 @@ def find_active_plan(project_dir: str) -> dict | None:
     }
 
 
-def find_recent_session_log(project_dir: str) -> dict | None:
-    """Find the most recent session log."""
-    logs_dir = Path(project_dir) / "quality_reports" / "session_logs"
-    if not logs_dir.exists():
+def find_session_report(project_dir: str) -> dict | None:
+    """Surface SESSION_REPORT.md and the heading of its most recent entry.
+
+    The heading is the point. A restoration message naming only a filename
+    told the resuming session nothing it could not have guessed; the last
+    entry's `## YYYY-MM-DD HH:MM — Title` says what the session before
+    compaction was actually doing.
+
+    Root first, then `docs/` — see log-reminder.py's `find_session_report`.
+    """
+    report = None
+    for candidate in (
+        Path(project_dir) / "SESSION_REPORT.md",
+        Path(project_dir) / "docs" / "SESSION_REPORT.md",
+    ):
+        if candidate.is_file():
+            report = candidate
+            break
+    if report is None:
         return None
 
-    log_files = sorted(logs_dir.glob("*.md"), key=lambda f: f.stat().st_mtime, reverse=True)
-    if not log_files:
+    try:
+        content = report.read_text()
+    except OSError:
         return None
+
+    last_entry = None
+    for line in content.split("\n"):
+        if line.startswith("## "):
+            last_entry = line[3:].strip()
 
     return {
-        "log_path": str(log_files[0]),
-        "log_name": log_files[0].name
+        "report_path": str(report),
+        "report_name": report.name,
+        "last_entry": last_entry,
     }
 
 
@@ -154,7 +176,7 @@ def format_restoration_message(
     pipeline_state: dict | None,
     pre_compact_state: dict | None,
     plan_info: dict | None,
-    session_log: dict | None
+    session_report: dict | None
 ) -> str:
     """Format the (ANSI-free) context restoration message for Claude."""
     lines = ["[Context Restored After Compaction]", ""]
@@ -191,9 +213,11 @@ def format_restoration_message(
             lines.append(f"  Next task: {plan_info['current_task']}")
         lines.append("")
 
-    if session_log:
-        lines.append("Session Log:")
-        lines.append(f"  {session_log['log_name']}")
+    if session_report:
+        lines.append("Session Report:")
+        lines.append(f"  File: {session_report['report_path']}")
+        if session_report.get("last_entry"):
+            lines.append(f"  Last entry: {session_report['last_entry']}")
         lines.append("")
 
     lines.append("Recovery Actions:")
@@ -225,12 +249,12 @@ def main() -> int:
     pipeline_state = find_pipeline_state(project_dir)
     pre_compact_state = read_pre_compact_state()
     plan_info = find_active_plan(project_dir)
-    session_log = find_recent_session_log(project_dir)
+    session_report = find_session_report(project_dir)
 
     # If we have any context to restore, inject it via the SessionStart contract
     # (clean additionalContext — not raw stdout carrying ANSI escape noise).
-    if pipeline_state or pre_compact_state or plan_info or session_log:
-        message = format_restoration_message(pipeline_state, pre_compact_state, plan_info, session_log)
+    if pipeline_state or pre_compact_state or plan_info or session_report:
+        message = format_restoration_message(pipeline_state, pre_compact_state, plan_info, session_report)
         print(json.dumps({
             "hookSpecificOutput": {
                 "hookEventName": "SessionStart",

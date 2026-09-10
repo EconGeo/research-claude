@@ -88,36 +88,64 @@ def find_active_plan(project_dir: str) -> dict | None:
     return None
 
 
+def find_session_report(project_dir: str) -> Path | None:
+    """Locate SESSION_REPORT.md — root first, then `docs/`.
+
+    See `find_session_report` in log-reminder.py for why both are checked.
+    """
+    for candidate in (
+        Path(project_dir) / "SESSION_REPORT.md",
+        Path(project_dir) / "docs" / "SESSION_REPORT.md",
+    ):
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def extract_recent_decisions(project_dir: str, limit: int = 3) -> list[str]:
-    """Extract recent decisions from the session log."""
-    logs_dir = Path(project_dir) / "quality_reports" / "session_logs"
-    if not logs_dir.exists():
+    """Extract decisions from the MOST RECENT SESSION_REPORT.md entry.
+
+    `.claude/rules/logging.md` fixes the entry format, so this parses that format
+    rather than pattern-hunting: entries open with `## YYYY-MM-DD HH:MM — Title`
+    and a decision is a `- ` bullet under `**Decisions:**`. Scoping to the last
+    entry is deliberate — a decision from a superseded entry is history, not
+    current state, and restoring it after compaction would reassert something
+    the session may have since reversed.
+
+    The previous implementation scanned the last 50 lines of a session-log file
+    for loose markers including a bare `•`, which matched any bullet at all.
+    """
+    report = find_session_report(project_dir)
+    if report is None:
         return []
 
-    log_files = sorted(logs_dir.glob("*.md"), key=lambda f: f.stat().st_mtime, reverse=True)
-    if not log_files:
+    try:
+        content = report.read_text()
+    except OSError:
         return []
 
-    content = log_files[0].read_text()
+    # Last entry = text after the final `## ` heading.
+    entries = re.split(r"^## ", content, flags=re.MULTILINE)
+    if len(entries) < 2:
+        return []
+    last = entries[-1]
+
+    # The `**Decisions:**` block runs to the next `**Label:**` or end of entry.
+    match = re.search(
+        r"^\*\*Decisions?:\*\*\s*$(.*?)(?=^\*\*\w|\Z)",
+        last,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    if not match:
+        return []
+
     decisions = []
-
-    # Look for decision markers
-    patterns = [
-        r"Decision:\s*(.+)",
-        r"Decided:\s*(.+)",
-        r"Chose:\s*(.+)",
-        r"→\s*(.+)",
-        r"•\s*(.+)"
-    ]
-
-    for line in content.split("\n")[-50:]:  # Last 50 lines
-        for pattern in patterns:
-            match = re.search(pattern, line.strip())
-            if match and len(match.group(1)) > 10:
-                decisions.append(match.group(1)[:100])
-                if len(decisions) >= limit:
-                    return decisions
-
+    for line in match.group(1).split("\n"):
+        line = line.strip()
+        if line.startswith("- ") and len(line) > 4:
+            decisions.append(line[2:].strip()[:100])
+            if len(decisions) >= limit:
+                break
     return decisions
 
 
@@ -196,21 +224,30 @@ def should_block_draft(plan_info: dict | None) -> tuple[bool, str]:
     return True, reason
 
 
-def append_to_session_log(project_dir: str, trigger: str) -> None:
-    """Append compaction note to session log."""
-    logs_dir = Path(project_dir) / "quality_reports" / "session_logs"
-    if not logs_dir.exists():
-        return
+def append_compaction_note(project_dir: str, trigger: str) -> None:
+    """Append a compaction marker to SESSION_REPORT.md, in that file's format.
 
-    log_files = sorted(logs_dir.glob("*.md"), key=lambda f: f.stat().st_mtime, reverse=True)
-    if not log_files:
+    `.claude/rules/logging.md` §Session Report mandates appending "at end of session or
+    before context compression" — this is the second case, written by the hook
+    so the marker exists even when compaction arrives unannounced.
+
+    Never CREATES the file. An absent SESSION_REPORT.md means the project has
+    not started one; conjuring a headerless file would leave `/checkpoint` to
+    append its first real entry beneath no `# Session Report — [Project]`
+    header, which is the one thing logging.md says to write first.
+    """
+    report = find_session_report(project_dir)
+    if report is None:
         return
 
     try:
-        with open(log_files[0], "a") as f:
-            f.write(f"\n\n---\n")
-            f.write(f"**Context compaction ({trigger}) at {datetime.now().strftime('%H:%M')}**\n")
-            f.write(f"Check git log and quality_reports/plans/ for current state.\n")
+        with open(report, "a") as f:
+            f.write(f"\n\n## {datetime.now().strftime('%Y-%m-%d %H:%M')} — "
+                    f"Context compaction ({trigger})\n\n")
+            f.write("**Operations:**\n")
+            f.write("- Context compacted. For current state read "
+                    "`quality_reports/pipeline_state.json`, the active plan under "
+                    "`quality_reports/plans/`, and `git status`.\n")
     except IOError:
         pass
 
@@ -284,8 +321,8 @@ def main() -> int:
     # Save state for restoration
     save_state(state)
 
-    # Append note to session log
-    append_to_session_log(project_dir, trigger)
+    # Record the compaction in the append-only session history
+    append_compaction_note(project_dir, trigger)
 
     # Emit on the documented JSON channel (systemMessage) instead of stderr,
     # whose format is undefined and which Claude does not see.

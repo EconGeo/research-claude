@@ -40,7 +40,7 @@ git diff --cached --stat
 Then scan:
 - `CLAUDE.md` header for the project name
 - `quality_reports/plans/` for files modified today
-- `quality_reports/session_logs/` for files modified today (if the project uses session logs)
+- `SESSION_REPORT.md` (repo root, or `docs/` where the project's `CLAUDE.md` relocates it) — the last entry, so the new one continues the history rather than repeating it
 - `quality_reports/pipeline_state.json` — `python3 .claude/scripts/pipeline.py state show`; the staleness sweep in `.claude/rules/session-handoff.md` compares the plan's status claims against it
 - The conversation context for key decisions, corrections, or learnings that qualify for auto-memory
 

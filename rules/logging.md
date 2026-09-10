@@ -5,6 +5,17 @@ Append to `SESSION_REPORT.md` at end of session or before context compression.
 **Rules:** Append only. Bullet points. Include file paths and commit hashes when available.
 Create the file if it doesn't exist: `# Session Report — [Project Name]`
 
+**Other writers and readers.** `/checkpoint` appends the session entry.
+`.claude/hooks/pre-compact.py` appends a compaction marker in the same format and reads the
+`**Decisions:**` block of the latest entry; `.claude/hooks/post-compact-restore.py` surfaces
+the latest entry's heading after compaction; `.claude/hooks/log-reminder.py` nudges when the
+file is missing or stale. **This is the only session-continuity document the hooks read** —
+there is deliberately no session-log directory. `.claude/rules/session-handoff.md` explains why: the
+continuity design is already complete, and "the fix is not another document."
+
+**Where it lives:** the project root, unless the project's own `CLAUDE.md` relocates it (this
+repo puts it at `docs/SESSION_REPORT.md`). The hooks check the root first, then `docs/`.
+
 **Entry format:**
 ```markdown
 ## YYYY-MM-DD HH:MM — [Brief Title]
