@@ -38,9 +38,53 @@ this file is that move.**
   `~/Research/.claude/journal-profiles.md.bak-2026-09-10`. Commits: ESG `ce7c32b`,
   zoning2026 `342e870`.
 - **`ReStud` casing: no bug.** All copies already read `REStud`. §2e's second half is closed.
-- Still open: §2a (109 prose literals), §2d (upstream ZotPilot), §2f's live tier.
-  Before running `--live`, note line 139 discards the transcript with `>/dev/null 2>&1` and
-  asserts only exit-0 plus a non-empty log — a red on the first-ever run would be undebuggable.
+- **§2f live tier: BUILT AND EXERCISED.** `run_fixture.sh --live` now runs. Getting there
+  took peeling apart six defects, listed here because the class recurs:
+  1. the live tier ran in the mechanical tier's `$T`, so `live-dispatch-log` passed on
+     residue — the false green: `run_fixture: PASS` with the pipeline never executed;
+  2. that same residue ends on a deliberately unpaired `coder`, so `critic-pairing.py`
+     blocked the live session at Stop;
+  3. `claude -p` **exits 0 on an unknown command** (tested), so the exit code can never
+     distinguish a real run from one that never started;
+  4. the harness invoked `claude` without `cd`-ing into the project, and skills resolve from
+     the cwd's `.claude/` — every `/skill` was then "Unknown command";
+  5. a timeout was tested for AFTER emptiness, and a killed run has written nothing, so
+     every timeout was misreported as "claude produced no output at all";
+  6. `claude -p` text output is written only at the END, so SIGALRM discarded a whole
+     30-minute transcript. Now `--output-format stream-json --verbose`.
+  Fixed in `a70885b`, `d6f4a9e`, `12cbcee`; merged `dc293d7`.
+- **The enforcement chain has now run for real, under the driver:**
+  `strategist` (12 min) → `strategist-critic` (12 min), both `source: "hook"` with a real
+  session id — dispatch-log.py on SubagentStop — then `strategy=61.0`,
+  `strikes {strategist: 1}` (the below-80 path), `overall 68.71`. critic-pairing.py correctly
+  did NOT block: the pair matched. **This is the first time any of it executed under
+  `/pipeline`.**
+- **Live-tier facts worth keeping.** literature is the only creator with `kind: skill`; it
+  delegates to ZotPilot against a real Zotero library, which a `mktemp -d` has none of, so
+  `--until <anything>` could never get past it. The live copy seeds literature's output
+  (artifact + score, **never the dispatch log**) so `strategy` onward runs for real.
+  Budget ~12 min per agent; one stage that strikes wants ~50 min. Hence
+  `LIVE_UNTIL=strategy`, `LIVE_TIMEOUT=3600`, both overridable.
+- **Do not assert outcomes in the live tier.** strategy scored 61 on round one. Any assertion
+  that the run *reaches* a stage depends on an LLM clearing 80 on a synthetic fixture, which
+  is not a property of the pipeline. Assert mechanism — dispatched, critic followed, score
+  recorded, hook wrote it — as `live-critic-ran` does.
+- **`check_install --all` had been red since 06:22 today** and nobody had run it: membership
+  counted `hooks/__pycache__` as an unlinked upstream item. `bf79fd1` gave the residue `find`
+  that exclusion and missed the membership loop above it. Fixed, merged `1513246`.
+- **New defect, NOT yet fixed — `session_logs/` has no authority.**
+  `hooks/log-reminder.py` tells sessions to create `quality_reports/session_logs/<date>_*.md`,
+  and `hooks/pre-compact.py` (×2) and `hooks/post-compact-restore.py` READ that directory for
+  context recovery — but `rules/logging.md`, read in full, defines exactly four artifacts and
+  never mentions it. So compaction recovery reads a directory nothing is instructed to write.
+  Two independent nested sessions flagged it before it was verified. Decide whether
+  `logging.md` gains a fifth artifact or the hooks point at `SESSION_REPORT.md`.
+- Verified green on main after all of the above: `check_fork` PASS · 62 tests OK ·
+  `run_fixture` (mechanical) PASS · `check_install --all` PASS six repos ·
+  `audit_graph` dangling 0 · roster [] · never-invoked [].
+- Still open: §2a (109 prose literals), §2d (upstream ZotPilot), the `session_logs/` question
+  above, and a full green `--live` run (the last one proved the mechanism, then hit the wall
+  clock mid-round-2).
 
 ---
 
