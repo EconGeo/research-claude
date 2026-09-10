@@ -56,31 +56,14 @@ Based on `$ARGUMENTS`:
 - **`model`**: Draft model section (structural or theory+empirics papers only)
 - **No argument**: Ask user which section to draft
 
-#### 4. Dispatch Writer
+#### 4. Dispatch writer
+Dispatch **writer** with the paper type, the section, and the argument-move templates. It writes the section into the declared manuscript under its `#` heading; every number is an inline expression (INV-11). Standalone: `python3 .claude/scripts/pipeline.py log writer`.
 
-Dispatch Writer with paper type and argument-move templates for the target section. The writer drafts using paragraph types (motivation, result statement, mechanism, etc.), applies design-specific moves, then runs the cleanup pass. Write the section into `manuscript_<project>.qmd` under its `#` heading. Every number is an inline `` `r ` `` expression against a live object — never a typed literal (INV-11).
+#### 5. Dispatch writer-critic (every mode that touches prose)
+Dispatch **writer-critic** in section mode on the section just written. It produces a scored report at `quality_reports/reviews/writer-critic_<date>.md` and the Claim–Evidence Table at `quality_reports/reviews/claim_evidence_<project>_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --report <path> --scope section:<name>`. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question. `/write humanize` is prose and gets the critic; `/write style-guide` produces no prose and is the only exempt mode.
 
-#### 5. Quality Self-Check
-
-Before presenting the draft:
-- [ ] Paper type identified and correct template used
-- [ ] Every paragraph has an identifiable purpose (argument move type)
-- [ ] Findings lead sentences — not buried after setup
-- [ ] Design-specific elements present (see writer.md for checklists per design)
-- [ ] Every displayed equation is numbered (`{#eq-...}`)
-- [ ] All `@key` citations exist in `references.bib`
-- [ ] Introduction contribution paragraph names specific papers
-- [ ] Effect sizes stated with units
-- [ ] No banned hedging phrases
-- [ ] Notation consistent throughout
-- [ ] Every `@tbl-`/`@fig-` reference names a chunk label in the manuscript
-- [ ] Results narrated correctly for output type (tables, event study figures, counterfactuals)
-- [ ] Personal style guide loaded (not template) — or user prompted to run `/write style-guide`
-- [ ] Results/Conclusion only drafted when an estimation chunk exists and the manuscript renders (`.claude/skills/write/templates/drafting-gates.md`)
-
-#### 6. Present to User
-
-Present sections through drafting gates, pausing for approval at each:
+#### 6. Present to user
+Only after the critic's score. Sections go through the drafting gates (`.claude/skills/write/templates/drafting-gates.md`), each gate closing with a score, pausing for approval at each:
 
 **GATE 1:** Introduction + Literature positioning → present, wait for approval
 **GATE 2:** Data + Empirical Strategy (or Model) → present, wait for approval
@@ -187,6 +170,7 @@ See also: `gotchas.md` for known failure points and edge cases.
 ---
 
 ## Principles
+- **Never a draft without its critic.** The score comes before the user sees the section.
 - **This is the user's paper, not Claude's.** Match their voice and style.
 - **Never fabricate results.** Use TBD placeholders.
 - **Citations must be verifiable.** Only cite confirmed papers.
