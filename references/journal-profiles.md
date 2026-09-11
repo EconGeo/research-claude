@@ -414,17 +414,46 @@ Each journal profile includes a **Referee pool** that weights which dispositions
 
 **Short name:** `JRER`
 
-**Focus:** Applied real estate research across valuation, market analysis, investment performance, and property markets — the American Real Estate Society (ARES) flagship journal. Broadest practitioner-academic readership among the real estate field journals; welcomes empirical work across residential, commercial, and mortgage markets.
+**Focus:** Analytical, empirical and clinical real estate research across development, economics, finance, investment, law, management, marketing, secondary markets and valuation. Official journal of the American Real Estate Society (ARES), published by Taylor & Francis.
 
-**Bar:** Sound applied contribution with clear practical, decision-relevant implications. Credible identification valued but the bar is more forgiving than REE or JUE — ARES's practitioner readership rewards results that translate directly into valuation, investment, or market practice.
+**Bar:** Usefulness to business decision-makers is the stated criterion. Descriptive and measurement work is a legitimate genre here — the bar is not causal identification but whether the finding is documented well enough to be used and reproduced. **Theoretical papers that fail to provide testable or policy implications are explicitly discouraged.**
 
-**Domain referee adjusts:** Contribution 30 → 25 (broad applied contribution sufficient; grand theoretical claims not required). Policy relevance 15 → 30 (ARES's practitioner audience wants results usable by appraisers, investors, and brokers, not just other academics). Fit 10 → 15 (should read as "real estate research" for a practitioner-facing audience, not general applied economics).
+**Replication policy (verbatim, and it binds):** "data used in empirical research must be thoroughly documented and sufficient details of computations and methodologies must be provided to allow duplication." Treat instrument/dictionary/data documentation as a submission requirement, not a referee courtesy.
 
-**Methods referee adjusts:** Identification 35 → 25 (credible but not load-bearing the way it is at REE or JUE). Robustness 15 → 20 (practitioner readership wants results that hold across market segments and specifications).
+**Review model:** Double-anonymous, two to three referees, after initial editor screening.
 
-**Typical concerns:** "What can an appraiser, investor, or broker actually do with this finding?" "Is the market or property type representative, or a narrow niche result?" "How does this compare to the REE/JUE literature on the same question?"
+**Domain referee adjusts:** Practitioner relevance 15 → 30 (decision-maker usefulness is the stated bar). Contribution 30 → 25 (applied or measurement contribution sufficient). Real-estate specificity 15 → 25 (must be a real estate paper, not a general-corporate paper run on REITs — "why this sector" is asked seriously).
 
-**Referee pool:** CREDIBILITY (high), POLICY (high), MEASUREMENT (medium), STRUCTURAL (low), THEORY (low), SKEPTIC (low)
+**Methods referee adjusts:** Identification 35 → 20 (descriptive/measurement designs accepted on their own terms). Robustness 15 → 20. Replicability/documentation 5 → 20 (elevated by the stated policy above — dictionaries, code, and data provenance are scored).
+
+**Typical concerns:** "Could this have been run on any set of firms, or is it genuinely about real estate?" "Can a practitioner act on this?" "Is the measurement instrument documented well enough to reproduce?" "Are the data sources and computations spelled out?"
+
+**Referee pool:** MEASUREMENT (high), POLICY (high), STRUCTURAL (medium), CREDIBILITY (medium), SKEPTIC (low), THEORY (low)
+
+**Verified requirements** (retrieved from the T&F Instructions for Authors, 2026-08-04):
+
+| Item | Requirement |
+|------|-------------|
+| Word limit | **None.** "There are no word limits for papers in this journal." A word count must still be supplied. |
+| Abstract | **Unstructured, 200 words.** (Not 150 — INV-5's default is Wiley-shaped and does not apply here.) |
+| Structure order | title page; abstract; keywords; main text (introduction, materials and methods, results, discussion); acknowledgments; declaration of interest statement; references; appendices; tables (each on its own page, with captions); figures; figure captions as a list |
+| References | **T&F standard APA.** EndNote output style available. |
+| Spelling / quotes | American spelling throughout; double quotation marks, single within double; long quotations indented without quotation marks |
+| JEL codes | **No mention anywhere in the instructions** — not a journal requirement. Keeping them is harmless but optional. |
+| Disclosure | Required, under the subheading **"Disclosure of interest."** If none: *"The authors report there are no competing interests to declare."* |
+| Data sharing | T&F **Basic** Data Sharing Policy — sharing *encouraged*, not mandated. Submission asks whether a dataset is associated; a Data Availability Statement is required if so. |
+| CRediT | Supported; be ready to assign contributor roles at submission |
+| Graphical abstract | Optional |
+| Review | Double-anonymous, 2–3 referees, after editor screening |
+| Publication charges | Not captured — confirm at submission |
+
+**T&F AI policy** (Author Services, retrieved 2026-08-04) — *differs from the Wiley/COPE
+template in `.claude/rules/ai-disclosure.md`*:
+- AI tools **must not** be listed as co-authors
+- Generative AI use must be acknowledged **in the Methods or Acknowledgments section** —
+  not as a standalone "AI Use Statement" section
+- The statement must give: **full tool name with version number**, how it was used, and why
+- Submission may ask for a separate declaration of AI use
 
 ### Journal of Real Estate Portfolio Management (JREPM)
 
