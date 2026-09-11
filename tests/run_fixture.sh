@@ -56,6 +56,9 @@ expect_fail post-coder-unscored-red python3 "$RC/scripts/pipeline.py" --root "$T
 run         record-code      python3 "$RC/scripts/pipeline.py" --root "$T" state record-score code 85 --critic coder-critic --report quality_reports/reviews/coder-critic_fixture.md
 run         post-coder-green python3 "$RC/scripts/pipeline.py" --root "$T" post coder
 run         pre-writer-green python3 "$RC/scripts/pipeline.py" --root "$T" pre writer
+# code is scored after coder's completion, so `next` must call it CLOSED, skip the three
+# discovery stages behind it, and suggest manuscript — the driver starts at the frontier.
+run         next-frontier    bash -c "python3 '$RC/scripts/pipeline.py' --root '$T' next | grep -q '^next: manuscript'"
 expect_fail conflicts-red    python3 "$RC/scripts/pipeline.py" --root "$T" conflicts coder writer
 run         score            python3 "$RC/scripts/pipeline.py" --root "$T" score
 run render                bash -c "cd '$T' && quarto render manuscript_fixture.qmd >/dev/null 2>&1"

@@ -20,6 +20,11 @@ python3 .claude/scripts/pipeline.py state init
 ```
 No-op with a message if `quality_reports/pipeline_state.json` already exists.
 
+**If the project already has work** — a manuscript with analysis chunks, a strategy memo,
+referee rounds — `state init` alone leaves every stage reading as unstarted. Follow
+`.claude/skills/pipeline/references/adopt.md` before `run`: each existing artifact is scored by
+its own critic, and `pipeline.py next` then starts the driver at the frontier.
+
 ## Approval-gate summary
 Report: the resolved manuscript path, ZotPilot status (configured / just configured / user
 declined indexing), and whether `pipeline_state.json` was created or already existed. No

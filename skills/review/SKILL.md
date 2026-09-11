@@ -180,6 +180,15 @@ Include the lint report in the coder-critic's input so it can skip already-flagg
 
 Save report to `quality_reports/reviews/coder-critic_<date>.md`
 
+**When the target is the declared manuscript** (`--code <manuscript>` — the adoption route in
+`.claude/skills/pipeline/references/adopt.md`), coder-critic reviews the manuscript's analysis
+chunks under the full checklist. Categories 1–3 are assessed against
+`quality_reports/strategy/<project>/strategy_memo.md` when it exists and against the
+manuscript's own design section when it does not — the report says which. Record:
+`python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --report quality_reports/reviews/coder-critic_<date>.md`.
+A standalone review of a script under `scripts/acquire/` or `explorations/` records nothing —
+`code` is the manuscript's analysis, not acquisition or exploration code.
+
 ### Causal Audit (`--methods`)
 
 Dispatch **strategist-critic** standalone for a full 4-phase causal inference review.

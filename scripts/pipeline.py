@@ -5,6 +5,10 @@ Reads .claude/rules/registry.yaml (the same file at the repo root, without the .
 prefix, when --root is the research-claude checkout itself), the project's CLAUDE.md
 `manuscript:` declaration, quality_reports/pipeline_state.json and
 quality_reports/agent_dispatch.jsonl. See .claude/rules/lifecycle.md for the contract.
+
+`next` is where the driver starts: it reads the state file and the dispatch log together and
+names the first component stage that is ready, treating a scored stage with no logged creator
+completion as adopted work (see next_report).
 """
 from __future__ import annotations
 import argparse, datetime as dt, fnmatch, glob, json, re, subprocess, sys
@@ -250,20 +254,106 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
             d + ("" if passed else producer_hint(q, ok)) for q, (ok, d) in results)
     return False, f"unknown predicate {t}"
 
-def run_preds(kind: str, agent: str, root: Path, reg) -> int:
-    if agent not in reg["agents"]: sys.exit(f"pipeline.py: {agent!r} is not in the registry")
+def eval_preds(kind: str, agent: str, root: Path, reg) -> List[Tuple[bool, str]]:
+    """Every verdict for `pre`/`post <agent>`, as (ok, line). `post` auto-appends `critic-ran`
+    for any agent with a critic (see the predicate). Shared by run_preds() and next_report()."""
     e = reg["agents"][agent]; ctx = Ctx(root, reg, agent)
     preds = list(e["requires"] if kind == "pre" else e["produces"])
     if kind == "post" and rl.critic_of(reg, agent) and not any(p["type"] == "critic-ran" for p in preds):
         preds.append({"type": "critic-ran"})
-    rc = 0
+    out: List[Tuple[bool, str]] = []
     for p in preds:
         ok, desc = evaluate(p, ctx, post=(kind == "post"))
-        hint = producer_hint(p, ok)
-        print(("ok      " if ok else "MISSING ") + desc + hint)
+        out.append((ok, desc + producer_hint(p, ok)))
+    return out
+
+def run_preds(kind: str, agent: str, root: Path, reg) -> int:
+    if agent not in reg["agents"]: sys.exit(f"pipeline.py: {agent!r} is not in the registry")
+    rc = 0
+    for ok, line in eval_preds(kind, agent, root, reg):
+        print(("ok      " if ok else "MISSING ") + line)
         rc |= 0 if ok else 1
     print(f"{kind} {agent}: " + ("PASS" if rc == 0 else "FAIL"))
     return rc
+
+# ── next: where the driver starts ───────────────────────────────────────────
+def stage_creators(reg, comp: str) -> List[str]:
+    """The agents whose work a component scores — creators and infrastructure, never the critic
+    that scores it and never the referees a component aggregates."""
+    return [a for a, e in reg["agents"].items()
+            if e.get("component") == comp and e.get("role") in ("creator", "infrastructure")]
+
+def next_report(root: Path, reg) -> int:
+    """One line per component stage, in the registry's component order, then `next: <stage>`.
+
+    A stage is CLOSED when its component score postdates every completion its creators have in
+    the dispatch log — or when it has a score and its creators have NO completion at all. That
+    second case is adoption: the work exists, the registry's own critic scored it (record-score
+    refuses any other), but it never ran under this driver, or ran on a machine whose gitignored
+    log did not travel with the clone. Without it an in-progress paper reads as unstarted and
+    `run` restarts at literature. It is a statement about the SCORE, not about the round: `post`
+    remains the in-run gate, and a creator completion after the score reopens the stage (OPEN).
+
+    The frontier is the last CLOSED stage. An unscored stage behind it is SKIPPED — reported,
+    excluded from `overall` by renormalisation, never suggested and never faked. A conditional
+    component is OPTIONAL and never suggested; the user opts in. `pre` is evaluated only until
+    the first READY stage, because `pre` can render the manuscript, and a stage after the one
+    about to be suggested has no claim on that cost (PENDING).
+    """
+    st = load_state(root); log = read_log(root)
+    comps = list(reg["components"]); info: Dict[str, Tuple[Optional[str], str]] = {}
+    for c in comps:
+        creators = stage_creators(reg, c)
+        entry = (st.get("components") or {}).get(c) or {}
+        at = entry.get("at")
+        last = {a: last_completion(log, a) for a in creators}
+        newest_agent = max((a for a in creators if last[a]), key=lambda a: last[a], default=None)
+        newest = last[newest_agent] if newest_agent else None
+        if at is not None and (newest is None or at > newest):
+            tail = (" (no creator completion logged — adopted or cloned; see "
+                    ".claude/skills/pipeline/references/adopt.md)" if newest is None
+                    else f" (creator {newest_agent} completed at {newest})")
+            info[c] = ("CLOSED", f"{entry.get('score')} by {entry.get('critic')} at {at}" + tail)
+        elif newest is not None:
+            scorer = reg["components"][c].get("scored_by")
+            d = f"{newest_agent} completed at {newest}; no {c} score after it — dispatch {scorer} and record-score"
+            if at is None and st.get("sections") and scorer == (reg["agents"].get("writer") or {}).get("critic"):
+                d += f" ({len(st['sections'])} section score(s) exist; a whole-manuscript score is needed)"
+            info[c] = ("OPEN", d)
+        else:
+            info[c] = (None, "")
+    # The frontier is the last CLOSED stage — only a score moves it. An OPEN round is
+    # unfinished work the user started, so it is suggested ahead of any READY stage and no
+    # `pre` is evaluated while one exists; but it does NOT move the frontier: a standalone
+    # verifier run in a project with nothing scored would otherwise mark every earlier stage
+    # SKIPPED on the strength of a log line (observed on a real project, 2026-09-10).
+    closed = [i for i, c in enumerate(comps) if info[c][0] == "CLOSED"]
+    frontier = closed[-1] if closed else -1
+    opens = [c for c in comps if info[c][0] == "OPEN"]
+    rows: List[Tuple[str, str, str]] = []; found: Optional[str] = opens[0] if opens else None; blocked = False
+    for i, c in enumerate(comps):
+        status, detail = info[c]; cond = bool(reg["components"][c].get("conditional"))
+        if status in ("CLOSED", "OPEN"): rows.append((status, c, detail)); continue
+        if i < frontier:
+            rows.append(("SKIPPED", c, f"unscored, behind the frontier ({comps[frontier]} is closed) — "
+                                       "excluded from overall; run its stage to score it")); continue
+        if cond:
+            rows.append(("OPTIONAL", c, "conditional — never suggested; opt in from the driver")); continue
+        if found is not None:
+            rows.append(("PENDING", c, "not evaluated — another stage is suggested first")); continue
+        ready: Optional[str] = None; misses: List[str] = []
+        for a in stage_creators(reg, c):
+            res = eval_preds("pre", a, root, reg)
+            if all(ok for ok, _ in res): ready = a; break
+            misses.append(f"pre {a}: " + "; ".join(l for ok, l in res if not ok))
+        if ready: rows.append(("READY", c, f"pre {ready}: PASS")); found = c
+        else: rows.append(("BLOCKED", c, " | ".join(misses) or "no creator declared")); blocked = True
+    for status, c, detail in rows: print(f"{status:9s} {c:12s} {detail}")
+    if found:
+        print(f"next: {found} ({', '.join(stage_creators(reg, found))})"); return 0
+    if blocked:
+        print("next: none — nothing is ready; see BLOCKED above"); return 1
+    print("next: none — every component stage is closed"); return 0
 
 # ── registry check (check_fork criteria) ────────────────────────────────────
 AUTH_PAIR = re.compile(r"^\|\s*(lit-position|explorer|strategist|theorist|coder|data-engineer|writer|storyteller)\s*\|\s*[a-z-]+-critic\s*\|", re.M)
@@ -305,7 +395,7 @@ def registry_check(root: Path) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default=".")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("manuscript"); sub.add_parser("fresh")
+    sub.add_parser("manuscript"); sub.add_parser("fresh"); sub.add_parser("next")
     for k in ("pre", "post"): sub.add_parser(k).add_argument("agent")
     sc = sub.add_parser("score"); sc.add_argument("--gate", choices=sorted(GATES))
     st = sub.add_parser("state"); st.add_argument("op", choices=["init", "validate", "show", "record-score", "strike", "set-blocked", "clear-blocked"])
@@ -320,6 +410,7 @@ def main() -> int:
     if a.cmd == "fresh":
         ok, why = is_fresh(root, declared_manuscript(root)); print(("fresh: " if ok else "STALE: ") + why); return 0 if ok else 1
     if a.cmd in ("pre", "post"): return run_preds(a.cmd, a.agent, root, reg)
+    if a.cmd == "next": return next_report(root, reg)
     if a.cmd == "log": append_log(root, a.agent, a.source); return 0
     if a.cmd == "conflicts":
         ws = {}

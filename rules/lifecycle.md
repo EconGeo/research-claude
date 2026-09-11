@@ -53,6 +53,28 @@ One further consequence is intended, not a limitation. A section-scoped score is
 a section-only draft — `post` asserts the whole stage is complete and a section draft is
 mid-stage. The refusal says so explicitly rather than reporting it as a missing critic.
 
+## Where to start — `pipeline.py next`
+
+`pre` and `post` judge one agent. `next` judges the project: one line per component, in the
+registry's component order, ending in `next: <component>`. A stage is **CLOSED** when its
+component score postdates every completion its creators have in the dispatch log — **or when it
+has a score and its creators have no completion at all.** That second case is deliberate. It is
+what adopting an in-progress paper produces (`.claude/skills/pipeline/references/adopt.md`), and
+what a coauthor's clone produces, since the dispatch log is gitignored and the state file is
+not. `record-score` only accepts the registry's own critic for a component, so a score with no
+logged creator still says that the declared critic reviewed the work against a named report.
+It says nothing about the round, which is why `post` — the in-run gate — is unchanged: a
+creator completion after the score reopens the stage (**OPEN**), and `next` suggests an open
+round ahead of anything else.
+
+The frontier is the furthest CLOSED or OPEN stage. An unscored stage behind it is **SKIPPED**:
+reported, excluded from `overall` by renormalisation, never suggested and never back-filled. A
+conditional component is **OPTIONAL** and never suggested. Past the frontier, `pre` is evaluated
+in order until one passes (**READY**); the rest are **PENDING**, because `pre` can render the
+manuscript and a stage after the one about to be suggested has no claim on that cost. Exit 0
+when a stage is suggested or every stage is closed; exit 1 when nothing is ready (**BLOCKED**,
+each with what is missing and the skill that produces it).
+
 ## Predicate types
 
 | Type | Passes when |

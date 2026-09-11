@@ -580,6 +580,7 @@ agent pair, and holds an approval gate before moving on.
 ```bash
 /pipeline status                    # what's done, what's next, current score
 /pipeline run --until write --yes   # run through the write stage, no gate pauses
+/pipeline run --from write          # re-open a stage regardless of its status
 /pipeline resume                    # after /compact or a new session
 ```
 
@@ -598,6 +599,13 @@ Stages run in `REQUIRES` order, never a hardcoded sequence: `setup` → `literat
 - **The dispatch log**, `quality_reports/agent_dispatch.jsonl`, is written by
   `hooks/dispatch-log.py` on every agent dispatch. `post <creator>` checks a stage's
   entries here to confirm its critic actually ran before letting the pipeline advance.
+- **Where to start** is `scripts/pipeline.py next`, which reads the state file and the
+  dispatch log together and names the first stage that is ready. A component score with
+  no logged creator completion counts as closed — that is what **adopting an existing
+  paper** looks like (each artifact is scored by its own critic; nothing is back-filled;
+  see `skills/pipeline/references/adopt.md`), and also what a coauthor's clone looks like,
+  since the log is gitignored and the state file is committed. Unscored stages behind the
+  furthest one reached are reported and skipped, never re-run by surprise.
 - **`tests/run_fixture.sh`** is the end-to-end check: it copies `tests/fixture-project/`
   into a scratch directory, commits it, and runs the mechanical tier (no LLM calls,
   a simulated dispatch log); `--live` additionally drives a real `claude -p

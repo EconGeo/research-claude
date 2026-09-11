@@ -11,6 +11,10 @@ coder already produced. It re-runs three critics **in parallel**:
 There is no registry agent named `review`, so the driver does not call `pipeline.py pre/post
 review` — it checks the three components' freshness via `pipeline.py score` instead.
 
+`pipeline.py next` reports a separate `referees` line, scored by the editor through
+`/review --peer [journal]` (`pre editor`: `manuscript` ≥ 80 and `code` ≥ 80). When `next`
+names `referees`, run that; it is a stage of its own, not part of `--all`.
+
 ## Driver sequence
 ```
                                 # invoke /review --all

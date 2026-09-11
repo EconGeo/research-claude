@@ -259,4 +259,86 @@ class TestProducerHint(FixtureCase):
         self.assertEqual(rc, 0, out); self.assertNotIn("run `", out)
 
 
+class TestNext(FixtureCase):
+    """`pipeline.py next` — where the driver starts.
+
+    A component stage is CLOSED when its score postdates every completion its creators have
+    in the dispatch log, or when it has a score and no completion at all — the adopted /
+    cloned case, where the work was reviewed by the registry's critic but never ran under
+    this driver (or ran on another machine, whose gitignored log did not travel). Without
+    that rule an in-progress paper reads as unstarted and `run` restarts at literature.
+    Stages behind the frontier (the last CLOSED one) that are still open are SKIPPED, not
+    suggested; a conditional component is never suggested; `post` stays the in-run gate."""
+    def record(self, comp, score):
+        rc, out = run("state", "record-score", comp, str(score), "--critic", _scorer(comp), "--report", "r.md", root=self.t)
+        self.assertEqual(rc, 0, out)
+
+    def test_no_state_file_names_state_init(self):
+        rc, out = run("next", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("state init", out)
+
+    def test_fresh_project_starts_at_the_first_component(self):
+        run("state", "init", root=self.t)
+        rc, out = run("next", root=self.t)
+        self.assertEqual(rc, 0, out); self.assertIn("next: literature", out)
+
+    def test_a_score_with_no_logged_completion_closes_the_stage(self):
+        """Adoption: code scored by coder-critic, coder never in the log. The stage is CLOSED
+        (and says why), the stages before it are SKIPPED, and the frontier moves to manuscript
+        — whose `pre writer` passes on the fixture (code >= 80, a tbl-* chunk, a render)."""
+        run("state", "init", root=self.t); self.record("code", 85)
+        rc, out = run("next", root=self.t)
+        self.assertEqual(rc, 0, out)
+        self.assertRegex(out, r"CLOSED\s+code\s.*no creator completion logged")
+        self.assertRegex(out, r"SKIPPED\s+literature\s")
+        self.assertIn("next: manuscript", out)
+
+    def test_a_creator_completion_after_the_score_reopens_the_stage(self):
+        """R-44 again, from the driver's side: coder ran after the last code score, so the
+        round is open and the stage is where work is — its critic must score."""
+        run("state", "init", root=self.t); self.record("code", 85)
+        time.sleep(0.01); self.log("coder")
+        rc, out = run("next", root=self.t)
+        self.assertEqual(rc, 0, out)
+        self.assertRegex(out, r"OPEN\s+code\s.*coder completed at .* no code score after it")
+        self.assertIn("next: code", out)
+
+    def test_skipped_behind_the_frontier_and_blocked_ahead_of_it(self):
+        """manuscript scored, nothing else: everything before it is SKIPPED (never suggested,
+        never faked); referees is BLOCKED on the code score; replication is BLOCKED on overall.
+        Nothing is ready, so `next` says so and exits 1."""
+        run("state", "init", root=self.t); self.record("manuscript", 88)
+        rc, out = run("next", root=self.t)
+        self.assertEqual(rc, 1, out)
+        for c in ("literature", "data", "strategy", "code"):
+            self.assertRegex(out, r"SKIPPED\s+" + c + r"\s", out)
+        self.assertRegex(out, r"BLOCKED\s+referees\s.*code score")
+        self.assertRegex(out, r"BLOCKED\s+replication\s.*overall score")
+        self.assertIn("next: none", out); self.assertNotIn("next: literature", out)
+
+    def test_a_conditional_component_is_never_suggested(self):
+        """strategy >= 80 makes theorist's `pre` pass, but theory is conditional: the user opts
+        in. The suggestion is code (data-engineer / coder), whose `pre` also passes."""
+        run("state", "init", root=self.t); self.record("strategy", 85)
+        rc, out = run("next", root=self.t)
+        self.assertEqual(rc, 0, out)
+        self.assertRegex(out, r"OPTIONAL\s+theory\s")
+        self.assertIn("next: code", out)
+
+    def test_pre_is_evaluated_lazily_past_the_first_ready_stage(self):
+        """`pre writer` renders the manuscript. `next` must not pay for stages after the one it
+        is going to suggest — a fresh project stops at literature and leaves the rest PENDING."""
+        run("state", "init", root=self.t)
+        rc, out = run("next", root=self.t)
+        self.assertRegex(out, r"PENDING\s+manuscript\s")
+        self.assertNotIn("render", out)
+
+    def test_every_stage_closed(self):
+        run("state", "init", root=self.t)
+        for c in ("literature", "data", "strategy", "code", "manuscript", "referees", "replication"):
+            self.record(c, 90)
+        rc, out = run("next", root=self.t)
+        self.assertEqual(rc, 0, out); self.assertIn("next: none", out); self.assertIn("closed", out)
+
+
 if __name__ == "__main__": unittest.main()
