@@ -80,7 +80,9 @@ ingests only what the library lacks, and produces `annotated_bibliography.md`,
 `frontier_map.md`, and `positioning.md` — with proximity scoring and an independent
 lit-critic review (D3, D-15).
 
-If a bibliography seed is wanted first, run `/seed-papers`.
+Optionally run `/seed-papers` first: you confirm which library papers are anchors, and
+`/lit-position` reads that set from `quality_reports/literature/<project>/zotero_seed.md`
+(its Step 0) before it searches.
 
 ### `/discover data [requirements]` — Data Discovery
 Find and assess datasets for the research question.

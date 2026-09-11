@@ -554,7 +554,7 @@ Once installed, the main entry points are:
 | `/ztp-research` | Find and ingest new papers into your Zotero library |
 | `/ztp-review` | Synthesize papers already in your library |
 | `/ztp-data-tag` | Backfill dataset/variable tags + a structured Data note onto papers already in your Zotero library (pilots one collection first) |
-| `/seed-papers` | Pre-search your Zotero library to seed `references.bib` before `/lit-position` |
+| `/seed-papers` | Optional: confirm which of your Zotero papers are anchors before `/lit-position` (writes `zotero_seed.md`, which `/lit-position` reads) |
 | `/lit-position` | Position the project against the literature (frontier map + positioning claim) |
 | `/strategize` | Design your identification strategy |
 | `/write` | Draft paper sections |
@@ -632,9 +632,9 @@ If ZotPilot is already indexed, Claude records the status in your project `CLAUD
 `/discover lit` is a pointer now — the real work happens in **`/lit-position`**, which
 runs in the main session and holds ZotPilot access directly (D3). Optionally seed first:
 
-> *"Run `/seed-papers [topic]` to pre-search your Zotero library before `/lit-position`?
-> This writes your existing anchors to `references.bib` so the search doesn't
-> re-discover what you already have."*
+> *"Run `/seed-papers [topic]` first? It searches your Zotero library for the topic, shows
+> you the candidates, and records the ones you confirm as anchors, so `/lit-position` starts
+> from your judgment about what already matters rather than re-discovering it."*
 
 If yes, the workflow is:
 
@@ -642,12 +642,15 @@ If yes, the workflow is:
 1. /seed-papers searches ChromaDB via ZotPilot MCP for the core topic
 2. Shows you a ranked candidate table — title, year, journal, relevance
 3. You confirm which papers to include
-4. Claude exports BibTeX entries → references.bib
+4. Writes quality_reports/literature/{project}/zotero_seed.md (the confirmed anchors, with
+   coverage notes, gaps and scooping risks) and bibliography_base.bib (a BibTeX export)
 ```
 
 Then `/lit-position`:
 
 ```
+0. Reads zotero_seed.md if it exists: seeded papers enter the bibliography at proximity ≥ 3,
+   and the external search starts from the seed's stated gaps
 1. ztp-research: search the local Zotero index first (rules/literature-search-order.md),
    ingest only what the library lacks
 2. ztp-review: synthesize claims and passages from the local corpus
@@ -656,33 +659,38 @@ Then `/lit-position`:
 ```
 
 **No PDFs are copied by the seed step.** Papers stay indexed in ChromaDB/Zotero.
-`references.bib` is the handoff — it tells `/lit-position` what anchor papers already
-exist so it fills genuine gaps rather than re-discovering what you already have.
+`zotero_seed.md` is the hand-off, and what it carries is your *confirmation* — which of
+the library's papers are anchors for this project — the one thing a semantic index cannot
+supply. `bibliography_base.bib` is a convenience export: nothing in the pipeline reads it,
+and nothing copies it into the manuscript's `references.bib`.
 
-### Why there's no bridge file anymore
+### What the seed file is for now
 
 The retired pipeline dispatched a restricted-tool **librarian agent** (`Read, Write,
 Grep, Glob, WebSearch, WebFetch` — no MCP access) that could not query ChromaDB
-itself, so a `bibliography_base.bib` + `zotero_seed.md` hand-off file was the only way
-results reached it. `/seed-papers` and `/lit-position` are **skills**, not agent
-dispatches — they run in the main session and can call `mcp__zotpilot__*` tools
-directly. The only file-based hand-off left is `references.bib` itself, and it exists
-because the manuscript's bibliography needs a file on disk, not because a
-tool-restricted agent needs one:
+itself, so `bibliography_base.bib` + `zotero_seed.md` was the only way search results
+reached it at all. `/seed-papers` and `/lit-position` are **skills**, not agent
+dispatches — they run in the main session and call `mcp__zotpilot__*` tools directly, so
+no file is needed to move *search results*. The seed survives for a different reason: it
+records a *human choice*. `/lit-position` reads it when it exists and works without it
+when it does not.
 
 ```
 ChromaDB / Ollama embeddings
     ↓  main session queries via ZotPilot MCP — no bridge file required
-references.bib          ← written by /seed-papers, read by /lit-position and /write
-    ↓
-quality_reports/literature/{project}/annotated_bibliography.md, frontier_map.md, positioning.md
+quality_reports/literature/{project}/zotero_seed.md   ← optional; written by /seed-papers
+    ↓                                                     after you confirm the anchors
+/lit-position → annotated_bibliography.md, frontier_map.md, positioning.md
     ↓
 lit-critic reviews all three
+
+references.bib   ← the manuscript's bibliography, read by /write and the verifier;
+                   maintained from Zotero, not written by any skill above
 ```
 
 ### What `master_supporting_docs/` is for
 
-The `master_supporting_docs/` folder exists for papers **not in your Zotero library** — manually downloaded PDFs, unpublished working papers, draft manuscripts a colleague sent you. `/lit-position` can read these as full text via `Read`/`Glob`. For anything already indexed in ChromaDB, `references.bib` is the right path and no files need to move.
+The `master_supporting_docs/` folder exists for papers **not in your Zotero library** — manually downloaded PDFs, unpublished working papers, draft manuscripts a colleague sent you. `/lit-position` can read these as full text via `Read`/`Glob`. Anything already indexed in ChromaDB is reached through ZotPilot, and no files need to move.
 
 ---
 

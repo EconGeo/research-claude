@@ -2,7 +2,7 @@
 name: new-project-ztp
 description: >
   ZotPilot setup step for new research projects — run when starting a project to embed
-  your Zotero library into ChromaDB so /seed-papers and /lit-position can search it.
+  your Zotero library into ChromaDB so /lit-position (and the optional /seed-papers) can search it.
   Trigger on: "set up ZotPilot", "embed my Zotero library", "configure ZotPilot for
   this project", or any mention of wanting local library search before literature review.
   Run at project start, BEFORE /seed-papers or /lit-position.
@@ -78,15 +78,20 @@ If `## Tools` already exists, update in place. If not, append after `## Current 
 ## Step 5: Confirm next steps
 
 Tell the user:
-> "ZotPilot is ready. Before running `/lit-position`, run `/seed-papers [topic]` to
-> pre-populate `references.bib` from your Zotero library. `/lit-position` reads
-> references.bib and the Zotero index; it is the main session, so it holds ZotPilot access."
+> "ZotPilot is ready. `/lit-position` searches the Zotero index directly; it runs in the main
+> session, so it holds ZotPilot access. Optionally run `/seed-papers [topic]` first: you confirm
+> which library papers are anchors, and `/lit-position` reads that confirmed set from
+> `quality_reports/literature/<project>/zotero_seed.md` before it searches."
 
 ---
 
 ## Notes
 
-- `/seed-papers` bridges ZotPilot → references.bib → `/lit-position`
-- `/lit-position` reads references.bib and the Zotero index; it is the main session, so it holds ZotPilot access
+- `/seed-papers` is optional. It writes `quality_reports/literature/<project>/zotero_seed.md`
+  (the user-confirmed anchor set, which `/lit-position` Step 0 reads) and `bibliography_base.bib`
+  at the project root (a BibTeX convenience export that nothing in this pipeline reads — the
+  manuscript's bibliography is `references.bib`, and nothing copies between the two)
+- `/lit-position` reads the Zotero index and, when present, `zotero_seed.md`; it never reads a
+  `.bib` — Zotero is the source of truth for what has been read
 - ZotPilot is registered in project `.mcp.json` by default (not globally)
 - To add it globally: `claude mcp add -g zotpilot -- /path/to/zotpilot mcp serve`

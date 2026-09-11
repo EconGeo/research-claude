@@ -23,6 +23,23 @@ skill is the bridge.
 
 ---
 
+## Step 0 — Read the seed, if there is one
+
+If `quality_reports/literature/<project>/zotero_seed.md` exists, `/seed-papers` was run and the
+user confirmed, paper by paper, which library items are anchors. That confirmation is the one
+thing the index cannot supply, so it binds here:
+
+- every paper in the seed enters `annotated_bibliography.md` (Step 3) at proximity 3 or higher
+  unless you say, in its entry, why it belongs lower;
+- its closing `## Notes for the Literature Review` names what is already covered, where the
+  gaps are and any scooping risks — start Step 1's external search from those gaps, not from
+  scratch, and carry its scooping risks into Step 1's flag.
+
+The seed is optional. If the file is absent, go straight to Step 1; do not create it here.
+`bibliography_base.bib`, which the same run writes at the project root, is a BibTeX convenience
+export — this skill does not read it, and nothing copies it into the manuscript's
+`references.bib`.
+
 ## Step 1 — Find and ingest (`ztp-research`)
 
 Search order is non-negotiable (`.claude/rules/literature-search-order.md`):
