@@ -14,9 +14,22 @@ IN ORDER TO ASSERT THEIR ABSENCE; without the marker those assertions are dangli
 edges for ever. The marker is per-line, so a genuinely broken reference elsewhere in
 the same gate is still reported.
 """
-import re, sys, json, pathlib, collections
+import argparse, re, sys, json, pathlib, collections
 
-ROOT = pathlib.Path(sys.argv[1]).resolve()
+# Both arguments used to be bare sys.argv[1]/[2]: run with none it died on an IndexError before
+# scanning, and run with only ROOT it scanned everything and THEN died writing the report. ROOT
+# defaults to the checkout this script lives in (so the answer does not depend on the caller's
+# cwd), and the JSON report is written only when asked for — the printed summary is the usual need.
+ap = argparse.ArgumentParser(
+    description="Dependency graph over a pipeline tree: dangling path refs, roster and skill "
+                "coverage, orphan files. Prints a summary; writes the full report as JSON if OUT is given.")
+ap.add_argument("root", nargs="?", default=str(pathlib.Path(__file__).resolve().parents[1]),
+                help="tree to audit (default: the research-claude checkout holding this script)")
+ap.add_argument("out", nargs="?", help="write the full JSON report here")
+args = ap.parse_args()
+ROOT = pathlib.Path(args.root).resolve()
+if not ROOT.is_dir():
+    ap.error(f"root is not a directory: {ROOT}")
 # Pick whichever base actually holds agents/ - research-claude keeps the pipeline
 # at repo root and ALSO has its own .claude/ for working on itself.
 CLAUDE = ROOT/".claude" if (ROOT/".claude"/"agents").is_dir() else ROOT
@@ -101,8 +114,8 @@ report = {
       str(f.relative_to(ROOT)) for f in files
       if inbound[str(f.resolve())]==0 and f.name not in {"SKILL.md","README.md"}),
 }
-out = pathlib.Path(sys.argv[2])
-out.write_text(json.dumps(report, indent=2))
+if args.out:
+    pathlib.Path(args.out).write_text(json.dumps(report, indent=2))
 c=report["counts"]
 print(f"{ROOT.name}: {c['files']} files, {c['agents']} agents, {c['skills']} skills")
 print(f"  dangling path refs        : {len(report['dangling_paths'])}")
