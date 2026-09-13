@@ -170,6 +170,44 @@ this file is that move.**
   (the last one proved the mechanism, then hit the wall clock mid-round-2). The
   `session_logs/` question above is closed.
 
+**2026-09-10 → 09-13, session `01Sco7`:**
+
+- **The seed has a consumer (`78c80aa`).** `/lit-position` Step 0 reads
+  `quality_reports/literature/<project>/zotero_seed.md` when present. `new-project-ztp`,
+  `discover` and the README no longer claim `/seed-papers` fills `references.bib` or that
+  `/lit-position` reads a `.bib`. `bibliography_base.bib` is documented as an export nothing reads.
+- **Adopting an in-progress paper is now a procedure, not a warning (`631af04`).**
+  `pipeline.py next` prints CLOSED / OPEN / READY / BLOCKED / SKIPPED / OPTIONAL / PENDING per
+  component and a `next:` line. A score with no logged creator completion is CLOSED — that is
+  adoption, and also a coauthor's clone, since the log is gitignored. Only a score moves the
+  frontier; an OPEN round is suggested first. `post` is unchanged. `run` gains `--from`.
+  `skills/pipeline/references/adopt.md` is the sequence: each existing artifact is scored by its
+  own critic; nothing is back-filled. **This supersedes "do not run `/pipeline run` in a paper
+  repo"** — run `next` first, adopt, then `run` starts at the frontier.
+- **affordable_housing_2026 partly adopted.** Its two ported scores now cite the real critic
+  reports (`c19f316` there). `next` there reads strategy and code CLOSED, `next: manuscript`.
+  An explorer-critic adoption of its data assessment was started and **died on a session limit
+  before writing a report; no data score was recorded.** Literature and data remain SKIPPED.
+- **Item-4 gates (`958b1d7`).** `artifact-paths` (R-112) is live in `check_fork`; its first run
+  found the theory-review template saving to an unregistered path, now fixed. The
+  `detached at the lock SHA` branch of `check_install` has five tests, each shown red against a
+  mutated copy. `next` reports a conditional component as OPTIONAL wherever it sits.
+- **JRER verified profile moved upward (`43a80db`; ESG `33fbe05`).** ESG's T&F-checked JRER
+  block replaced the recalled one in the template and the shared `~/Research` copy (backup:
+  `~/Research/.claude/references/journal-profiles.md.bak-2026-09-10b`).
+- **Open — needs the user: Task 7b.1 steps 3-4.** Replacing ESG's and NAR_settlement's three
+  committed reference files with symlinks to the shared copies was refused twice by the
+  auto-mode classifier as local destruction. Content no longer blocks it for either repo: ESG's
+  only unique content was the JRER block, and NAR's `domain-profile.md` and
+  `personal-style-guide.md` are the blank templates while its `journal-profiles.md` lacks the
+  whole Real Estate section. **Ruling: link both.** The files are git-tracked, so the change is
+  recoverable with `git checkout`.
+- **Live tier not re-run to green.** A run on 2026-09-10 ended `FAIL [live-pipeline] exit 1`
+  after 126 dispatch events, on the same HTTP 429 session limit as the adoption run — not a
+  pipeline defect. Deferred by the user.
+- Green after: `check_fork` PASS (incl. `artifact-paths`) · **113 tests OK** · `check_install
+  --all` PASS six repos · `audit_graph` dangling 0 · roster [] · never-invoked [].
+
 ### Loose ends this handoff never mentioned (added 2026-09-10)
 
 Neither is urgent; both are recorded because nothing else points at them.
