@@ -195,7 +195,10 @@ this file is that move.**
 - **JRER verified profile moved upward (`43a80db`; ESG `33fbe05`).** ESG's T&F-checked JRER
   block replaced the recalled one in the template and the shared `~/Research` copy (backup:
   `~/Research/.claude/references/journal-profiles.md.bak-2026-09-10b`).
-- **Open — needs the user: Task 7b.1 steps 3-4.** Replacing ESG's and NAR_settlement's three
+- **✅ DONE 2026-09-13, run by the user — Task 7b.1 steps 3-4** (ESG `a30b42f`, NAR_settlement
+  `d4f1887` on `phase1-event-study`). All six now relative links (mode 120000) that resolve to
+  the shared copies; `check_install --all` PASS. Original note follows.
+  Replacing ESG's and NAR_settlement's three
   committed reference files with symlinks to the shared copies was refused twice by the
   auto-mode classifier as local destruction. Content no longer blocks it for either repo: ESG's
   only unique content was the JRER block, and NAR's `domain-profile.md` and
