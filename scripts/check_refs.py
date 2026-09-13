@@ -8,8 +8,10 @@ latex-residue, manuscript-model and deleted-things. A file whose first line is e
 ai-audit/) are scanned for deleted-things only and reported as WARN.
 """
 from __future__ import annotations
-import argparse, re, sys
+import argparse, fnmatch, re, sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import registry_lib as rl
 
 SHIP = ["agents", "skills", "rules", "references", "hooks", "templates", "seeds", "scripts"]
 VENDORED = ["zotpilot-skills", "ai-audit"]
@@ -185,10 +187,78 @@ def crit_hooks_readme(root):
             hits.append(f"hooks/README.md: {name} is a git hook listed in the Claude hook table")
     return report("hooks-readme", hits)
 
+# ── artifact-paths (R-112) ──────────────────────────────────────────────────
+# A path token under quality_reports/, with its placeholders: <x>, [x], {x} and {a,b} brace groups.
+AP_TOKEN = re.compile(r"(?<![A-Za-z0-9_./-])quality_reports/(?:[A-Za-z0-9_.*/-]|<[^<>\s]*>|\[[^\[\]\s]*\]|\{[^{}\s]*\})*")
+# Artifacts the registry deliberately does not declare. Each is written or read by a skill, hook or
+# script, and nothing gates on it — so it can never contradict a `produces`. Add a row only with its
+# reason; a skill path that CONTRADICTS a registry glob belongs in the skill, not here.
+AP_ALLOW = {
+    "quality_reports/pipeline_state.json":        "the state file itself (rules/logging.md)",
+    "quality_reports/agent_dispatch.jsonl":       "the dispatch log (rules/logging.md)",
+    "quality_reports/research_journal.md":        "narrative log written from the state (rules/logging.md)",
+    "quality_reports/prose_number_allowlist.csv": "prose_number_check.py's per-project allowlist",
+    "quality_reports/plans/*":                    "plans — records, not gated",
+    "quality_reports/decisions/*":                "decision records — not gated",
+    "quality_reports/research_spec_*.md":         "/discover interview output — not gated",
+    "quality_reports/research_ideas_*.md":        "/discover ideate output — not gated (R-112)",
+    "quality_reports/literature/*/zotero_seed.md": "/seed-papers output, read by /lit-position Step 0 — optional input",
+    "quality_reports/pre_analysis_plan_*.md":     "/strategize pap output — strategy is scored from the critic report",
+    "quality_reports/journal_recommendations_*.md": "/submit target output — not gated (R-112)",
+    "quality_reports/quality_gate_*.md":          "/submit final gate summary — derived from `score --gate`",
+    "quality_reports/referee_response_tracker.md": "/revise tracker — not gated (R-112)",
+    "quality_reports/referee_response_*_*.md":    "/revise response letter — not gated",
+    "quality_reports/reviews/replication_*_*.md": "/review --replicate report — records no score (R-106)",
+    "quality_reports/claim_source_map_*.md":      "named only as retired INV-22's former artifact",
+}
+
+def _ap_expand(tok):
+    """All concrete forms of a token: brace groups with commas expand; every other placeholder is `*`."""
+    tok = tok.rstrip(".,;:)")
+    m = re.search(r"\{([^{}]*,[^{}]*)\}", tok)
+    if m:
+        return [x for alt in m.group(1).split(",") for x in _ap_expand(tok[:m.start()] + alt + tok[m.end():])]
+    return [re.sub(r"<[^<>]*>|\[[^\[\]]*\]|\{[^{}]*\}", "*", tok)]
+
+def _ap_patterns(root):
+    reg = rl.load_registry(root); files, dirs = set(), set()
+    def walk(p):
+        if p.get("type") == "path": files.add(p["glob"])
+        if p.get("type") == "section" and p.get("file") != "manuscript": files.add(p["file"])
+        for q in p.get("of") or []: walk(q)
+    for e in reg["agents"].values():
+        for p in (e.get("requires") or []) + (e.get("produces") or []): walk(p)
+        dirs |= {w for w in (e.get("writes") or []) if str(w).startswith("quality_reports/")}
+    return files, dirs
+
+def crit_artifact_paths(root):
+    """R-112's inverse check. The produces-path audit caught a MISSING declaration; it could not
+    catch a skill naming a path its agent's registry entry does not declare, because the agent
+    file being right let the skill's wrong path pass (/strategize, R-111). Every quality_reports/
+    path in the shipped tree must match a registry glob, be a directory prefix of one, or be an
+    AP_ALLOW artifact."""
+    files, dirs = _ap_patterns(root)
+    allow = set(AP_ALLOW)
+    hits = []
+    for f in shipped_files(root, SHIP):
+        for n, ln in lines_of(f):
+            for m in AP_TOKEN.finditer(ln):
+                for t in _ap_expand(m.group(0)):
+                    last = t.rsplit("/", 1)[-1]
+                    if t.endswith("/") or "." not in last:          # a directory, or a dir-name stem
+                        ok = any(p.startswith(t) or fnmatch.fnmatchcase(p[:len(t)], t)
+                                 for p in files | dirs | allow)
+                    else:
+                        ok = any(fnmatch.fnmatchcase(t, p) for p in files | allow)
+                    if not ok:
+                        hits.append(f"{f.relative_to(root)}:{n}: {m.group(0).rstrip('.,;:)')} matches no registry glob")
+    return report("artifact-paths", hits)
+
 CRITERIA = {
     "latex-residue": crit_latex_residue, "manuscript-model": crit_manuscript_model,
     "deleted-things": crit_deleted_things, "inv-refs": crit_inv_refs, "skill-refs": crit_skill_refs,
     "tool-name": crit_tool_name, "hooks-readme": crit_hooks_readme,
+    "artifact-paths": crit_artifact_paths,
 }
 
 def main():

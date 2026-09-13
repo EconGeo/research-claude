@@ -316,6 +316,13 @@ class TestNext(FixtureCase):
         self.assertRegex(out, r"BLOCKED\s+replication\s.*overall score")
         self.assertIn("next: none", out); self.assertNotIn("next: literature", out)
 
+    def test_a_conditional_component_behind_the_frontier_is_optional_not_skipped(self):
+        """theory is conditional: behind a closed stage it is still the user's opt-in, and
+        SKIPPED would read as a gap to close (observed on a real adoption, 2026-09-10)."""
+        run("state", "init", root=self.t); self.record("code", 85)
+        rc, out = run("next", root=self.t)
+        self.assertRegex(out, r"OPTIONAL\s+theory\s"); self.assertNotRegex(out, r"SKIPPED\s+theory\s")
+
     def test_a_conditional_component_is_never_suggested(self):
         """strategy >= 80 makes theorist's `pre` pass, but theory is conditional: the user opts
         in. The suggestion is code (data-engineer / coder), whose `pre` also passes."""

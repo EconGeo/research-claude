@@ -334,11 +334,13 @@ def next_report(root: Path, reg) -> int:
     for i, c in enumerate(comps):
         status, detail = info[c]; cond = bool(reg["components"][c].get("conditional"))
         if status in ("CLOSED", "OPEN"): rows.append((status, c, detail)); continue
+        # Conditional first: behind the frontier or ahead of it, it is the user's opt-in, and
+        # SKIPPED would present it as a gap to close.
+        if cond:
+            rows.append(("OPTIONAL", c, "conditional — never suggested; opt in from the driver")); continue
         if i < frontier:
             rows.append(("SKIPPED", c, f"unscored, behind the frontier ({comps[frontier]} is closed) — "
                                        "excluded from overall; run its stage to score it")); continue
-        if cond:
-            rows.append(("OPTIONAL", c, "conditional — never suggested; opt in from the driver")); continue
         if found is not None:
             rows.append(("PENDING", c, "not evaluated — another stage is suggested first")); continue
         ready: Optional[str] = None; misses: List[str] = []

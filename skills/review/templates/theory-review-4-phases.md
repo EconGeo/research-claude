@@ -142,7 +142,7 @@ Cross-check against `references.bib`.
 
 ## Report Format
 
-Save to `quality_reports/[FILENAME]_theory_review.md`:
+Save to `quality_reports/reviews/theorist-critic_<date>.md` — the path `.claude/rules/registry.yaml` declares for `theorist-critic`'s `produces`, and the one `/strategize theory` records the `theory` score against:
 
 ```markdown
 # Theory Review: [Filename]
