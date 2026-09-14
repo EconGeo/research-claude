@@ -16,7 +16,7 @@ python3 .claude/scripts/pipeline.py pre strategist
 python3 .claude/scripts/pipeline.py post strategist
 ```
 `/strategize` dispatches strategist, then strategist-critic (its Step 4), and records the
-score itself: `state record-score strategy <score> --critic strategist-critic --report
+score itself: `state record-score strategy <score> --critic strategist-critic --deductions <total> --report
 quality_reports/reviews/strategist-critic_<date>.md`.
 
 ## Approval-gate summary

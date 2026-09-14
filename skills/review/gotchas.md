@@ -10,7 +10,7 @@ Known failure points and edge cases for paper/code/strategy review.
 - Code review checks both the script AND its output. A script that runs clean but produces wrong numbers still fails.
 - Writer-critic format deductions come from `.claude/rules/quarto-pdf.md` / `quarto-word.md` and are required (blocking), not advisory. Architecture deductions (caching, inline numbers, `source()`) come from `quarto-empirical.md` and belong to the coder-critic — do not double-count them.
 - Voice fidelity (writer-critic category 7) is only scored when `.claude/references/personal-style-guide.md` has real content. If the style guide is still a template, skip and report.
-- The strategist-critic uses severity classification (CRITICAL/MAJOR/MINOR), not a point-deduction rubric. The coder-critic and writer-critic use point deductions.
+- The strategist-critic classifies each issue CRITICAL/MAJOR/MINOR, and each severity carries a fixed deduction (`.claude/skills/review/config/scoring-rubrics.md`, Strategist-Critic). Until 2026-09-14 the rubric had no point values and critics invented their own weightings, so a `strategy` score recorded before then is not comparable with one recorded after.
 - Theorist-critic should not lecture authors on their own methods. Check `.claude/references/domain-profile.md` for the paper's authors before flagging textbook issues.
 - Explorer-critic flags concerns but does NOT suggest specific alternative datasets (separation of powers).
 - R&R second round reloads same referee dispositions and pet peeves from round 1. Max 3 rounds total.

@@ -262,6 +262,40 @@ this file is that move.**
   6. POGM4's `fresh` fails on a leftover gitignored `manuscript_quarto_word.html` the YAML no
      longer produces — `is_fresh()` failing closed as designed; delete the file.
 
+**2026-09-14, session `01Sco7`, continued — the five adoption findings fixed (`fix/adoption-findings`):**
+
+- **1. Floored scores rank again.** `record-score … --deductions <total>` stores the unfloored
+  total beside the score and refuses one that disagrees with it (score = max(0, 100 − total));
+  `score` and `next` print it, and flag a 0 recorded without one as "floored — deductions not
+  recorded". Every deduction-rubric `record-score` line in the skills now passes it (22 sites);
+  `validate` rejects a malformed field. 8 red-first tests in `tests/test_pipeline.py`.
+  **Not back-filled:** the POGM4, NAR and affordable_housing scores predate the flag. Re-recording
+  them from their reports would bump each entry's `at` and `rounds`, so it was left to the user.
+- **2. strategist-critic has point values:** CRITICAL −25, MAJOR −5, MINOR −1 per issue
+  (`scoring-rubrics.md`). Chosen so one CRITICAL alone fails the commit gate (75) and a fifth
+  MAJOR does; a test pins the first property. **This is a policy choice made in-session — change
+  the three numbers if they are wrong; the tests only require CRITICAL > MAJOR > MINOR > 0 and
+  100 − CRITICAL < 80.** The 41 and 48 recorded on 2026-09-13 are not comparable with later
+  strategy scores (said in `gotchas.md`). Also fixed: `strategist-critic.md` named its rubric by a
+  path that resolves nowhere (`review/config/…`, R-18's blind spot).
+- **3. One verifier definition, the agent's.** Resolved toward `agents/verifier.md`, because
+  `rules/content-invariants.md`'s "How Agents Use" table already agreed with it and the verifier
+  had followed it. Its invariants are now a numbered check (4c) with a report row; the review
+  skill's restated definition is a pointer. A third copy surfaced while fixing it —
+  `skills/submit/templates/audit-10-checks.md` listed INV-10 and omitted INV-11/INV-24 — and is
+  now a pointer too. Tests pin the agent/invariants-table agreement and forbid a restatement.
+- **4. The verifier leaves the tree alone.** It runs only the commands its file names — never a
+  project's gate script, even one its `CLAUDE.md` says to run first — and reports any
+  `git status --porcelain` difference under **Tree changes** without reverting. `/review` checks
+  the tree around the verifier as well, because an instruction to a subagent is not a guard.
+- **5. Adoption is sequential and saves as it goes** (`adopt.md`, `/review`): one project at a
+  time; write each report and record its score as that critic returns; read `git status` before
+  the adoption commit.
+- Green: **135 tests OK** (118 + 8 deductions + 9 `tests/test_review_contracts.py`) ·
+  `check_fork` PASS. No file added or removed under `agents/ skills/ rules/ hooks/`, so no re-link.
+- Still open from the adoption list: POGM4's leftover `manuscript_quarto_word.html` (item 6, a
+  paper matter), and the papers' own revisions against their critic reports.
+
 ### Loose ends this handoff never mentioned (added 2026-09-10)
 
 Neither is urgent; both are recorded because nothing else points at them.

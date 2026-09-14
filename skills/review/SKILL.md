@@ -37,10 +37,21 @@ Unified review command that routes to the appropriate critic agents based on the
 
 ### Comprehensive Review (default for the declared manuscript)
 Dispatch in parallel:
-1. **strategist-critic** — causal design audit (4 phases). Save report to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --report quality_reports/reviews/strategist-critic_<date>.md`.
-2. **writer-critic** — manuscript polish (6 categories). Save report to `quality_reports/reviews/writer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --report quality_reports/reviews/writer-critic_<date>.md`.
-3. **verifier** — render + prose check. Save report to `quality_reports/verification_report.md`. Record: `python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report quality_reports/verification_report.md`.
+1. **strategist-critic** — causal design audit (4 phases). Save report to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report quality_reports/reviews/strategist-critic_<date>.md`.
+2. **writer-critic** — manuscript polish (6 categories). Save report to `quality_reports/reviews/writer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report quality_reports/reviews/writer-critic_<date>.md`.
+3. **verifier** — standard checks 1–4c (`.claude/agents/verifier.md`). Save report to `quality_reports/verification_report.md`. Record: `python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report quality_reports/verification_report.md`.
 Compute weighted aggregate score from the recorded component scores.
+
+**Save each report the moment its critic returns**, and record that score then — not after all
+three. Critics are read-only and return their reports as text; this session writes them, so a
+session that dies before the last critic finishes loses every report not yet on disk (observed:
+strategist-critic done, report unsaved, run lost).
+
+**Check the tree around the verifier.** Record `git status --porcelain` before dispatching it and
+again when it returns. Put every tracked path that changed — other than the manuscript's rendered
+outputs — in front of the user, and keep it out of any commit of the scores. Do not revert it
+unasked. The verifier is told not to run a project's own gate scripts; this check is what notices
+when one did anyway (observed: a project gate restamped two committed reports).
 
 ### Full Peer Review (`--peer [journal]`)
 
@@ -185,7 +196,7 @@ Save report to `quality_reports/reviews/coder-critic_<date>.md`
 chunks under the full checklist. Categories 1–3 are assessed against
 `quality_reports/strategy/<project>/strategy_memo.md` when it exists and against the
 manuscript's own design section when it does not — the report says which. Record:
-`python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --report quality_reports/reviews/coder-critic_<date>.md`.
+`python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report quality_reports/reviews/coder-critic_<date>.md`.
 A standalone review of a script under `scripts/acquire/` or `explorations/` records nothing —
 `code` is the manuscript's analysis, not acquisition or exploration code.
 
@@ -229,6 +240,9 @@ Dispatch **strategist-critic** standalone for a full 4-phase causal inference re
 - **MAJOR ISSUES** — Significant concerns that could change conclusions
 - **CRITICAL ERRORS** — Fundamental design flaw or incorrect implementation
 
+The label is reported beside the score, not instead of it. The score is 100 minus the fixed
+per-severity deductions in `.claude/skills/review/config/scoring-rubrics.md` (Strategist-Critic).
+
 Save report to `quality_reports/reviews/strategist-critic_<date>.md`
 
 ### Manuscript Polish (`--proofread`)
@@ -250,9 +264,11 @@ Never writes the manuscript. Save the replicated script and comparison report to
 ---
 
 ## Verifier Pass/Fail Definition
-**For the manuscript (`.qmd`):** `quarto render` exits 0; no `ERROR`/`WARNING` in the log; every `@fig-`/`@tbl-`/`@sec-`/`@eq-` resolves; every `@key` exists in `references.bib`; `python3 .claude/scripts/prose_number_check.py` exits 0; rendered output is fresh.
-**For code (`scripts/acquire/*`, `explorations/*`):** runs without error; packages at top; no absolute paths; seed set once if stochastic; writes only to `data/raw/` (acquisition) or `explorations/` (exploration).
-**For replication packages:** `/submit audit` checks 1–10 (`.claude/skills/submit/templates/audit-10-checks.md`).
+The definition is `.claude/agents/verifier.md`, and only there: standard checks 1–4c for the
+declared manuscript (4c is the content invariants it treats as automatic FAIL), its scope note
+for acquisition and exploration scripts, and submission checks 5–10 for a replication package.
+It is deliberately not restated here. A restated copy once omitted 4c, and two papers passed
+this file's version while failing the agent's.
 Verifier score maps to 0 (FAIL) or 100 (PASS).
 
 ---

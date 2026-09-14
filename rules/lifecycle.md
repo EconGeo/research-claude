@@ -95,7 +95,10 @@ each with what is missing and the skill that produces it).
 `init` creates `quality_reports/pipeline_state.json` (schema in `.claude/templates/pipeline-state.json`);
 `validate` checks it; `record-score <component> <score> --critic <name> --report <path> [--scope section:<name>]`
 records a critic score (latest per component counts; a section-scoped `writer-critic` score is
-recorded under `sections`, never as the manuscript component); `strike <creator>` takes one agent
+recorded under `sections`, never as the manuscript component). `--deductions <total>` records the
+critic's unfloored deduction total beside the score and must agree with it (score =
+max(0, 100 − total)); pass it for every rubric that deducts, because a score floored at 0 ranks
+nothing — `score` and `next` print the total, and flag a 0 recorded without one; `strike <creator>` takes one agent
 name and increments that creator's strike count, printing the escalation target at three;
 `show` prints it. The state file is
 committed — it is replication provenance. The dispatch log is gitignored — it is session mechanics.

@@ -22,7 +22,7 @@ python3 .claude/scripts/pipeline.py conflicts data-engineer coder     # sanity: 
 python3 .claude/scripts/pipeline.py post coder
 ```
 `/analyze` dispatches data-engineer then coder-critic (Step 2), then coder then coder-critic
-(Step 3), recording `state record-score code <score> --critic coder-critic --report <path>`
+(Step 3), recording `state record-score code <score> --critic coder-critic --deductions <total> --report <path>`
 after each round.
 
 ## Approval-gate summary

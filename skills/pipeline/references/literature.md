@@ -16,7 +16,7 @@ python3 .claude/scripts/pipeline.py pre lit-position          # trivially passes
 python3 .claude/scripts/pipeline.py post lit-position
 ```
 `/lit-position` (Step 7 of its own SKILL.md) dispatches lit-critic itself and records the
-score itself: `state record-score literature <score> --critic lit-critic --report <path>`.
+score itself: `state record-score literature <score> --critic lit-critic --deductions <total> --report <path>`.
 Standalone runs additionally call `pipeline.py log lit-position` there, since nothing else
 would log a skill that never went through the Agent tool; orchestrated runs still need that
 log entry for `post`'s `critic-ran` check, so confirm it happened before trusting `post`.

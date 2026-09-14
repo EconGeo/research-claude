@@ -46,7 +46,7 @@ loop over stages from start in REQUIRES order, stop after --until:
   pre <creator>            → FAIL: report missing artifact + producer skill; stop
   conflicts <creator> <…>  → never dispatch two manuscript writers at once
   read references/<stage>.md; dispatch the creator per that file (Agent)
-  dispatch the critic per that file; record-score <component> <score> --critic … --report …
+  dispatch the critic per that file; record-score <component> <score> --critic … [--deductions …] --report …
   post <creator>           → FAIL (critic-ran / render / prose-check): re-dispatch or stop
   below 80: creator fixes → critic re-scores; `state strike <creator>`; at 3 → escalate to
             registry's ESCALATION_TARGET with a specific question

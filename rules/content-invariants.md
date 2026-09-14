@@ -107,9 +107,9 @@ kept rather than reused so older reports and reviews still resolve.
 | Invariant | Enforced by |
 |---|---|
 | INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required; verifier check 4b |
-| INV-14, INV-15, INV-16, INV-19 | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) + `coder-critic` (chunk-level: `set.seed()`, cache setup, `source()`) + verifier (mandatory gate) |
-| INV-23, INV-24 | `coder-critic` against `data/raw/data_manifest.md`; verifier check 7 (Submission mode) for INV-24 |
-| INV-9, INV-13 | `quarto render` fails or degrades visibly; writer-critic category 5 |
+| INV-14, INV-15, INV-16, INV-19 | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) + `coder-critic` (chunk-level: `set.seed()`, cache setup, `source()`) + verifier check 4c (mandatory FAIL) |
+| INV-23, INV-24 | `coder-critic` against `data/raw/data_manifest.md`; verifier check 4c for INV-24 (and check 7, data provenance, in submission mode) |
+| INV-9, INV-13 | `quarto render` fails or degrades visibly; writer-critic category 5; verifier check 4c for INV-9 |
 | INV-18 | `coder-critic` category 13 (manuscript-model) |
 | INV-1..INV-8, INV-10, INV-12, INV-17, INV-20..INV-21 | `reviewer-judgment` — no script checks these |
 

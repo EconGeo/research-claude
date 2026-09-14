@@ -46,6 +46,23 @@ stop where the work stops:
 finished draft the whole adoption is usually: `/review --code <manuscript>` then `/review`.
 Re-run `next` after each recording and watch the frontier move.
 
+## One project at a time, saving as you go
+
+Observed on the 2026-09-13 adoptions, and the reason for each line:
+
+- **Adopt one project, let it finish, then start the next.** `/review` already dispatches three
+  critics at once, each reading a whole manuscript. Two projects adopted in parallel exhausted a
+  five-hour usage window in about fifteen minutes, and a run that hits the limit dies mid-stage.
+- **Save each report and record its score as that critic returns**, not after the last one.
+  Critics are read-only and return reports as text for the orchestrating session to write; a run
+  that died with strategist-critic finished and its report unwritten had to run it again.
+- **Read `git status` before committing the adoption.** The verifier must not change tracked
+  files (`.claude/agents/verifier.md`), but a project gate script it ran once restamped two
+  committed reports. Anything a review run touched stays out of the commit that records its
+  scores.
+- **Record deduction totals** (`--deductions`). An adopted paper is the likeliest to floor at 0,
+  and the total is then the only thing that says how far it is from 80.
+
 ## What adoption does not do
 
 - It does not write a strategy memo, a positioning file or a data assessment that the project

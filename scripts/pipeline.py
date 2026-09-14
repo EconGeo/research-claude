@@ -88,6 +88,9 @@ def validate_state(st: Dict[str, Any], reg: Dict[str, Any]) -> List[str]:
             p.append(f"components.{c}: score must be a number in 0..100")
         for k in ("critic", "report", "at"):
             if not isinstance((e or {}).get(k), str): p.append(f"components.{c}: {k} must be a string")
+        d = (e or {}).get("deductions")
+        if d is not None and (isinstance(d, bool) or not isinstance(d, (int, float)) or d < 0):
+            p.append(f"components.{c}: deductions must be a non-negative number when present")
     for a in (st.get("strikes") or {}):
         if a not in reg["agents"]: p.append(f"strikes.{a}: not a registry agent")
     return p
@@ -98,6 +101,19 @@ def compute_overall(st, reg) -> Tuple[Optional[float], Dict[str, float]]:
     used = {c: w[c] for c in scored if c in w}
     if not used: return None, {}
     tot = sum(used.values()); return round(sum(scored[c] * used[c] for c in used) / tot, 2), used
+
+def deduction_note(entry: Dict[str, Any]) -> str:
+    """What stands behind a score, for `score` and `next`.
+
+    Critics start at 100, deduct per rubric and floor at 0 — so 185 points of deductions and
+    817 both record as 0, and two floored papers read as equally far from 80 (observed on two
+    adoptions, 2026-09-13). The unfloored total is the only thing that still ranks them. A
+    floored score with no total is flagged rather than left silent: it is exactly the case
+    where the ranking was lost."""
+    d = entry.get("deductions")
+    if d is None:
+        return "  (floored — deductions not recorded)" if entry.get("score") == 0 else ""
+    return f"  ({'floored; ' if entry.get('score') == 0 else ''}{d:g} deducted)"
 
 # ── dispatch log ────────────────────────────────────────────────────────────
 def read_log(root: Path) -> List[Dict[str, Any]]:
@@ -313,7 +329,7 @@ def next_report(root: Path, reg) -> int:
             tail = (" (no creator completion logged — adopted or cloned; see "
                     ".claude/skills/pipeline/references/adopt.md)" if newest is None
                     else f" (creator {newest_agent} completed at {newest})")
-            info[c] = ("CLOSED", f"{entry.get('score')} by {entry.get('critic')} at {at}" + tail)
+            info[c] = ("CLOSED", f"{entry.get('score')} by {entry.get('critic')} at {at}" + deduction_note(entry) + tail)
         elif newest is not None:
             scorer = reg["components"][c].get("scored_by")
             d = f"{newest_agent} completed at {newest}; no {c} score after it — dispatch {scorer} and record-score"
@@ -402,6 +418,7 @@ def main() -> int:
     sc = sub.add_parser("score"); sc.add_argument("--gate", choices=sorted(GATES))
     st = sub.add_parser("state"); st.add_argument("op", choices=["init", "validate", "show", "record-score", "strike", "set-blocked", "clear-blocked"])
     st.add_argument("args", nargs="*"); st.add_argument("--critic"); st.add_argument("--report"); st.add_argument("--scope")
+    st.add_argument("--deductions", type=float, help="record-score: the critic's unfloored deduction total")
     sub.add_parser("conflicts").add_argument("agents", nargs="+")
     sub.add_parser("registry").add_argument("op", choices=["check"])
     lg = sub.add_parser("log"); lg.add_argument("agent"); lg.add_argument("--source", default="skill")
@@ -424,7 +441,7 @@ def main() -> int:
         print("conflicts: " + ("none" if not clashes else f"{len(clashes)}")); return 1 if clashes else 0
     if a.cmd == "score":
         stt = load_state(root); ov, used = compute_overall(stt, reg)
-        for c, w in used.items(): print(f"{c:12s} {stt['components'][c]['score']:6.1f}  weight {w:5.1f}")
+        for c, w in used.items(): print(f"{c:12s} {stt['components'][c]['score']:6.1f}  weight {w:5.1f}" + deduction_note(stt['components'][c]))
         print(f"overall={ov if ov is not None else 'n/a'}")
         if a.gate:
             need, per = GATES[a.gate]; ok = ov is not None and ov >= need and (per is None or all(e["score"] >= per for e in stt["components"].values()))
@@ -441,7 +458,7 @@ def main() -> int:
             print("state: " + ("valid" if not probs else "INVALID")); return 1 if probs else 0
         if a.op == "show": print(json.dumps(stt, indent=2)); return 0
         if a.op == "record-score":
-            if len(a.args) != 2 or not a.critic or not a.report: sys.exit("usage: state record-score <component> <score> --critic X --report P [--scope section:NAME]")
+            if len(a.args) != 2 or not a.critic or not a.report: sys.exit("usage: state record-score <component> <score> --critic X --report P [--deductions N] [--scope section:NAME]")
             comp, score = a.args[0], float(a.args[1])
             if comp not in reg["components"] or not 0 <= score <= 100: print("record-score: bad component or score"); return 1
             # The registry already knows which critic owns each component, so honour it.
@@ -452,7 +469,17 @@ def main() -> int:
             if owner and a.critic != owner:
                 print(f"record-score: {comp} is scored by {owner}, not {a.critic} "
                       f"(see .claude/rules/registry.yaml)"); return 1
+            if a.deductions is not None:
+                # The total must be the score's own arithmetic: a critic starts at 100 and floors at
+                # 0. Anything else is a transcription slip between report and command line, and
+                # recording it would put two disagreeing numbers in the replication record.
+                if a.deductions < 0:
+                    print("record-score: --deductions must be ≥ 0 (the total points deducted)"); return 1
+                if abs(score - max(0.0, 100.0 - a.deductions)) > 0.05:
+                    print(f"record-score: score {score:g} does not match --deductions {a.deductions:g} "
+                          f"(expected {max(0.0, 100.0 - a.deductions):g} = max(0, 100 − deductions))"); return 1
             entry = {"score": score, "critic": a.critic, "report": a.report, "at": now()}
+            if a.deductions is not None: entry["deductions"] = a.deductions
             if a.scope and a.scope.startswith("section:"):
                 stt["sections"][a.scope.split(":", 1)[1]] = entry
             else:

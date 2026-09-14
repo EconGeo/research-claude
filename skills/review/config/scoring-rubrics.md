@@ -2,6 +2,12 @@
 
 Consolidated deduction tables from all critic agents. Each critic starts at 100 and deducts for issues found. Floor at 0.
 
+**Report the deduction total as well as the score** — `**Score:** 0 · **Deductions:** 185` — and
+record both: `pipeline.py state record-score <component> <score> --deductions <total> …`. A floor
+erases the ranking: deductions of 185 and 817 both score 0, and only the total says which paper
+is closer to 80. An issue is deducted once, under the row that fits it best, however many phases
+or categories it surfaces in.
+
 ---
 
 ## Writer-Critic (Manuscript Review)
@@ -85,13 +91,22 @@ Checks" — it is not restated here; cite it by row. Additional rows:
 
 ## Strategist-Critic (Causal Audit)
 
-The strategist-critic does not use a point-deduction rubric. Instead, it classifies issues by severity:
+Each issue is classified by severity, and each severity carries a fixed deduction. Use these
+values and no others: before they existed, two critics invented different weightings for the
+same scale and scored two papers 41 and 48 on numbers that were not comparable.
 
-| Severity | Definition |
-|----------|-----------|
-| **CRITICAL** | Identification is wrong or unsupported. Fatal design flaw. |
-| **MAJOR** | Missing important check or wrong inference. Should fix before publication. |
-| **MINOR** | Could strengthen but paper works without it. Nice to have. |
+| Severity | Definition | Deduction |
+|----------|-----------|-----------|
+| **CRITICAL** | Identification is wrong or unsupported. Fatal design flaw. | -25 per |
+| **MAJOR** | Missing important check or wrong inference. Should fix before publication. | -5 per |
+| **MINOR** | Could strengthen but paper works without it. Nice to have. | -1 per |
+
+**Why these values.** One CRITICAL alone leaves 75 — below the commit gate by itself, because a
+wrong identifying argument is not offset by everything else being sound. Four MAJORs reach 80; a
+fifth fails. No severity is capped: the total is recorded with `--deductions`, so a paper floored
+at 0 still ranks.
+
+The overall assessment label below is reported beside the score, never instead of it.
 
 **Overall assessment scale:**
 - **SOUND** -- Design is valid, implementation is correct

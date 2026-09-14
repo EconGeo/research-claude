@@ -348,4 +348,62 @@ class TestNext(FixtureCase):
         self.assertEqual(rc, 0, out); self.assertIn("next: none", out); self.assertIn("closed", out)
 
 
+class TestDeductions(FixtureCase):
+    """A floored score carries no ranking. Adoption runs deducted 185, 187, 347 and 817 points
+    from critics that start at 100 and floor at 0 — four zeros that say nothing about which
+    paper is closer to 80. `--deductions` records the unfloored total beside the score."""
+    def rec(self, comp, score, *extra):
+        return run("state", "record-score", comp, str(score), "--critic", _scorer(comp),
+                   "--report", "r.md", *extra, root=self.t)
+    def entry(self, comp):
+        return json.loads((self.t / "quality_reports" / "pipeline_state.json").read_text())["components"][comp]
+
+    def test_deductions_are_stored_beside_the_floored_score(self):
+        run("state", "init", root=self.t)
+        rc, out = self.rec("code", 0, "--deductions", "185"); self.assertEqual(rc, 0, out)
+        self.assertEqual(self.entry("code")["deductions"], 185.0)
+        self.assertEqual(run("state", "validate", root=self.t)[0], 0)
+
+    def test_score_shows_the_deductions_behind_a_floor(self):
+        run("state", "init", root=self.t)
+        self.rec("code", 0, "--deductions", "185"); self.rec("manuscript", 0, "--deductions", "347")
+        rc, out = run("score", root=self.t)
+        self.assertRegex(out, r"code\s.*floored.*185 deducted")
+        self.assertRegex(out, r"manuscript\s.*floored.*347 deducted")
+
+    def test_a_floor_without_deductions_says_so(self):
+        """Fail toward noticing: a 0 with no total is exactly the lost ranking."""
+        run("state", "init", root=self.t); self.rec("code", 0)
+        rc, out = run("score", root=self.t)
+        self.assertRegex(out, r"code\s.*floored.*deductions not recorded")
+
+    def test_an_unfloored_score_is_not_labelled(self):
+        run("state", "init", root=self.t); self.rec("strategy", 61, "--deductions", "39")
+        rc, out = run("score", root=self.t)
+        self.assertNotIn("floored", out); self.assertIn("39 deducted", out)
+
+    def test_score_and_deductions_must_agree(self):
+        """A score that is not max(0, 100 - deductions) is a transcription error, not a score."""
+        run("state", "init", root=self.t)
+        rc, out = self.rec("code", 50, "--deductions", "185")
+        self.assertEqual(rc, 1, out); self.assertIn("does not match", out)
+        self.assertNotIn("code", json.loads((self.t / "quality_reports" / "pipeline_state.json").read_text())["components"])
+
+    def test_negative_deductions_rejected(self):
+        run("state", "init", root=self.t)
+        rc, out = self.rec("code", 100, "--deductions", "-5"); self.assertEqual(rc, 1, out)
+
+    def test_next_reports_the_deductions_of_a_closed_stage(self):
+        run("state", "init", root=self.t); self.rec("code", 0, "--deductions", "187")
+        rc, out = run("next", root=self.t)
+        self.assertRegex(out, r"CLOSED\s+code\s.*187 deducted")
+
+    def test_validate_rejects_a_malformed_deductions_field(self):
+        run("state", "init", root=self.t); self.rec("code", 85)
+        sp = self.t / "quality_reports" / "pipeline_state.json"; st = json.loads(sp.read_text())
+        st["components"]["code"]["deductions"] = "lots"; sp.write_text(json.dumps(st))
+        rc, out = run("state", "validate", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("deductions", out)
+
+
 if __name__ == "__main__": unittest.main()
