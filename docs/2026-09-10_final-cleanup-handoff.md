@@ -219,18 +219,19 @@ this file is that move.**
 - **`audit_graph.py` runs with no arguments (`4a1125c`).** ROOT defaults to this checkout and the
   JSON report is written only when an output path is given; `--help` works; a bad root is exit 2.
   Red-first `tests/test_audit_graph.py` (5 tests, 4 red). 118 tests OK.
-- **ai-audit dangling references — fixed upstream, NOT YET PUSHED.** `/verify-claims` and
-  `claim-verifier` cite a `post-flight-verification.md` rule that ships nowhere; name
+- **✅ ai-audit dangling references — fixed upstream and re-vendored.** `/verify-claims` and
+  `claim-verifier` cited a `post-flight-verification.md` rule that ships nowhere; named
   `/proofread`, `/review-paper`, `/lit-review`, `/research-ideation`, `/respond-to-referees`
-  (none exist); promise a `/commit` gate and a `verifyClaims.allowHighWarn` setting nothing
-  reads; and `/humanize all` audits `Slides/`, `Quarto/` and reference PDFs. Committed as
-  `3bd26b7` on `fix/standalone-dangling-references` in a scratch clone of `EconGeo/ai-audit`;
-  the push/PR was refused by the auto-mode classifier ("Create Public Surface") pending the
-  user's approval. **Do not edit `ai-audit/` in place** — land it upstream, then
-  `scripts/sync-ai-audit.sh`, update `VENDORED.md`, re-run `check_fork` (its 6 `absent skill
-  invoked` and 3 `UNRESOLVED` ai-audit WARNs should clear).
+  (none exist); promised a `/commit` gate and a `verifyClaims.allowHighWarn` setting nothing
+  reads; and `/humanize all` audited `Slides/`, `Quarto/` and reference PDFs. EconGeo/ai-audit
+  PR #1, squash-merged by the user as `2e9a1ac` (the classifier refused both the push and the
+  merge until the user approved); `scripts/sync-ai-audit.sh` brought down exactly the reviewed
+  diff (5 files, 34+/35−, byte-identical to the reviewed commit). `check_fork`'s 6 `absent skill
+  invoked` and 3 `UNRESOLVED` ai-audit WARNs are gone; the remaining ai-audit WARNs are
+  `UNPREFIXED` paths in its README and VENDORED.md, which are upstream-repo-relative and correct
+  as written. `rules/ai-disclosure.md` needed no drift check: the PR did not touch upstream `rules/`.
 - **POGM4 and NAR_settlement adopted** (POGM4 on `rewrite-phase1`, NAR on `phase1-event-study`;
-  both committed, not pushed). Each ran `/review --code <manuscript>` then the comprehensive
+  both committed and pushed). Each ran `/review --code <manuscript>` then the comprehensive
   `/review`, via `claude -p` inside the project (so the project's hooks log dispatches):
 
   | | code | strategy | manuscript | replication | overall |

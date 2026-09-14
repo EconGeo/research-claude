@@ -38,7 +38,7 @@ ZotPilot's skills for the same reason.
 ## Provenance / refresh
 
 - Source: `https://github.com/EconGeo/ai-audit.git`
-- Vendored from commit: `8122ea930e7fb6c59e0cd222e6d882a89f819384`
+- Vendored from commit: `2e9a1ac8bd265982ee9b07109d79287158c2a08e` (PR #1: dangling references removed)
 
 To refresh after the upstream repo's skills or agents change, run:
 

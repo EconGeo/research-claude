@@ -5,7 +5,7 @@ author: Claude Code Academic Workflow
 version: 1.0.0
 argument-hint: "[filename or 'all'] [--severity low|med|high]"
 disable-model-invocation: true
-allowed-tools: ["Read", "Grep", "Glob", "Write", "Task"]
+allowed-tools: ["Read", "Grep", "Glob", "Write", "Agent"]
 ---
 
 # `/humanize` — AI-voice audit (detect-and-flag)
@@ -25,8 +25,8 @@ Referees and editors increasingly recognise AI-generated prose. The tells are no
 ## What this skill is NOT
 
 - **Not a rewriter.** No `--rewrite` mode. Auto-rewriting AI tells degrades prose quality (cross-vendor research finding); the author preserves voice by editing manually.
-- **Not a substance reviewer.** Use `/review-paper` for argument structure, identification, citations.
-- **Not a grammar checker.** Use `/proofread` for grammar, typos, overflow, citation format.
+- **Not a substance reviewer.** Use a manuscript review (in research-claude, `/review`) for argument structure, identification, citations.
+- **Not a grammar checker.** Use a proofreading pass (in research-claude, `/review --proofread`) for grammar, typos, overflow, citation format.
 - **Not a fact-checker.** Use `/verify-claims` for Chain-of-Verification fact-checking of citations and numeric claims.
 
 `/humanize` is the *voice* lens. Run it alongside the others — none of them substitute.
@@ -155,7 +155,7 @@ Long chains of compound modifiers as a paragraph signature:
 
 1. **Identify files to audit:**
    - If `$ARGUMENTS` starts with a filename: audit that file only.
-   - If `$ARGUMENTS` is `all`: audit all `.qmd`, `.tex`, `.md` files in `Slides/`, `Quarto/`, root, and `master_supporting_docs/`.
+   - If `$ARGUMENTS` is `all`: audit every `.qmd`, `.tex` and `.md` manuscript file in the project — the declared manuscript first, where the host pipeline declares one. Reference papers by other authors are not audited.
    - Skip `.bib`, `.R`, `.py`, code files, and any file under `scripts/`.
 
 2. **Parse `--severity` flag** (default: report all).
@@ -186,13 +186,15 @@ Long chains of compound modifiers as a paragraph signature:
 
 ## Pairings
 
-| When you've drafted prose with AI assistance | Run `/humanize` before submission. Pair with `/proofread` (grammar) and `/verify-claims` (citations). |
+| Situation | What to run |
+|---|---|
+| When you've drafted prose with AI assistance | Run `/humanize` before submission. Pair with a proofreading pass (in research-claude, `/review --proofread`) and `/verify-claims` (citations). |
 | When you wrote in your own voice | Run `/humanize` anyway — your own prose drifts toward LLM patterns after long sessions of AI-assisted work. |
-| Submission-ready review | `/review-paper --peer [journal] --variance 3` for substance, `/humanize` for voice, `/verify-claims` for facts. |
+| Submission-ready review | A referee-style review for substance (in research-claude, `/review --peer [journal]`), `/humanize` for voice, `/verify-claims` for facts. |
 
 ## Anti-pattern: no `--rewrite` mode
 
-We deliberately do not ship `/humanize --rewrite`. Cross-vendor research (Cursor / Aider community findings; cited in the v1.9.0 plan) finds that auto-rewriting prose to strip AI tells degrades quality more often than it improves it — the rewriter introduces its *own* AI tells. The detect-and-flag pattern preserves authorial voice; the cost is your editing time, which is exactly the cost we want to pay.
+We deliberately do not ship `/humanize --rewrite`. Cross-vendor research (Cursor / Aider community findings) finds that auto-rewriting prose to strip AI tells degrades quality more often than it improves it — the rewriter introduces its *own* AI tells. The detect-and-flag pattern preserves authorial voice; the cost is your editing time, which is exactly the cost we want to pay.
 
 If you find yourself reaching for an auto-rewriter, that's the signal to rewrite the paragraph from scratch — not to patch the tells one by one.
 

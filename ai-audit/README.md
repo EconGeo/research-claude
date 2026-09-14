@@ -14,7 +14,7 @@ Both are **read-only auditors** — they flag problems but do not rewrite. The a
 
 ## Why detect-only (no auto-rewrite)?
 
-Cross-vendor research (Cursor/Aider community) shows that auto-rewriting AI-voice tells degrades prose quality and introduces *new* tells. The author edits manually — that's the price of preserving voice. Same rationale as keeping `/proofread` advisory.
+Cross-vendor research (Cursor/Aider community) shows that auto-rewriting AI-voice tells degrades prose quality and introduces *new* tells. The author edits manually — that's the price of preserving voice.
 
 ---
 
@@ -80,13 +80,13 @@ Output: structured report with location (file:line), severity (HIGH/MED/LOW), an
 ```
 /verify-claims paper/main.tex --source papers/smith2024.pdf
 /verify-claims paper/main.tex                              # infers sources from context
-/verify-claims paper/main.tex --no-fail-closed             # warnings only; don't block commit
+/verify-claims paper/main.tex --no-fail-closed             # downgrade a FAIL outcome to a warning
 ```
 
 **Architecture:** The `claim-verifier` agent runs in a fresh (forked) context — it never sees the original draft. It receives only the extracted claims + source material, and answers verification questions independently. This architectural separation (context isolation) is the CoVe independence trick from Dhuliawala et al. 2023 (arXiv:2309.11495).
 
 **Severity tiers:**
-- `HIGH-WARN`: Fabricated citation / numerical contradiction / directional contradiction → **blocks `/commit`**
+- `HIGH-WARN`: Fabricated citation / numerical contradiction / directional contradiction → outcome **FAIL** (the report says do not commit; nothing enforces it mechanically)
 - `MED-WARN`: Transient retrieval failure (source not accessible)
 - `LOW-WARN`: Source genuinely inaccessible (paywalled, link rot)
 
