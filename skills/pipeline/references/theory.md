@@ -18,7 +18,7 @@ python3 .claude/scripts/pipeline.py pre theorist
 python3 .claude/scripts/pipeline.py post theorist
 ```
 `/strategize theory` dispatches theorist, then theorist-critic (its Step 4), and records the
-score itself: `state record-score theory <score> --critic theorist-critic --report
+score itself: `state record-score theory <score> --critic theorist-critic --deductions <total> --report
 quality_reports/reviews/theorist-critic_<date>.md`.
 
 ## Approval-gate summary

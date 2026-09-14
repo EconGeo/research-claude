@@ -17,7 +17,7 @@ python3 .claude/scripts/pipeline.py pre writer
 python3 .claude/scripts/pipeline.py post writer
 ```
 `/write full` walks GATE 1–3, dispatching writer then writer-critic after each section
-(Step 5), recording `state record-score manuscript <score> --critic writer-critic --report
+(Step 5), recording `state record-score manuscript <score> --critic writer-critic --deductions <total> --report
 <path> --scope section:<name>` per section. `post writer` needs a whole-manuscript score, not
 just section scores (`.claude/rules/lifecycle.md`) — run a final `/write full` pass (or
 `/review --proofread`) to close it if only sections were scored.

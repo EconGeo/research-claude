@@ -117,7 +117,7 @@ claim to close one.
 cold-reads the three files, checks coverage against the local Zotero index, scores the six
 categories (`.claude/skills/review/config/scoring-rubrics.md`, Lit-Critic) and writes
 `quality_reports/reviews/lit-critic_<date>.md`. Record:
-`python3 .claude/scripts/pipeline.py state record-score literature <score> --critic lit-critic --report <path>`.
+`python3 .claude/scripts/pipeline.py state record-score literature <score> --critic lit-critic --deductions <total> --report <path>`.
 Below 80 → return to Step 1 for the named gaps (max 3 rounds, `pipeline.py state strike lit-position`);
 strike three → User: "the critic requires coverage of X, which the library lacks and external
 search did not find — narrow the claim or extend the search?"

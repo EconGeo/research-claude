@@ -6,7 +6,7 @@ No new creator is dispatched here — this stage re-validates artifacts strategi
 coder already produced. It re-runs three critics **in parallel**:
 - strategist-critic → re-scores `strategy`
 - writer-critic → re-scores `manuscript`
-- verifier → re-scores `replication` (render + prose check; PASS=100, FAIL=0)
+- verifier → re-scores `replication` (standard checks 1–4c in `.claude/agents/verifier.md`; PASS=100, FAIL=0)
 
 There is no registry agent named `review`, so the driver does not call `pipeline.py pre/post
 review` — it checks the three components' freshness via `pipeline.py score` instead.
@@ -18,8 +18,8 @@ names `referees`, run that; it is a stage of its own, not part of `--all`.
 ## Driver sequence
 ```
                                 # invoke /review --all
-python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --report <path>
-python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --report <path>
+python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report <path>
+python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path>
 python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report quality_reports/verification_report.md
 python3 .claude/scripts/pipeline.py score
 ```

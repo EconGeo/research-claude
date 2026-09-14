@@ -15,7 +15,7 @@ python3 .claude/scripts/pipeline.py pre explorer          # trivially passes (no
 python3 .claude/scripts/pipeline.py post explorer
 ```
 `/discover data` dispatches explorer, then explorer-critic (its Step 6), and records the
-score itself: `state record-score data <score> --critic explorer-critic --report
+score itself: `state record-score data <score> --critic explorer-critic --deductions <total> --report
 quality_reports/reviews/explorer-critic_<date>.md`.
 
 ## Approval-gate summary

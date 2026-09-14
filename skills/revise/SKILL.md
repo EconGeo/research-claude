@@ -53,8 +53,8 @@ Save to `quality_reports/referee_response_tracker.md` with:
 ### Step 5: Dispatch Agents
 - CLARIFICATION/REWRITE → dispatch writer, then writer-critic; record the score
 - NEW ANALYSIS → after user approval dispatch coder, then coder-critic; record the score. Then dispatch writer and writer-critic for the affected section; record the score.
-  - `code`: `python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --report <path>`
-  - `manuscript`: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --report <path> --scope section:<name>`
+  - `code`: `python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report <path>`
+  - `manuscript`: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<name>`
 - DISAGREE → draft diplomatic response, flag prominently for user
 
 ### Step 6: Draft Response Letter

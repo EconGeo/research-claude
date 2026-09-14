@@ -29,7 +29,7 @@ proceed on the user's description and flag that categories 1–3 of the review c
 Dispatch **data-engineer**: `build-*` chunks with `cache.extra`, manifest rows, `tbl-summary`
 chunk. Then `python3 .claude/scripts/pipeline.py log data-engineer` (standalone) and dispatch
 **coder-critic** on the manuscript; record its score:
-`python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --report <path>`.
+`python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report <path>`.
 
 ### Step 3: Estimation — coder, then its paired critic
 Dispatch **coder**: `estimate-*`, `robustness-*`, `tbl-*`, `fig-*` chunks per

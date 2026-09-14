@@ -58,7 +58,7 @@ If research spec, literature review, or data assessment are missing, the Strateg
    - Phase 3: Inference soundness (clustering, multiple testing)
    - Phase 4: Polish and completeness (robustness, citations)
 
-   Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --report quality_reports/reviews/strategist-critic_<date>.md`.
+   Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report quality_reports/reviews/strategist-critic_<date>.md`.
 5. If CRITICAL issues found, iterate (max 3 rounds per three-strikes)
 6. Save to `quality_reports/strategy/<project>/`: `strategy_memo.md` (primary output — must include all 5 required sections: Estimand, Specification, Assumptions, Robustness Plan, Threats), `pseudo_code.md`, `robustness_plan.md`, `falsification_tests.md`
 7. Save review to `quality_reports/reviews/strategist-critic_<date>.md`
@@ -176,7 +176,7 @@ After PAP creation, dispatch the strategist-critic to review:
 - Are multiple testing corrections appropriate?
 - Are any [ASSUMED] items potentially problematic if left uncorrected?
 
-Save review to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --report quality_reports/reviews/strategist-critic_<date>.md`. Below 80 → Strategist revises → critic re-reviews; `pipeline.py state strike strategist` per failing round; strike three → User with a specific question.
+Save review to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report quality_reports/reviews/strategist-critic_<date>.md`. Below 80 → Strategist revises → critic re-reviews; `pipeline.py state strike strategist` per failing round; strike three → User with a specific question.
 
 Save PAP to `quality_reports/pre_analysis_plan_[topic].md`
 
@@ -234,7 +234,7 @@ If strategy memo or paper type is missing, the Theorist flags it and asks before
    - Phase 3: Assumption minimality + statement calibration + notation consistency (INV-7)
    - Phase 4: Citation fidelity + linkage to empirical claims + exposition
 
-   Record: `python3 .claude/scripts/pipeline.py state record-score theory <score> --critic theorist-critic --report quality_reports/reviews/theorist-critic_<date>.md`.
+   Record: `python3 .claude/scripts/pipeline.py state record-score theory <score> --critic theorist-critic --deductions <total> --report quality_reports/reviews/theorist-critic_<date>.md`.
 5. If CRITICAL issues found, iterate (max 3 rounds per three-strikes). Escalation target: User.
 6. Save review to `quality_reports/reviews/theorist-critic_<date>.md`
 7. **Save decision record** → `quality_reports/decisions/theory_[topic].md`

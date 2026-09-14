@@ -1,6 +1,6 @@
 # Verifier Submission-Mode Audit: 10 Checks
 
-The verifier runs in two modes. Standard mode (checks 1-4) runs between phase transitions. Submission mode (checks 1-10) runs before journal submission. All checks are pass/fail.
+The verifier runs in two modes. Standard mode (checks 1–4c) runs between phase transitions. Submission mode (checks 1–10) runs before journal submission. The pass/fail definition is `.claude/agents/verifier.md`; this file expands on it and never overrides it. All checks are pass/fail.
 
 ## Standard Checks (Always Run)
 
@@ -69,15 +69,11 @@ The verifier runs in two modes. Standard mode (checks 1-4) runs between phase tr
 - Instructions for replication
 - List of tables and figures with generating chunk labels
 
-## Content Invariants Checked
+## Content Invariants Checked — check 4c
 
-The verifier also enforces these invariants (any violation is FAIL):
-- INV-9: pandoc `@key` citations; `cite-method: biblatex` on the PDF path; no top-level `csl:`
-- INV-10: when a preamble is supplied, hyperref second-to-last, cleveref after
-- INV-14: `set.seed()` once, in the setup chunk
-- INV-15: All packages loaded at top
-- INV-16: No absolute paths
-- INV-19: No prohibited functions (`setwd()`, `rm(list = ls())`, `install.packages()`, `attach()`)
+Which invariants are an automatic FAIL is defined once, in `.claude/agents/verifier.md` (check 4c)
+and `.claude/rules/content-invariants.md` ("How Agents Use This File"). This file used to carry its
+own list, and it had drifted from both.
 
 ## Scoring
 
