@@ -211,6 +211,56 @@ this file is that move.**
 - Green after: `check_fork` PASS (incl. `artifact-paths`) · **113 tests OK** · `check_install
   --all` PASS six repos · `audit_graph` dangling 0 · roster [] · never-invoked [].
 
+**2026-09-13 (evening), session `01Sco7`, continued:**
+
+- **Four unpushed commits pushed** (research-claude `a6e7a21`, affordable_housing_2026 `0f7a6a8`,
+  ESG `a30b42f`, NAR_settlement `d4f1887`). The affordable_housing data adoption the log above
+  says "died" did finish: explorer-critic scored the data assessment **0**, overall 93.25 → 74.6.
+- **`audit_graph.py` runs with no arguments (`4a1125c`).** ROOT defaults to this checkout and the
+  JSON report is written only when an output path is given; `--help` works; a bad root is exit 2.
+  Red-first `tests/test_audit_graph.py` (5 tests, 4 red). 118 tests OK.
+- **ai-audit dangling references — fixed upstream, NOT YET PUSHED.** `/verify-claims` and
+  `claim-verifier` cite a `post-flight-verification.md` rule that ships nowhere; name
+  `/proofread`, `/review-paper`, `/lit-review`, `/research-ideation`, `/respond-to-referees`
+  (none exist); promise a `/commit` gate and a `verifyClaims.allowHighWarn` setting nothing
+  reads; and `/humanize all` audits `Slides/`, `Quarto/` and reference PDFs. Committed as
+  `3bd26b7` on `fix/standalone-dangling-references` in a scratch clone of `EconGeo/ai-audit`;
+  the push/PR was refused by the auto-mode classifier ("Create Public Surface") pending the
+  user's approval. **Do not edit `ai-audit/` in place** — land it upstream, then
+  `scripts/sync-ai-audit.sh`, update `VENDORED.md`, re-run `check_fork` (its 6 `absent skill
+  invoked` and 3 `UNRESOLVED` ai-audit WARNs should clear).
+- **POGM4 and NAR_settlement adopted** (POGM4 on `rewrite-phase1`, NAR on `phase1-event-study`;
+  both committed, not pushed). Each ran `/review --code <manuscript>` then the comprehensive
+  `/review`, via `claude -p` inside the project (so the project's hooks log dispatches):
+
+  | | code | strategy | manuscript | replication | overall |
+  |---|---|---|---|---|---|
+  | POGM4 | 0 | 41 | 0 | 0 (FAIL) | 18.64 |
+  | NAR_settlement | 0 | 48 | 0 | 0 (FAIL) | 21.82 |
+
+  `next` reads `none — every component stage is closed` in both. The findings are paper matters
+  (see each repo's `quality_reports/reviews/*_2026-09-13.md`); what they show about the
+  **pipeline** is recorded here because nothing else points at it:
+  1. **Floored scores carry no ranking.** Deductions ran −185, −187, −347 and −817 against a
+     floor of 0. Two papers at 0 are not equally far from 80; only the reports' priority lists
+     say how far.
+  2. **The strategist-critic rubric has no point values.** Both critics invented a weighting and
+     said so (NAR: CRITICAL −20 / MAJOR −6 / MINOR −1; POGM4: −20 / −3 / −1). 48 and 41 are
+     therefore not comparable, and a third run could produce a different number from the same
+     findings.
+  3. **The verifier has two pass/fail definitions.** `skills/review/SKILL.md`'s "Verifier
+     Pass/Fail Definition" for a manuscript lists render, refs, bib, prose check and
+     freshness; `agents/verifier.md` also makes INV-9/11/14/15/16/19/24 mandatory FAILs. Both
+     NAR and POGM4 pass the first and fail the second; the verifier followed its agent file.
+  4. **The verifier runs project gate scripts that rewrite tracked files.** NAR's `x7_gate.sh`
+     restamped two committed reports; reverted by hand before the adoption commit.
+  5. **Two adoption runs in parallel exhausted the 5-hour usage window in ~15 minutes.** One was
+     paused and relaunched after the reset; POGM4's first run died with strategist-critic done
+     but its report unsaved (critics return reports as text; the orchestrating session writes
+     them). Run adoptions one at a time.
+  6. POGM4's `fresh` fails on a leftover gitignored `manuscript_quarto_word.html` the YAML no
+     longer produces — `is_fresh()` failing closed as designed; delete the file.
+
 ### Loose ends this handoff never mentioned (added 2026-09-10)
 
 Neither is urgent; both are recorded because nothing else points at them.
