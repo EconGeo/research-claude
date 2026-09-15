@@ -74,7 +74,7 @@ Copied as project-owned SEEDS (never overwritten if present), from seeds/:
   .gitignore                      keeps *.qmd + *.bib; ignores render artifacts and the linked dirs
   templates/quarto-preamble.tex   PDF preamble the manuscript YAML requires
 
-Written every run:
+Written when the pipeline commit changes (left untouched otherwise):
   .claude/pipeline.lock      repo URL + SHA — replication provenance and coauthor bootstrap
 
 Directory skeleton:
@@ -235,10 +235,18 @@ fi
 
 # ── the lock file ────────────────────────────────────────────────────────────
 write_lock() {
-  local sha mode
+  local sha mode lock="$PROJECT_DIR/.claude/pipeline.lock"
   sha="$(git -C "$SCRIPT_DIR" rev-parse HEAD)"
+  # Same commit: leave the file byte-identical. Restamping `generated=` on every run
+  # dirtied a coauthor's clone straight after ./bootstrap-pipeline.sh, and committing
+  # that churned against the maintainer's own lock refreshes. The lock records which
+  # pipeline, and that has not changed.
+  if [[ -f "$lock" && "$(sed -n 's/^commit=//p' "$lock")" == "$sha" ]]; then
+    echo "→ pipeline.lock already records ${sha:0:7} — left untouched"
+    return 0
+  fi
   mode="pinned"; [[ "$TIP_MODE" == true ]] && mode="tip (shared checkout)"
-  cat > "$PROJECT_DIR/.claude/pipeline.lock" <<EOF
+  cat > "$lock" <<EOF
 # Which research-claude produced this project's pipeline.
 # Committed on purpose: it is replication provenance, and it is what
 # ./bootstrap-pipeline.sh checks out for a coauthor.

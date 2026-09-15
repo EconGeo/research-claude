@@ -109,6 +109,25 @@ check_project() {
       printf '%s\n' "$tracked" | head -5 | sed 's/^/    /'
       [[ $(printf '%s\n' "$tracked" | wc -l) -gt 5 ]] && echo "    …"
     else ok tracked-links "no symlink is committed"; fi
+
+    # ── 2b. No committed link leaves the repo ───────────────────────────────
+    # `dangling` resolves links on THIS machine, so a committed link into a shared
+    # directory outside the repo (e.g. .claude/references/ -> ../../../.claude/references/)
+    # passes here and is dead in every coauthor's clone. Read the committed target
+    # itself, so the answer does not depend on what exists on the machine running this.
+    # Links under the pipeline-owned dirs are already reported by tracked-links.
+    local escapes
+    escapes="$(git -C "$P" ls-tree -r "$br" --format='%(objectmode) %(objectname) %(path)' 2>/dev/null \
+      | awk '$1=="120000"' | while read -r _ oid path; do
+          case "$path" in .claude/skills/*|.claude/agents/*|.claude/rules/*|.claude/hooks/*|.claude/scripts/*|.claude/templates/*) continue ;; esac
+          tgt="$(git -C "$P" cat-file blob "$oid")"
+          python3 -c 'import os,sys; t=sys.argv[2]; r=os.path.normpath(os.path.join(os.path.dirname(sys.argv[1]), t)); sys.exit(0 if os.path.isabs(t) or r == ".." or r.startswith("../") else 1)' \
+            "$path" "$tgt" && echo "$path -> $tgt"
+        done)"
+    if [[ -n "$escapes" ]]; then
+      bad clone-links "$(printf '%s\n' "$escapes" | wc -l | tr -d ' ') committed link(s) point outside the repo — dead in every clone; commit real copies:"
+      printf '%s\n' "$escapes" | sed 's/^/    /'
+    else ok clone-links "no committed link leaves the repo"; fi
   else
     warn git "not a git repository — skipping index checks"
   fi
