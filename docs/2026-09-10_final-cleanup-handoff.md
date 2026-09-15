@@ -296,6 +296,25 @@ this file is that move.**
 - Still open from the adoption list: POGM4's leftover `manuscript_quarto_word.html` (item 6, a
   paper matter), and the papers' own revisions against their critic reports.
 
+**2026-09-15 — ESG made coauthor-ready (Ben, `williamsbenjamin`, via the `esg` team):**
+
+- **The 2026-09-13 Task 7b.1 ruling "link both" was wrong for any repo a coauthor clones.**
+  A fresh clone of `udenver/esg-reit-disclosure` + `./bootstrap-pipeline.sh` got three dead
+  `.claude/references/` links into `../../../.claude/references/` — `~/Research`, which exists only
+  here. `check_install --all` passed because `dangling` resolves on this machine. ESG `9349a8e`
+  (on `main`) restores real copies, byte-identical to the shared files the links resolved to.
+- **New gate `clone-links` (`c331016`, merged `6c69ce5`):** reads each committed link's target from
+  git, not the filesystem. Its first run FAILs **BRI, NAR_settlement, POGM4 and zoning2026** with
+  the same three links — not fixed; each needs real copies before any coauthor clones it.
+  `check_install --all` is therefore red on those four until then, deliberately.
+- **`apply.sh` leaves an unchanged lock byte-identical** (same `c331016`), so a coauthor's
+  bootstrap no longer dirties `pipeline.lock`.
+- **ESG lock → `6c69ce5`; `bootstrap-pipeline.sh` replaced with the seed** (no submodule flags).
+- Done in a worktree on ESG `main` while the ESG adoption ran on `pipeline-adoption`, untouched.
+  Verified: fresh clone at `9349a8e`, bootstrap run twice, `git status` empty both times,
+  `check_install` PASS (one WARN: no `pipeline_state.json` on `main` yet — it is on the adoption
+  branch). 142 tests OK · `check_fork` PASS · `run_fixture` PASS.
+
 ### Loose ends this handoff never mentioned (added 2026-09-10)
 
 Neither is urgent; both are recorded because nothing else points at them.
