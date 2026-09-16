@@ -1446,9 +1446,13 @@ explicitly:
   `allowed-tools` sweep (`strategize`, `discover`, and `mcp__zotpilot__*` pre-approval
   everywhere), **P7 evals**, and the **vendored P1 offenders** `ztp-tutor` (431 lines) and
   `humanize` (205), which need upstream PRs to `EconGeo/ZotPilot` and `EconGeo/ai-audit`.
-- **Still open from the predecessor's close-out:** the six `pipeline.lock` files record
-  `f7f49af` and are now 40+ commits behind; ESG's `clone-links` regression on
-  `pipeline-adoption`.
+- **Still open from the predecessor's close-out, and from the 2026-09-10 handoff** (whose §2
+  status markers were corrected on 2026-09-16 — see its progress log): R-136, the seed/hook
+  propagation gap where a new hook in `seeds/settings.json` reaches no existing project; a full
+  green `--live` run; `clone-links` failing in BRI, NAR_settlement, POGM4, zoning2026 and
+  ESG-on-`pipeline-adoption`; the six `pipeline.lock` files, now 40+ commits behind; POGM4's
+  leftover `manuscript_quarto_word.html`. None of it is skill text, which is why this plan does
+  not touch it.
 - **Found in passing while writing this plan, not fixed:** this repo's own `CLAUDE.md` says
   *"`templates/` holds files `apply.sh` installs directly into a project (e.g.
   `data_manifest.md` → `data/raw/`, `gitignore` → `.gitignore`)"*. Neither file is in
@@ -1458,10 +1462,18 @@ explicitly:
 - [ ] **Step 4: Repoint the pointer, or explain why not**
 
 `CLAUDE.md`'s **Start here** points at `docs/2026-09-10_final-cleanup-handoff.md`. The
-predecessor deliberately did **not** repoint it, because that handoff's §2a/§2b/§2c/§4 were
-still open. Check whether they still are. If they are, cross-link this plan's close-out from the
-handoff, exactly as the predecessor did, and leave the pointer alone. If they are not, repoint
-**Start here** and say so. Do not add a second pointer — the single-pointer rule is the point.
+predecessor deliberately did **not** repoint it, on the grounds that the handoff's
+§2a/§2b/§2c/§4 were still open — **and that was checked and corrected on 2026-09-16 before this
+plan began** (`docs/2026-09-10_final-cleanup-handoff.md`, the 2026-09-16 progress-log entry):
+§2a is done, §2b is a revisit-when condition, §2c is three recorded decisions, and §4's
+submodule half is obsolete. What is genuinely open there is infrastructure, not skill text:
+R-136's seed/hook propagation gap, a full green `--live` run, `clone-links` in five repos, the
+six stale `pipeline.lock` files, and POGM4's leftover `.html`.
+
+So the question at this step is narrow: **does that remaining list still belong to the handoff?**
+If it does, cross-link this plan's close-out from the handoff and leave the pointer alone. If it
+has shrunk to nothing, repoint **Start here** and say so. Do not add a second pointer — the
+single-pointer rule is the point.
 
 - [ ] **Step 5: Commit**
 

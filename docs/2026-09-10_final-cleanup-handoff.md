@@ -321,8 +321,19 @@ this file is that move.**
   ran to completion (Tasks 0–8); the write-up is the `2026-09-16` entry in `docs/SESSION_REPORT.md`.
   It cut Level-2 skill text 31% for a `/pipeline run` and fixed a batch of correctness defects in
   `review`, `strategize`, `write`, `discover`, `checkpoint`, `submit` and the session guards.
-  **It does not touch §2a, §2b, §2c or §4 below, which remain this document's open work** — which
-  is why `CLAUDE.md`'s "Start here" still points here rather than at the newer entry.
+  It does not touch §2 or §4 below. **Corrected 2026-09-16 (later session): that sentence named
+  §2a, §2b, §2c and §4 as this document's open work, and only part of that is true.** §2a is
+  **done** — the 2026-09-10 entry above records it green in all three repos (`689ec39`,
+  `8e81512`, `41af5dc`), and its `### 2a` header simply never got the ✅ marker §2d/§2e/§2f got,
+  so the header was read instead of the log. §2b is a *revisit-when* condition, not work: it
+  unblocks when ESG's results set is frozen, and ESG's manuscript is still a 154-line skeleton
+  with a `PLACEHOLDER` abstract. §2c is three deliberate decisions with recorded reasons —
+  reverse them only if you disagree. §4's submodule half is obsolete (submodules were removed
+  2026-09-09); its R-136 half is live. What is genuinely open is what this progress log itself
+  lists: R-136's seed/hook propagation gap, a full green `--live` run, `clone-links` red in BRI,
+  NAR_settlement, POGM4, zoning2026 and ESG-on-`pipeline-adoption`, the six `pipeline.lock`
+  files now 40+ commits behind, and POGM4's leftover `manuscript_quarto_word.html`.
+  `CLAUDE.md`'s "Start here" still points here because that list is still this document's.
 - **§4-adjacent correction:** the progress log above says `clone-links` FAILs BRI, NAR_settlement,
   POGM4 and zoning2026, with ESG fixed by `9349a8e`. **ESG fails too.** It is checked out on
   `pipeline-adoption`, and `9349a8e` is on `main` and is not an ancestor of that branch, so the
@@ -478,7 +489,15 @@ stays reachable in the reflog for ~90 days: `git branch fix/critic-dispatch cd1d
 
 Ordered by how much judgment each needs. **None is mechanical.**
 
-### 2a. Prose literals — 54 NAR, 41 zoning2026, 14 ESG
+### 2a. Prose literals — ✅ DONE 2026-09-10 (NAR `689ec39`, ESG `8e81512`, zoning2026 `41af5dc`)
+
+**All three repos are green.** The progress log above has the full account: NAR's 54 were
+already adjudicated in a file the shipped scanner was not looking for; ESG's 14 were drafting
+notes, converted to HTML comments, leaving 0 literals; zoning2026's 41 were the real
+adjudication — 4 became inline expressions, 37 got rows with reasons. Two scanner defects it
+surfaced were also fixed (`105e95a` allowlist resolution, `66fb3e7` per-project nouns).
+**This header lacked the ✅ marker its siblings got, and a later session read the header
+rather than the log and recorded §2a as still open. It is not.** Text below is as written.
 
 `prose_number_check.py` fails in three repos. The plan predicted 2 for NAR; there are 54, because
 the manuscript grew.
@@ -592,6 +611,10 @@ it. Both fixed. Expect more of this class as the live tier is exercised.
 ---
 
 ## 4. Two things that will bite
+
+**The first is obsolete.** The git submodule mechanism was removed entirely on 2026-09-09 —
+there is no `submodules/` directory and no `.gitmodules` (see `CLAUDE.md`). Kept for its
+reasoning, which generalises to anything with state in six places. The second is still live.
 
 **Submodules live in six places.** Removing them properly means the index gitlink, `.gitmodules`,
 the working directory, `.git/modules/submodules/`, `.git/config`, and each worktree's own
