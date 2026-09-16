@@ -35,13 +35,10 @@ Before drafting, read all available context:
 
 #### 2. Paper Type Detection
 
-Before routing, identify the paper type from the strategy memo or existing draft:
-- **Reduced-form** — DiD, IV, RDD, event study
-- **Structural** — Model estimation, counterfactual simulations
-- **Theory + empirics** — Propositions tested with data
-- **Descriptive / measurement** — New data, new measure, stylized facts
-
-This determines which section templates the Writer uses.
+Identify the paper type from the strategy memo or the existing draft — reduced-form, structural,
+theory+empirics, or descriptive/measurement. The signatures, and what each type turns the strategy
+section into, are in `.claude/skills/write/templates/section-templates.md` ("Paper Types"). The
+type decides which section template the Writer uses.
 
 #### 3. Section Routing
 
@@ -58,6 +55,12 @@ Based on `$ARGUMENTS`:
 
 #### 4. Dispatch writer
 Dispatch **writer** with the paper type, the section, and the argument-move templates. It writes the section into the declared manuscript under its `#` heading; every number is an inline expression (INV-11). Standalone: `python3 .claude/scripts/pipeline.py log writer`.
+
+#### 4b. Cleanup pass
+
+After the writer returns and before dispatching writer-critic, apply
+`.claude/skills/write/templates/cleanup-patterns.md` to the drafted section. This is the pass
+the skill's description promises; without it the description is a claim no step delivers.
 
 #### 5. Dispatch writer-critic (every mode that touches prose)
 Dispatch **writer-critic** in section mode on the section just written. It produces a scored report at `quality_reports/reviews/writer-critic_<date>.md` and the Claim–Evidence Table at `quality_reports/reviews/claim_evidence_<project>_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<name>`. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question. `/write humanize` is prose and gets the critic — in its own mode section below, in proofread mode; `/write style-guide` produces no prose and is the only exempt mode.
@@ -80,40 +83,21 @@ Flag items that need attention:
 
 One-shot extraction of the user's writing voice from their published or drafted papers. Produces `.claude/references/personal-style-guide.md`, which the writer auto-loads on every subsequent invocation.
 
-**When to run:**
-- Once at the start of a project, after pointing at a directory of the user's prior papers
-- After publishing a new paper that shifts voice (re-run to refresh the profile)
+**When to run:** once at the start of a project, and again after publishing a paper that shifts
+the voice.
 
-**Input:** `$ARGUMENTS` — path to a directory containing prior papers (`.qmd`, `.docx`, `.pdf`, `.tex`). If omitted, defaults to `master_supporting_docs/` and scans for `.qmd`/`.docx`/`.pdf`/`.tex` files.
+**Input:** `$ARGUMENTS` — a directory of prior papers (`.qmd`, `.docx`, `.pdf`, `.tex`); defaults
+to `master_supporting_docs/`.
 
 **Agent:** Writer (style-extraction mode)
 **Output:** `.claude/references/personal-style-guide.md`
 
-Workflow:
-1. **Discover corpus.** List `.qmd`, `.docx`, `.pdf`, `.tex` files in the target directory. If fewer than 2 papers found, flag and ask before proceeding (style extraction on a single paper overfits).
-2. **Sample strategically.** For each paper, extract:
-   - The full introduction
-   - The first two paragraphs of each major section
-   - The abstract and conclusion
-   - A random sample of 5–10 results-section paragraphs
-   This keeps context usage bounded while capturing voice variation across sections.
-3. **Extract patterns.** The Writer (in style-extraction mode) produces quantitative and qualitative patterns:
-   - Sentence-length distribution (median, 10th–90th pct)
-   - Passive-voice frequency, first-person-plural frequency, em dash rate
-   - Paragraph opening and closing moves
-   - Section-architecture patterns (how introductions open, how results lead)
-   - Lexicon: words used repeatedly, words demonstrably avoided
-   - Hedging and comparison patterns
-   - Citation conventions (textual vs. parenthetical split; papers-per-claim)
-   - Tone markers and anti-patterns already stripped
-4. **Write to `.claude/references/personal-style-guide.md`.** Fill every template section with quoted examples from the corpus. Never invent patterns — if a section has no evidence, write "[insufficient corpus evidence]".
-5. **Present summary.** One-paragraph recap of the voice profile: sentence length, passive rate, signature lexicon, distinguishing tone markers. User confirms before the guide takes effect on subsequent `/write` calls.
-
-Principles for the extraction:
-- **Ground every claim in the corpus.** Each pattern must have at least one quoted example.
-- **Extract, don't prescribe.** The guide records the author's observed behavior, not what the Writer thinks is good style.
-- **Don't duplicate `domain-profile.md`.** The style guide is about voice; the domain profile is about field conventions.
-- **Don't override the content invariants.** Voice doesn't trump INV-1..21 (`.claude/rules/content-invariants.md`).
+Dispatch the Writer in style-extraction mode against
+`.claude/skills/write/templates/style-extraction-protocol.md`. It owns all six steps — corpus
+discovery, strategic sampling, pattern extraction, writing the guide, the **self-citation check**
+(which this skill used to omit, so missing self-citation bib keys went unreported), and the
+summary the user confirms before the guide takes effect — plus the rules that keep extraction
+descriptive rather than prescriptive.
 
 ### `/write humanize [file]` — Cleanup Pass Only
 Strip AI writing patterns from existing text without rewriting content.
@@ -121,11 +105,8 @@ Strip AI writing patterns from existing text without rewriting content.
 **Agent:** Writer (cleanup mode)
 **Output:** Edited file with AI patterns removed
 
-Strips 24 patterns across 4 categories:
-- Structural: forced narrative arcs, artificial progression
-- Lexical: "delve, leverage, nuanced, robust"
-- Rhetorical: rule-of-three, negative parallelisms, em dash overuse
-- Formatting: excessive bullet points, promotional language
+Strips the 24 AI patterns in `.claude/skills/write/templates/cleanup-patterns.md` (content,
+language, style and communication categories) under its academic adaptation rules.
 
 After the cleanup pass, dispatch **writer-critic** in **proofread mode** (`.claude/agents/writer-critic.md` — categories 4, 5, 6, 8 only: writing quality, format, render, notation; not section mode, which would score identification fidelity and claims-evidence on prose it never saw drafted). Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<file>`. The `section:` prefix is mandatory — without it the score falls through to the component branch and overwrites the whole-manuscript score instead of scoping to this file. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question.
 
@@ -133,16 +114,10 @@ After the cleanup pass, dispatch **writer-critic** in **proofread mode** (`.clau
 
 ## Section Standards
 
-**All paper types share the same backbone. Moves diverge by type — see writer.md for full templates.**
-
-| Section | Length | Reduced-Form | Structural | Theory+Empirics | Descriptive |
-|---------|--------|-------------|-----------|----------------|-------------|
-| Introduction | 1000-1500 | ...preview → result → contribution | ...model preview → counterfactual → contribution | ...theory preview → test result → contribution | ...data innovation → key fact → contribution |
-| Data | 800-1200 | Treatment, outcome, controls | Moments that identify parameters | Standard | 1200-1800 (core contribution) |
-| Strategy/Model | 800-1500 | Design-specific (DiD/IV/RDD/ES) | Environment → decisions → equilibrium → estimation | Model → propositions → tests | N/A (merged into Data) |
-| Results | 800-1500 | Main spec → robustness → heterogeneity | Estimates → model fit → counterfactuals → welfare | Prediction-by-prediction evidence | Key facts → decompositions → implications |
-| Conclusion | 500-700 | Policy implications | Counterfactual implications + model limitations | What model gets right/wrong | Research agenda enabled by new data |
-| Abstract | 100-150 | Question, design, finding with magnitude | Question, model, counterfactual finding | Question, prediction, test result | Question, measurement, key fact |
+Every paper type shares the same backbone; the moves diverge by type. Section lengths and the
+per-type moves are the "Section Length Summary" table in
+`.claude/skills/write/templates/section-templates.md`, which is also where the full per-section
+templates live — not in `.claude/agents/writer.md`, which only points at them.
 
 ---
 
@@ -152,28 +127,3 @@ After the cleanup pass, dispatch **writer-critic** in **proofread mode** (`.clau
 - `@tbl-label`, `@fig-label`, `@eq-label`, `@sec-label` — never a typed number
 - Notation protocol: `.claude/skills/write/references/notation-protocol.md`
 
----
-
-## Bundled Resources (Level 3)
-
-Loaded on demand by the writer agent:
-
-| Resource | Path | When |
-|----------|------|------|
-| Section templates | `.claude/skills/write/templates/section-templates.md` | Always -- defines section structure |
-| Paragraph moves | `.claude/skills/write/templates/paragraph-moves.md` | Always -- defines argument types |
-| Cleanup patterns | `.claude/skills/write/templates/cleanup-patterns.md` | After drafting -- cleanup pass |
-| Style extraction | `.claude/skills/write/templates/style-extraction-protocol.md` | `/write style-guide` mode |
-| Drafting gates | `.claude/skills/write/templates/drafting-gates.md` | Full draft mode |
-| Notation protocol | `.claude/skills/write/references/notation-protocol.md` | Strategy + results sections |
-
-See also: `gotchas.md` for known failure points and edge cases.
-
----
-
-## Principles
-- **Never a draft without its critic.** The score comes before the user sees the section.
-- **This is the user's paper, not Claude's.** Match their voice and style.
-- **Never fabricate results.** Use TBD placeholders.
-- **Citations must be verifiable.** Only cite confirmed papers.
-- **Argument moves first, cleanup second.** Draft with structure, then strip AI patterns.
