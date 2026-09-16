@@ -96,7 +96,11 @@ Show current context status and session health.
 Check context usage, whether auto-compact is approaching, what state will be preserved.
 
 ### `/tools learn` — Extract Learnings
-Extract reusable knowledge from the current session. Auto-memory handles corrections automatically; this is for multi-step workflows worth turning into a full skill.
+Extract a reusable multi-step workflow from the current session and propose it as a skill.
+
+A **correction** to a pipeline skill, agent or rule is not handled here and is never applied
+silently. It follows `.claude/rules/meta-governance.md`: `/checkpoint` names it as an improvement
+candidate, it must hold across 3+ projects, and `/promote` is the only thing that lands it.
 
 ---
 
