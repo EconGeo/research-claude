@@ -1,11 +1,9 @@
 ---
 name: ztp-tutor
 description: >
-  Deep reading guide for a single paper already in the Zotero library, tailored
-  to the reader's persona (purpose, background, language). Writes 5-dimension
-  color highlights with per-sentence understanding comments
-  in the reader's language (Chinese by default), figure/table/equation
-  annotations, and a page-1 argument-structure
+  Deep reading guide for a single paper already in the Zotero library.
+  Writes 5-dimension color highlights with per-sentence Chinese comments,
+  figure/table/equation annotations, and a page-1 argument-structure
   overview directly into the Zotero-stored PDF. Original PDF is always
   backed up to a .ztpbak sidecar before any write.
   Trigger on: "论文导读", "/ztp-tutor", "帮我导读", "五维导读",
@@ -20,19 +18,10 @@ description: >
 
 ## Language Policy
 
-Two independent languages:
-
-- **Interface language** — detect from the triggering message; use it for every
-  user-facing chat message.
-- **Annotation language** — the language of the in-PDF `comment` fields AND the
-  page-1 overview. It follows the reader's persona (Step 2a): use the reader's
-  stated native / preferred annotation language. When the persona indicates no
-  language, default to Chinese.
-
-The annotation language is independent of the paper's language — the goal is to
-explain a (often foreign-language) paper in the reader's own language. Carry the
-chosen language on the overview via its `lang` field (`"zh"`, `"en"`, …) so the
-page-1 overview labels render in the same language (Step 5).
+Detect the user's language from the triggering message and use it for all
+user-facing messages. Chinese is the default and is used for all annotation
+`comment` fields regardless of the interface language — comments are always
+Chinese per-sentence understanding notes (the whole point of the feature).
 
 ---
 
@@ -72,11 +61,8 @@ The response from Step 1 carries two personalization inputs:
 The raw text of the `## 阅读画像 (Reading Persona)` section from
 `~/.config/zotpilot/ZOTPILOT.md`, or `null` if absent.
 
-**Parse by intent-matching, not literal enum.** The persona is stored as
-labeled lines (`英文水平：…`, `领域熟悉度：…`, …), so match each axis by its
-LABEL first: a bare token like `入门` means English-beginner under `英文水平`
-but field-novice under `领域熟悉度` — never let one token set an axis it was not
-labeled for. Match leniently within each labeled value:
+**Parse by intent-matching, not literal enum.** Match each hint leniently
+against the raw section text:
 
 **English proficiency — gates the term + long-sentence layer:**
 Match any of: `英文弱`, `英文不好`, `英文一般`, `入门`, `中等`, `poor`,
@@ -97,102 +83,38 @@ When no match is found, default to "moderate" and SUPPRESS those layers
 - `全面综述` / `comprehensive` / `thorough` / `全面` / `详尽` → maximal:
   annotate every independent understanding point within the hard caps.
 
-Density is set by reading depth ALONE — domain familiarity changes how much
-background each comment carries, not how many there are. If `速览` collides with
-the weak-English term / long-sentence layers, stay within the sparse budget and
-keep only the most essential helps.
+When hints conflict (e.g., `速览` but `新手`), favor the MORE CONSERVATIVE
+density to avoid over-annotation.
 
 When depth cannot be recognized, default to `速览`.
 
-**Annotation language — sets the language of every in-PDF comment + overview:**
-Match a stated native / preferred language, e.g. `母语：英文`, `批注语言：中文`,
-`用英文批注`, `native language: English`, `annotate in English`. Use that
-language for all `comment` fields and the page-1 overview, and set the overview
-`lang` accordingly (Step 5). When no language is stated, default to Chinese
-(`zh`). This is independent of English proficiency — a reader may want English
-annotations yet still need the term / long-sentence layers, or vice versa.
-
-**Reading purpose — reallocates emphasis across the five dimensions (it does NOT
-raise the annotation count):** match the reader's intent and steer the limited
-budget toward the points that serve it:
-- 入门 / 背景 / `background` / 了解 → emphasize `thesis`, `concept`, big-picture
-  significance and `conclusion`; go lighter on method internals.
-- 复现 / 实现 / `implement` / `reproduce` / 跑代码 → emphasize `method`,
-  equations, experimental setup and any hyperparameters; the method section is
-  the priority surface.
-- 评审 / 审稿 / 批判 / `review` / `critique` → emphasize claim↔evidence links,
-  `rebuttal` / limitations, methodology soundness and unstated assumptions;
-  call out weak or unsupported claims explicitly.
-- 找结果 / 特定问题 / `specific finding` → emphasize the `evidence` (tables /
-  figures) bearing on the reader's question; lighter elsewhere.
-- 综述 / 定位 / `survey` / `positioning` → emphasize `thesis`, the contribution,
-  relation to prior work and `conclusion`.
-If the triggering message states a purpose for THIS paper (e.g. 「我想复现它的
-方法」), use it for this run, overriding any persona default. When no purpose is
-given anywhere, default to a balanced five-dimension reading.
-
-*Example:* with purpose `复现` on a method paper, most of the budget goes to
-`method` + equations + setup while `rebuttal` keeps only its one required note;
-with purpose `评审` on the same paper, the budget shifts instead to
-claim↔evidence gaps and limitations.
-
-**Domain familiarity — sets how much background each comment carries:**
-- 新手 / 入门 / `novice` / 不熟 → comments add orienting context: what a term
-  builds on, why a result matters, how it fits the field; define field jargon
-  even when English proficiency is strong.
-- 熟悉 / 专家 / `expert` / `familiar` → skip basics; focus comments on what is
-  novel, the specific contribution, and where the work is weak or surprising.
-- Default (中等 / unstated): explain non-obvious constructs but not textbook basics.
-
-**Comment style — shapes how each `comment` reads (not what is covered):**
-- 结构化 / 要点 / `bullet` / `structured` → terse, label-led notes
-  (`论点：…` / `证据：…`), one idea per comment.
-- 叙述 / `narrative` / `prose` → short flowing prose, 1–3 sentences (a novice
-  reader may need the upper end for the extra background).
-- 提问 / `socratic` / 启发 → end with a brief check question that nudges the
-  reader to connect the point to the argument.
-- Default: clear explanatory prose.
-
 **If `persona` is `null`:**
+Ask ONCE (then stop and wait):
 
-First **infer, don't interrogate**. Take whatever the reader already signaled in
-the triggering message as given and do NOT re-ask it — e.g. 「我想复现这篇的
-方法」→ purpose=复现; 「用英文批注」→ language=en; 「我是这领域新手」→
-familiarity=novice.
+> 未检测到阅读画像配置。告诉我你的阅读偏好我会记住，以后不再询问
+> （影响批注密度与是否加术语/长难句层）：英文水平 / 领域熟悉度 /
+> 导读深度 / 风格偏好。或回复「跳过」用默认（速览 / 中等 / 中等）。
 
-Then offer a low-friction quick-start (one short message, then wait) — a stated
-default plan plus an open invitation, NOT a six-field form:
-
-> 还没有你的阅读画像，我可以直接开始：默认 **中文批注 · 速览 · 均衡覆盖五维**。
-> 想更贴合你，任选一项告诉我即可（其余用默认）：
-> · 阅读目的：入门 / 复现 / 评审 / 找结果 / 综述
-> · 批注语言 · 英文水平 · 领域熟悉度 · 导读深度 · 风格偏好（要点 / 叙述 / 提问）
-> 直接回「开始」就用默认。
-
-Accept partial answers — a one-word reply like 「复现」 or 「开始」 is enough;
-fill every unstated axis with the default and never block on a full profile.
-
-**Persist the stable traits** the reader states (批注语言 / 英文水平 /
-领域熟悉度 / 导读深度 / 风格偏好) so future runs don't re-ask: call
-`save_reading_persona(persona_text=...)` with one labeled markdown line per
-stated axis, e.g.:
+**When the user provides preferences, you MUST persist them before continuing:**
+call `save_reading_persona(persona_text=...)` with the four hints formatted as
+markdown lines, e.g.:
 
 ```
-- 批注语言：中文
 - 英文水平：入门
 - 领域熟悉度：中等
 - 导读深度：速览
 - 风格偏好：结构化要点
 ```
 
-It writes the `## 阅读画像 (Reading Persona)` section to
-`~/.config/zotpilot/ZOTPILOT.md`; confirm the save (the tool returns
-`{saved, path, action}`). Reading **purpose** is per-paper — use it for this run
-from the trigger or the quick-start reply, and persist it as a default only when
-the reader frames it as a standing preference. If the reader replies 「开始」 or
-「跳过」, proceed on defaults (Chinese annotations · sparse · balanced five
-dimensions · English-proficiency moderate · moderate familiarity · plain prose)
-and do not ask again this run.
+This writes the `## 阅读画像 (Reading Persona)` section to
+`~/.config/zotpilot/ZOTPILOT.md` so the NEXT `/ztp-tutor` run auto-detects it
+and does **not** ask again. Confirm to the user it was saved (the tool returns
+`{saved, path, action}`). Do NOT skip this step — failing to persist is exactly
+why the user gets re-asked every run.
+
+If the user replies「跳过」/ declines: use defaults (sparse density,
+English-proficiency moderate, no term/long-sentence layer), do NOT call
+`save_reading_persona`, and do not ask again this run.
 
 ### 2b. Existing annotations (`existing_annotations: list`)
 
@@ -232,23 +154,12 @@ annotation. Skip a dimension only when the paper truly lacks it (e.g., a
 purely theoretical paper with no empirical section has no `evidence`).
 Never duplicate-color the same text span across two dimensions.
 
-**Personalize within the budget (Step 2a) — reallocate, don't inflate:**
-- **Reading purpose** reallocates emphasis: keep each present dimension's one
-  required annotation, then spend the remaining budget on the dimensions the
-  purpose emphasizes; trim de-emphasized ones to their minimum of ONE annotation
-  each — never to zero for a dimension the paper genuinely contains.
-- **Domain familiarity** sets how much background each `comment` carries
-  (novice → orienting context; expert → novelty + critique).
-- **Comment style** sets how each `comment` is phrased (structured / narrative
-  / Socratic).
-These shape the SAME annotations and respect the Step 6 density ceiling.
-
 **Per-annotation fields:**
 ```
 {
   quote:      the verbatim excerpt from the paper text (≤ 1000 bytes UTF-8),
   dimension:  one of the five keys above,
-  comment:    per-sentence understanding note in the annotation language (≤ 500 bytes UTF-8),
+  comment:    Chinese per-sentence understanding note (≤ 500 bytes UTF-8),
   page_hint:  the page_num of the page where this quote appears (1-based),
   kind:       "highlight" for all prose/term/equation/caption annotations,
               "region"    for figure and materialized-table region notes,
@@ -285,7 +196,7 @@ judgment calls.
 - Only emit when Step 2a determined English proficiency is "weak".
 - `kind="highlight"`, `subtype="term"`, `dimension="concept"`.
 - Short quote of the term itself (≤ 40 characters preferred).
-- `comment` = brief gloss in the annotation language: what the term means in this paper's context.
+- `comment` = brief Chinese gloss: what the term means in this paper's context.
 - `page_hint` from the page where the term first appears.
 
 ### 4c. 长难句 (English-proficiency weak only)
@@ -293,18 +204,12 @@ judgment calls.
 - `kind="highlight"`, `subtype="long_sentence"`, `dimension="method"` or
   `"concept"` as appropriate.
 - Quote the full difficult sentence (≤ 200 characters preferred).
-- `comment` = grammar skeleton + a translation into the annotation language, in natural prose.
+- `comment` = grammar skeleton + Chinese translation in natural prose.
 - `page_hint` from the page where the sentence appears.
 
 ### 4d. 图 Figure
-Figures are part of the annotation budget — select which to annotate by the
-reading depth + purpose (Step 2a); do NOT auto-annotate all of them:
-- `速览` → only the 1–3 figures most central to the thesis / the reader's purpose.
-- `技术细节` → the figures bearing on method + evidence (复现 → method / setup
-  figures; 评审 → the evidence figures).
-- `全面综述` → every entry in `figures[]`.
-
-For each SELECTED figure (each has `bbox` and `caption` from the extractor):
+For EVERY entry in `figures[]` (all are guaranteed to have `bbox` and
+`caption` from the extractor):
 
 **Region note** (the primary anchor at the figure):
 - `kind="region"`, `subtype="figure"`.
@@ -313,8 +218,8 @@ For each SELECTED figure (each has `bbox` and `caption` from the extractor):
   or synthesize coordinates. Never compute, estimate, or modify a bbox.
 - `dimension` = `"evidence"` (figures are usually evidence or method; use
   your judgment but do not leave blank).
-- `comment` = figure 导读: one or two sentences (in the annotation language)
-  describing what this figure shows and why it matters to the argument.
+- `comment` = 该图导读: one or two Chinese sentences describing what this
+  figure shows and why it matters to the argument.
 - Leave `quote` as an empty string `""` for region notes.
 
 **Caption highlight** (secondary anchor on the caption text):
@@ -348,12 +253,9 @@ For each SELECTED figure (each has `bbox` and `caption` from the extractor):
 - Use `kind="highlight"`, `subtype="equation"`.
 - Quote the SPECIFIC explanatory sentence that describes or derives the
   equation (the prose adjacent to the equation, not the equation glyphs
-  themselves). Choose a sentence ≥ 12 characters. Never quote a bare formula /
-  glyph string — extracted math rarely matches the PDF text layer and will fail
-  to anchor; quote the surrounding sentence and name the equation in the
-  `comment` instead.
-- `comment` = an explanation, in the annotation language, of what the equation
-  means and how it connects to the argument.
+  themselves). Choose a sentence ≥ 12 characters.
+- `comment` = Chinese explanation of what the equation means and how it
+  connects to the argument.
 - Do NOT use `kind="region"` for equations — there is no extractor bbox.
 - If the explanatory sentence is ambiguous (appears more than once on the
   page), the code will report `ambiguous_multi_match`. In that case, try a
@@ -367,7 +269,6 @@ Construct a compact argument-structure map for the page-1 sticky-note:
 
 ```json
 {
-  "lang":      "zh|en|… — the annotation language from Step 2a (drives overview labels)",
   "thesis":    "核心论点，一句话",
   "skeleton": {
     "question":   "研究问题",
@@ -381,7 +282,7 @@ Construct a compact argument-structure map for the page-1 sticky-note:
 }
 ```
 
-All text fields in the annotation language (set `lang` to match), short phrases. Total JSON serialized to ≤ 2000 bytes.
+All fields in Chinese, short phrases. Total JSON serialized to ≤ 2000 bytes.
 
 ---
 
@@ -399,10 +300,8 @@ density rules:
     if English-weak. Aim for 8–20 total annotations for a typical paper.
   - `技术细节`: fuller method/evidence coverage. Aim for 20–50.
   - `全面综述`: every independent point. Up to the 200-annotation cap.
-- **Density comes from reading depth only** — domain familiarity changes
-  per-comment background, not the annotation count. If `速览` collides with the
-  weak-English term/long-sentence layers, stay within the sparse budget and keep
-  only the most essential helps.
+- **On conflicts** between persona signals (e.g., "速览" but "新手"), always
+  choose the MORE CONSERVATIVE density.
 - **Heavily annotated pages** (user has > 2 foreign annotations on the page):
   drop redundant annotations on that page, but do not skip all annotations.
 
@@ -462,7 +361,7 @@ Read the returned dict carefully. It contains:
 - `coverage`: breakdown by subtype (figures, tables_region, tables_caption,
   tables_unanchorable, terms, long_sentences, equations)
 - `verified`: bool — the post-write verification result
-- `summary`: pre-formatted one-line summary (interface language)
+- `summary`: pre-formatted one-line Chinese summary
 
 ---
 
@@ -497,7 +396,7 @@ original PDF was restored from `.ztpbak`. No data was lost.
 
 ## Step 10 — Coverage summary
 
-Relay a concise one-line coverage summary to the user, in the interface language. Build it from
+Relay a concise one-line Chinese coverage summary to the user. Build it from
 the `coverage` dict and `unplaced` list. Example format:
 
 > 五维齐全 · 5图已标 · 2表（1表仅按标题锚定）· 3术语 · 2长难句 · 备份 foo.pdf.ztpbak · 4处未定位（其中2处用户已批注）
