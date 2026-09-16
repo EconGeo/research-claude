@@ -65,21 +65,28 @@ def check_freeze(tool_name: str, tool_input: dict, guards: dict) -> tuple:
 
     return False, (
         f"FREEZE ACTIVE: Edit blocked. File '{os.path.basename(file_path)}' "
-        f"is outside allowed paths: {allowed}. Run /freeze off to deactivate."
+        f"is outside allowed paths: {allowed}. Ask the user to run /freeze off."
     )
 
 
+# Compiled per pattern: only the SQL forms are case-insensitive. A global re.IGNORECASE
+# made `git branch -d` (which refuses to delete an unmerged branch) as blocked as
+# `git branch -D`, so the guard denied a safe command and taught the user to turn it off.
 DESTRUCTIVE_PATTERNS = [
-    (r"\brm\s+-(r|f|rf|fr)", "rm with recursive/force flags"),
-    (r"\bgit\s+reset\s+--hard\b", "git reset --hard"),
-    (r"\bgit\s+push\s+--force\b", "git push --force"),
-    (r"\bgit\s+push\s+-f\b", "git push -f"),
-    (r"\bgit\s+clean\s+-f\b", "git clean -f"),
-    (r"\bgit\s+checkout\s+--\s+\.", "git checkout -- ."),
-    (r"\bgit\s+branch\s+-D\b", "git branch -D"),
-    (r"\bDROP\s+TABLE\b", "DROP TABLE"),
-    (r"\bDROP\s+DATABASE\b", "DROP DATABASE"),
-    (r"\bchmod\s+777\b", "chmod 777"),
+    (re.compile(r"\brm\s+(-\S+\s+)*(-[a-zA-Z]*[rf]|--force\b|--recursive\b)"),
+     "rm with recursive/force flags"),
+    (re.compile(r"\bgit\s+reset\s+--hard\b"), "git reset --hard"),
+    # The refspec form is the one people type. `\bgit\s+push\s+--force\b` matched only the
+    # bare form and let `git push origin main --force` straight through.
+    (re.compile(r"\bgit\s+push\b[^\n]*?(\s--force(-with-lease)?\b|\s-f\b)"), "git push --force"),
+    (re.compile(r"\bgit\s+clean\s+-[a-z]*f"), "git clean -f"),
+    (re.compile(r"\bgit\s+checkout\s+--\s+\."), "git checkout -- ."),
+    (re.compile(r"\bgit\s+branch\s+-D\b"), "git branch -D"),
+    (re.compile(r"\bfind\b[^\n]*\s-delete\b"), "find -delete"),
+    (re.compile(r"\bfind\b[^\n]*-exec\s+rm\b"), "find -exec rm"),
+    (re.compile(r"\bDROP\s+TABLE\b", re.I), "DROP TABLE"),
+    (re.compile(r"\bDROP\s+DATABASE\b", re.I), "DROP DATABASE"),
+    (re.compile(r"\bchmod\s+777\b"), "chmod 777"),
 ]
 
 
@@ -97,10 +104,10 @@ def check_careful(tool_name: str, tool_input: dict, guards: dict) -> tuple:
         return True, ""
 
     for pattern, description in DESTRUCTIVE_PATTERNS:
-        if re.search(pattern, command, re.IGNORECASE):
+        if pattern.search(command):
             return False, (
                 f"CAREFUL MODE: Blocked '{description}'. "
-                f"Run /careful off to deactivate, or rephrase the command."
+                f"Ask the user to run /careful off if this command is intended."
             )
 
     return True, ""
