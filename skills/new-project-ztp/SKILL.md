@@ -34,8 +34,15 @@ tool is present, ZotPilot is installed. If absent, it needs to be installed firs
 Invoke the `/ztp-setup` skill to walk through full ZotPilot installation:
 - micromamba env setup
 - zotpilot package install (EconGeo fork with BBT 7+ and group library support)
-- MCP server registration in project `.mcp.json`
-- Zotero API key configuration
+- MCP server registration and skill deployment, **done by `zotpilot setup` itself** and at
+  **client level, once per machine** — not by a separate `claude mcp add`, and not into a
+  project `.mcp.json`. `zotpilot status` reports which clients are registered under
+  `Client integration`.
+- Zotero API key configuration. Keys resolve from `~/.secrets.env`; the fork's
+  `~/.config/zotpilot/config.json` holds non-secret settings and `zotero_user_id` only.
+
+Because registration is client-level, ZotPilot is available in this project as soon as the
+client restarts — there is nothing to add to the project itself.
 
 After `/ztp-setup` completes, continue to Step 3.
 
@@ -93,5 +100,11 @@ Tell the user:
   manuscript's bibliography is `references.bib`, and nothing copies between the two)
 - `/lit-position` reads the Zotero index and, when present, `zotero_seed.md`; it never reads a
   `.bib` — Zotero is the source of truth for what has been read
-- ZotPilot is registered in project `.mcp.json` by default (not globally)
-- To add it globally: `claude mcp add -g zotpilot -- /path/to/zotpilot mcp serve`
+- ZotPilot is registered once per client at user scope, not per project: one install
+  serves every project, because there is one Zotero library behind it. `/ztp-setup` writes
+  no project `.mcp.json`
+- To confirm what is registered and where: `zotpilot status` — its `Client integration` block
+  lists detected and registered clients, any drift, and the deployed skill dirs
+- If one project genuinely needs its own entry, add it to that project's `.mcp.json` by
+  hand: `{"mcpServers": {"zotpilot": {"type": "stdio", "command": "/path/to/zotpilot",
+  "args": ["mcp", "serve"]}}}`
