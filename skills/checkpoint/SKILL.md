@@ -17,8 +17,8 @@ Persists the session to three places, plus a gated fourth:
 
 1. **Auto-memory** (`~/.claude/projects/.../memory/`) — learnings for future conversations
 2. **`SESSION_REPORT.md`** — append-only log per `.claude/rules/logging.md`, at the repo root
-   unless the project's `CLAUDE.md` relocates it
-3. **`quality_reports/research_journal.md`** — agent-invocation trail
+   unless the project's `CLAUDE.md` moves it
+3. **`quality_reports/research_journal.md`** — agent trail
 4. **Obsidian vault** — optional, only when configured
 
 Gather, write, report. **Never stop to ask "look right?"** — the user's own `CLAUDE.md` makes
@@ -30,7 +30,7 @@ every `/checkpoint` behave as `--auto`.
 
 ### Step 1: Gather Context
 
-Run these in parallel (single message, multiple Bash calls):
+Run in parallel (one message, several Bash calls):
 
 ```bash
 basename "$(pwd)"
@@ -58,13 +58,11 @@ If absent, Obsidian is inactive this session — proceed without it and do not o
 
 ### Step 3: Draft Updates
 
-Compose the entries — what happened, memory updates, the SESSION_REPORT and research-journal
-entries, and any Obsidian updates — and go straight to Step 4. Under `--dry-run`, print them
-instead of saving.
+Compose the entries and go straight to Step 4. Under `--dry-run`, print them instead of saving.
 
 ### Step 4: Save Everything
 
-Execute all saves. Each section is independent — if one fails, the others still run.
+Each section is independent — if one fails, the others still run.
 
 #### 4a. Claude Code Auto-Memory
 
@@ -73,10 +71,15 @@ from the code or `git log`. The four entry types, when each qualifies, and the e
 in `.claude/skills/checkpoint/templates/memory-entry-types.md`. Update existing files rather than
 duplicating, then update the `MEMORY.md` index.
 
+**A `feedback` memory that corrects a pipeline skill, agent or rule** — rather than stating a
+project preference — is also named in the Step 5 report as an improvement candidate, with the
+file it would touch. Never edit the shared tree and never prompt: `.claude/rules/
+meta-governance.md` wants the pattern seen in 3+ projects and `/promote` is the only thing that
+lands it. The report line is what carries it forward.
+
 #### 4b. SESSION_REPORT.md
 
-Append-only. If the file does not exist, create it with the header
-`# Session Report — [Project Name]`. The entry format is
+Append-only; create with header `# Session Report — [Project Name]` if absent. Entry format:
 `.claude/skills/checkpoint/templates/session-report-entry.md` (canonically
 `.claude/rules/logging.md`).
 
@@ -87,27 +90,24 @@ Append only if agent work happened this session. Entry format:
 
 #### 4d. Obsidian (only if `.claude/state/obsidian-config.md` exists)
 
-Follow `.claude/skills/checkpoint/references/obsidian.md` (Sync): project-note journal entry,
-dashboard update only when something changed, daily journal append.
+Follow `.claude/skills/checkpoint/references/obsidian.md` (Sync).
 
 ### Step 4f. HANDOFF.md
 
-If the project has one, regenerate it from `.claude/templates/handoff.md` (never append;
-`.claude/rules/session-handoff.md` §2).
+If the project has one, regenerate from `.claude/templates/handoff.md` — never append
+(`.claude/rules/session-handoff.md` R2).
 
 ### Step 5: Confirm
 
-Before reporting, run the three verifications the rules require. Each produces a **report line**,
-never a question:
+Run the three verifications the rules require. Each yields a **report line**, never a question:
 
-- **Plan staleness sweep** (`.claude/rules/session-handoff.md` Requirement 1, mandatory every
-  checkpoint). Re-read the active plan's status section against the state gathered in Step 1 and
-  **fix the plan in place** — do not record the drift elsewhere.
-- **Handoff reference dry-run** (`.claude/rules/session-handoff.md` Requirement 3), if the project
-  has a `HANDOFF.md`. Read the output rather than looking for an empty result: a file that
-  legitimately lives outside the repo flags, and is not suppressed.
-- **`ai_use_log.md` confirmation** (`.claude/rules/ai-disclosure.md`, Enforcement): confirm it was
-  updated this session. Absent with no agent work is a normal result, not a failure.
+- **Plan staleness sweep** — `.claude/rules/session-handoff.md` R1, mandatory every checkpoint.
+  Re-read the active plan's status section against Step 1's state and **fix the plan in place**;
+  do not record the drift elsewhere.
+- **Handoff reference dry-run** — same rule, R3, when the project has a `HANDOFF.md`. Read the
+  output; a file that legitimately lives outside the repo flags and is not suppressed.
+- **`ai_use_log.md`** — `.claude/rules/ai-disclosure.md` Enforcement. Absent with no agent work
+  is normal, not a failure.
 
 Report what was saved:
 
@@ -120,6 +120,7 @@ Checkpoint saved:
 - Plan staleness sweep: [none | fixed: <plan> | flagged: <plan>]
 - Handoff reference dry-run: [clean | N unresolved | no HANDOFF.md]
 - ai_use_log.md: [N entries | absent — no agent work this session]
+- Pipeline improvement candidates: [none | N — <skill>: <one-line correction>]
 ```
 
 ---

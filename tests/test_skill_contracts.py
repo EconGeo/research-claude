@@ -29,6 +29,12 @@ KNOWN_UNBOUND = {
 }
 
 # Level-2 budget in characters of SKILL.md body (frontmatter excluded). Ratchet downward only.
+#
+# Measured 2026-09-16 after the refactor: review 10,878 / strategize 7,967 / write 7,482 /
+# discover 5,934 / checkpoint 5,495 — each already within 122 chars of its cap, so rounding the
+# achieved size up to the next 500 reproduces these numbers exactly and there is nothing left to
+# ratchet this round. Headroom is deliberately thin: pasting a table back into any of these files
+# turns this test red, which is the point.
 BUDGET = {
     "review": 11000,
     "strategize": 8000,
