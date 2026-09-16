@@ -70,9 +70,19 @@ to the repo root — this overrides the checkpoint skill's default root path. A 
   is not carried here: it had drifted from the canonical `rules/ai-disclosure.md` (still
   describing a retired dual LaTeX+Quarto placement), so that copy was reconciled away —
   `rules/ai-disclosure.md` at repo root is the one true copy.
-- `zotpilot-skills/` is **vendored verbatim** from `EconGeo/ZotPilot` and is never edited
-  in place. Changes go into a bridge skill under `skills/` (see `lit-position`,
-  `new-project-ztp`, `ztp-data-tag`).
+- `zotpilot-skills/` is **vendored verbatim** from the **`EconGeo/ZotPilot` fork** and is
+  never edited in place. Changes go into a bridge skill under `skills/` (see `lit-position`,
+  `new-project-ztp`, `ztp-data-tag`, `ztp-ollama`).
+  **The fork is the only source — never re-vendor from upstream `xunhe730/ZotPilot`, and
+  never install ZotPilot from PyPI.** The server we run *is* the fork: `zotpilot` reports
+  **0.5.0**, a v0.5.0 base plus ~40 fork commits (Ollama provider, multi-library indexing,
+  token-aware chunking, ChromaDB batching, `delete_note`). Upstream's packaged skills are a
+  **different lineage**, not a newer revision of these, and they drive CLI flags the fork
+  does not implement. **A version-number gap between this directory, `~/.claude/skills/ztp-*`,
+  PyPI, or anything else is expected, not a defect — do not "fix" it.** The same goes for the
+  ZotPilot MCP server's own "skills or configuration paths are outdated" notice. This was
+  tried and reverted on 2026-09-15; `zotpilot-skills/VENDORED.md` carries the test that
+  settles it.
 - Keep the template generic: never hardcode a machine-specific path (e.g. a personal
   `~/research/.claude/references` dir). Mechanism goes in the template; the path is supplied at
   runtime (e.g. `apply.sh --link-references <dir>`).
