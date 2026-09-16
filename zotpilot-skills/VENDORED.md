@@ -16,7 +16,7 @@ that server's MCP tools.
 ## Provenance / refresh
 
 - Source: `https://github.com/EconGeo/ZotPilot.git`, `claude-skills/`
-- Vendored from commit: `d12ab63` (`v0.5.0-69-gd12ab63`)
+- Vendored from commit: `f92e5b0` (`v0.5.0-72-gf92e5b0`)
 
 ## The fork is the only source — do not sync from upstream
 
@@ -66,8 +66,11 @@ upstream**. Update with the fork install instead:
 pip install --upgrade --force-reinstall git+https://github.com/EconGeo/ZotPilot.git
 ```
 
-`claude-skills/ztp-setup/SKILL.md` carries this warning as of fork `0f37a24`, so the
-vendored copy here does too. Making `upgrade` itself fork-aware is still open in the fork.
+**Fixed in the fork as of `b13bf83`.** `upgrade` now follows the install's recorded source:
+a VCS install reinstalls from its own `git+` URL, an editable install is told to `git pull`,
+and PyPI is queried only when the install actually came from PyPI. On a fixed build
+`upgrade --check` prints no `Latest:` number — that is how to tell a fixed build from an
+older one, which is still dangerous and must not be run.
 
 To refresh after the fork's skills change, run:
 
