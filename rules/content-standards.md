@@ -98,6 +98,11 @@ done
 1. Process only 2-3 chunks per session
 2. Focus on specific sections user identifies as most important
 
+### Page limit
+
+The Read tool takes a `pages` parameter (e.g. `pages: "1-5"`). For any PDF over 10 pages,
+always specify a page range. Maximum 20 pages per request.
+
 ---
 
 ## 4. Explorations

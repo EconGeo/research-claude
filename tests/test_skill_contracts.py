@@ -20,12 +20,6 @@ CATALOGUE = re.compile(r"^## (Bundled [Rr]esources|Resources|Principles|Rules)\b
 KNOWN_UNBOUND = {
     # Task 4 — strategize
     # Task 5 — write
-    # Task 6 — discover
-    "skills/discover/references/pdf-processing.md",
-    "skills/discover/templates/data-assessment.md",
-    "skills/discover/templates/lit-review-entry.md",
-    "skills/discover/templates/research-ideas.md",
-    "skills/discover/templates/research-spec.md",
     # Task 7 — checkpoint
     "skills/checkpoint/templates/memory-entry-types.md",
     "skills/checkpoint/templates/research-journal-entry.md",
