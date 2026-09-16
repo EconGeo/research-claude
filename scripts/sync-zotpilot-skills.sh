@@ -1,84 +1,51 @@
 #!/usr/bin/env bash
-# sync-zotpilot-skills.sh — refresh the vendored ZotPilot skills.
+# sync-zotpilot-skills.sh — refresh the vendored ZotPilot skills from the fork.
 #
-# TWO SOURCES, on purpose (see zotpilot-skills/VENDORED.md):
+# research-claude vendors only the ~68 KB claude-skills/ from EconGeo/ZotPilot (see
+# zotpilot-skills/VENDORED.md) rather than carrying the whole fork (224 MB connector) as a
+# submodule. This script re-pulls just that directory — blobless + sparse, so no connector,
+# no pdf.js — and overwrites zotpilot-skills/ in place.
 #
-#   * ztp-profile / ztp-research / ztp-review / ztp-tutor come from the UPSTREAM release
-#     tag's packaged skills (src/zotpilot/skills/*.md). These are prompt-level skills: the
-#     newer text is better and degrades gracefully against the older fork server.
-#   * ztp-setup and seed-papers come from the EconGeo FORK's claude-skills/. seed-papers does
-#     not exist upstream. ztp-setup MUST track the fork because it drives the `zotpilot` CLI
-#     directly, and the fork's CLI is a v0.5.0 base: it has no `setup --list-vendors` and no
-#     `--verify` (tested 2026-09-15 — the upstream v0.5.3 skill errors out against it).
+# THE FORK IS THE ONLY SOURCE. Do not "upgrade" these skills from upstream
+# (xunhe730/ZotPilot), however much newer its version number looks. The server we run IS the
+# fork: it is pinned to a v0.5.0 base plus ~40 fork commits (Ollama provider, multi-library
+# indexing, token-aware chunking), and it deliberately does not track upstream. Upstream's
+# skills drive CLI flags the fork does not implement — `zotpilot setup --list-vendors` and
+# `--verify` do not exist here (tested 2026-09-15), so upstream's ztp-setup hard-errors.
+# A version-number gap between this directory and anything else is EXPECTED, not a bug.
 #
-# The fork's claude-skills/ copies of the other ztp-* skills are a v0.5.0-era snapshot and are
-# DELIBERATELY NOT USED here: syncing from them downgrades the skills (that is exactly what
-# happened before 2026-09-15). If the fork ever starts carrying fork-specific edits to one of
-# those, this script must become a real three-way merge rather than an overlay.
-#
-# When the fork rebases onto upstream >= v0.5.3, move ztp-setup back to UPSTREAM_SKILLS.
-#
-# Both fetches are blobless + sparse, so no 224 MB connector toolchain is pulled.
-#
-# Usage:  ./scripts/sync-zotpilot-skills.sh [upstream-tag] [fork-ref]
-#   upstream-tag defaults to UPSTREAM_TAG below; fork-ref defaults to the fork's default branch.
+# Usage:  ./scripts/sync-zotpilot-skills.sh [git-ref]
+#   git-ref defaults to the fork's default branch.
 
 set -euo pipefail
 
-UPSTREAM_URL="https://github.com/xunhe730/ZotPilot.git"
 FORK_URL="https://github.com/EconGeo/ZotPilot.git"
-UPSTREAM_TAG="${1:-v0.5.3}"
-FORK_REF="${2:-}"
-
+REF="${1:-}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEST="$REPO_ROOT/zotpilot-skills"
-
-# Skills taken from upstream's packaged skills/, and the ones that must track the fork.
-UPSTREAM_SKILLS=(ztp-profile ztp-research ztp-review ztp-tutor)
-FORK_SKILLS=(seed-papers ztp-setup)
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-sparse_clone() {  # url ref dir sparse-path
-  git clone --quiet --filter=blob:none --no-checkout --depth 1 \
-    ${2:+--branch "$2"} "$1" "$3"
-  git -C "$3" sparse-checkout set --no-cone "$4" >/dev/null
-  git -C "$3" checkout --quiet
-}
+echo "→ Fetching claude-skills/ from $FORK_URL (sparse, blobless — no connector)..."
+git clone --quiet --filter=blob:none --no-checkout --depth 1 \
+  ${REF:+--branch "$REF"} "$FORK_URL" "$TMP/zp"
+git -C "$TMP/zp" sparse-checkout set --no-cone claude-skills >/dev/null
+git -C "$TMP/zp" checkout --quiet
 
-echo "→ Fetching upstream packaged skills from $UPSTREAM_URL @ $UPSTREAM_TAG (sparse, blobless)..."
-sparse_clone "$UPSTREAM_URL" "$UPSTREAM_TAG" "$TMP/up" "src/zotpilot/skills"
-UP_SRC="$TMP/up/src/zotpilot/skills"
-[[ -d "$UP_SRC" ]] || { echo "Error: src/zotpilot/skills/ not found at $UPSTREAM_TAG" >&2; exit 1; }
+if [[ ! -d "$TMP/zp/claude-skills" ]]; then
+  echo "Error: claude-skills/ not found in the fork checkout" >&2
+  exit 1
+fi
 
-echo "→ Fetching fork-only skills from $FORK_URL (sparse, blobless — no connector)..."
-sparse_clone "$FORK_URL" "$FORK_REF" "$TMP/zp" "claude-skills"
-FORK_SRC="$TMP/zp/claude-skills"
-[[ -d "$FORK_SRC" ]] || { echo "Error: claude-skills/ not found in the fork checkout" >&2; exit 1; }
+SRC_COMMIT="$(git -C "$TMP/zp" rev-parse --short HEAD)"
 
-UP_COMMIT="$(git -C "$TMP/up" rev-parse --short HEAD)"
-FORK_COMMIT="$(git -C "$TMP/zp" rev-parse --short HEAD)"
-
-# Stage the new tree, then swap it in — VENDORED.md is ours and survives.
-STAGE="$TMP/stage"
-mkdir -p "$STAGE"
-for s in "${UPSTREAM_SKILLS[@]}"; do
-  [[ -f "$UP_SRC/$s.md" ]] || { echo "Error: upstream $UPSTREAM_TAG has no skills/$s.md" >&2; exit 1; }
-  mkdir -p "$STAGE/$s"
-  cp "$UP_SRC/$s.md" "$STAGE/$s/SKILL.md"
-done
-for s in "${FORK_SKILLS[@]}"; do
-  [[ -d "$FORK_SRC/$s" ]] || { echo "Error: fork has no claude-skills/$s" >&2; exit 1; }
-  cp -r "$FORK_SRC/$s" "$STAGE/$s"
-done
-
-if [[ -f "$DEST/VENDORED.md" ]]; then cp "$DEST/VENDORED.md" "$STAGE/VENDORED.md"; fi
+# Preserve our local VENDORED.md, refresh everything else.
+if [[ -f "$DEST/VENDORED.md" ]]; then cp "$DEST/VENDORED.md" "$TMP/VENDORED.md"; fi
 rm -rf "$DEST"
-mv "$STAGE" "$DEST"
+cp -r "$TMP/zp/claude-skills" "$DEST"
+if [[ -f "$TMP/VENDORED.md" ]]; then cp "$TMP/VENDORED.md" "$DEST/VENDORED.md"; fi
 
-echo "✓ Refreshed zotpilot-skills/"
-echo "    ztp-*        ← xunhe730/ZotPilot@${UPSTREAM_TAG} (${UP_COMMIT}), src/zotpilot/skills/"
-echo "    ztp-setup    ← EconGeo/ZotPilot@${FORK_COMMIT}, claude-skills/ (CLI-coupled)"
-echo "    seed-papers  ← EconGeo/ZotPilot@${FORK_COMMIT}, claude-skills/"
-echo "  Update the provenance lines in zotpilot-skills/VENDORED.md, review the diff, and commit."
+echo "✓ Refreshed zotpilot-skills/ from EconGeo/ZotPilot@${SRC_COMMIT}"
+echo "  Update the 'Vendored from commit' line in zotpilot-skills/VENDORED.md to ${SRC_COMMIT},"
+echo "  review the diff, and commit."
