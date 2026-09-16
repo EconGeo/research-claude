@@ -13,14 +13,16 @@ allowed-tools: Read,Grep,Glob,Write,Edit,Bash
 
 # Checkpoint: Session Handoff
 
-Captures what happened in the current session and pushes it to three places (plus optionally a fourth):
+Persists the session to three places, plus a gated fourth:
 
-1. **Claude Code auto-memory** (`~/.claude/projects/.../memory/`) — learnings for future conversations
-2. **`SESSION_REPORT.md`** (project root) — append-only session log per `.claude/rules/logging.md`
+1. **Auto-memory** (`~/.claude/projects/.../memory/`) — learnings for future conversations
+2. **`SESSION_REPORT.md`** — append-only log per `.claude/rules/logging.md`, at the repo root
+   unless the project's `CLAUDE.md` relocates it
 3. **`quality_reports/research_journal.md`** — agent-invocation trail
-4. **Obsidian vault** (optional, gated) — project-note journal, dashboard, daily journal
+4. **Obsidian vault** — optional, only when configured
 
-You are fast and minimal. One confirmation prompt, then save.
+Gather, write, report. **Never stop to ask "look right?"** — the user's own `CLAUDE.md` makes
+every `/checkpoint` behave as `--auto`.
 
 ---
 
@@ -40,53 +42,25 @@ git diff --cached --stat
 Then scan:
 - `CLAUDE.md` header for the project name
 - `quality_reports/plans/` for files modified today
-- `SESSION_REPORT.md` (repo root, or `docs/` where the project's `CLAUDE.md` relocates it) — the last entry, so the new one continues the history rather than repeating it
-- `quality_reports/pipeline_state.json` — `python3 .claude/scripts/pipeline.py state show`; the staleness sweep in `.claude/rules/session-handoff.md` compares the plan's status claims against it
-- The conversation context for key decisions, corrections, or learnings that qualify for auto-memory
+- `SESSION_REPORT.md` (wherever the project's `CLAUDE.md` puts it) — the last entry, so the new
+  one continues the history rather than repeating it
+- `python3 .claude/scripts/pipeline.py state show` — what the staleness sweep in
+  `.claude/rules/session-handoff.md` compares the plan's status claims against
+- The conversation, for decisions, corrections and learnings that qualify for memory
 
 ### Step 2: Detect Obsidian Configuration
-
-Check for `.claude/state/obsidian-config.md`:
 
 ```bash
 test -f .claude/state/obsidian-config.md && echo "OBSIDIAN: configured" || echo "OBSIDIAN: not configured"
 ```
 
-If the file exists, read it to extract:
-- Vault path
-- Project-name mapping (working directory → Obsidian project note)
+If absent, Obsidian is inactive this session — proceed without it and do not offer to set it up.
 
-If the file does not exist, Obsidian integration is inactive for this session. Proceed without it — do not ask the user to set it up unless they invoke `/checkpoint --setup-obsidian` (see below).
+### Step 3: Draft Updates
 
-### Step 3: Draft Updates (present to user for confirmation)
-
-Present a compact summary:
-
-```
-## Checkpoint Summary
-
-**Project:** [name] | **Branch:** [current branch]
-**Session:** [date, ~duration if inferrable]
-**Obsidian:** [configured: path | not configured]
-
-### What happened
-- [bullets from git log + conversation context]
-
-### Memory updates
-- [new learnings to save — or "None"]
-
-### Scaffold updates
-- **SESSION_REPORT.md:** [entry to append]
-- **quality_reports/research_journal.md:** [entry to append — if any agent work happened]
-
-### Obsidian updates
-- [if configured: project note journal entry, dashboard row, daily journal]
-- [if not configured: "Skipped — no .claude/state/obsidian-config.md"]
-```
-
-**Ask the user:** "Look right? I'll save all of this." Wait for confirmation or edits.
-
-Skip confirmation if invoked with `--auto` or the user said "just do it".
+Compose the entries — what happened, memory updates, the SESSION_REPORT and research-journal
+entries, and any Obsidian updates — and go straight to Step 4. Under `--dry-run`, print them
+instead of saving.
 
 ### Step 4: Save Everything
 
@@ -94,82 +68,27 @@ Execute all saves. Each section is independent — if one fails, the others stil
 
 #### 4a. Claude Code Auto-Memory
 
-Check existing memory files first — update rather than duplicate.
-
-**Qualifies for memory:**
-- User corrections or preferences (`feedback` type)
-- Project state that isn't in git (`project` type)
-- External references discovered (`reference` type)
-- User profile updates (`user` type)
-
-**Does NOT go in memory** (per auto-memory rules):
-- Code patterns, file paths, architecture
-- Git history (derivable from `git log`)
-- Debugging solutions (the fix is in the code)
-- Ephemeral task details
-
-Write/update memory files with the standard frontmatter, then update `MEMORY.md` index.
+Memory is for **future conversations** — not what is useful only now, and not anything derivable
+from the code or `git log`. The four entry types, when each qualifies, and the exclusion list are
+in `.claude/skills/checkpoint/templates/memory-entry-types.md`. Update existing files rather than
+duplicating, then update the `MEMORY.md` index.
 
 #### 4b. SESSION_REPORT.md
 
-Append-only. If the file doesn't exist, create it with header `# Session Report — [Project Name]`.
-
-Entry format (per `.claude/rules/logging.md`):
-
-```markdown
-## YYYY-MM-DD HH:MM — [Brief Title]
-
-**Operations:**
-- [Scripts run, files created/modified/deleted]
-
-**Decisions:**
-- [Choice made] — [rationale]
-
-**Results:**
-- [Key findings, outputs produced]
-
-**Commits:**
-- `[hash]` [commit message]
-
-**Status:**
-- Done: [what's complete]
-- Pending: [what remains]
-```
+Append-only. If the file does not exist, create it with the header
+`# Session Report — [Project Name]`. The entry format is
+`.claude/skills/checkpoint/templates/session-report-entry.md` (canonically
+`.claude/rules/logging.md`).
 
 #### 4c. quality_reports/research_journal.md
 
-Append only if agent work happened this session (writer, coder, strategist, etc.). Entry format per `logging.md`:
+Append only if agent work happened this session. Entry format:
+`.claude/skills/checkpoint/templates/research-journal-entry.md`.
 
-```markdown
-### YYYY-MM-DD HH:MM — [Agent Name]
-**Phase:** [Discovery/Strategy/Execution/Peer Review/Presentation]
-**Target:** [file or topic]
-**Score:** [XX/100 or PASS/FAIL or N/A]
-**Verdict:** [one line — key finding or decision]
-**Report:** [path to full report]
-```
+#### 4d. Obsidian (only if `.claude/state/obsidian-config.md` exists)
 
-#### 4d. Obsidian (optional, only if `.claude/state/obsidian-config.md` exists)
-
-Follow the project's `obsidian-config.md` for vault path and project mapping. Then:
-
-1. Add journal entry to the matched project note via Obsidian MCP (`mcp__obsidian-files__read_note` → modify → `mcp__obsidian-files__write_note`). Reverse chronological — newest first, after `## Journal` heading.
-2. Update the dashboard (`Home.md`) only if something changed (stage transition, status update, Next Action change, Days in Stage recalc). Sync General Kanban if the project is research-tracked.
-3. Append to today's daily journal (`Journal/YYYY-MM-DD.md`). Create from template if it doesn't exist.
-
-Entry format for project note journal:
-
-```markdown
-### YYYY-MM-DD
-
-**Done:**
-- [concrete accomplishments from this session]
-
-**Next:**
-- [concrete next steps]
-```
-
-Keep it tight — 3–5 bullets per section max.
+Follow `.claude/skills/checkpoint/references/obsidian.md` (Sync): project-note journal entry,
+dashboard update only when something changed, daily journal append.
 
 ### Step 4f. HANDOFF.md
 
@@ -177,6 +96,18 @@ If the project has one, regenerate it from `.claude/templates/handoff.md` (never
 `.claude/rules/session-handoff.md` §2).
 
 ### Step 5: Confirm
+
+Before reporting, run the three verifications the rules require. Each produces a **report line**,
+never a question:
+
+- **Plan staleness sweep** (`.claude/rules/session-handoff.md` Requirement 1, mandatory every
+  checkpoint). Re-read the active plan's status section against the state gathered in Step 1 and
+  **fix the plan in place** — do not record the drift elsewhere.
+- **Handoff reference dry-run** (`.claude/rules/session-handoff.md` Requirement 3), if the project
+  has a `HANDOFF.md`. Read the output rather than looking for an empty result: a file that
+  legitimately lives outside the repo flags, and is not suppressed.
+- **`ai_use_log.md` confirmation** (`.claude/rules/ai-disclosure.md`, Enforcement): confirm it was
+  updated this session. Absent with no agent work is a normal result, not a failure.
 
 Report what was saved:
 
@@ -186,6 +117,9 @@ Checkpoint saved:
 - SESSION_REPORT.md: [entry added]
 - research_journal.md: [entry added | skipped — no agent work]
 - Obsidian: [entry added to Project Name | not configured]
+- Plan staleness sweep: [none | fixed: <plan> | flagged: <plan>]
+- Handoff reference dry-run: [clean | N unresolved | no HANDOFF.md]
+- ai_use_log.md: [N entries | absent — no agent work this session]
 ```
 
 ---
@@ -194,52 +128,23 @@ Checkpoint saved:
 
 | Flag | Effect |
 |------|--------|
-| `--auto` | Skip user confirmation, just save |
+| `--auto` | Default behaviour, accepted for compatibility |
 | `--memory-only` | Only update Claude Code memory |
 | `--scaffold-only` | Update memory + SESSION_REPORT + research_journal, skip Obsidian |
 | `--dry-run` | Show what would be saved, don't save |
-| `--setup-obsidian` | Walk the user through creating `.claude/state/obsidian-config.md` from the example template |
-
----
-
-## Obsidian Config Setup (on demand)
-
-When invoked with `--setup-obsidian`:
-
-1. Check if `.claude/state/obsidian-config.md.example` exists; if not, flag and stop.
-2. Copy the example to `.claude/state/obsidian-config.md`.
-3. Walk the user through filling in: vault path, project-name mapping for the current working directory.
-4. Verify Obsidian MCP is connected; if not, point the user to the Obsidian REST API plugin setup.
-5. Confirm `.claude/state/` is in `.gitignore`.
-
-Do NOT run this on every checkpoint — only when the user explicitly opts in.
-
----
-
-## Bundled Resources
-
-| Resource | Path | What It Contains |
-|----------|------|-----------------|
-| Session report entry | `.claude/skills/checkpoint/templates/session-report-entry.md` | Append format for SESSION_REPORT.md |
-| Research journal entry | `.claude/skills/checkpoint/templates/research-journal-entry.md` | Append format for research_journal.md |
-| Memory entry types | `.claude/skills/checkpoint/templates/memory-entry-types.md` | 4 memory types with when-to-save guidance |
-| Gotchas | `.claude/skills/checkpoint/gotchas.md` | Known failure points and edge cases |
+| `--setup-obsidian` | Create `.claude/state/obsidian-config.md` from the example, per `.claude/skills/checkpoint/references/obsidian.md` (Setup) |
 
 ---
 
 ## Rules
 
-- **Never invent progress.** Only log what actually happened — from git, conversation, or user confirmation.
-- **Be fast.** The whole checkpoint should take under 60 seconds including user confirmation.
-- **Don't duplicate.** Check existing memory files before creating new ones. Check if today's journal entry already covers this project.
-- **Keep the defaults local.** Memory, SESSION_REPORT and the research journal work out of the box. Obsidian integration is opt-in and gated behind local config.
-- **`.claude/state/obsidian-config.md` is local-only.** It contains user-specific paths and mappings; `.gitignore` keeps it out of commits.
-- **The Obsidian `Home.md` dashboard is the source of truth for project stages** (when Obsidian is active). Don't contradict it.
-- **Memory is for future conversations.** Don't save things only useful right now.
-- **Minimal user friction.** One confirmation prompt, not five. Default to "looks right? saving."
+- **Never invent progress.** Only log what actually happened — from git, the conversation, or
+  the pipeline state.
+- **Don't duplicate.** Check existing memory files and today's journal entry before writing.
+- **`.claude/state/obsidian-config.md` is local-only** — user-specific paths, kept out of commits
+  by `.gitignore`. Obsidian is opt-in; memory, SESSION_REPORT and the research journal work out of
+  the box.
+- **When Obsidian is active, its `Home.md` dashboard is the source of truth for project stages.**
+  Don't contradict it.
 
----
-
-## Precedence
-
-If the user has a user-level `checkpoint` skill at `~/.claude/skills/checkpoint/`, this project-level skill takes precedence when invoked from within a research-claude project. The user-level skill continues to work for projects that don't have this file.
+Known failure points: `.claude/skills/checkpoint/gotchas.md`.
