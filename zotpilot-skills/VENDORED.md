@@ -16,7 +16,7 @@ that server's MCP tools.
 ## Provenance / refresh
 
 - Source: `https://github.com/EconGeo/ZotPilot.git`, `claude-skills/`
-- Vendored from commit: `a8120c5` (`v0.5.0-62-ga8120c5`)
+- Vendored from commit: `d12ab63` (`v0.5.0-69-gd12ab63`)
 
 ## The fork is the only source — do not sync from upstream
 
@@ -43,6 +43,31 @@ against our own CLI. Everything here is back to fork `a8120c5`.
 
 If a specific upstream improvement is wanted, port it into the fork's own `claude-skills/` and
 sync it down from there. Never overlay upstream onto this directory.
+
+### Do not run `zotpilot upgrade`
+
+The fork's `upgrade` resolves "latest" from **PyPI**, which publishes upstream. Tested
+2026-09-15 on the installed 0.5.0 build:
+
+```
+$ zotpilot upgrade --check
+  Installed: 0.5.0
+  Latest:    0.5.3
+Update available: 0.5.0 → 0.5.3
+```
+
+That "update" is a different lineage, not a newer revision — and it is what triggered the
+false alarm above. `_detect_cli_installer` (`src/zotpilot/_platforms.py:1086`) returns
+`editable` only for a dev checkout; any other install falls through to `pip`, and
+`cmd_update` then runs `pip install --upgrade zotpilot`, **replacing the fork with
+upstream**. Update with the fork install instead:
+
+```bash
+pip install --upgrade --force-reinstall git+https://github.com/EconGeo/ZotPilot.git
+```
+
+`claude-skills/ztp-setup/SKILL.md` carries this warning as of fork `0f37a24`, so the
+vendored copy here does too. Making `upgrade` itself fork-aware is still open in the fork.
 
 To refresh after the fork's skills change, run:
 
