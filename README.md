@@ -61,7 +61,9 @@ micromamba --version                 # should print a version number
 If `Invoke-WebRequest` is blocked by execution policy, run PowerShell as Administrator once with
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then re-run the installer.
 
-**Why micromamba instead of pip?** Running `pip install zotpilot` would add ZotPilot to your system Python — and uninstalling it later might leave orphaned dependencies. micromamba creates a clean, deletable env per tool.
+**Why micromamba instead of a bare pip install?** Installing ZotPilot straight into your system Python leaves orphaned dependencies behind when you remove it; micromamba creates a clean, deletable env per tool.
+
+**And why not `pip install zotpilot`?** That name on PyPI is *upstream* ZotPilot. Step 7 always installs from the **[`EconGeo/ZotPilot`](https://github.com/EconGeo/ZotPilot) fork on GitHub** — the fork is what this pipeline is built against, and the PyPI package lacks the Ollama embedding provider, multi-library indexing and BBT 7 support described below.
 
 ### Step 2 — Install Zotero + Better BibTeX
 
@@ -72,7 +74,7 @@ If `Invoke-WebRequest` is blocked by execution policy, run PowerShell as Adminis
    - In Zotero: Tools → Add-ons → drag the `.xpi` into the window
    - Restart Zotero
 
-**BBT 7+ note:** The EconGeo/ZotPilot fork handles the schema change in BBT version 7. If you're on BBT 6 or earlier, the upstream ZotPilot package also works.
+**BBT 7+ note:** The [`EconGeo/ZotPilot`](https://github.com/EconGeo/ZotPilot) fork handles the schema change in BBT version 7. Install the fork whatever your BBT version — the rest of this guide, and the vendored `ztp-*` skills, assume the fork's CLI.
 
 ### Step 3 — Install Quarto CLI
 
@@ -158,7 +160,8 @@ require judgment about paths (Steps 7–8).
 > step. `ai-audit` (agents + skills for `/humanize` and `/verify-claims`) and the
 > ZotPilot skills are both **vendored**, in `ai-audit/` and `zotpilot-skills/`
 > respectively, never a submodule. The ZotPilot MCP server itself installs separately
-> (Step 7, `pip install`), so cloning this repo does not drag in its heavy Chrome-connector
+> (Step 7, `pip install git+https://github.com/EconGeo/ZotPilot.git` — the fork, never PyPI),
+> so cloning this repo does not drag in its heavy Chrome-connector
 > toolchain either. A submodule needs `git submodule update --init` and silently yields an
 > EMPTY directory when a clone skips that step — this repo used to carry two (`ai-audit`
 > and `journal-digest`); both are gone as of 2026-09-09, one vendored and one dropped
