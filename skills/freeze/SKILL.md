@@ -27,31 +27,50 @@ Blocks Write and Edit operations on files outside the specified directories. Use
 
 When the user invokes `/freeze [dirs]`:
 
-1. Read the current `.claude/state/session-guards.json` (create if it doesn't exist)
-2. Set the `freeze` guard:
-```json
-{
-  "freeze": {
-    "active": true,
-    "allowed_paths": ["explorations/", "data/raw/"],
-    "activated_at": "2026-05-09T14:30:00",
-    "reason": "User invoked /freeze"
-  }
-}
+**If no directories are given, stop and ask which directories should stay editable.** An empty
+`allowed_paths` blocks every edit outside `.claude/`, which is almost never what the user meant.
+
+Write the guard with Bash — never Edit or Write. The hook denies Edit/Write on the guard file
+while freeze is active, and a read-modify-write is what preserves an active `careful` guard:
+
+```bash
+python3 - <<'PY'
+import json, pathlib, datetime
+p = pathlib.Path(".claude/state/session-guards.json")
+g = json.loads(p.read_text()) if p.exists() else {}
+g["freeze"] = {"active": True,
+               "allowed_paths": ["explorations/"],
+               "activated_at": datetime.datetime.now().isoformat(timespec="seconds"),
+               "reason": "User invoked /freeze"}
+p.parent.mkdir(parents=True, exist_ok=True)
+p.write_text(json.dumps(g, indent=2) + "\n")
+PY
 ```
-3. Confirm: "Freeze active. Edits allowed only in: [dirs]. Run `/freeze off` to deactivate."
+
+Confirm: "Freeze active. Edits allowed only in: [dirs]. Run `/freeze off` to deactivate."
 
 ## Deactivation
 
-When the user invokes `/freeze off`:
+When the user invokes `/freeze off`, again with Bash:
 
-1. Read `.claude/state/session-guards.json`
-2. Set `freeze.active` to `false`
-3. Confirm: "Freeze deactivated. All paths editable."
+```bash
+python3 - <<'PY'
+import json, pathlib
+p = pathlib.Path(".claude/state/session-guards.json")
+g = json.loads(p.read_text()) if p.exists() else {}
+g.setdefault("freeze", {})["active"] = False
+p.write_text(json.dumps(g, indent=2) + "\n")
+PY
+```
+
+Confirm: "Freeze deactivated. All paths editable."
 
 ## Gotchas
 
-- Freeze is session-scoped -- it resets when the conversation ends
-- The guard file persists on disk; the hook reads `.claude/state/session-guards.json` on every PreToolUse
-- `.claude/` is always editable (can't freeze yourself out of config changes)
-- Paths are relative to the project root
+- **Not session-scoped.** The guard file persists on disk; the hook reads
+  `.claude/state/session-guards.json` on every PreToolUse. A new session inherits an active
+  freeze. `/freeze off` is what ends it.
+- `.claude/` is editable **except** `.claude/state/session-guards.json` itself — otherwise a
+  frozen session could unfreeze itself. This is why activation and deactivation use Bash.
+- Paths are relative to the project root.
+- `/freeze` with no directories would block every edit. The skill refuses instead.
