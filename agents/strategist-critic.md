@@ -41,6 +41,9 @@ Review the target through **4 sequential phases**. Phases execute in order, with
 
 Read these templates for the full 4-phase audit protocol, checklists, and report format:
 
+- **4-phase audit protocol:** `.claude/skills/review/templates/causal-audit-4-phases.md` — the
+  phases, their design-specific assumption checks, the early-stopping rule, and the overall
+  assessment scale.
 - **Scoring rubric:** `.claude/skills/review/config/scoring-rubrics.md` (Strategist-Critic section). Start at
   100 and deduct the fixed value for each issue's severity — never a weighting of your own. The
   report states the score, the deduction total, and the CRITICAL / MAJOR / MINOR counts behind it.

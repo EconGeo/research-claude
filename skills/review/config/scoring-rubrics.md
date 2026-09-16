@@ -87,6 +87,24 @@ Checks" — it is not restated here; cite it by row. Additional rows:
 | Inconsistent naming | -2 |
 | Prohibited patterns (LOW severity) | -1 per |
 
+### Severity calibration (classification examples)
+
+Which severity an issue takes when it is not already a row above. Moved here from
+`.claude/skills/review/SKILL.md`, where it loaded on every `/review` invocation although only
+the coder-critic ever used it.
+
+| Example | Severity |
+|---------|----------|
+| Missing `set.seed()` in stochastic script | **Major** |
+| Hardcoded absolute path (`/Users/name/...`) | **Major** |
+| No error handling on data load | **Major** |
+| Missing figure axis labels | **Major** |
+| No package loading section at top of script | **Major** |
+| Missing comment on complex transformation | **Minor** |
+| Inconsistent naming convention | **Minor** |
+| Dead code left in script | **Minor** |
+| Using `print()` for debugging left in production | **Minor** |
+
 ---
 
 ## Strategist-Critic (Causal Audit)

@@ -20,7 +20,7 @@ When `/review --peer [journal]` is invoked:
 
 ### Referee Pool Field
 
-Each journal profile includes a **Referee pool** that weights which dispositions the editor draws from. The two referees always get DIFFERENT dispositions. Dispositions: STRUCTURAL, CREDIBILITY, MEASUREMENT, POLICY, THEORY, SKEPTIC (see editor.md for definitions).
+Each journal profile includes a **Referee pool** that weights which dispositions the editor draws from. The two referees always get DIFFERENT dispositions. Dispositions: STRUCTURAL, CREDIBILITY, MEASUREMENT, POLICY, THEORY, SKEPTIC (defined in `.claude/skills/review/templates/disposition-pool.md`; the sampling procedure is in `.claude/agents/editor.md`).
 
 ### Table Format Convention
 

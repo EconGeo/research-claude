@@ -101,6 +101,9 @@ Write to `quality_reports/peer_review_[sanitized_paper_name]/desk_review.md`:
 
 Only if Phase 1 verdict is SEND OUT.
 
+The six dispositions and what each one means are
+`.claude/skills/review/templates/disposition-pool.md`. Read it before drawing.
+
 **Default mode (2 referees, deliberately different):** From the journal profile's `Referee pool` weights:
 
 1. Draw disposition D1 according to weights. Record.
