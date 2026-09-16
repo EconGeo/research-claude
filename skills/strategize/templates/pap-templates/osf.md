@@ -161,6 +161,11 @@ $$
 - Functional form: [linear / polynomial / nonparametric]
 - Sample restrictions: [list, committed before seeing results]
 
+### Known endogeneity threats and planned diagnostics
+| Threat | Why it would bias the estimate | Planned diagnostic |
+|---|---|---|
+| [e.g. selection into treatment] | [direction and mechanism] | [test committed to now] |
+
 ---
 
 ## 7. Deviations Log
