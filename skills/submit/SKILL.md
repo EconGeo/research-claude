@@ -70,6 +70,11 @@ Workflow:
    - If a journal is specified via `$ARGUMENTS`: check that the disclosure location matches that journal's `**AI disclosure:**` field in `.claude/references/journal-profiles.md`
    - If all checks pass: report "AI disclosure audit: [N] log entries found, statement populated ✓"
 3. Check score gate: `python3 .claude/scripts/pipeline.py score --gate submission`
+3.5. **Coverage check (R-133).** `pipeline.py score` weights only components that carry a
+   score, so a PASS can rest on one scored component out of eight. Run
+   `python3 .claude/scripts/pipeline.py state show` and list every component the paper
+   actually has. If any of them is unscored, report it by name and treat the gate as
+   **not met** — an unscored component is not counted at all, it does not fail.
 4. Save gate summary to `quality_reports/quality_gate_[date].md`
 5. If PASS: generate cover letter draft (`.claude/skills/submit/templates/cover-letter.qmd`) + submission checklist (`.claude/skills/submit/templates/submission-checklist.md`)
 6. If FAIL: list blocking issues and stop
