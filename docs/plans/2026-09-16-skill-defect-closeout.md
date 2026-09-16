@@ -103,7 +103,7 @@ notes; this table is the handoff.
 
 | Task | Status | Branch | Merged | Notes |
 |---|---|---|---|---|
-| 0 — Land the pending `new-project-ztp` edit; baseline | not started | | | |
+| 0 — Land the pending `new-project-ztp` edit; baseline | done | `fix/new-project-ztp-registration` | yes (`b0a95af`) | The draft that had sat uncommitted (and live in all six papers) asserted two mechanisms. **Both were checked against the installed build, not the vendored text.** `zotpilot status` reports `Client integration — Registered: claude-code, opencode`, so the client-level half is right; and `Secrets file: ~/.secrets.env` with `Write ops ready: yes`, while `~/.config/zotpilot/config.json` holds only non-secret settings plus `zotero_user_id` — so the secrets half is right too, and **the vendored `ztp-setup` step 5 ("API keys are stored in `~/.config/zotpilot/config.json`") is stale, as is the audit's "still open" finding on it.** Two draft claims were wrong and were dropped before landing: a `claude mcp add --scope user` invocation (`zotpilot setup` does the registration itself — vendored step 7) and a reference to Codex, which is not a detected client. Suite **159 passed, 3 subtests**; `check_fork` PASS. Baseline: review 10,878 / revise 4,109 / tools 4,347 / promote 3,176 / lit-position 6,093 / ztp-data-tag 9,173 / pipeline 4,183 / write 7,482 / new-project-ztp 3,966; all 18 = 98,894. |
 | 1 — `review`: `--theory`, `--variance`, `--peer` score, `--stress` | not started | | | |
 | 2 — `revise`: `allowed-tools`, `post writer`, REWRITE, the letter | not started | | | |
 | 3 — `pipeline`: single owner for `state strike` | not started | | | |
