@@ -640,3 +640,98 @@ resolution base before the file.
 - Done: handoff §1, §2e, §2f (built + exercised); `CLAUDE.md` now points at the handoff.
 - Pending: §2a (109 prose literals), §2d (upstream ZotPilot), the `session_logs/` question,
   the six `pipeline.lock` files still recording `8bb6218`, and a full green `--live` run.
+
+## 2026-09-16 — Skill token optimization: Tasks 0–8 complete
+
+Executed `docs/plans/2026-09-16-skill-token-optimization.md` end to end. Nine branches, each
+merged to `main` with `--no-ff` after its own green verification.
+
+**Operations:**
+- `fix/session-guards` (786379e), `fix/submit-coverage-check` (fdf17a3),
+  `refactor/review-skill` (745794f), `refactor/strategize-skill` (ea89319),
+  `refactor/write-skill` (4e765ce), `refactor/discover-skill` (4333ec2),
+  `refactor/checkpoint-skill` (52a3267), `feat/checkpoint-improvement-candidates` (35f82d5)
+- New tests: `tests/test_session_guard.py` (12 cases), `tests/test_submit_gate.py` (2),
+  `tests/test_skill_contracts.py` (3 — step-binding, allowlist staleness, Level-2 budget)
+
+**Results — Level 2 (SKILL.md bodies, loaded in full on every invocation):**
+
+| | baseline | after | change |
+|---|---|---|---|
+| The five refactored skills | 63,573 | **37,756** | −41% (target ≤38,000 ✓) |
+| All 18 skills | 121,621 | **98,672** | −19% (~30,399 → ~24,668 tok) |
+| One `/pipeline run` (8 skills) | 73,176 | **50,819** | −31% (~18,294 → ~12,704 tok) |
+
+Per skill: review 18,058→10,878 · strategize 15,966→7,967 · write 11,290→7,482 ·
+discover 9,733→5,934 · checkpoint 8,526→5,495. `submit` grew 4,779→5,192 (the R-133 coverage
+check), and `careful`/`freeze` grew (the corrected guard documentation) — both deliberate.
+
+Test suite 142 → **159 passed**, `check_fork.sh` PASS.
+
+**Decisions:**
+- **D1 — `/strategize pap` score scope: user chose (b).** The PAP now records with
+  `--scope section:pre-analysis-plan`. Verified by reading `scripts/pipeline.py:483` in full:
+  only a `section:`-prefixed scope writes `state["sections"]`; a bare `--scope pap` would still
+  overwrite the component. R-103's mandatory PAP critic is intact. Accepted consequence —
+  `pipeline.py next` reports `strategy` unscored for a PAP-only project — is recorded in
+  `skills/strategize/gotchas.md` so it is not later "fixed".
+- **`disposition-pool.md` vs `agents/editor.md` on the 0-FATAL case: editor.md wins.** Zero FATAL
+  with 4+ ADDRESSABLE is a Major revision. The losing copy's duplicated peeve pools, decision
+  rule and report formats were deleted rather than corrected — a second copy only drifts again.
+  The file now owns only the six disposition definitions, which nothing else in the tree defined.
+- **Data feasibility grade A–D vs A–F: both, reconciled.** The explorer-critic's six categories
+  separate practical feasibility from the four fit categories, so the grade measures **access
+  effort** (the skill's semantics), extended with the template's **F** = not obtainable.
+- **Improvement loop: `/checkpoint` → `/promote`, not the audit's P6.** P6 would put a closing
+  instruction block in all 18 SKILL.md files — the exact per-invocation tax this plan removes.
+
+**Defects found and fixed beyond the plan's tables:**
+- `references/journal-profiles.md` pointed at `editor.md` for the disposition definitions;
+  `editor.md` never had them.
+- `/review --code` routed to "categories 4-12"; the agent and template both say 5–16, split
+  1–4 strategic / 5–16 quality.
+- `/write style-guide`'s inline workflow omitted the protocol's **self-citation check**, so
+  self-citation keys missing from `references.bib` went unreported.
+- `/discover` said the explorer-critic runs a "5-point assessment"; it runs six categories.
+- `/checkpoint` Step 3 told the model to ask "Look right? I'll save all of this" and wait — a
+  blocking prompt the user's global `CLAUDE.md` has standing instructions against. Removed.
+- `/checkpoint` never performed the plan staleness sweep, the handoff reference dry-run or the
+  `ai_use_log.md` confirmation that `session-handoff.md` and `ai-disclosure.md` require. Added as
+  report lines, not prompts.
+- `/tools learn` claimed "auto-memory handles corrections automatically" — silent
+  self-modification, which `meta-governance.md` forbids. Repointed.
+
+**Two findings worth carrying forward:**
+1. **No re-link was needed.** Task 8 Step 4 assumed membership changes require `apply.sh --link`.
+   Each skill is a *directory* symlink into this tree, so files and subdirectories created or
+   deleted inside an existing skill propagate immediately. Verified in `NAR_settlement`:
+   `causal-audit-4-phases.md` present, `referee-report-template.md` absent,
+   `checkpoint/references/` present, `discover/references/` gone. `check_install`'s `membership`
+   check passes in all six projects. A re-link is only needed for a brand-new top-level skill.
+   (Also note: the plan's command `./apply.sh --link` is wrong — `--project-dir` is required.)
+2. **`check_install --all` is RED — known and deliberate, but one project is worse than
+   recorded.** `docs/2026-09-10_final-cleanup-handoff.md` records `clone-links` as failing
+   **BRI, NAR_settlement, POGM4 and zoning2026** on purpose: each needs real copies of the three
+   `references/*` files before a coauthor clones it. That is still true and is not this work
+   (BRI's links date to `cd60ca1`, 2026-06-17).
+
+   **New:** ESG also fails, and the handoff says ESG was *fixed* by `9349a8e` on `main`. ESG is
+   checked out on `pipeline-adoption`, and `9349a8e` is **not an ancestor of that branch** — the
+   three links are still committed there (mode `120000`). The fix has not reached the adoption
+   branch, so ESG regresses into the failure if that branch merges. Worth resolving before the
+   adoption lands.
+
+**Deliberately not implemented** (so the next audit does not re-raise them):
+P2 `disable-model-invocation` (breaks `/pipeline`, which invokes stage skills by name), P4
+"5–10 options per decision point", P6 as specified, P7 eval suite (needs a mock ZotPilot MCP
+server).
+
+**Status:**
+- Done: Tasks 0–8. Plan's Progress Log is complete and is the detailed record.
+- Pending, from the audit and unchanged by this work: §4 Med/Low defects in `review`
+  (`--theory` has no mode section, `--variance` undocumented), `revise`, `tools`, `ztp-data-tag`,
+  `lit-position`, `pipeline` (possible double-strike — **unverified**, confirm before fixing),
+  `promote`, `state/`; P5 subagent routing; `allowed-tools` accuracy; P7 evals; and the two worst
+  P1 offenders, `ztp-tutor` (431 lines) and `humanize` (205), which live in vendored trees and
+  need upstream PRs to `EconGeo/ZotPilot` and `EconGeo/ai-audit` before a re-sync.
+- Also open: the six `pipeline.lock` files record `f7f49af`, now 30+ commits behind.

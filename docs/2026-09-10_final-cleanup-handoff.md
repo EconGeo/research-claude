@@ -315,6 +315,25 @@ this file is that move.**
   `check_install` PASS (one WARN: no `pipeline_state.json` on `main` yet — it is on the adoption
   branch). 142 tests OK · `check_fork` PASS · `run_fixture` PASS.
 
+**2026-09-16, skill token optimization:**
+
+- A **parallel track**, not a successor to this handoff. `docs/plans/2026-09-16-skill-token-optimization.md`
+  ran to completion (Tasks 0–8); the write-up is the `2026-09-16` entry in `docs/SESSION_REPORT.md`.
+  It cut Level-2 skill text 31% for a `/pipeline run` and fixed a batch of correctness defects in
+  `review`, `strategize`, `write`, `discover`, `checkpoint`, `submit` and the session guards.
+  **It does not touch §2a, §2b, §2c or §4 below, which remain this document's open work** — which
+  is why `CLAUDE.md`'s "Start here" still points here rather than at the newer entry.
+- **§4-adjacent correction:** the progress log above says `clone-links` FAILs BRI, NAR_settlement,
+  POGM4 and zoning2026, with ESG fixed by `9349a8e`. **ESG fails too.** It is checked out on
+  `pipeline-adoption`, and `9349a8e` is on `main` and is not an ancestor of that branch, so the
+  three `references/*` symlinks are still committed there. The fix has to reach the adoption
+  branch or ESG regresses when it merges.
+- **`apply.sh --link` is not needed for file-level membership changes.** Each skill is a
+  *directory* symlink into the shared tree, so files and subdirectories added or deleted inside an
+  existing skill propagate on save. Verified in NAR_settlement after Tasks 3/6/7 created and
+  deleted several. Only a brand-new top-level skill needs a re-link. (The plan's own
+  `./apply.sh --link` invocation is also wrong — `--project-dir` is required.)
+
 ### Loose ends this handoff never mentioned (added 2026-09-10)
 
 Neither is urgent; both are recorded because nothing else points at them.
