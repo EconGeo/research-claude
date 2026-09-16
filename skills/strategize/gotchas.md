@@ -36,3 +36,16 @@ Known failure points and edge cases for identification strategy design.
 - "Your instrument is invalid because [channel]" -- exclusion restriction arguments must be institutional, not just statistical.
 - "Parallel trends could fail because [reason]" -- the robustness plan should include a pre-committed response.
 - "Your structural model is too simple" -- justify scope explicitly, don't just defend the model.
+
+## Why the PAP score is section-scoped
+
+`/strategize pap` records with `--scope section:pre-analysis-plan`. The prefix is load-bearing:
+`pipeline.py` writes to `state["sections"]` **only** for a `section:`-prefixed scope. Every other
+value — including a bare `--scope pap` — falls through and overwrites the `strategy` component.
+
+A PAP and a strategy memo are alternative artifacts, not two passes over one. Without the scope, a
+PAP scored 72 overwrites a memo scored 88 that `coder` and `data-engineer` gate on, and a PAP
+scored 95 opens the `strategy` gate with no memo in existence.
+
+Consequence to expect, and not a defect: for a PAP-only project, `pipeline.py next` reports
+`strategy` as unscored until a strategy memo is written.
