@@ -22,11 +22,41 @@ tracked upstream. `seed-papers` exists only in the fork.
 
 | Skill | Source | Version |
 |---|---|---|
-| `ztp-profile`, `ztp-research`, `ztp-review`, `ztp-setup`, `ztp-tutor` | `xunhe730/ZotPilot`, `src/zotpilot/skills/*.md` | tag `v0.5.3` (commit `8b706c6`) |
+| `ztp-profile`, `ztp-research`, `ztp-review`, `ztp-tutor` | `xunhe730/ZotPilot`, `src/zotpilot/skills/*.md` | tag `v0.5.3` (commit `8b706c6`) |
+| `ztp-setup` | `EconGeo/ZotPilot`, `claude-skills/ztp-setup/` | commit `a8120c5` (`v0.5.0-62-ga8120c5`) |
 | `seed-papers` | `EconGeo/ZotPilot`, `claude-skills/seed-papers/` | commit `a8120c5` (`v0.5.0-62-ga8120c5`) |
 
-The five `ztp-*` files are byte-identical to the `v0.5.3` package skills (verified by SHA-256
-against the `.zotpilot-version.json` stamps that `zotpilot setup` writes alongside its deploy).
+The four upstream-sourced files are byte-identical to the `v0.5.3` package skills (verified by
+SHA-256 against the `.zotpilot-version.json` stamps that `zotpilot setup` writes alongside its
+deploy).
+
+### Why `ztp-setup` is the exception
+
+**`ztp-setup` drives the `zotpilot` CLI directly, so it must match the installed server, not the
+newest text.** The server everyone here runs is the **EconGeo fork**, whose base is v0.5.0 plus
+~40 fork commits — it is not upstream v0.5.3. Tested 2026-09-15 against the installed build:
+
+```
+$ zotpilot setup --list-vendors --json
+zotpilot: error: unrecognized arguments: --list-vendors --json
+```
+
+The fork's `zotpilot setup` accepts only `--non-interactive`, `--provider {gemini,dashscope,local}`
+and `--zotero-dir`. The upstream v0.5.3 skill's whole Step 4 is built on `--list-vendors --json`
+and `--verify`, neither of which exists there, so shipping it would walk users into a hard CLI
+error. The other four skills are prompt-level and degrade gracefully, so they track upstream.
+
+**Move `ztp-setup` back to the upstream list once the fork rebases onto upstream ≥ v0.5.3.**
+
+### Known gap: neither `ztp-setup` version documents the fork's Ollama path
+
+The fork added a local **Ollama** embedding provider (default `bge-large`, 1024-dim) that
+upstream implements differently. The fork's `setup --provider` choices do **not** include
+`ollama`, so it is configured through `zotpilot config set embedding_provider ollama` rather than
+the setup wizard — and the vendored `ztp-setup` (which lists only gemini/dashscope/local/none)
+never says so. Documenting it belongs either upstream in the fork's own `claude-skills/` or in a
+research-claude bridge skill under `skills/`; it must **not** be hand-patched into this
+directory, which is vendored verbatim.
 
 To refresh, run:
 
@@ -42,11 +72,11 @@ commits. Update the table above when you do.
 
 Until 2026-09-15 this directory was refreshed wholesale from the fork's `claude-skills/`, which
 silently held all five `ztp-*` skills at v0.5.0 while users' own `~/.claude/skills/` ran v0.5.3.
-Three skills were materially behind — `ztp-setup` lacked the two-layer embedding vendor/model
-catalog and `--verify` self-heal, `ztp-research` lacked the `manual_completion_required` /
-`publisher_canary_pending` actions and the `notices` handling, and `ztp-tutor` lacked the
-separate annotation-language, reading-purpose, domain-familiarity and comment-style axes. The
-sync script now pulls those five from upstream instead. The fork's `claude-skills/ztp-*` carry
+`ztp-research` lacked the `manual_completion_required` / `publisher_canary_pending` actions and
+the `notices` handling; `ztp-tutor` lacked the separate annotation-language, reading-purpose,
+domain-familiarity and comment-style axes. The sync script now pulls those two, plus
+`ztp-profile` and `ztp-review`, from upstream instead. (`ztp-setup` was briefly updated too and
+then reverted — see the exception above.) The fork's `claude-skills/ztp-*` carry
 no fork-specific edits (checked at `a8120c5`: four are byte-identical to the v0.5.0 package
 skills and `ztp-tutor` is a strict subset of the upstream text), so nothing is lost by
 preferring upstream. **If the fork ever does start editing a `ztp-*` skill, the overlay in

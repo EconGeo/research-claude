@@ -3,16 +3,20 @@
 #
 # TWO SOURCES, on purpose (see zotpilot-skills/VENDORED.md):
 #
-#   * ztp-profile / ztp-research / ztp-review / ztp-setup / ztp-tutor come from the
-#     UPSTREAM release tag's packaged skills (src/zotpilot/skills/*.md). That is what
-#     `zotpilot setup` deploys into ~/.claude/skills, so it is the version users actually
-#     run, and it is ahead of the fork.
-#   * seed-papers comes from the EconGeo FORK's claude-skills/ — it does not exist upstream.
+#   * ztp-profile / ztp-research / ztp-review / ztp-tutor come from the UPSTREAM release
+#     tag's packaged skills (src/zotpilot/skills/*.md). These are prompt-level skills: the
+#     newer text is better and degrades gracefully against the older fork server.
+#   * ztp-setup and seed-papers come from the EconGeo FORK's claude-skills/. seed-papers does
+#     not exist upstream. ztp-setup MUST track the fork because it drives the `zotpilot` CLI
+#     directly, and the fork's CLI is a v0.5.0 base: it has no `setup --list-vendors` and no
+#     `--verify` (tested 2026-09-15 — the upstream v0.5.3 skill errors out against it).
 #
-# The fork's claude-skills/ copies of the ztp-* skills are a v0.5.0-era snapshot and are
+# The fork's claude-skills/ copies of the other ztp-* skills are a v0.5.0-era snapshot and are
 # DELIBERATELY NOT USED here: syncing from them downgrades the skills (that is exactly what
-# happened before 2026-09-15). If the fork ever starts carrying fork-specific edits to a
-# ztp-* skill, this script must become a real three-way merge rather than an overlay.
+# happened before 2026-09-15). If the fork ever starts carrying fork-specific edits to one of
+# those, this script must become a real three-way merge rather than an overlay.
+#
+# When the fork rebases onto upstream >= v0.5.3, move ztp-setup back to UPSTREAM_SKILLS.
 #
 # Both fetches are blobless + sparse, so no 224 MB connector toolchain is pulled.
 #
@@ -29,9 +33,9 @@ FORK_REF="${2:-}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEST="$REPO_ROOT/zotpilot-skills"
 
-# Skills taken from upstream's packaged skills/, and the fork-only ones kept from the fork.
-UPSTREAM_SKILLS=(ztp-profile ztp-research ztp-review ztp-setup ztp-tutor)
-FORK_ONLY_SKILLS=(seed-papers)
+# Skills taken from upstream's packaged skills/, and the ones that must track the fork.
+UPSTREAM_SKILLS=(ztp-profile ztp-research ztp-review ztp-tutor)
+FORK_SKILLS=(seed-papers ztp-setup)
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -64,7 +68,7 @@ for s in "${UPSTREAM_SKILLS[@]}"; do
   mkdir -p "$STAGE/$s"
   cp "$UP_SRC/$s.md" "$STAGE/$s/SKILL.md"
 done
-for s in "${FORK_ONLY_SKILLS[@]}"; do
+for s in "${FORK_SKILLS[@]}"; do
   [[ -d "$FORK_SRC/$s" ]] || { echo "Error: fork has no claude-skills/$s" >&2; exit 1; }
   cp -r "$FORK_SRC/$s" "$STAGE/$s"
 done
@@ -75,5 +79,6 @@ mv "$STAGE" "$DEST"
 
 echo "✓ Refreshed zotpilot-skills/"
 echo "    ztp-*        ← xunhe730/ZotPilot@${UPSTREAM_TAG} (${UP_COMMIT}), src/zotpilot/skills/"
+echo "    ztp-setup    ← EconGeo/ZotPilot@${FORK_COMMIT}, claude-skills/ (CLI-coupled)"
 echo "    seed-papers  ← EconGeo/ZotPilot@${FORK_COMMIT}, claude-skills/"
 echo "  Update the provenance lines in zotpilot-skills/VENDORED.md, review the diff, and commit."
