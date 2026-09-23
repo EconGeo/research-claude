@@ -185,12 +185,20 @@ fi
 
 # ── scaffolding seeds (copies — project-owned, meant to be edited) ────────────
 echo "→ Installing project-owned seeds"
+# references/ are LINKED, not copied (D-26). They were copy_seed scaffolding
+# "meant to be edited", and that is exactly how they rotted: nothing refreshes a
+# copy, so POGM4's coding-standards-r.md still described a functions/ directory
+# and source() with here() long after upstream made source() in a chunk a
+# prohibited pattern (INV-19, -10) -- the local copy contradicted the invariant
+# the project was being scored against. discipline-cards.md still routed to
+# commands retired months earlier. A reference is shared knowledge, same class as
+# rules/, so it propagates by link like rules/ does. Per-paper specifics belong in
+# the project's own CLAUDE.md, never in a forked copy of a shared reference.
+# --link-references still runs after this and overwrites with links to the
+# author's shared voice-profile dir, which is a different and legitimate source.
 if [[ -d "$SCRIPT_DIR/references" ]]; then
-  mkdir -p "$PROJECT_DIR/.claude/references"
-  for ref in "$SCRIPT_DIR/references"/*.md; do
-    [[ -e "$ref" ]] || continue
-    copy_seed "$ref" "$PROJECT_DIR/.claude/references/$(basename "$ref")"
-  done
+  link_items "$SCRIPT_DIR/references" "$PROJECT_DIR/.claude/references"
+  prune_dead_links "$PROJECT_DIR/.claude/references"
 fi
 if [[ -d "$SCRIPT_DIR/state" ]]; then
   for ex in "$SCRIPT_DIR/state"/*.example; do

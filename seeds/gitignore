@@ -68,6 +68,7 @@ __pycache__/
 .claude/hooks/*
 .claude/scripts/*
 .claude/templates/*
+.claude/references/*
 # Session mechanics, never provenance
 quality_reports/agent_dispatch.jsonl
 /.pipeline/

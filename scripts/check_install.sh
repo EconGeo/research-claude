@@ -31,9 +31,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Linked dirs the pipeline owns. settings.json / references / state are
-# project-owned or installed by another mechanism and are not checked here.
-LINKED=(skills agents rules hooks scripts templates)
+# Linked dirs the pipeline owns. settings.json and state/ are project-owned.
+# references/ joined this list (D-26): it used to be copy_seed scaffolding, and
+# copies rot -- see the apply.sh comment. References have TWO legitimate sources,
+# so link-target below accepts either: research-claude (coding standards,
+# discipline cards) and the author's shared voice-profile dir, linked by
+# --link-references (personal-style-guide, domain-profile, journal-profiles).
+LINKED=(skills agents rules hooks scripts templates references)
 
 fail=0
 
@@ -119,7 +123,7 @@ check_project() {
     local escapes
     escapes="$(git -C "$P" ls-tree -r "$br" --format='%(objectmode) %(objectname) %(path)' 2>/dev/null \
       | awk '$1=="120000"' | while read -r _ oid path; do
-          case "$path" in .claude/skills/*|.claude/agents/*|.claude/rules/*|.claude/hooks/*|.claude/scripts/*|.claude/templates/*) continue ;; esac
+          case "$path" in .claude/skills/*|.claude/agents/*|.claude/rules/*|.claude/hooks/*|.claude/scripts/*|.claude/templates/*|.claude/references/*) continue ;; esac
           tgt="$(git -C "$P" cat-file blob "$oid")"
           python3 -c 'import os,sys; t=sys.argv[2]; r=os.path.normpath(os.path.join(os.path.dirname(sys.argv[1]), t)); sys.exit(0 if os.path.isabs(t) or r == ".." or r.startswith("../") else 1)' \
             "$path" "$tgt" && echo "$path -> $tgt"
@@ -154,7 +158,7 @@ check_project() {
       [[ -e "$dest/$name" || -L "$dest/$name" ]] || missing+=("$2/$name")
     done
   }
-  local d; for d in skills agents rules hooks templates; do want "$RC/$d" "$d"; done
+  local d; for d in skills agents rules hooks templates references; do want "$RC/$d" "$d"; done
   want "$RC/ai-audit/skills" skills
   want "$RC/ai-audit/agents" agents
   want "$RC/zotpilot-skills" skills true
@@ -174,6 +178,10 @@ check_project() {
   local stray=() t
   while IFS= read -r l; do
     t="$(cd "$(dirname "$l")" && cd "$(dirname "$(readlink "$l")")" 2>/dev/null && pwd -P)" || continue
+    # A reference may legitimately point at the author's shared voice-profile dir
+    # instead of the checkout -- that is what --link-references installs, and that
+    # dir is not a research-claude clone. Everything else must be in $RC.
+    [[ "$l" == "$P/.claude/references/"* && "$t" != "$RC"/* ]] && continue
     [[ "$t" == "$RC"/* || "$t" == "$RC" ]] || stray+=("${l#"$P"/} -> $(readlink "$l")")
   done < <(pipeline_links "$P")
   if [[ ${#stray[@]} -gt 0 ]]; then
@@ -242,7 +250,7 @@ check_project() {
   # project-owned file (a statusline, a journal-specific template), so a real
   # file there is reported but does not fail.
   local soft=() d3
-  for d3 in hooks scripts templates; do
+  for d3 in hooks scripts templates references; do
     [[ -d "$P/.claude/$d3" ]] || continue
     while IFS= read -r f; do soft+=("${f#"$P"/}"); done \
       < <(find "$P/.claude/$d3" -maxdepth 1 -mindepth 1 ! -type l ! -name '.*' ! -name '__pycache__' 2>/dev/null | sort)
@@ -281,7 +289,7 @@ check_project() {
 
   # ── 8. gitignore covers the linked dirs ───────────────────────────────────
   local gi_missing=() pat
-  for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' 'quality_reports/agent_dispatch.jsonl'; do
+  for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' '.claude/references/*' 'quality_reports/agent_dispatch.jsonl'; do
     grep -qxF "$pat" "$P/.gitignore" 2>/dev/null || gi_missing+=("$pat")
   done
   [[ ${#gi_missing[@]} -eq 0 ]] && ok gitignore-covers || bad gitignore-covers "missing lines: ${gi_missing[*]}"
