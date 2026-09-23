@@ -1,6 +1,6 @@
 ---
 name: tools
-description: Utility commands — commit, render, validate-bib, lint, journal, context-status, learn. Replaces individual utility skills.
+description: Utility commands — commit (with blocking quality/number/structure gates), render, validate-bib, lint, journal, context-status, learn. Replaces individual utility skills.
 argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | context | learn] [args]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
@@ -16,11 +16,58 @@ Utility subcommands for project maintenance and infrastructure.
 ## Subcommands
 
 ### `/tools commit [message]` — Git Commit
-Stage changes, create commit, optionally create PR and merge.
-- Run git status to identify changes
-- Stage relevant files (never stage .env or credentials)
-- Create commit with descriptive message
-- If quality score available and >= 80, note in commit
+
+Stage changes, **verify the blocking gates**, commit, open a PR, and merge.
+
+#### Step 0 — Quality gate (blocking, runs before branching)
+
+For every changed `.qmd`, `.tex` or `.R` file with a rubric:
+
+```bash
+python3 scripts/quality_score.py <changed-file-paths>
+```
+
+**If the declared manuscript is among the changed files, also run the
+single-source-of-truth gates. These are blocking, not advisory:**
+
+```bash
+python3 .claude/scripts/prose_number_check.py <manuscript>       # INV-11
+python3 .claude/scripts/quarto_structure_check.py <manuscript>   # INV-13/INV-25
+```
+
+- `prose_number_check.py` non-zero = a numeric literal in prose is neither derived
+  from code nor explained. Bind it to an inline `` `r ` `` expression, or add a row to
+  `quality_reports/prose_number_allowlist.csv` **with a reason**. Do not override.
+- `quarto_structure_check.py` non-zero = the document is not native Quarto — a table or
+  figure chunk is mislabelled, an exhibit is referenced by typed number instead of `@ref`,
+  a caption is set in R instead of `#| tbl-cap:`, or a cross-reference does not resolve.
+- **Score below 80 on any file: halt and report.** The user must fix, or override
+  explicitly ("commit anyway", "skip quality gate"). Record any override *and its stated
+  reason* in the commit message.
+
+**Why these are blocking.** A clean render proves nothing about either class of defect:
+a render cannot fail on a literal, because a literal is not an expression, and it cannot
+fail on a typed "Table 4", because typed text is valid prose. A manuscript once scored
+100/100 EXCELLENCE with zero issues while shipping a sentence that stated the opposite
+sign of its own table, and four provably wrong numbers reached a manuscript through
+exactly this gap. The quality score checks hardcoded *paths*, not *numbers* or *structure*.
+
+Then spawn the **verifier** agent (`Agent`, `subagent_type=verifier`) for render and
+cross-reference checks. Report pass/fail before committing.
+
+#### Steps 1–7
+
+1. `git status`, `git diff --stat`, `git log --oneline -5`.
+2. Create a branch — **never commit directly to main**.
+3. Stage named files. Never `git add -A`; never stage `.claude/settings.local.json`,
+   `.env`, or anything holding a secret.
+4. Commit. If `$ARGUMENTS` is given use it verbatim; otherwise write a message that
+   explains *why*, not *what*.
+5. Push, `gh pr create`.
+6. `gh pr merge --merge --delete-branch` (not squash or rebase unless asked).
+7. Report the PR URL and what merged.
+
+**Never skip Step 0.** If the user insists, the override reason goes in the commit message.
 
 ### `/tools render [file]` — Quarto Render
 Single-step render. There is no separate LaTeX build.

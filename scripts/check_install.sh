@@ -207,6 +207,48 @@ check_project() {
     else ok override-tracked "every project override is committed"; fi
   fi
 
+  # ── 5b. No project-local tooling ──────────────────────────────────────────
+  # Skills, agents, rules and commands are PIPELINE LOGIC. They live upstream and
+  # reach a project by symlink; a paper repo holds project-specific data and
+  # decisions, not tooling. Check 5 above already finds real files under linked
+  # dirs, but it only asks whether they are COMMITTED — it treats a real override
+  # as legitimate. That is the hole this closes.
+  #
+  # Why it is not a style rule. POGM4 carried a project-local skill,
+  # flextable-quarto-word-captions, kept as a deliberate carve-out by the very
+  # commit that aligned the project to the canonical set. Its fix went obsolete
+  # with a flextable release and nothing re-checked it, so it silently forced
+  # tab- chunk labels — which Quarto does not register as crossref targets —
+  # producing 158 typed table references and a rendered exhibit order that drifted
+  # from the numbers the captions claimed. Worse, it functioned as a standing
+  # WAIVER: two successive coder-critics declined to deduct for the defect
+  # *because the local skill documented the deviation*, overriding the shared rule
+  # rules/quarto-word.md, which had the correct pattern the whole time. A real
+  # directory sitting among symlinks is invisible to every other gate here.
+  local TOOLING=(skills agents rules commands) local_tooling=() f d2
+  for d2 in "${TOOLING[@]}"; do
+    [[ -d "$P/.claude/$d2" ]] || continue
+    while IFS= read -r f; do local_tooling+=("${f#"$P"/}"); done \
+      < <(find "$P/.claude/$d2" -maxdepth 1 -mindepth 1 ! -type l ! -name '.*' ! -name '__pycache__' 2>/dev/null | sort)
+  done
+  if [[ ${#local_tooling[@]} -gt 0 ]]; then
+    bad local-tooling "${#local_tooling[@]} project-local tooling item(s) — promote upstream, then delete here:"
+    printf '    %s\n' "${local_tooling[@]}" | head -10
+    [[ ${#local_tooling[@]} -gt 10 ]] && echo "    …"
+    echo "    (skills/agents/rules/commands belong in research-claude; use /promote)"
+  else ok local-tooling "no skills, agents, rules or commands are project-local"; fi
+
+  # Softer sibling: hooks/, scripts/ and templates/ may legitimately hold a
+  # project-owned file (a statusline, a journal-specific template), so a real
+  # file there is reported but does not fail.
+  local soft=() d3
+  for d3 in hooks scripts templates; do
+    [[ -d "$P/.claude/$d3" ]] || continue
+    while IFS= read -r f; do soft+=("${f#"$P"/}"); done \
+      < <(find "$P/.claude/$d3" -maxdepth 1 -mindepth 1 ! -type l ! -name '.*' ! -name '__pycache__' 2>/dev/null | sort)
+  done
+  [[ ${#soft[@]} -gt 0 ]] && warn local-support "${#soft[@]} real file(s) under hooks/scripts/templates: ${soft[*]}"
+
   # ── 6. Lock provenance ────────────────────────────────────────────────────
   # In --tip mode the lock is an install-time stamp, so it goes stale as the
   # pipeline advances. That is not an error; it is only wrong at submission,
