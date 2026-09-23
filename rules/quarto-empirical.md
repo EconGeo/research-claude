@@ -325,7 +325,6 @@ Invoked when the reviewed artifact is `manuscript_<project>.qmd` and this rule i
 | `quarto-empirical.md` (this rule) | **Required** — pipeline architecture, caching, data integrity, single source of ground truth |
 | `quarto-pdf.md` | **Required** — `pdf:` format block + kableExtra/figure/citation mechanics for the canonical PDF output |
 | `quarto-word.md` | Optional — `docx:` format block + flextable/CSL mechanics, only if Word secondary output is needed |
-| `registry-verification-gate.md` | **Legacy only** — registry-pattern projects |
 
 `quarto-pdf.md` and `quarto-word.md` are **format-reference** docs for the two output
 formats of the single `manuscript_<project>.qmd` — they describe rendering mechanics and

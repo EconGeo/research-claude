@@ -223,7 +223,6 @@ Beyond the vendored ai-audit agents and skills, research-claude ships its own pi
 | `data-manifest.md` | Every project keeps `data/raw/data_manifest.md` — a current table recording where each raw data file came from, how it was acquired, and which variables are used. The audit trail behind every reported number. |
 | `quarto-pdf.md` | PDF output format reference for the single `manuscript_<project>.qmd`: the `pdf:` block plus kableExtra/figure/citation mechanics and LaTeX landmines (XeLaTeX + biblatex). |
 | `quarto-word.md` | Word output format reference: the optional `docx:` block plus flextable/CSL mechanics, rendered from the *same* `manuscript_<project>.qmd`. Architecture and caching are governed by `quarto-empirical.md`, not redefined here. |
-| `registry-verification-gate.md` | *Legacy.* Write-gate for older registry-pattern projects that pre-date the `quarto-empirical` standard. New projects don't need it. |
 
 ### The single-manuscript pipeline
 
