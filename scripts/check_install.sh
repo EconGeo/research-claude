@@ -222,8 +222,8 @@ check_project() {
   # dirs, but it only asks whether they are COMMITTED — it treats a real override
   # as legitimate. That is the hole this closes.
   #
-  # Why it is not a style rule. POGM4 carried a project-local skill,
-  # flextable-quarto-word-captions, kept as a deliberate carve-out by the very
+  # Why it is not a style rule. One project carried a project-local skill for a
+  # flextable caption workaround, kept as a deliberate carve-out by the very
   # commit that aligned the project to the canonical set. Its fix went obsolete
   # with a flextable release and nothing re-checked it, so it silently forced
   # tab- chunk labels — which Quarto does not register as crossref targets —

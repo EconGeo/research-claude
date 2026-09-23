@@ -21,13 +21,7 @@ Stage changes, **verify the blocking gates**, commit, open a PR, and merge.
 
 #### Step 0 — Quality gate (blocking, runs before branching)
 
-For every changed `.qmd`, `.tex` or `.R` file with a rubric:
-
-```bash
-python3 scripts/quality_score.py <changed-file-paths>
-```
-
-**If the declared manuscript is among the changed files, also run the
+**If the declared manuscript is among the changed files, run both
 single-source-of-truth gates. These are blocking, not advisory:**
 
 ```bash
@@ -41,9 +35,14 @@ python3 .claude/scripts/quarto_structure_check.py <manuscript>   # INV-13/INV-25
 - `quarto_structure_check.py` non-zero = the document is not native Quarto — a table or
   figure chunk is mislabelled, an exhibit is referenced by typed number instead of `@ref`,
   a caption is set in R instead of `#| tbl-cap:`, or a cross-reference does not resolve.
+Then, **only if the project ships one**, run its own rubric scorer. This is
+project-owned — `quality_score.py` at the project root in the projects that have it —
+and is **not** part of research-claude, so test for it before calling it rather than
+assuming it exists.
+
 - **Score below 80 on any file: halt and report.** The user must fix, or override
   explicitly ("commit anyway", "skip quality gate"). Record any override *and its stated
-  reason* in the commit message.
+  reason* in the commit message. A project without a scorer still runs the two gates above.
 
 **Why these are blocking.** A clean render proves nothing about either class of defect:
 a render cannot fail on a literal, because a literal is not an expression, and it cannot

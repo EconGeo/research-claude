@@ -85,6 +85,22 @@ into `data/raw/` — cleaning lives in cached chunks reading the true raw files.
 
 **INV-24.** Every external file a chunk reads has a row in `data/raw/data_manifest.md`.
 
+**INV-25.** Exhibit numbers and cross-references come from the renderer, never from a
+human. Table chunks are labelled `tbl-` (or `apptbl-` under a `crossref: custom` float),
+figure chunks `fig-`; captions live in `#| tbl-cap:` / `#| fig-cap:` and not in an R
+argument; prose cites `@tbl-x` / `@fig-x` / `@sec-x` and never a typed "Table 4"; and
+`knitr::opts_knit$set(quarto.version = 0)` — which disables captions, auto-numbering and
+cross-references together — does not appear. Checked by
+`.claude/scripts/quarto_structure_check.py`.
+
+> INV-25 is the structural twin of INV-11. INV-11 asks whether every *number* in prose came
+> from code; INV-25 asks whether every *exhibit number and reference* came from the renderer.
+> Neither subsumes the other, and a render proves neither: a render cannot fail on a typed
+> "Table 4" any more than it can fail on a typed coefficient, because typed text is valid
+> prose. One project shipped 158 typed table references, zero `@tbl-`, and ten exhibits whose
+> rendered position contradicted the number their own caption claimed, while passing the
+> render, the quality score and the number gate.
+
 ## Talk
 
 **INV-20.** Notation in the talk matches the paper exactly — same symbols, same
@@ -108,6 +124,7 @@ kept rather than reused so older reports and reviews still resolve.
 |---|---|
 | INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required; verifier check 4b |
 | INV-14, INV-15, INV-16, INV-19 | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) + `coder-critic` (chunk-level: `set.seed()`, cache setup, `source()`) + verifier check 4c (mandatory FAIL) |
+| INV-25 | `.claude/scripts/quarto_structure_check.py` — FAIL blocks the commit gate |
 | INV-23, INV-24 | `coder-critic` against `data/raw/data_manifest.md`; verifier check 4c for INV-24 (and check 7, data provenance, in submission mode) |
 | INV-9, INV-13 | `quarto render` fails or degrades visibly; writer-critic category 5; verifier check 4c for INV-9 |
 | INV-18 | `coder-critic` category 13 (manuscript-model) |

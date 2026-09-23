@@ -2,3 +2,4 @@ prose_number_check.py
 pipeline.py
 registry_lib.py
 qmd_chunks.py
+quarto_structure_check.py
