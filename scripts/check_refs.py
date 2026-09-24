@@ -284,12 +284,50 @@ def crit_promote_register_check(root):
                      "a bare mention of the file is not a checklist step")
     return report("promote-register-check", hits)
 
+WRITE_CAPABLE_TOOLS = {"Write", "Edit", "NotebookEdit"}
+NO_WRITE_MARKER = re.compile(r"do\s+not\s+(write|edit)\b", re.I)
+
+def _agent_tools(root, name):
+    """Resolve an agent's own .md file across both roster directories (rl.AGENT_DIRS) and
+    return (path, full text, tools set) — or (None, "", set()) if no file exists anywhere."""
+    for d in rl.AGENT_DIRS:
+        f = root / d / f"{name}.md"
+        if f.exists():
+            text = f.read_text(errors="ignore")
+            m = re.search(r"^(?:allowed-)?tools:\s*(.*)$", text, re.M)
+            tools = {tok.strip() for tok in m.group(1).split(",")} if m else set()
+            return f, text, tools
+    return None, "", set()
+
+def crit_writes_tools(root):
+    """Phase 2.1 of the 2026-09-23 repair plan fixed nine agents by hand: declared to write a
+    path in registry.yaml, with no Write/Edit tool and no instruction that the dispatching
+    skill writes on their behalf, so the write silently never happened. This is the check that
+    should have existed to catch it. An agent whose own .md file cannot be resolved is skipped —
+    that is registry-complete's job (pipeline.py registry check), not this criterion's."""
+    reg = rl.load_registry(root)
+    hits = []
+    for name, e in reg["agents"].items():
+        writes = e.get("writes") or []
+        if not writes:
+            continue
+        f, text, tools = _agent_tools(root, name)
+        if f is None:
+            continue
+        if tools & WRITE_CAPABLE_TOOLS:
+            continue
+        if NO_WRITE_MARKER.search(text):
+            continue
+        hits.append(f"{f.relative_to(root)}: registry.yaml declares writes: {writes} but this "
+                    f"agent has no write-capable tool and no 'do not write/edit' disclaimer")
+    return report("writes-tools", hits)
+
 CRITERIA = {
     "latex-residue": crit_latex_residue, "manuscript-model": crit_manuscript_model,
     "deleted-things": crit_deleted_things, "inv-refs": crit_inv_refs, "skill-refs": crit_skill_refs,
     "tool-name": crit_tool_name, "hooks-readme": crit_hooks_readme,
     "artifact-paths": crit_artifact_paths, "promote-vendor-warn": crit_promote_vendor_warn,
-    "promote-register-check": crit_promote_register_check,
+    "promote-register-check": crit_promote_register_check, "writes-tools": crit_writes_tools,
 }
 
 def main():

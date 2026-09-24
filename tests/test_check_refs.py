@@ -142,4 +142,39 @@ class TestPromoteRegisterCheck(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(cr.crit_promote_register_check(ROOT), 0)
 
+
+class TestWritesTools(unittest.TestCase):
+    """Phase 2.1 of docs/plans/2026-09-23_pipeline-repair.md fixed nine agents by hand (no
+    Write/Edit tool + no 'do not write' disclaimer meant a declared writes: path was silently
+    never produced). This is the check that should have existed to catch it, and to stop it
+    recurring: an agent with writes: in registry.yaml must EITHER carry a write-capable tool
+    OR carry the disclaimer establishing the dispatching skill writes on its behalf."""
+
+    def _run(self, agent_md_body: str) -> int:
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "rules").mkdir()
+            (root / "rules" / "registry.yaml").write_text((ROOT / "rules" / "registry.yaml").read_text())
+            (root / "agents").mkdir()
+            # coder-critic already declares writes: in the real registry.yaml copied above;
+            # only its own .md file's content varies per test.
+            (root / "agents" / "coder-critic.md").write_text(agent_md_body)
+            with contextlib.redirect_stdout(io.StringIO()):
+                return cr.crit_writes_tools(root)
+
+    def test_no_write_tool_no_disclaimer_flagged(self):
+        self.assertEqual(self._run("---\ntools: Read, Grep, Glob\n---\nReview things.\n"), 1)
+
+    def test_no_write_tool_with_disclaimer_passes(self):
+        self.assertEqual(self._run(
+            "---\ntools: Read, Grep, Glob\n---\n"
+            "Return as your final response. Do NOT write any files yourself.\n"), 0)
+
+    def test_write_tool_present_passes_without_disclaimer(self):
+        self.assertEqual(self._run("---\ntools: Read, Write, Grep\n---\nWrite the report directly.\n"), 0)
+
+    def test_real_tree_passes(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cr.crit_writes_tools(ROOT), 0)
+
 if __name__ == "__main__": unittest.main()
