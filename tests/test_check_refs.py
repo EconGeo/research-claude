@@ -106,4 +106,40 @@ class TestPromoteVendorWarn(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(cr.crit_promote_vendor_warn(ROOT), 0)
 
+
+class TestPromoteRegisterCheck(unittest.TestCase):
+    """Phase 4.3: D-2, D-3 and D-18 were all a mechanism correctly retired or introduced whose
+    purpose nobody re-homed, found only because an audit went looking three months later.
+    `/promote` is the moment a change lands upstream for everyone; it must prompt the promoting
+    session to check the clo-author divergence register, not just document that it exists."""
+
+    def _run(self, text: str) -> int:
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "skills" / "promote").mkdir(parents=True)
+            (root / "skills" / "promote" / "SKILL.md").write_text(text)
+            with contextlib.redirect_stdout(io.StringIO()):
+                return cr.crit_promote_register_check(root)
+
+    def test_no_mention_of_the_register_fails(self):
+        self.assertEqual(self._run("Review pipeline changes and land them upstream.\n"), 1)
+
+    def test_register_named_but_no_divergence_step_fails(self):
+        """Naming the file in passing (e.g. a cross-reference elsewhere) is not a checklist step."""
+        self.assertEqual(self._run("See docs/decisions/clo-author-divergences.md for history.\n"), 1)
+
+    def test_register_and_divergence_step_passes(self):
+        self.assertEqual(self._run(
+            "Before committing, ask whether this change is a divergence from clo-author and "
+            "add an entry to docs/decisions/clo-author-divergences.md if so.\n"), 0)
+
+    def test_missing_file_reported(self):
+        with tempfile.TemporaryDirectory() as t:
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(cr.crit_promote_register_check(pathlib.Path(t)), 1)
+
+    def test_the_shipped_skill_passes(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cr.crit_promote_register_check(ROOT), 0)
+
 if __name__ == "__main__": unittest.main()

@@ -267,11 +267,29 @@ def crit_promote_vendor_warn(root):
             for v in VENDORED if not any(v in ln and re.search(r"vendor", ln, re.I) for ln in lines)]
     return report("promote-vendor-warn", hits)
 
+def crit_promote_register_check(root):
+    """D-2, D-3 and D-18 were all the same shape: a mechanism correctly retired or introduced,
+    whose purpose nobody re-homed, found only because a 2026-09-23 audit went looking three months
+    later (Phase 4.3). `/promote` is the moment a change lands upstream for everyone — it must
+    prompt whoever is promoting to check the divergence register, not just document that the
+    register exists somewhere."""
+    f = root / "skills" / "promote" / "SKILL.md"
+    if not f.exists(): return report("promote-register-check", ["skills/promote/SKILL.md missing"])
+    text = f.read_text()
+    hits = []
+    if "clo-author-divergences.md" not in text:
+        hits.append("skills/promote/SKILL.md: does not reference docs/decisions/clo-author-divergences.md")
+    if not re.search(r"before committ", text, re.I):
+        hits.append("skills/promote/SKILL.md: no step ties the register to the upstream commit — "
+                     "a bare mention of the file is not a checklist step")
+    return report("promote-register-check", hits)
+
 CRITERIA = {
     "latex-residue": crit_latex_residue, "manuscript-model": crit_manuscript_model,
     "deleted-things": crit_deleted_things, "inv-refs": crit_inv_refs, "skill-refs": crit_skill_refs,
     "tool-name": crit_tool_name, "hooks-readme": crit_hooks_readme,
     "artifact-paths": crit_artifact_paths, "promote-vendor-warn": crit_promote_vendor_warn,
+    "promote-register-check": crit_promote_register_check,
 }
 
 def main():

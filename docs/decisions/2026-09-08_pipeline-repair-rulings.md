@@ -857,10 +857,25 @@ Recorded, judged non-blocking, and left for triage:
 - ~~`hooks/README.md`'s "how to block" table states that `PreCompact, Stop` block only by exit
   2…~~ **CORRECTED at Task 7.4.** The row now records that `Stop` also honours a top-level
   `{"decision":"block","reason":…}`, which is what `hooks/critic-pairing.py` emits.
-- `hooks/protect-files.sh` exists, is documented in the README table, and is registered in **no**
-  settings file anywhere. That is deliberate (R-7: it is opt-in and needs `PROTECTED_PATTERNS`
-  edited per project), but `hooks-readme` only checks existence and event agreement, never
-  registration — so nothing distinguishes "deliberately unwired" from "forgotten".
+- ~~`hooks/protect-files.sh` exists, is documented in the README table, and is registered in
+  **no** settings file anywhere. That is deliberate (R-7: it is opt-in and needs
+  `PROTECTED_PATTERNS` edited per project)~~ **CORRECTED 2026-09-24 (Phase 4.1 of
+  `docs/plans/2026-09-23_pipeline-repair.md`).** The "R-7" cited above is
+  `docs/superpowers/specs/2026-09-08-pipeline-repair-design.md`'s R-7 — a *different document's*
+  numbering, not this rulings file's own appendix, which has an unrelated R-7 of its own
+  (*"`coder-critic.md` must retain `Correctness Layer` and `INV-23`"*, see the Appendix below).
+  The two happened to collide on the same number the same day; this line conflated them, and the
+  2026-09-23 audits repeated the conflation without checking either source. The underlying
+  decision was real (the design spec's R-7 does say "opt-in"), but it did not survive contact with
+  reality: by 2026-09-23, `/review` had already had to add its own `git status --porcelain` check
+  because a project gate restamped two committed reports — exactly the failure this hook exists to
+  prevent. `hooks/protect-files.sh` is now wired by default in `seeds/settings.json` and all six
+  linked repos; see `docs/decisions/clo-author-divergences.md` D-3. This line is kept, struck
+  through, for the same reason the hooks-readme correction above is: a reader who saw the "R-7,
+  opt-in" claim should learn where it came from and why it changed, not just find it gone. Also
+  worth naming as its own small lesson: **a citation that looks self-referential inside a document
+  may point at a different document's numbering** — always resolve "R-n" against the appendix (or
+  file) it is actually claiming to cite, not assume proximity implies identity.
 - `critic-pairing.py`'s sentinel under `~/.claude/sessions/<hash>/` is never pruned and grows one
   `<sid>:<creator>` key per incident, indefinitely.
 - Clock skew between machines is unfixed and fails OPEN: a creator run on a slow clock can stamp
