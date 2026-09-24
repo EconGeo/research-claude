@@ -923,18 +923,18 @@ Same shape: assert `search_topic` and `advanced_search` calls precede any
 
 | Task | Status | Commit | Notes |
 |---|---|---|---|
-| A1 | | | |
-| A2 | | | |
-| A3 | | | |
-| A4 | | | |
-| A5 | | | |
-| A6 | | | |
-| A7 | | | |
-| A8 | | | |
-| A9 | | | |
-| A10 | | | |
-| A11 | | | |
-| A12 | | | |
+| A1 | done 2026-09-24 | `63e8fd7` | rule + agents.md pointer + test; 278 tests |
+| A2 | done 2026-09-24 | `3e08f17` | strategize cap 8,000→8,500 (8,464) |
+| A3 | done 2026-09-24 | `febc8c0` | discover cap 6,200→7,300 (7,195); four gates |
+| A4 | done 2026-09-24 | `d9649e6` | three gates; argument-hint added |
+| A5 | done 2026-09-24 | `37461cb` | web claim dropped; pick read by --peer/final |
+| A6 | done 2026-09-24 | `731e66e` | review cap 12,500→12,700 (12,521) |
+| A7 | done 2026-09-24 | `feb72bd` | classification confirmed before routing |
+| A8 | done 2026-09-24 | `12e1951` | Step 1b |
+| A9 | done 2026-09-24 | `71888c8` | write cap 7,600→8,100 (8,033) |
+| A10 | done 2026-09-24 | `6d4c86c` | five ranked alternatives per stage reference; theory opt-in |
+| A11 | done 2026-09-24 | `dcbee58` |  |
+| A12 | done 2026-09-24 | `311ea53` | Step 5b; +1 test |
 | A13 | | | |
 | B1 | | | |
 | B2 | | | |
