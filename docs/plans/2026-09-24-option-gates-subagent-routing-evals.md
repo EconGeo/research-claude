@@ -944,15 +944,15 @@ Same shape: assert `search_topic` and `advanced_search` calls precede any
 | A10 | done 2026-09-24 | `6d4c86c` | five ranked alternatives per stage reference; theory opt-in |
 | A11 | done 2026-09-24 | `dcbee58` |  |
 | A12 | done 2026-09-24 | `311ea53` | Step 5b; +1 test |
-| A13 | in progress | `38cd58c` | first live run stopped at `data`: protect-files.sh blocked creating the critic report (pre-existing since `5305d11`, hook fixed); re-run pending |
-| B1 | | | |
-| B2 | | | |
-| B3 | | | |
-| B4 | | | |
-| B5 | | | |
-| B6 | | | |
+| A13 | done 2026-09-24 | `0737ac2` | live tier GREEN under --yes after the hook fix: two data rounds, score 75 recorded, strike 1, round 2 re-dispatched; halted only on a claude -p permission refusal of the round-2 record-score (now pre-approved in the fixture, `483882e`) |
+| B1 | done 2026-09-24 | `483882e` | data-tag-extractor; registry + permissions.md; fixture pre-approves pipeline.py |
+| B2 | done 2026-09-24 | `8742139` | lit-scout; /ztp-research stays in main context |
+| B3 | done 2026-09-24 | `a70b660` | journal-scout; no web tool anywhere |
+| B4 | done 2026-09-24 | `b028cb3` | D4b recorded in checkpoint/gotchas.md |
+| B5 | done 2026-09-24 | `b028cb3` | novelty via lit-scout; explorer keeps its web tools (read in full: it uses them) |
+| B6 | done 2026-09-24 | `b028cb3` | revise/write list the manuscript; writer reads; write 8,100→8,200, discover 7,300→7,500 |
 | C1 | done 2026-09-24 | `2dd45e1` | tests/mock_zotpilot.py + fixture JSON; 8 tests |
-| C2 | scaffold 2026-09-24 | `b3b7815` | checker + runner + 5 checker tests; the run itself waits on B1 |
+| C2 | done 2026-09-24 | `9023f2e` | PASS: 13 mock calls, extractor dispatched first, 0 writes (vacuous 2–4, noted); two mock defects fixed |
 | C3 | | | |
 
 ## What this plan deliberately leaves open
