@@ -13,6 +13,10 @@ def init_repo(root):
     git(["init", "-q"], root)
     git(["config", "user.email", "t@example.com"], root)
     git(["config", "user.name", "T"], root)
+    git(["config", "commit.gpgsign", "false"], root)
+    hooks = root / ".nohooks"
+    hooks.mkdir()
+    git(["config", "core.hooksPath", str(hooks)], root)
 
 def run_check(root, days=7):
     return subprocess.run([sys.executable, str(SCRIPT), "--root", str(root), "--days", str(days)],
