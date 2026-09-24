@@ -6,7 +6,7 @@ description: >
   artifacts ZotPilot does not — frontier_map.md and positioning.md. Use when starting
   a project, writing an introduction, or defending a contribution claim.
   Local-first per .claude/rules/literature-search-order.md.
-allowed-tools: Read,Write,Edit,Grep,Glob,Bash,WebSearch,WebFetch,Agent
+allowed-tools: Read,Write,Edit,Grep,Glob,Bash,WebSearch,WebFetch,Agent,mcp__zotpilot__*
 ---
 
 # Literature Positioning

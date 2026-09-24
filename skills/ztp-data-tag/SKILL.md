@@ -8,7 +8,7 @@ description: >
   "add data tags to Zotero", "build a data-discovery index from my library". Pilots one
   collection first, then offers to extend to the whole library. Opt-in and user-driven —
   it writes to your Zotero library, so it always confirms before batch writes.
-allowed-tools: Read, Bash
+allowed-tools: Read, Bash, mcp__zotpilot__*
 ---
 
 # ztp-data-tag — Backfill the data field across your Zotero library

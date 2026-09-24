@@ -6,7 +6,7 @@ description: >
   Trigger on: "set up ZotPilot", "embed my Zotero library", "configure ZotPilot for
   this project", or any mention of wanting local library search before literature review.
   Run at project start, BEFORE /seed-papers or /lit-position.
-allowed-tools: Read,Write,Edit,Bash
+allowed-tools: Read,Write,Edit,Bash,mcp__zotpilot__*
 ---
 
 # ZotPilot Project Setup
