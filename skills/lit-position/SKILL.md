@@ -6,7 +6,7 @@ description: >
   artifacts ZotPilot does not — frontier_map.md and positioning.md. Use when starting
   a project, writing an introduction, or defending a contribution claim.
   Local-first per .claude/rules/literature-search-order.md.
-allowed-tools: Read,Write,Edit,Grep,Glob,WebSearch,WebFetch,Agent
+allowed-tools: Read,Write,Edit,Grep,Glob,Bash,WebSearch,WebFetch,Agent
 ---
 
 # Literature Positioning
@@ -49,11 +49,19 @@ local Zotero index first, external databases only for what the library lacks.
    and the *setting* terms separately — a paper using your method in another
    setting and a paper on your setting with another method are different kinds of
    neighbour, and you need both.
-2. Invoke `/ztp-research` for the topic. It handles external search → candidate
-   selection → PDF ingest → tagging → indexing.
-3. Follow citation chains on anything scoring 4 or 5 below: check its reference
+2. **Local sweep, in the rule's order** — `mcp__zotpilot__search_topic` on the question and
+   on each method/setting term, then `mcp__zotpilot__advanced_search` for known authors,
+   years and tags, then `mcp__zotpilot__search_papers` for the specific claims you expect a
+   neighbour to make. Its output is the list of what the library already covers. **The sweep
+   lives here because `/ztp-research` is vendored and starts at external search
+   (`search_academic_databases`); its `local_duplicate` annotation is de-duplication of web
+   results, not local-first discovery.** Do not delete this step as redundant.
+3. Invoke `/ztp-research` for the **gap set only**: the terms and neighbours the sweep did not
+   find, plus the gaps named in the seed's `## Notes for the Literature Review` (Step 0). It
+   handles external search → candidate selection → PDF ingest → tagging → indexing.
+4. Follow citation chains on anything scoring 4 or 5 below: check its reference
    list, and check who has cited it since.
-4. Flag **scooping risks** explicitly: working papers from the last three years
+5. Flag **scooping risks** explicitly: working papers from the last three years
    with the same question and the same data.
 
 ## Step 2 — Synthesize (`ztp-review`)

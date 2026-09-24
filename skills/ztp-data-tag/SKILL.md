@@ -108,17 +108,30 @@ before writing. Batch writes (>5 papers) must never run without confirmation.
 
 ## Step 5 — Write back to Zotero
 
+**Note first, tags second.** The `data-tagged` marker is the library-wide idempotency key
+(Step 2 skips anything carrying it, forever). Write `data-tagged` **only** for an item that
+now holds a Data note. Writing it first and the note second let an item be marked done with no
+note — silently and permanently.
+
 For each approved item:
 
-1. **Tags** — `mcp__zotpilot__manage_tags(action="add", allow_new=true, ...)` with the
-   `dataset:` and `var:` tags plus the `data-tagged` marker.
+1. **Check for an existing Data note** — `mcp__zotpilot__get_notes(item_key=...)`. If a note
+   titled "Data (auto-extracted)" is already there, the item is genuinely done: go to step 3.
+2. **Note** — `mcp__zotpilot__create_note(idempotent=true, title="Data (auto-extracted)", ...)`
+   containing the JSON block and a readable list. **`idempotent=true` skips creation if the
+   item already has ANY ZotPilot note** — one from `/ztp-tutor` or `/ztp-research` counts —
+   not specifically a Data note. So if the call returns without creating, **stop here for this
+   item: do NOT write `data-tagged`.** Record it for Step 6 under
+   "skipped: has a non-Data ZotPilot note (no Data note written)" so the user can decide.
+3. **Tags** — only for an item that now has a Data note:
+   `mcp__zotpilot__manage_tags(action="add", allow_new=true, ...)` with the `dataset:` and
+   `var:` tags plus the `data-tagged` marker.
    - **`allow_new=true` is REQUIRED.** The `dataset:*`/`var:*` tags are new to the library
      vocabulary; without `allow_new=true`, `add` silently creates **none** of them.
    - Use `action="add"` ONLY. NEVER `action="set"` — set replaces all existing tags and is
      destructive.
-2. **Note** — `mcp__zotpilot__create_note(idempotent=true, title="Data (auto-extracted)", ...)`
-   containing the JSON block and a readable list. **`idempotent=true`** skips creation if the
-   item already has a ZotPilot note, so reprocessing an item never produces a duplicate note:
+
+   The note's content:
 
    ```
    Data (auto-extracted by /ztp-data-tag)
@@ -135,6 +148,9 @@ For each approved item:
 After the pilot collection, present a summary table and STOP:
 
 - N processed · M with datasets found · K abstract-only (lower confidence)
+- S skipped: has a non-Data ZotPilot note, so no Data note was written and **no
+  `data-tagged` marker** — list them by title; they will be picked up again on the next run
+  unless the user adds the Data note by hand or asks you to write it non-idempotently
 - The tag namespaces created (`dataset:*`, `var:*`)
 
 Then offer the user a choice — do NOT auto-continue:
@@ -156,9 +172,9 @@ it may span multiple sessions; the marker tag makes it resumable.
 - **Notes:** delete the "Data (auto-extracted)" note with
   `mcp__zotpilot__delete_note(note_key=...)` (find the key via
   `mcp__zotpilot__get_notes(item_key=...)`). It only deletes items of type 'note'
-  and, by default, only ZotPilot-created notes. (Because Step 5 creates notes with
-  `idempotent=true`, a reprocessed item won't accumulate duplicate notes even if you
-  leave the old one in place.)
+  and, by default, only ZotPilot-created notes. Delete the note **and** remove
+  `data-tagged` together: an item with the marker and no Data note is exactly the state
+  Step 5 exists to prevent.
 
 ## Rules
 
@@ -166,8 +182,11 @@ it may span multiple sessions; the marker tag makes it resumable.
 - **Pilot first.** Always one collection before any whole-library run.
 - **`add` + `allow_new=true`, never `set`** for tags — `allow_new=true` is required or no
   new `dataset:*`/`var:*` tags are created; `set` is destructive (replaces all tags).
-- **Notes are idempotent via `idempotent=true`** — re-runs won't duplicate them. To remove
-  one, use `mcp__zotpilot__delete_note(note_key=...)` (note-type-guarded; ZotPilot-only by default).
+- **Notes are idempotent via `idempotent=true`** — re-runs won't duplicate them. But the
+  flag keys on *any* ZotPilot note, so an item with a note from another skill gets no Data
+  note; Step 5 checks `get_notes` first and never writes `data-tagged` for such an item. To
+  remove a note, use `mcp__zotpilot__delete_note(note_key=...)` (note-type-guarded;
+  ZotPilot-only by default).
 - **Resumable & cross-project.** The `data-tagged` Zotero tag is the idempotency key —
   it lives on the item in the global Zotero library, so it is visible from every project.
   Always skip items that carry it unless the user asks for a refresh. NEVER track "done"
