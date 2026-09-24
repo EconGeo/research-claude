@@ -14,7 +14,7 @@ every other component is essentially done.
 ## Driver sequence
 ```
 python3 .claude/scripts/pipeline.py pre verifier
-                                                    # invoke /submit final [journal]
+                                                    # invoke /submit final [journal] [--yes if run carried it]
 python3 .claude/scripts/pipeline.py post verifier
 python3 .claude/scripts/pipeline.py score --gate submission
 ```

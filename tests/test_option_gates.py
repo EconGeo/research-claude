@@ -21,7 +21,7 @@ GATED = [
     ("lit-position", r"frontier_map", 5),  # Task A4
     ("lit-position", r"positioning", 5),
     ("lit-position", r"Dispatch `lit-critic`", 3),
-    # Task A5 — submit target
+    ("submit", r"Journal Targeting", 5),  # Task A5
     # Task A6 — review --peer / --stress
     # Task A7 — revise
     # Task A8 — talk

@@ -1,7 +1,7 @@
 ---
 name: submit
 description: Submission pipeline — journal targeting, replication package, audit, archive deposit, and final gate. Replaces the old target-journal, audit-replication and data-deposit commands.
-argument-hint: "[mode: target | package | audit | deposit | final] [journal name (optional)]"
+argument-hint: "[mode: target | package | audit | deposit | final] [journal name (optional)] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Bash,Agent
 ---
 
@@ -18,12 +18,17 @@ Submission pipeline with five modes covering journal selection through final ver
 ### `/submit target` — Journal Targeting
 Get ranked journal recommendations.
 
-**Performed by this skill** (no agent): read `.claude/references/journal-profiles.md` and `.claude/references/discipline-cards.md`, rank three journals.
+**Performed by this skill** (no agent): read `.claude/references/journal-profiles.md` and
+`.claude/references/discipline-cards.md`.
 
-Considers: contribution fit, methodology fit, audience fit, recent publications, desk rejection risk.
+**Option gate** (`.claude/rules/option-gates.md`): rank 5–10 journals — columns
+*contribution fit*, *methodology fit*, *audience*, *desk-reject risk*, *AI-disclosure field*
+(from the profile) — and wait (`--yes` takes rank 1). This skill has no web tool; "recent
+publications" is judged from the profile's stated scope, not a search.
 
-Output: Ranked list of 3 target journals with rationale.
-Save to `quality_reports/journal_recommendations_[date].md`
+Save the full table to `quality_reports/journal_recommendations_[date].md` with the pick
+marked. `/review --peer`, `/review --stress` and `/submit final` read the pick from that file
+when no journal is given on the command line.
 
 ### `/submit package` — Build Replication Package
 Assemble AEA-compliant replication package.
