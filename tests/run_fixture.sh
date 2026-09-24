@@ -53,6 +53,9 @@ run         log-coder        python3 "$RC/scripts/pipeline.py" --root "$T" log c
 expect_fail post-coder-red   python3 "$RC/scripts/pipeline.py" --root "$T" post coder
 run         log-coder-critic bash -c "sleep 1; python3 '$RC/scripts/pipeline.py' --root '$T' log coder-critic"
 expect_fail post-coder-unscored-red python3 "$RC/scripts/pipeline.py" --root "$T" post coder
+# record-score refuses a --report path that does not exist (Phase 2.3) — the stub stands in
+# for the report coder-critic would have returned as text for this session to save.
+mkdir -p "$T/quality_reports/reviews" && echo "stub report" > "$T/quality_reports/reviews/coder-critic_fixture.md"
 run         record-code      python3 "$RC/scripts/pipeline.py" --root "$T" state record-score code 85 --critic coder-critic --report quality_reports/reviews/coder-critic_fixture.md
 run         post-coder-green python3 "$RC/scripts/pipeline.py" --root "$T" post coder
 run         pre-writer-green python3 "$RC/scripts/pipeline.py" --root "$T" pre writer
