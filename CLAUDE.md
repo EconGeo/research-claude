@@ -25,10 +25,13 @@ a coauthor bootstrap the pipeline with a clone and no access grant.
 Its §3 records what landed and §4 the open work in dependency order. As of 2026-09-24, §4.1
 (`docs/plans/2026-09-23_pipeline-repair.md`, Phases 1–4), §4.2
 (`docs/plans/2026-09-24-connectivity-checks-and-closeout-resume.md`), §4.4 and §4.5 are done;
-what remains is §4.3 — `docs/plans/2026-09-16-skill-defect-closeout.md`, resumable at Task 1,
-which opens on decision D3 — and a full green `tests/run_fixture.sh --live`. The earlier
-`docs/2026-09-10_final-cleanup-handoff.md` is history: its progress log is accurate through
-2026-09-16 and is superseded after that.
+and §4.3 (`docs/plans/2026-09-16-skill-defect-closeout.md`, Tasks 0–7) completed on
+2026-09-24 — its close-out is the 2026-09-24 entry in `docs/SESSION_REPORT.md`, and
+`tests/run_fixture.sh --live` ran green the same day. **Nothing from that handoff's §4 is
+open.** What remains is the audit residue listed under "What this plan deliberately leaves
+open" at the end of the 09-16 plan (P4 option points, P5 subagent routing, the `allowed-tools`
+sweep, P7 evals, vendored P1 offenders). The earlier `docs/2026-09-10_final-cleanup-handoff.md`
+is history: every item it carried is closed.
 
 Standing pointers it depends on, and which no session should change without reading:
 `docs/decisions/2026-09-08_pipeline-repair-rulings.md` (R-1…R-136 — §1 explains why things
@@ -53,8 +56,11 @@ to the repo root — this overrides the checkpoint skill's default root path. A 
 - `agents/`, `skills/`, `rules/`, `hooks/` and `references/` are **linked into every
   project** by `apply.sh --link`. Only put content here that every project should
   receive. Never put research-claude's own dev notes or machine-specific state in them.
-- `templates/` holds files `apply.sh` installs directly into a project (e.g.
-  `data_manifest.md` → `data/raw/`, `gitignore` → `.gitignore`). Generic, no machine-specifics.
+- `seeds/` holds the project-owned files `apply.sh` **copies** once and never overwrites
+  (`data_manifest.md` → `data/raw/`, `gitignore` → `.gitignore`, `settings.json`,
+  `bootstrap-pipeline.sh`, `ai-use-log.md`, `quarto-preamble.tex`). `templates/` holds files
+  agents read by a `.claude/templates/` path (`handoff.md`, `journal-profile-template.md`,
+  `pipeline-state.json`) and is **linked**, like `rules/`. Both generic, no machine-specifics.
 - `root-skills/` was **removed** on 2026-09-08. `new-project` was superseded by
   `rules/quarto-empirical.md` and `skills/new-project-ztp/`; see
   `docs/decisions/2026-09-08_cut-the-orchestration-graph.md`.

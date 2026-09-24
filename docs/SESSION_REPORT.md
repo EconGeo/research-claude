@@ -735,3 +735,102 @@ server).
   P1 offenders, `ztp-tutor` (431 lines) and `humanize` (205), which live in vendored trees and
   need upstream PRs to `EconGeo/ZotPilot` and `EconGeo/ai-audit` before a re-sync.
 - Also open: the six `pipeline.lock` files record `f7f49af`, now 30+ commits behind.
+
+## 2026-09-24 — Skill defect close-out: Tasks 1–7 complete (the stalled 09-16 plan)
+
+**Plan:** `docs/plans/2026-09-16-skill-defect-closeout.md`, stalled since 09-16, unblocked by the
+09-24 connectivity plan's Task 6, executed today one task per branch with red-first tests. Every
+task's Progress Log row carries the full account; this entry is the cross-task record.
+
+**Operations (one merge per task, all on `main`):**
+- Task 1 `c5df76a` — `/review --theory` mode section; `--stress` records nothing (gauntlet path
+  registered under `editor`'s `produces`); `--variance` named only to refuse; Scoring table gained
+  Theory and Replication; **D3(a)** applied: Editor rubric in `scoring-rubrics.md` (mean of the two
+  referee scores clamped to the decision band — Accept 90–100 / Minor 80–89 / Major 60–79 / Reject
+  0–59) and an `**Overall score:**` line in `editorial_decision.md`.
+- Task 2 `7c031a9` — `/revise` runs `post writer` before the letter; letter written from
+  `response-letter.qmd` as `.qmd` with anchors, never page numbers; REWRITE added to
+  `rules/revision.md`; Bash pre-approved; two templates bound, catalogue deleted, `KNOWN_UNBOUND` −2.
+- Task 3 `a281b5b` — `state strike` has one owner per creator: the stage skill (rule in
+  `rules/agents.md` §3); driver reads the count; strike lines added to `/discover data`,
+  `/strategize theory`, `/analyze` (data-engineer), `/talk`; `review` and `submit` are stated
+  exceptions.
+- Task 4 `69e3e3f` — `/tools render` resolves the manuscript; lint default matches the hook;
+  `validate-bib` and `journal` have real steps; `context` deleted; `tools/gotchas.md` deleted.
+- `/tools commit` gates `4c68b6c` (user request, outside the plan): Gate A before `git commit`,
+  Gate B before PR/merge, both honouring `--yes`; `--yes` never skips Step 0.
+- Task 5 `d91b540` — `ztp-data-tag` writes the Data note before the `data-tagged` marker and
+  reports the skip; `lit-position` runs the local sweep before `/ztp-research`; Bash added.
+- Task 6 `7885356` — `promote` reads `# installed via:`; re-link commands carry `--project-dir`;
+  `state/obsidian-config.md.example` no longer names the deleted skill; `check_refs` scans `state/`
+  and `.example`; `new-project-ztp` anchor and index estimate fixed. **D2 moot** (`/humanize` →
+  `/civilize` upstream, `c737ac6`).
+
+**Decisions:**
+- D3 → (a), user, 2026-09-24. Rubric band values are a policy choice; change the four bands if
+  wrong, the tests pin only that the rubric section and the score line exist.
+- D2 → moot; `/write humanize` keeps its name.
+- Task 1 fix 2 (wire `--variance` with N-referee dispatch) **not applied**: the user's 09-24 ruling
+  (repair plan Phase 2.5, D-19) says do not build variance dispatch. `/review` refuses the flag.
+- Task 3: `review` and `submit` exempt from the strike rule, by their own reference files.
+- Task 4: `/tools context` deleted rather than documented (the hook needs a harness-supplied
+  `transcript_path`; built-in `/context` exists); `/tools journal` reframed from "regenerate" to
+  "append what the state file shows is missing" because `rules/logging.md` defines it append-only.
+- Task 6: `## Current Project State` exists in two of three real projects but no template, so the
+  anchor became "update `## Tools` in place, else append at EOF".
+
+**Contradictions resolved — which copy won and why:**
+- `--stress` recording (skill) vs "no editorial decision letter" (agent): **agent** — it is what
+  runs; the skill now says records nothing.
+- Editorial-decision score source: none existed; **new rubric** created (D3a).
+- `--variance` enforcement delegated by the agent to a skill that never mentioned it: **neither**
+  wires it; both now say it is refused (D-19).
+- REWRITE in the skill, absent from the rule: **skill** — the registry declares pairings, not
+  classes; the rule gained the row.
+- Letter format: skill's "page/section references" vs template's "never a page number":
+  **template** — it is what ships to an editor.
+- Strike ownership: driver vs stage skills: **stage skill**, mirroring the `record-score`
+  convention every `references/<stage>.md` already states.
+- Lint default: skill's "acquire + explorations" vs hook's single target: **hook** — it runs.
+- `tools/gotchas.md` vs SKILL.md (3): validate-bib claim (now false, dropped), journal-selection
+  bullet (described `/submit target`, dropped), `.claude/state/` staging rule (folded into commit).
+- `promote` checkout test: `commit=` (always present) vs `# installed via:` — **the lock's last
+  line**, per `apply.sh`'s `write_lock()`.
+- `new-project-ztp` index estimate vs README: **README** (200 papers ≈ 10–20 min, Ollama
+  recommended).
+
+**Found in passing and fixed:** `artifact-paths` allowlist named the referee letter as `.md`
+(Task 2); `check_paths` caught an unprefixed hook path (Task 4); the plan's Task 7 expected
+`check_install --all` RED on `clone-links` — it is PASS in all six repos since the 09-23
+reference-linking change (D-26); `CLAUDE.md`'s `templates/` sentence named files that live in
+`seeds/` (corrected today).
+
+**Budgets moved (all upward, each with a reason in `tests/test_skill_contracts.py`):** review
+11,500 → 12,500 (mode section for a weight-20 component); discover 6,000 → 6,200 (strike line).
+Measured today: all 18 SKILL.md bodies 114,966 chars (phase-1 baseline 98,672, +16.5%); the
+eight pipeline-run skills 56,656 (baseline 50,819, +11.5%). Correctness text, not prose creep —
+every addition is a dispatch, a gate, a record line or a refusal.
+
+**Results:** 274 tests OK (218 at the start of the day, +56 across seven new test files) ·
+`check_fork` PASS · `check_paths` PASS · `check_refs` 0 FAIL · `check_install --all` PASS ×6 ·
+`run_fixture` mechanical PASS · **`run_fixture.sh --live` GREEN for the first time** (explorer →
+explorer-critic → strategist → strategist-critic via hook; data=92, strategy=84; exit 0).
+
+**Commits (research-claude, main):** `1edcffa` docs pointer + June plans closed; `c5df76a`,
+`7c031a9`, `a281b5b`, `69e3e3f`, `4c68b6c`, `d91b540`, `7885356` (task merges); plus the close-out
+commit that carries this entry. Paper repos: pipeline.lock refresh committed in all six;
+POGM4 `e6a99bc` (Phase 1.6); ESG `98de0c5`, `1d072d7` (adoption round, field audit, script).
+**Nothing pushed anywhere** — `main` is ~15 ahead of origin; five paper repos ahead of theirs.
+
+**Status:**
+- Done: the 09-16 plan in full (Tasks 0–7); every carry-forward item from the 2026-09-10 handoff
+  is closed (R-136 is detected by `hooks-wired` deriving from the seed; live tier green;
+  `clone-links` PASS ×6; locks refreshed 09-23 — re-warn on every commit by design, refresh at
+  submission; POGM4's leftover `.html` is gone).
+- Still open from the 2026-09-15 audit, unchanged by this plan and recorded in its "What this
+  plan deliberately leaves open": the other **P4 option points** (`/tools commit` is now done);
+  **P5 subagent routing**; the full **`allowed-tools` sweep** (`strategize`, `discover`, and
+  `mcp__zotpilot__*` pre-approval); **P7 evals**; the **vendored P1 offenders** (`ztp-tutor`,
+  `civilize`) and `seed-papers`' domain-profile field — all upstream work;
+  `skills/submit/templates/audit-10-checks.md` still in `KNOWN_UNBOUND`.
+- Pending (user): push research-claude and the six paper repos.
