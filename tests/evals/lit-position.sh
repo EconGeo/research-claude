@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# tests/evals/ztp-data-tag.sh — functionality eval for /ztp-data-tag against the ZotPilot mock.
+# tests/evals/lit-position.sh — functionality eval for /lit-position against the ZotPilot mock.
 #
 # Builds a throwaway project (the fixture, linked to this checkout), registers
 # tests/mock_zotpilot.py as the `zotpilot` MCP server for that run only, invokes
-# `/ztp-data-tag --yes` through `claude -p`, then runs check_ztp_data_tag.py over the
-# transcript and the mock's stderr. Asserts mechanism, not outcome. Run alone — never in
+# /lit-position --yes through `claude -p`, then runs check_lit_position.py over the transcript
+# and the mock's stderr (local-first as a transcript property). Asserts mechanism, not outcome. Run alone — never in
 # parallel with another eval (audit 2026-09-15 §3 P7 rule 4).
 #
-#   tests/evals/ztp-data-tag.sh            # EVAL_TIMEOUT (s, default 1800) bounds the run
+#   tests/evals/lit-position.sh            # EVAL_TIMEOUT (s, default 1800) bounds the run
 set -u
 RC="$(cd "$(dirname "$0")/../.." && pwd)"
 E="$(mktemp -d)"
@@ -27,12 +27,12 @@ LOG="$E/eval.stream.jsonl"; : >"$ERR"
 command -v claude >/dev/null 2>&1 || { echo "claude not on PATH"; exit 1; }
 # The transcript goes to stdout; claude's own stderr is kept beside it.
 ( cd "$E" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "${EVAL_TIMEOUT:-1800}" \
-    claude -p "/ztp-data-tag --yes" --permission-mode acceptEdits \
+    claude -p '/lit-position "staggered adoption and local housing prices" --yes' --permission-mode acceptEdits \
     --mcp-config "$MCP_CFG" --strict-mcp-config \
-    --allowedTools "mcp__zotpilot__*" "Agent" "Read" "Bash" \
+    --allowedTools "mcp__zotpilot__*" "Agent" "Read" "Write" "Bash" "Skill" \
     --output-format stream-json --verbose ) >"$LOG" 2>"$E/claude.stderr.log"
 rc=$?
 echo "claude exit $rc · transcript $(wc -l <"$LOG" | tr -d ' ') lines · mock log $(grep -c '^CALL' "$ERR") calls, $(grep -c '^WRITE' "$ERR") writes"
-grep -qi 'Unknown command:' "$LOG" && { echo "claude did not recognise /ztp-data-tag"; exit 1; }
-python3 "$RC/tests/evals/check_ztp_data_tag.py" "$LOG" "$ERR"; status=$?
+grep -qi 'Unknown command:' "$LOG" && { echo "claude did not recognise /lit-position"; exit 1; }
+python3 "$RC/tests/evals/check_lit_position.py" "$LOG" "$ERR"; status=$?
 exit $status
