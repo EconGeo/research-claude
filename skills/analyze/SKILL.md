@@ -1,7 +1,7 @@
 ---
 name: analyze
 description: End-to-end analysis inside the declared manuscript — dispatches data-engineer (wrangling chunks) and coder (estimation, robustness, tbl-/fig- chunks), each followed by coder-critic. R primary; Python/Julia via their engines.
-argument-hint: "[goal or strategy-memo path]"
+argument-hint: "[goal or strategy-memo path] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
@@ -24,6 +24,11 @@ python3 .claude/scripts/pipeline.py pre coder      # standalone: informational o
 The coder outputs `.claude/skills/analyze/templates/pre-code-report.md` filled in — strategy memo
 path, paper type, naming map, planned **chunk labels** (not filenames). If the memo is missing,
 proceed on the user's description and flag that categories 1–3 of the review cannot be verified.
+Every row of the report's *Assumptions made* is an **Option gate**
+(`.claude/rules/option-gates.md`) with 2–4 alternatives — sample restriction, control set,
+clustering level, functional form are the usual ones; design questions belong to
+`/strategize`, not here. Wait once for the whole table; `--yes` takes rank 1 on every row. The
+picks are recorded in the report itself, which is saved alongside the coder-critic review.
 
 ### Step 2: Wrangling — data-engineer, then its paired critic
 Dispatch **data-engineer**: `build-*` chunks with `cache.extra`, manifest rows, `tbl-summary`
