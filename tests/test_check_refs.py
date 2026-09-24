@@ -143,6 +143,39 @@ class TestPromoteRegisterCheck(unittest.TestCase):
             self.assertEqual(cr.crit_promote_register_check(ROOT), 0)
 
 
+class TestHooksWiredSource(unittest.TestCase):
+    """hooks/README.md documents which hooks are wired directly vs. invoked indirectly (an
+    Event cell containing 'via'). A directly-documented hook that seeds/settings.json never
+    mentions is exactly the R-7/session-guard.py shape hooks/README.md's own 'not a dormant
+    feature' section describes — this makes it a gate instead of a paragraph."""
+
+    def _run(self, event_cell: str, settings_text: str) -> int:
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "hooks").mkdir()
+            (root / "hooks" / "probe.sh").write_text("#!/bin/bash\n# does a thing\n")
+            (root / "hooks" / "README.md").write_text(
+                "| Hook | Event | What it does |\n|---|---|---|\n"
+                f"| `probe.sh` | {event_cell} | does a thing |\n")
+            (root / "seeds").mkdir()
+            (root / "seeds" / "settings.json").write_text(settings_text)
+            with contextlib.redirect_stdout(io.StringIO()):
+                return cr.crit_hooks_wired_source(root)
+
+    def test_directly_wired_hook_missing_from_settings_flagged(self):
+        self.assertEqual(self._run("PreToolUse", "{}"), 1)
+
+    def test_directly_wired_hook_present_in_settings_passes(self):
+        self.assertEqual(self._run("PreToolUse", '{"cmd": "hooks/probe.sh"}'), 0)
+
+    def test_indirectly_invoked_hook_not_required_in_settings(self):
+        self.assertEqual(self._run("PostToolUse (via other.sh)", "{}"), 0)
+
+    def test_real_tree_passes(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cr.crit_hooks_wired_source(ROOT), 0)
+
+
 class TestWritesTools(unittest.TestCase):
     """Phase 2.1 of docs/plans/2026-09-23_pipeline-repair.md fixed nine agents by hand (no
     Write/Edit tool + no 'do not write' disclaimer meant a declared writes: path was silently

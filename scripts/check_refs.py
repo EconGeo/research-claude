@@ -187,6 +187,30 @@ def crit_hooks_readme(root):
             hits.append(f"hooks/README.md: {name} is a git hook listed in the Claude hook table")
     return report("hooks-readme", hits)
 
+def crit_hooks_wired_source(root):
+    """hooks/README.md's table cell for Event states, per hook, whether it fires by direct
+    settings.json wiring or 'via' another hook / the CLI. A directly-documented hook that
+    seeds/settings.json never names is an unwired promise (hooks/README.md's own 'not a
+    dormant feature' section, written after session-guard.py shipped exactly this way)."""
+    readme = root / "hooks" / "README.md"
+    settings = root / "seeds" / "settings.json"
+    if not readme.exists():
+        return report("hooks-wired-source", ["hooks/README.md missing"])
+    if not settings.exists():
+        return report("hooks-wired-source", ["seeds/settings.json missing"])
+    settings_text = settings.read_text()
+    rows = [(n, e) for n, e in
+            re.findall(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|", readme.read_text(), re.M)
+            if n.endswith((".py", ".sh"))]
+    hits = []
+    for name, event in rows:
+        if re.search(r"\bvia\b", event, re.I):
+            continue
+        if name not in settings_text:
+            hits.append(f"hooks/{name}: README documents direct wiring ('{event.strip()}') "
+                        f"but seeds/settings.json never names it")
+    return report("hooks-wired-source", hits)
+
 # ── artifact-paths (R-112) ──────────────────────────────────────────────────
 # A path token under quality_reports/, with its placeholders: <x>, [x], {x} and {a,b} brace groups.
 AP_TOKEN = re.compile(r"(?<![A-Za-z0-9_./-])quality_reports/(?:[A-Za-z0-9_.*/-]|<[^<>\s]*>|\[[^\[\]\s]*\]|\{[^{}\s]*\})*")
@@ -325,7 +349,7 @@ def crit_writes_tools(root):
 CRITERIA = {
     "latex-residue": crit_latex_residue, "manuscript-model": crit_manuscript_model,
     "deleted-things": crit_deleted_things, "inv-refs": crit_inv_refs, "skill-refs": crit_skill_refs,
-    "tool-name": crit_tool_name, "hooks-readme": crit_hooks_readme,
+    "tool-name": crit_tool_name, "hooks-readme": crit_hooks_readme, "hooks-wired-source": crit_hooks_wired_source,
     "artifact-paths": crit_artifact_paths, "promote-vendor-warn": crit_promote_vendor_warn,
     "promote-register-check": crit_promote_register_check, "writes-tools": crit_writes_tools,
 }

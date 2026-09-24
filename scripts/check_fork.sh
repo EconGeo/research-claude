@@ -91,7 +91,7 @@ for g in skills/analyze/templates/r-script-structure.R skills/analyze/templates/
 for g in skills/analyze/templates/results-summary.md skills/submit/templates/cover-letter.tex root-skills; do absent d1-deletions "$g"; done  # <!-- residue:prohibition -->
 
 echo "── text criteria (scripts/check_refs.py) ──"
-for c in latex-residue manuscript-model deleted-things inv-refs skill-refs tool-name hooks-readme artifact-paths promote-vendor-warn promote-register-check writes-tools; do
+for c in latex-residue manuscript-model deleted-things inv-refs skill-refs tool-name hooks-readme hooks-wired-source artifact-paths promote-vendor-warn promote-register-check writes-tools; do
   py check_refs.py --criterion "$c"
 done
 
