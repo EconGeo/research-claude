@@ -54,6 +54,11 @@ EXEMPT_PREFIX = ("data/", "quality_reports/", "talks/", "explorations/", "script
                  "master_supporting_docs/", ".claude/state/", ".claude/settings", ".claude/pipeline.lock")
 EXEMPT_EXACT = {"templates/quarto-preamble.tex", "templates/word-reference.docx",
                 "templates/ai-use-log.md", "templates/apa.csl", "scripts/acquire"}
+# A reference under agents/ or skills/ that does not resolve in the main tree may still be a
+# real, valid reference into a vendored subtree — registry_lib.AGENT_DIRS already treats
+# ai-audit/agents as an alias for agents/ when resolving an agent's own file; this scanner
+# needs the same alias or it reports a real, valid reference as dangling.
+VENDOR_ALIASES = {"agents": ["ai-audit/agents"], "skills": ["ai-audit/skills", "zotpilot-skills"]}
 # Generic pipeline vocabulary that AGENT_RE matches but that names no agent. This has to be a
 # set here and CANNOT be replaced by residue markers: AGENT_RE is case-insensitive, and
 # "Worker-critic pairing" / "Worker-critic separation" is ordinary prose in four shipped
@@ -93,6 +98,13 @@ for f in files:
         for base in (CLAUDE, ROOT, f.parent):
             if (base/t).exists(): hit = base/t; break
         if hit is None:
+            top, _, rest = t.partition("/")
+            for alias_dir in VENDOR_ALIASES.get(top, ()):
+                cand = ROOT / alias_dir / rest
+                if cand.exists():
+                    hit = cand
+                    break
+        if hit is None:
             dangling_paths.append((str(rel), t))
         else:
             inbound[str(hit.resolve())] += 1
@@ -123,3 +135,12 @@ print(f"  agents named, not on roster: {report['agents_named_not_on_roster']}")
 print(f"  roster agents never dispatched anywhere: {report['agents_on_roster_never_named_outside_own_file']}")
 print(f"  skills never invoked      : {report['skills_never_invoked_by_anything']}")
 print(f"  orphan files (0 inbound)  : {len(report['orphan_files_no_inbound_reference'])}")
+# Only dangling_paths is a verified-zero-false-positive gate (fixed 2026-09-24). The other
+# three are printed for visibility but not yet triaged for false positives (gotchas.md and
+# pipeline/references/*.md are loaded by naming convention, not a textual reference this
+# regex-based scanner can see) — WARN, never blocking, per this plan's coverage rule.
+if report["skills_never_invoked_by_anything"]:
+    print(f"WARN [graph-skills] never invoked by anything: {report['skills_never_invoked_by_anything']}")
+if report["orphan_files_no_inbound_reference"]:
+    print(f"WARN [graph-orphans] {len(report['orphan_files_no_inbound_reference'])} files have no inbound reference (not yet triaged for false positives)")
+sys.exit(1 if report["dangling_paths"] else 0)
