@@ -14,7 +14,7 @@ MARKER = "**Option gate**"
 
 # (skill, mode-heading regex, minimum options the gate must offer)
 GATED = [
-    # Task A2 — strategize
+    ("strategize", r"Identification Strategy", 5),  # Task A2
     # Task A3 — discover
     # Task A4 — lit-position
     # Task A5 — submit target

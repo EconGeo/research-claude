@@ -12,7 +12,7 @@ and — only if it was ever scored — `literature` and `data` must each be ≥ 
 ## Driver sequence
 ```
 python3 .claude/scripts/pipeline.py pre strategist
-                                                       # invoke /strategize [question]
+                                                       # invoke /strategize [question] [--yes if run carried it]
 python3 .claude/scripts/pipeline.py post strategist
 ```
 `/strategize` dispatches strategist, then strategist-critic (its Step 4), and records the
