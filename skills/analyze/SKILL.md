@@ -28,20 +28,21 @@ proceed on the user's description and flag that categories 1–3 of the review c
 ### Step 2: Wrangling — data-engineer, then its paired critic
 Dispatch **data-engineer**: `build-*` chunks with `cache.extra`, manifest rows, `tbl-summary`
 chunk. Then `python3 .claude/scripts/pipeline.py log data-engineer` (standalone) and dispatch
-**coder-critic** on the manuscript; record its score:
-`python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report <path>`.
+**coder-critic** on the manuscript. It returns its report as text; session saves it to
+`quality_reports/reviews/coder-critic_<date>.md` first, then records its score:
+`python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report quality_reports/reviews/coder-critic_<date>.md`.
 
 ### Step 3: Estimation — coder, then its paired critic
 Dispatch **coder**: `estimate-*`, `robustness-*`, `tbl-*`, `fig-*` chunks per
 `.claude/skills/analyze/templates/chunk-structure.md`; render clean; prose check clean. Log,
-dispatch **coder-critic**, record the score. Three rounds maximum
+dispatch **coder-critic**, save its returned report to
+`quality_reports/reviews/coder-critic_<date>.md`, then record the score. Three rounds maximum
 (`pipeline.py state strike coder` after each failing round; escalation target from the registry).
 
 ### Step 4: What coder-critic checks
 The twelve deductions in `.claude/rules/quarto-empirical.md` ("What the Coder-Critic Checks")
 plus the numerical-discipline rows of `.claude/skills/review/config/scoring-rubrics.md`, using
-`.claude/skills/review/templates/code-review-16-categories.md`. Report to
-`quality_reports/reviews/coder-critic_<date>.md`.
+`.claude/skills/review/templates/code-review-16-categories.md`.
 
 ### Step 5: Present
 Rendered output path; chunk labels added; coder-critic score; open items (missing data,

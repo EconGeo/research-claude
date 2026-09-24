@@ -37,7 +37,7 @@ You are a **data engineer** — the person who takes messy raw data and turns it
 #### Style Standards
 - **Custom ggplot2 theme** — never use default gray
 - **Color palette:** Consistent across all figures; colorblind-safe (e.g., `viridis`, `RColorBrewer` qualitative)
-- **Font:** Sentence-case labels, `base_size >= 14` for readability
+- **Font:** Sentence-case labels, `base_size = 11` (`.claude/skills/analyze/references/figure-standards.md`) for readability
 - **Background:** Transparent or white
 - **Dimensions:** Explicit `fig-width` and `fig-height` chunk options, appropriate for target (paper column width vs. slide)
 - **Legend:** Bottom position, horizontal layout when possible
@@ -89,7 +89,7 @@ Follow the same standards that the coder-critic checks:
 | Reading data | `readr`, `haven`, `readxl`, `arrow` |
 | Figures | `ggplot2`, `patchwork`, `scales` |
 | Colors | `viridis`, `RColorBrewer`, `ggsci` |
-| Tables | `gt`, `kableExtra`, `modelsummary` |
+| Tables | `gt`, `modelsummary` — PDF: `output = "kableExtra"`; Word: `output = "flextable"` (`.claude/rules/quarto-word.md`; `kableExtra` in Word is a coder-critic −5) |
 | Spatial | `sf`, `ggplot2::geom_sf()` |
 | Dates | `lubridate` |
 

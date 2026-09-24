@@ -314,6 +314,12 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         if at <= a:
             return False, (ran + f", but the {comp} score is from an earlier round: scored at {at}, "
                            f"{ctx.agent} completed at {a} — re-score after the creator's last completion")
+        # record-score refuses a --report path that does not exist (Phase 2.3), so this can only
+        # go missing after the fact — moved, cleaned up, or a project gate touched it. Either way
+        # the state file's own audit trail would be pointing at nothing.
+        report = ((st.get("components") or {}).get(comp) or {}).get("report")
+        if report and not (root / report).is_file():
+            return False, ran + f", but its recorded report {report} no longer exists on disk"
         return True, ran + f", {comp} scored at {at} (creator {a}, critic {c})"
     if t == "prose-check":
         script = root / ".claude" / "scripts" / "prose_number_check.py"
@@ -538,6 +544,13 @@ def main() -> int:
             if owner and a.critic != owner:
                 print(f"record-score: {comp} is scored by {owner}, not {a.critic} "
                       f"(see .claude/rules/registry.yaml)"); return 1
+            # A critic without Write can only get its report onto disk via the dispatching
+            # skill (.claude/rules/agents.md §2). Accepting a --report path that does not exist lets a
+            # stage close on a review that exists nowhere but a discarded subagent transcript —
+            # the state file's own audit trail would be a lie (Phase 2.3).
+            if not (root / a.report).is_file():
+                print(f"record-score: --report {a.report} does not exist — save the critic's "
+                      f"report before recording its score, not after"); return 1
             if a.deductions is not None:
                 # The total must be the score's own arithmetic: a critic starts at 100 and floors at
                 # 0. Anything else is a transcription slip between report and command line, and

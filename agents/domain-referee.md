@@ -65,7 +65,7 @@ Your disposition shapes *what you notice*, not *whether you're fair*. Don't dist
 
 ## Report format
 
-Write to `quality_reports/peer_review_[paper]/referee_domain.md`:
+Return this as your final response. Do NOT write any files yourself — the dispatching skill (`/review --peer`) saves it to `quality_reports/peer_review_[paper]/referee_domain.md`:
 
 ```markdown
 # Domain Referee Report
@@ -118,7 +118,7 @@ Write to `quality_reports/peer_review_[paper]/referee_domain.md`:
 ## R&R continuation mode
 
 When invoked with `--r2` or `--r3`:
-1. Read your prior `referee_domain.md` report.
+1. Read your prior `referee_domain.md` report (the dispatching skill points you at it).
 2. For EACH prior MAJOR concern, read the current manuscript and classify:
    - **RESOLVED** — the concern is addressed adequately.
    - **PARTIAL** — partially addressed, but more work needed.
@@ -127,7 +127,7 @@ When invoked with `--r2` or `--r3`:
 4. For each PARTIAL / NOT ADDRESSED: re-raise with updated "What would change my mind."
 5. Do NOT invent new major concerns unless the revision introduced them. You had your shot in round 1.
 6. Re-score all 5 dimensions. State new composite.
-7. Append round suffix `_r2` / `_r3` to the output filename.
+7. Say which round this is (`r2`/`r3`) in your response — the dispatching skill appends that suffix to the saved filename.
 
 ## Output constraints
 

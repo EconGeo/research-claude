@@ -58,7 +58,7 @@ Reject at desk if ANY of:
 
 ### Desk-review output
 
-Write to `quality_reports/peer_review_[sanitized_paper_name]/desk_review.md`:
+Return this as your final response. Do NOT write any files yourself — the dispatching skill (`/review --peer`) saves it to `quality_reports/peer_review_[sanitized_paper_name]/desk_review.md`. If the verdict is SEND OUT, include the Phase 1b referee-selection table below in this SAME response, not a separate one — it is one dispatch, one file.
 
 ```markdown
 # Desk Review: [Paper Title]
@@ -121,9 +121,9 @@ For each referee, draw **1 critical peeve + 1 constructive peeve** from the pool
 3. For each of the N referees, draw 1 critical + 1 constructive peeve (same rule as default).
 4. Record the realized disposition distribution + the stratification override (if any) — this metadata goes into `decision_distribution.md`.
 
-`--variance` cannot combine with `--stress` (which would force-fix SKEPTIC × 2, defeating sampling) or `--r2`/`--r3` (which reuses prior dispositions). The `/review --peer` skill enforces this — if you receive a Phase 1b call with both flags set, halt and report the conflict.
+`--variance` cannot combine with `--stress` (which would force-fix SKEPTIC × 2, defeating sampling) or `--r2`/`--r3` (which reuses prior dispositions). **Nothing currently enforces this — `.claude/skills/review/SKILL.md` has no `--variance` flag, so this mode is unreachable through `/review` today** (D-19, `docs/decisions/clo-author-divergences.md`). This is not a clo-author capability that regressed: clo-author's editor is fixed at exactly two referees, with no variance mode at all — `--variance` is net-new work whose referee-3-through-N agent identity was never resolved (checked directly against clo-author at the pinned `d36c408` commit). If this halt is ever wired into a real dispatch path, enforce it there.
 
-Append to `desk_review.md`:
+Add this section to your Phase 1 response, immediately after the desk-review markdown above — it is the same dispatch and the same saved file:
 
 ```markdown
 ## Referee Selection
@@ -138,7 +138,7 @@ For `--variance N` mode, the table has N rows (Referee 1 … Referee N). Mark th
 
 ## Phase 3 — Editorial synthesis
 
-After Referee A (domain) and Referee B (methods) have both written their reports (`referee_domain.md`, `referee_methods.md`), you read both and synthesize.
+After Referee A (domain) and Referee B (methods) have both returned their reports and the dispatching skill has saved them (`referee_domain.md`, `referee_methods.md`), you read both and synthesize.
 
 ### Classification
 
@@ -167,7 +167,7 @@ Surface disagreements explicitly. Two patterns to watch:
 
 ### Editorial decision output
 
-Write to `quality_reports/peer_review_[paper]/editorial_decision.md`:
+Return this as your final response. Do NOT write any files yourself — the dispatching skill saves it to `quality_reports/peer_review_[paper]/editorial_decision.md`:
 
 ```markdown
 # Editorial Decision: [Paper Title]
@@ -213,7 +213,7 @@ Write to `quality_reports/peer_review_[paper]/editorial_decision.md`:
 
 When invoked with `--variance N`, Phase 3 is replaced with a distribution-aggregation pass instead of the binary point-estimate synthesis above.
 
-After all N referees have submitted reports (`referee_1.md` … `referee_N.md`), do **not** write `editorial_decision.md`. Instead write **two** files:
+After all N referees have returned reports and the dispatching skill has saved them (`referee_1.md` … `referee_N.md`), do **not** produce `editorial_decision.md`. Instead return **two** clearly delimited sections in this response — the dispatching skill saves them as two separate files:
 
 ### `decision_distribution.md`
 

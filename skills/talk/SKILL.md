@@ -23,12 +23,9 @@ Generate a presentation from the paper.
 
 #### Format Constraints
 
-| Format | Slides | Duration | Content Scope |
-|--------|--------|----------|---------------|
-| job-market | 40-50 | 45-60 min | Full story, all results, mechanism, robustness |
-| seminar | 25-35 | 30-45 min | Motivation, main result, 2 robustness, conclusion |
-| short | 10-15 | 15 min | Question, method, key result, implication |
-| lightning | 3-5 | 5 min | Hook, one result, so-what |
+Slide counts, durations and per-format rules for all four formats are
+`talk/templates/format-constraints.md` — the Storyteller reads this file directly
+(`.claude/agents/storyteller.md`); not restated here so there is one number to keep current, not two.
 
 #### Workflow
 
@@ -62,17 +59,12 @@ Save to `talks/[format]_talk.qmd`.
 
 **Step 3: Dispatch Storyteller-Critic**
 
-After the Storyteller returns, dispatch the storyteller-critic to review across 5 categories:
+After the Storyteller returns, dispatch the storyteller-critic to review. Six categories —
+narrative flow, visual quality, content fidelity, scope for format, compilation, paper-type
+coherence — defined in `.claude/skills/review/templates/talk-review-6-categories.md`, which
+storyteller-critic already reads directly; not restated here.
 
-| Category | What It Checks |
-|----------|---------------|
-| **Narrative flow** | Does the story build properly? Is there a clear arc from motivation through results to implications? Are transitions smooth? |
-| **Visual quality** | Text overflow, font readability (>= 10pt), figure sizing, consistent formatting, overfull hbox warnings |
-| **Content fidelity** | Every claim traceable to the paper — no orphan results, no unsupported statements |
-| **Scope for format** | Right amount of content for the duration — not cramming a seminar into a lightning talk, not padding a short talk to seminar length |
-| **Compilation** | Does it compile cleanly without errors or warnings? |
-
-Score as advisory (non-blocking). Save report to `quality_reports/reviews/storyteller-critic_<date>.md`.
+Score as advisory (non-blocking). storyteller-critic returns its report as text; session saves it to `quality_reports/reviews/storyteller-critic_<date>.md`.
 
 **Step 4: Fix Critical Issues**
 

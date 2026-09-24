@@ -115,8 +115,9 @@ claim to close one.
 `python3 .claude/scripts/pipeline.py log lit-position` (standalone), then dispatch
 **lit-critic** (`.claude/agents/lit-critic.md`) on `quality_reports/literature/<project>/`. It
 cold-reads the three files, checks coverage against the local Zotero index, scores the six
-categories (`.claude/skills/review/config/scoring-rubrics.md`, Lit-Critic) and writes
-`quality_reports/reviews/lit-critic_<date>.md`. Record:
+categories (`.claude/skills/review/config/scoring-rubrics.md`, Lit-Critic) and returns its report
+as text; session saves it to `quality_reports/reviews/lit-critic_<date>.md` the moment it
+returns. Record:
 `python3 .claude/scripts/pipeline.py state record-score literature <score> --critic lit-critic --deductions <total> --report <path>`.
 Below 80 → return to Step 1 for the named gaps (max 3 rounds, `pipeline.py state strike lit-position`);
 strike three → User: "the critic requires coverage of X, which the library lacks and external

@@ -15,6 +15,10 @@ class FixtureCase(unittest.TestCase):
         os.symlink(ROOT / "scripts" / "quarto_structure_check.py", self.t / ".claude" / "scripts" / "quarto_structure_check.py")
         (self.t / ".claude" / "rules").mkdir(exist_ok=True)
         os.symlink(ROOT / "rules" / "registry.yaml", self.t / ".claude" / "rules" / "registry.yaml")
+        # record-score refuses a --report path that does not exist (Phase 2.3); this stub is
+        # the report every FixtureCase test that isn't specifically testing that refusal passes
+        # via `--report r.md`.
+        (self.t / "r.md").write_text("stub report\n")
     def tearDown(self): shutil.rmtree(self.t)
     def log(self, agent): self.assertEqual(run("log", agent, root=self.t)[0], 0)
 
@@ -95,6 +99,18 @@ class TestState(FixtureCase):
     def test_score_range(self):
         run("state", "init", root=self.t)
         self.assertEqual(run("state", "record-score", "code", "101", "--critic", "coder-critic", "--report", "r.md", root=self.t)[0], 1)
+    def test_record_score_refuses_a_report_path_that_does_not_exist(self):
+        """A critic that produced no report must not be able to close its creator's stage
+        (Phase 2.3). Deliberately does NOT use the FixtureCase 'r.md' stub."""
+        run("state", "init", root=self.t)
+        rc, out = run("state", "record-score", "code", "85", "--critic", "coder-critic",
+                       "--report", "nonexistent-report.md", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("does not exist", out)
+        self.assertFalse((self.t / "quality_reports" / "pipeline_state.json").exists()
+                          and json.loads((self.t / "quality_reports" / "pipeline_state.json").read_text())
+                          .get("components", {}).get("code"),
+                          "a refused record-score must not have recorded a score")
 
 class TestPredicates(FixtureCase):
     def test_pre_explorer_green_no_requires(self):
@@ -144,6 +160,18 @@ class TestPredicates(FixtureCase):
         self.assertEqual(rc, 1, out); self.assertIn("recorded no code score", out)
         run("state", "record-score", "code", "85", "--critic", "coder-critic", "--report", "r.md", root=self.t)
         rc, out = run("post", "coder", root=self.t); self.assertEqual(rc, 0, out)
+
+    def test_post_coder_fails_if_the_recorded_report_vanishes_after_scoring(self):
+        """record-score refuses a missing --report path up front (Phase 2.3), but a report
+        recorded when it existed can still be deleted, moved or cleaned up afterward. `post`
+        must not treat a state-file record-score entry as proof the report still exists."""
+        run("state", "init", root=self.t)
+        self.log("coder"); time.sleep(0.01); self.log("coder-critic")
+        run("state", "record-score", "code", "85", "--critic", "coder-critic", "--report", "r.md", root=self.t)
+        (self.t / "r.md").unlink()
+        rc, out = run("post", "coder", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("no longer exists on disk", out)
 
     def test_post_coder_rejects_a_score_that_predates_the_creator(self):
         """The staleness hole: a `code` score recorded BEFORE coder ran reviewed earlier work.

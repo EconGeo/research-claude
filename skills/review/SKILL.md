@@ -37,14 +37,14 @@ Unified review command that routes to the appropriate critic agents based on the
 
 ### Comprehensive Review (default for the declared manuscript)
 Dispatch in parallel:
-1. **strategist-critic** — causal design audit (4 phases). Save report to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report quality_reports/reviews/strategist-critic_<date>.md`.
-2. **writer-critic** — manuscript polish (6 categories). Save report to `quality_reports/reviews/writer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report quality_reports/reviews/writer-critic_<date>.md`.
-3. **verifier** — standard checks 1–4c (`.claude/agents/verifier.md`). Save report to `quality_reports/verification_report.md`. Record: `python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report quality_reports/verification_report.md`.
+1. **strategist-critic** — causal design audit (4 phases). Session saves to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report <path>`.
+2. **writer-critic** — manuscript polish (6 categories). Session saves to `quality_reports/reviews/writer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path>`.
+3. **verifier** — standard checks 1–4c (`.claude/agents/verifier.md`). Session saves to `quality_reports/verification_report.md`. Record: `python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report <path>`.
 Compute weighted aggregate score from the recorded component scores.
 
 **Save each report the moment its critic returns**, and record that score then — not after all
-three. Critics are read-only and return their reports as text; this session writes them, so a
-session that dies before the last critic finishes loses every report not yet on disk (observed:
+three. Critics are read-only, returning reports as text for this session to write; a session
+that dies before the last critic finishes loses every report not yet on disk (observed:
 strategist-critic done, report unsaved, run lost).
 
 **Check the tree around the verifier.** Record `git status --porcelain` before dispatching it and
@@ -58,7 +58,9 @@ when one did anyway (observed: a project gate restamped two committed reports).
 Simulates a realistic journal submission. Three phases, orchestrated sequentially.
 
 #### Phase 1: Editor Desk Review
-Dispatch the **editor** agent with the paper and target journal.
+Dispatch the **editor** agent with the paper and target journal. Returns text (desk review +
+referee selection if SEND OUT). Session saves to
+`quality_reports/peer_review_<manuscript-stem>/desk_review.md`.
 
 The editor:
 1. Reads the paper (abstract, intro, contribution, identification, results)
@@ -81,10 +83,11 @@ Dispatch **domain-referee** and **methods-referee** in parallel, each receiving:
 
 Both reviews are independent and blind — neither referee sees the other's report. Each
 referee agent enforces its own "What would change my mind" requirement on every major
-comment.
+comment. Each returns text; session saves to
+`quality_reports/peer_review_<manuscript-stem>/referee_domain.md` and `referee_methods.md`.
 
 #### Phase 3: Editorial Decision
-Dispatch the **editor** agent again with both referee reports.
+Dispatch the **editor** agent again — it reads both saved referee reports (has Read).
 
 The editor:
 1. Classifies each concern as FATAL / ADDRESSABLE / TASTE
@@ -92,14 +95,9 @@ The editor:
 3. Produces a decision letter: Accept / Minor Revisions / Major Revisions / Reject
 4. Lists MUST address, SHOULD address, and MAY push back items
 
-Record: `python3 .claude/scripts/pipeline.py state record-score referees <score> --critic editor --report quality_reports/peer_review_<manuscript-stem>/editorial_decision.md`.
-
-#### Save Reports
-Save all outputs to `quality_reports/peer_review_<manuscript-stem>/`:
-- `desk_review.md` (Phase 1)
-- `referee_domain.md` (Phase 2)
-- `referee_methods.md` (Phase 2)
-- `editorial_decision.md` (Phase 3)
+Returns text; session saves to
+`quality_reports/peer_review_<manuscript-stem>/editorial_decision.md`, records:
+`python3 .claude/scripts/pipeline.py state record-score referees <score> --critic editor --report <path>`.
 
 ### R&R Second Round (`--peer --r2 [journal]`)
 
@@ -143,13 +141,13 @@ Severity calibration for issues not already in a deduction table is in
 
 **Do NOT edit any source files.** Reports only; fixes come later, from the user or the Coder.
 
-Save report to `quality_reports/reviews/coder-critic_<date>.md`
+coder-critic returns text; session saves to `quality_reports/reviews/coder-critic_<date>.md`
 
 **When the target is the declared manuscript** (`--code <manuscript>` — the adoption route in
 `.claude/skills/pipeline/references/adopt.md`), the full checklist applies. Categories 1–4 are
 assessed against `quality_reports/strategy/<project>/strategy_memo.md` when it exists and against
 the manuscript's own design section when it does not — the report says which. Record:
-`python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report quality_reports/reviews/coder-critic_<date>.md`.
+`python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report <path>`.
 A standalone review under `scripts/acquire/` or `explorations/` records nothing — `code` is the
 manuscript's analysis, not acquisition or exploration code.
 
@@ -162,20 +160,20 @@ The assessment label (SOUND / MINOR ISSUES / MAJOR ISSUES / CRITICAL ERRORS) is 
 the score, not instead of it. The score is 100 minus the fixed per-severity deductions in
 `.claude/skills/review/config/scoring-rubrics.md` (Strategist-Critic).
 
-Save report to `quality_reports/reviews/strategist-critic_<date>.md`
+strategist-critic returns text; session saves to `quality_reports/reviews/strategist-critic_<date>.md`
 
 ### Manuscript Polish (`--proofread`)
 Dispatch **writer-critic** standalone:
 - 6 categories: structure, claims-evidence, ID fidelity, writing, grammar, render
-- Save report to `quality_reports/reviews/writer-critic_<date>.md`
+- Returns text; session saves to `quality_reports/reviews/writer-critic_<date>.md`
 
 ### Cross-Language Replication (`--replicate [language]`)
 Coder re-implements the manuscript's estimation chunks in `explorations/replicate_<language>.qmd`;
 coder-critic reviews; compare against the tolerances and known divergence sources in
 `.claude/skills/review/templates/replication-comparison.md`.
 
-Never writes the manuscript. Save the replicated script and comparison report to
-`quality_reports/reviews/replication_<language>_<date>.md`.
+Coder writes its own script (has Write), not the manuscript. coder-critic returns its comparison
+as text; session saves to `quality_reports/reviews/replication_<language>_<date>.md`.
 
 ---
 

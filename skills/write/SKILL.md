@@ -63,7 +63,9 @@ After the writer returns and before dispatching writer-critic, apply
 the skill's description promises; without it the description is a claim no step delivers.
 
 #### 5. Dispatch writer-critic (every mode that touches prose)
-Dispatch **writer-critic** in section mode on the section just written. It produces a scored report at `quality_reports/reviews/writer-critic_<date>.md` and the Claim–Evidence Table at `quality_reports/reviews/claim_evidence_<project>_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<name>`. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question. `/write humanize` is prose and gets the critic — in its own mode section below, in proofread mode; `/write style-guide` produces no prose and is the only exempt mode.
+Dispatch **writer-critic** in section mode. Returns report + Claim–Evidence Table as text;
+session saves to `quality_reports/reviews/writer-critic_<date>.md` and
+`quality_reports/reviews/claim_evidence_<project>_<date>.md`, records: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<name>`. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question. `/write humanize` gets the critic too, in proofread mode (below); `/write style-guide` is the only exempt mode (no prose).
 
 #### 6. Present to user
 Only after the critic's score. Sections go through the drafting gates (`.claude/skills/write/templates/drafting-gates.md`), each gate closing with a score, pausing for approval at each:
@@ -108,7 +110,10 @@ Strip AI writing patterns from existing text without rewriting content.
 Strips the 24 AI patterns in `.claude/skills/write/templates/cleanup-patterns.md` (content,
 language, style and communication categories) under its academic adaptation rules.
 
-After the cleanup pass, dispatch **writer-critic** in **proofread mode** (`.claude/agents/writer-critic.md` — categories 4, 5, 6, 8 only: writing quality, format, render, notation; not section mode, which would score identification fidelity and claims-evidence on prose it never saw drafted). Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<file>`. The `section:` prefix is mandatory — without it the score falls through to the component branch and overwrites the whole-manuscript score instead of scoping to this file. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question.
+After the cleanup pass, dispatch **writer-critic** in **proofread mode** (categories 4, 5, 6, 8
+only: writing quality, format, render, notation — not section mode, which would score
+identification fidelity and claims-evidence on prose it never saw drafted). Returns text;
+session saves to `quality_reports/reviews/writer-critic_<date>.md`, records: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<file>`. The `section:` prefix is mandatory — without it the score falls through to the component branch and overwrites the whole-manuscript score instead of scoping to this file. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question.
 
 ---
 

@@ -29,13 +29,35 @@ synthesises a decision. Referees are already reviewers and have no critic (regis
 
 ## 2. Separation of powers
 
-**Critics never create. Creators never self-score.**
+**Creators write the artifact. Critics write the review.** A creator never scores its own work;
+a critic never edits the artifact it reviews. A critic scores against a rubric, lists issues with
+deductions, and recommends fixes as recommendations — a critic that writes code, rewrites a
+section, or produces an alternative implementation has failed its role. The score always comes
+from the paired critic, recorded by the dispatching skill with `pipeline.py state record-score`.
 
-A critic scores against a rubric, lists issues with deductions, and recommends fixes as
-recommendations. A critic that writes code, rewrites a section, or produces an alternative
-implementation has failed its role. A creator's own assessment of its work is discarded; the
-score always comes from the paired critic, recorded by the dispatching skill with
-`pipeline.py state record-score`.
+**A critic also never saves its own report.** No critic, referee or infrastructure-role reviewer
+(`editor`, `domain-referee`, `methods-referee`, `verifier`) declares `Write`, and none should —
+`Write` is all-or-nothing in an agent's frontmatter, and a reviewer that could write *anything*
+could edit the manuscript it scores. `verifier` carries `Bash` for its render and cold-cache
+checks, not for authoring; `writer-critic` carried `Bash` too, but nothing in its file used it for
+anything but self-saving the report, so that tool is now removed. The model is
+`ai-audit/agents/humanize-auditor.md`'s `## Output` section: *"Structured report — return as your
+final response. Do NOT write any files yourself — the skill orchestrates report-saving."*
+
+**Every returned report is saved the instant it comes back — never batched until a workflow, a
+parallel dispatch, or a multi-phase flow finishes.** An agent without `Write` has no other way
+onto disk; its report exists only in the conversation until the dispatching skill writes it. A
+session that ends between dispatch and save — closed laptop, crash, context limit — loses that
+work permanently if it was not written immediately (observed: `/review`'s comprehensive mode once
+lost a completed strategist-critic report because the skill waited to save all three critics'
+reports together). This does not protect a report still being composed *inside* one long critic
+turn — no dispatched agent can stream partial output to the session that called it, so a critic
+reviewing an entire manuscript in one turn is exposed for the length of that turn. Splitting a
+long review into several smaller dispatches would close that gap too, at the cost of the critic's
+cross-category holistic judgment across the whole manuscript; considered and deliberately not done
+— clo-author has the identical exposure (checked directly: its `writer-critic` also has no `Write`
+and also reviews the whole manuscript in one turn; its only mitigation is a manual `/checkpoint`
+before session end, which is weaker than saving on every return).
 
 **Enforcement.** The dispatching skill flags: a critic dispatch that leaves a file under a
 creator's `WRITES` prefix; a creator that reports a score.

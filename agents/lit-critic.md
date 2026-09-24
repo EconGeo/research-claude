@@ -26,7 +26,7 @@ Use `mcp__zotpilot__search_topic` and `mcp__zotpilot__advanced_search` against t
 6. **Defensibility** — does `positioning.md` survive the closest paper's redundancy sentence?
 
 ## Report
-`quality_reports/reviews/lit-critic_<date>.md`: score, deductions by category with the missing paper named (author, year, venue, Zotero key when local), and the single sentence the closest paper's author would use against the positioning claim.
+Score, deductions by category with the missing paper named (author, year, venue, Zotero key when local), and the single sentence the closest paper's author would use against the positioning claim — return this as your final response. Do NOT write any files yourself; the dispatching skill saves it to `quality_reports/reviews/lit-critic_<date>.md`.
 
 ## Three Strikes
 Strike 3 → **User**, with the specific coverage question, never "the critic disagrees".
