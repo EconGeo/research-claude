@@ -36,6 +36,25 @@ class TestDataTagVocabularyMerge(unittest.TestCase):
         self.assertNotIn('action="set"', step5b.replace('never `set`', ''))
 
 
+class TestDataTagExtractionIsRouted(unittest.TestCase):
+    """Plan Part B, Task B1: the per-paper MCP loop runs in a subagent that holds zotpilot
+    and returns records; preview and every write stay in the main context."""
+
+    def test_step_3_dispatches_the_extractor_and_step_4_previews_in_the_main_context(self):
+        step3 = TAG[TAG.index("## Step 3"):TAG.index("## Step 4")]
+        self.assertIn("data-tag-extractor", step3)
+        self.assertIn(".claude/agents/data-tag-extractor.md", step3)
+        step4 = TAG[TAG.index("## Step 4"):TAG.index("## Step 5 ")]
+        self.assertNotIn("Agent", step4)
+
+    def test_the_extractor_holds_zotpilot_and_writes_nothing(self):
+        a = (ROOT / "agents" / "data-tag-extractor.md").read_text()
+        front = a.split("---")[1]
+        self.assertIn("mcpServers", front); self.assertIn("zotpilot", front)
+        self.assertNotRegex(front, r"tools:.*\b(Write|Edit)\b")
+        self.assertIn("Do NOT write any files", a)
+
+
 class TestLitPositionLocalFirst(unittest.TestCase):
     def test_ztp_research_still_starts_externally(self):
         """If this ever fails, upstream changed and the bridge workaround can be revisited."""
