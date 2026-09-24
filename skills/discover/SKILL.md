@@ -1,7 +1,7 @@
 ---
 name: discover
 description: Discovery phase combining research interviews, a pointer to /lit-position for literature, data discovery, and ideation. Routes to appropriate agents based on arguments. Replaces the old interview-me, lit-review, find-data and research-ideation commands.
-argument-hint: "[mode: interview | lit | data | ideate] [topic or query]"
+argument-hint: "[mode: interview | lit | data | ideate] [topic or query] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
@@ -29,7 +29,12 @@ question, significance, data, strategy, literature — with its follow-up probes
 rules (curious not prescriptive; probe weak spots gently; build on answers; stop when the vision
 is clear).
 
-After interview (5-8 exchanges), produce three outputs:
+After interview (5-8 exchanges), produce three outputs.
+
+**Option gate** (`.claude/rules/option-gates.md`): before writing the spec, show 5–8
+framings of the research question — columns *question*, *contribution*, *closest paper*,
+*data needed*, *feasibility* — ranked, and wait (`--yes` takes rank 1). The pick becomes the
+spec's research question; the rest are Output 3's alternatives.
 
 **Output 1: Research Specification** → `quality_reports/research_spec_[topic].md`, written with
 `.claude/skills/discover/templates/research-spec.md`. That template owns the eight sections:
@@ -37,7 +42,9 @@ research question, contribution, literature position, data requirements, prelimi
 identification strategy, expected results, feasibility assessment, risk factors.
 
 **Output 2: Domain Profile** → `.claude/references/domain-profile.md` (if still template)
-Fill in field, target journals, common data sources, identification strategies, field conventions, seminal references, and referee concerns based on the interview.
+Fill in field, target journals, common data sources, identification strategies, field conventions, seminal references, and referee concerns based on the interview. Target journals are
+offered as an **Option gate** (`.claude/rules/option-gates.md`) of 5–8 journals in tiers from
+`.claude/references/discipline-cards.md`; `--yes` takes rank 1; the pick fills the field.
 
 **Output 3: Decision Record** → `quality_reports/decisions/discovery_[topic].md`, written with
 `.claude/skills/strategize/templates/decision-record.md`. The decision is the research question
@@ -65,7 +72,10 @@ Workflow:
    - Survey data (RAND HRS, PSID, Add Health, NLSY)
    - International (World Bank, OECD, Eurostat)
    - Novel/alternative (satellite imagery, web scraping, proprietary)
-5. For each dataset found, report:
+5. For each dataset found, report — then, before Step 6, **Option gate**
+   (`.claude/rules/option-gates.md`): the ranked shortlist (5–8 datasets, or every feasible one
+   if fewer; columns *name*, *access*, *coverage*, *grade*), wait, `--yes` takes rank 1; the
+   pick heads `data_sources.md`, the rest stay in it as alternatives:
    - Name, provider, access level (public/restricted)
    - Key variables available
    - Coverage (time period, geography, sample size)
@@ -105,8 +115,11 @@ Generate structured research questions and hypotheses from a topic or dataset.
 **Agents:** Direct generation (no agent dispatch)
 **Output:** Research questions with empirical strategies
 
-Generate 3–5 research questions with clear hypotheses; for each, a potential identification
-strategy, data requirements and expected contribution; rank by feasibility and novelty. Save to
+Generate 5–10 research questions with clear hypotheses; for each, a potential identification
+strategy, data requirements and expected contribution; rank by feasibility and novelty, and offer
+them as an **Option gate** (`.claude/rules/option-gates.md`; columns *question*, *hypothesis*,
+*identification*, *data*, *contribution*; `--yes` takes rank 1). The pick is written first with
+the rest below it. Save to
 `quality_reports/research_ideas_[topic].md`, written with
 `.claude/skills/discover/templates/research-ideas.md`.
 
