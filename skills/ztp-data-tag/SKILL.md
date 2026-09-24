@@ -8,6 +8,7 @@ description: >
   "add data tags to Zotero", "build a data-discovery index from my library". Pilots one
   collection first, then offers to extend to the whole library. Opt-in and user-driven —
   it writes to your Zotero library, so it always confirms before batch writes.
+argument-hint: "[--yes]"
 allowed-tools: Read, Bash, mcp__zotpilot__*
 ---
 
@@ -54,12 +55,11 @@ parser or Obsidian hub can treat every backfilled paper uniformly.
 ## Step 1 — Pick a pilot collection (USER_REQUIRED)
 
 Do NOT process the whole library on the first run. List collections with
-`mcp__zotpilot__browse_library(view="collections")` and ask:
-
-> "Which collection should I pilot data-tagging on? I'll process that one (~N papers),
->  show you the results, and only then offer to run the rest of your library."
-
-Wait for the user to choose one collection.
+`mcp__zotpilot__browse_library(view="collections")`, then **Option gate**
+(`.claude/rules/option-gates.md`): rank 5–8 collections — columns *name*, *items*,
+*indexed share*, *why a good pilot* (small, mostly indexed, empirical) — and wait; `--yes`
+takes rank 1. The pilot processes that one collection (~N papers), shows the results, and
+only then offers the rest of the library.
 
 ## Step 2 — Enumerate items, skip already-tagged
 
@@ -142,6 +142,15 @@ For each approved item:
    - Variables: loan-denial rate, LTV
    - Unit: census tract · 2010-2020 · public (FFIEC)
    ```
+
+## Step 5b — Merge near-duplicate tags
+
+Before reporting, list every `dataset:*` / `var:*` tag written this batch next to any existing
+library tag within edit distance 2 or differing only by a plural or a hyphen
+(`dataset:hmda` vs `dataset:hmda-data`) — a near-duplicate splits the vocabulary Obsidian hubs
+key on. Offer each pair as `keep both / merge into existing / merge into new`; `--yes` keeps
+both. Merging is `manage_tags(action="add")` of the survivor then `action="remove"` of the
+other — never `set`.
 
 ## Step 6 — Report and pause for review (USER_REQUIRED)
 
