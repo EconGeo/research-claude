@@ -1,6 +1,6 @@
 ---
-name: humanize
-description: Read-only audit of `.tex`, `.qmd`, or `.md` text for AI-voice tells — boilerplate transitions ("Moreover", "Furthermore", "It is important to note that"), AI-cliché lexicon ("delve", "navigate the complexities", "tapestry", "robust framework"), em-dash overuse, symmetric paragraph shapes, tricolon abuse, hedging stacking, "not only X but also Y" frames, and formulaic openers. Produces a report; does NOT rewrite. Use when user says "humanize", "does this sound like AI?", "check for AI tells", "de-AI this draft", "remove AI voice", "audit my prose for sycophancy", or before journal submission / posting a working paper.
+name: civilize
+description: Read-only audit of `.tex`, `.qmd`, or `.md` text for AI-voice tells — boilerplate transitions ("Moreover", "Furthermore", "It is important to note that"), AI-cliché lexicon ("delve", "navigate the complexities", "tapestry", "robust framework"), em-dash overuse, symmetric paragraph shapes, tricolon abuse, hedging stacking, "not only X but also Y" frames, and formulaic openers. Produces a report; does NOT rewrite. Use when user says "civilize", "does this sound like AI?", "check for AI tells", "de-AI this draft", "remove AI voice", "audit my prose for sycophancy", or before journal submission / posting a working paper.
 author: Claude Code Academic Workflow
 version: 1.0.0
 argument-hint: "[filename or 'all'] [--severity low|med|high]"
@@ -8,7 +8,7 @@ disable-model-invocation: true
 allowed-tools: ["Read", "Grep", "Glob", "Write", "Agent"]
 ---
 
-# `/humanize` — AI-voice audit (detect-and-flag)
+# `/civilize` — AI-voice audit (detect-and-flag)
 
 Read the target file (or all paper-like files), audit for the canonical AI-voice tells in academic prose, and write a structured report. **The skill does not rewrite.** The author edits.
 
@@ -29,7 +29,7 @@ Referees and editors increasingly recognise AI-generated prose. The tells are no
 - **Not a grammar checker.** Use a proofreading pass (in research-claude, `/review --proofread`) for grammar, typos, overflow, citation format.
 - **Not a fact-checker.** Use `/verify-claims` for Chain-of-Verification fact-checking of citations and numeric claims.
 
-`/humanize` is the *voice* lens. Run it alongside the others — none of them substitute.
+`/civilize` is the *voice* lens. Run it alongside the others — none of them substitute.
 
 ## When to use
 
@@ -46,7 +46,7 @@ Referees and editors increasingly recognise AI-generated prose. The tells are no
 
 ## Detection categories
 
-The humanize-auditor agent checks these category groups:
+The civilize-auditor agent checks these category groups:
 
 ### 1. BOILERPLATE TRANSITIONS
 
@@ -163,7 +163,7 @@ Long chains of compound modifiers as a paragraph signature:
    - `--severity med` → suppress LOW findings.
    - `--severity high` → report only HIGH findings.
 
-3. **For each file, launch the `humanize-auditor` agent** with the 10 detection categories.
+3. **For each file, launch the `civilize-auditor` agent** with the 10 detection categories.
 
 4. **Receive structured report** from the agent. Format per finding:
 
@@ -171,7 +171,7 @@ Long chains of compound modifiers as a paragraph signature:
    line N | category | severity | current text | suggested rewrite or "remove"
    ```
 
-5. **Write report** to `quality_reports/humanize_<filename>_report.md`. Include:
+5. **Write report** to `quality_reports/civilize_<filename>_report.md`. Include:
    - Per-category counts (HIGH / MED / LOW)
    - Per-finding table
    - Summary recommendation (rough thresholds):
@@ -188,18 +188,18 @@ Long chains of compound modifiers as a paragraph signature:
 
 | Situation | What to run |
 |---|---|
-| When you've drafted prose with AI assistance | Run `/humanize` before submission. Pair with a proofreading pass (in research-claude, `/review --proofread`) and `/verify-claims` (citations). |
-| When you wrote in your own voice | Run `/humanize` anyway — your own prose drifts toward LLM patterns after long sessions of AI-assisted work. |
-| Submission-ready review | A referee-style review for substance (in research-claude, `/review --peer [journal]`), `/humanize` for voice, `/verify-claims` for facts. |
+| When you've drafted prose with AI assistance | Run `/civilize` before submission. Pair with a proofreading pass (in research-claude, `/review --proofread`) and `/verify-claims` (citations). |
+| When you wrote in your own voice | Run `/civilize` anyway — your own prose drifts toward LLM patterns after long sessions of AI-assisted work. |
+| Submission-ready review | A referee-style review for substance (in research-claude, `/review --peer [journal]`), `/civilize` for voice, `/verify-claims` for facts. |
 
 ## Anti-pattern: no `--rewrite` mode
 
-We deliberately do not ship `/humanize --rewrite`. Cross-vendor research (Cursor / Aider community findings) finds that auto-rewriting prose to strip AI tells degrades quality more often than it improves it — the rewriter introduces its *own* AI tells. The detect-and-flag pattern preserves authorial voice; the cost is your editing time, which is exactly the cost we want to pay.
+We deliberately do not ship `/civilize --rewrite`. Cross-vendor research (Cursor / Aider community findings) finds that auto-rewriting prose to strip AI tells degrades quality more often than it improves it — the rewriter introduces its *own* AI tells. The detect-and-flag pattern preserves authorial voice; the cost is your editing time, which is exactly the cost we want to pay.
 
 If you find yourself reaching for an auto-rewriter, that's the signal to rewrite the paragraph from scratch — not to patch the tells one by one.
 
 ## Output
 
-- Report at `quality_reports/humanize_<filename>_report.md` (gitignored).
+- Report at `quality_reports/civilize_<filename>_report.md` (gitignored).
 - Summary to the conversation: counts per category, top concentrated paragraphs, action recommendation.
 - **No file edits.** The user reads the report and applies changes manually.

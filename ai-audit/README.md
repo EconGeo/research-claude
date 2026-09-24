@@ -5,7 +5,7 @@ Two complementary tools — no Python dependencies.
 
 | Tool | What it does | When to use |
 |------|-------------|-------------|
-| `/humanize` | Detects AI-voice tells (lexical, structural, stylistic) in `.tex`, `.qmd`, `.md` | Before journal submission or posting a working paper |
+| `/civilize` | Detects AI-voice tells (lexical, structural, stylistic) in `.tex`, `.qmd`, `.md` | Before journal submission or posting a working paper |
 | `/verify-claims` | Chain-of-Verification (CoVe) hallucination check — fresh-context verifier never sees the original draft | After any text generation that asserts facts about papers, datasets, or numerical results |
 
 Both are **read-only auditors** — they flag problems but do not rewrite. The author edits manually.
@@ -28,9 +28,9 @@ git clone https://github.com/EconGeo/ai-audit.git
 cd ai-audit
 
 # Copy into your project's .claude/ directory
-cp -r skills/humanize    /your-project/.claude/skills/
+cp -r skills/civilize    /your-project/.claude/skills/
 cp -r skills/verify-claims /your-project/.claude/skills/
-cp agents/humanize-auditor.md /your-project/.claude/agents/
+cp agents/civilize-auditor.md /your-project/.claude/agents/
 cp agents/claim-verifier.md   /your-project/.claude/agents/
 cp rules/ai-disclosure.md     /your-project/.claude/rules/
 ```
@@ -38,9 +38,9 @@ cp rules/ai-disclosure.md     /your-project/.claude/rules/
 ### Install globally (active in all Claude Code projects)
 
 ```bash
-cp -r skills/humanize    ~/.claude/skills/
+cp -r skills/civilize    ~/.claude/skills/
 cp -r skills/verify-claims ~/.claude/skills/
-cp agents/humanize-auditor.md ~/.claude/agents/
+cp agents/civilize-auditor.md ~/.claude/agents/
 cp agents/claim-verifier.md   ~/.claude/agents/
 cp rules/ai-disclosure.md     ~/.claude/rules/
 ```
@@ -53,12 +53,12 @@ If you're using [EconGeo/research-claude](https://github.com/EconGeo/research-cl
 
 ## Usage
 
-### `/humanize` — AI-voice tells audit
+### `/civilize` — AI-voice tells audit
 
 ```
-/humanize paper/main.tex
-/humanize paper/main.tex --severity high    # only high-severity tells
-/humanize all                               # audit all .tex/.qmd/.md files
+/civilize paper/main.tex
+/civilize paper/main.tex --severity high    # only high-severity tells
+/civilize all                               # audit all .tex/.qmd/.md files
 ```
 
 Checks for 10 detection categories:
@@ -110,6 +110,6 @@ No Python environments, no global state, no MCP registrations — just `.claude/
 
 ## Attribution
 
-`/humanize` was designed based on cross-vendor research on AI-voice detection in academic prose.
+`/civilize` was designed based on cross-vendor research on AI-voice detection in academic prose.
 `/verify-claims` adapts the Chain-of-Verification protocol from:
 > Dhuliawala, S., Komeili, M., Xu, J., Raileanu, R., Li, X., Celikyilmaz, A., & Weston, J. (2023). *Chain-of-Verification Reduces Hallucination in Large Language Models.* arXiv:2309.11495.

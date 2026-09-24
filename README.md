@@ -25,7 +25,7 @@ paper project by *symlink*, so one edit here reaches every project at once.
 |--------|-----------------|
 | **this repo** | The research pipeline itself: `agents/` (strategist, writer, coder, referees, editor, data-engineer, theorist, verifier and their critics), `skills/` (`/discover`, `/strategize`, `/analyze`, `/write`, `/review`, `/revise`, `/submit`, `/talk`, `/lit-position`, `/pipeline`, `/promote`, …), `rules/`, `references/`, `hooks/`, `seeds/` (scaffolding copied into new projects), `scripts/` (the four listed in `scripts/SHIPPED` install into a project; the rest are pipeline-dev tooling), `tests/` (`run_fixture.sh` + the unit suite) |
 | `EconGeo/ZotPilot` | Zotero MCP server — embeds your library into a local ChromaDB so Claude searches it semantically, ingests papers, and cross-references citations (our fork of [xunhe730/ZotPilot](https://github.com/xunhe730/ZotPilot)). Skills vendored in `zotpilot-skills/` |
-| `EconGeo/ai-audit` | Prose audit skills: `/humanize` (AI-voice tells) + `/verify-claims` (hallucination check) — vendored in `ai-audit/`, not a submodule |
+| `EconGeo/ai-audit` | Prose audit skills: `/civilize` (AI-voice tells) + `/verify-claims` (hallucination check) — vendored in `ai-audit/`, not a submodule |
 
 The agents originate in [clo-author](https://github.com/hugosantanna/clo-author) by Hugo <!-- residue:historical -->
 Santanna, which research-claude was built on as a submodule until 2026-09-08. They are now <!-- residue:historical -->
@@ -157,7 +157,7 @@ None is ever overwritten if it already exists. The manuscript itself and
 require judgment about paths (Steps 7–8).
 
 > **No submodules.** Cloning this repo is enough — there is no `git submodule update`
-> step. `ai-audit` (agents + skills for `/humanize` and `/verify-claims`) and the
+> step. `ai-audit` (agents + skills for `/civilize` and `/verify-claims`) and the
 > ZotPilot skills are both **vendored**, in `ai-audit/` and `zotpilot-skills/`
 > respectively, never a submodule. The ZotPilot MCP server itself installs separately
 > (Step 7, `pip install git+https://github.com/EconGeo/ZotPilot.git` — the fork, never PyPI),
@@ -186,12 +186,12 @@ The two modes deliberately use **different checkouts**. Pinning the shared check
 would silently pin every project on your machine to one paper's locked commit.
 
 > **A lock pinned at or before commit `5d9fa0f`** (the last commit before `ai-audit` was
-> vendored) will silently install with `/humanize` and `/verify-claims` missing. At that
+> vendored) will silently install with `/civilize` and `/verify-claims` missing. At that
 > commit, `submodules/ai-audit` is still a submodule gitlink; a fresh, non-recursive
 > `git clone` (what `bootstrap-pipeline.sh` now does) checks it out as an **empty
 > directory**, and that old commit's `apply.sh` finds nothing under it and links
 > nothing — no error, nothing in the output beyond the `ai-audit/` line header. If a
-> project's `/humanize` or `/verify-claims` skill is unexpectedly absent, check
+> project's `/civilize` or `/verify-claims` skill is unexpectedly absent, check
 > `.claude/pipeline.lock`'s `commit=` line: re-pin to a commit at or after `6c2d025`
 > (where `ai-audit/` is a real vendored directory, not a submodule) or run
 > `./bootstrap-pipeline.sh --tip` once to pick up main.
@@ -539,7 +539,7 @@ After all steps, check:
 - [ ] `zotpilot status` shows papers indexed
 - [ ] `/ztp-research` skill invocable (type `/ztp` in Claude Code)
 - [ ] Connector (for paper download): ZotPilot Connector loaded in `chrome://extensions/`, Zotero Desktop running
-- [ ] `/humanize` and `/verify-claims` skills available
+- [ ] `/civilize` and `/verify-claims` skills available
 - [ ] `quarto render` produces output from a test `.qmd` file
 - [ ] `xelatex` compiles a test `.tex` file
 - [ ] Obsidian (if used): `.claude/state/obsidian-config.md` exists and the Obsidian MCP tools appear in `/tools`
@@ -562,7 +562,7 @@ Once installed, the main entry points are:
 | `/write` | Draft paper sections |
 | `/review-paper` | Manuscript review (single-pass, adversarial, or simulated peer review) |
 | `/verify-claims` | Hallucination check on a draft |
-| `/humanize` | Detect AI-voice tells before submission |
+| `/civilize` | Detect AI-voice tells before submission |
 | `/analyze` | End-to-end data analysis (R / Python / Julia) |
 
 Each skill's `SKILL.md` in `skills/` is its own reference. `/promote`, `/lit-position` <!-- residue:historical -->
@@ -749,7 +749,7 @@ Layer 0 — Upstream (not owned)
 
 Layer 1 — Custom tools (each repo owns its versioning)
 ├── EconGeo/ZotPilot               fork: multi-library indexing + token-aware chunking + bge-large/Ollama + BBT 7+  (server: pip-installed; skills: vendored)
-└── EconGeo/ai-audit               /humanize + /verify-claims                    (vendored, not a submodule)
+└── EconGeo/ai-audit               /civilize + /verify-claims                    (vendored, not a submodule)
 
 Layer 2 — This repo (compose via apply.sh)
 └── EconGeo/research-claude        ← you are here

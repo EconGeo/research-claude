@@ -1,7 +1,7 @@
 # Vendored ai-audit
 
-These are the two ai-audit skills (`/humanize`, `/verify-claims`) and their paired agents
-(`humanize-auditor`, `claim-verifier`), **vendored** from `EconGeo/ai-audit`. `apply.sh`
+These are the two ai-audit skills (`/civilize`, `/verify-claims`) and their paired agents
+(`civilize-auditor`, `claim-verifier`), **vendored** from `EconGeo/ai-audit`. `apply.sh`
 links `agents/` and `skills/` into each project's `.claude/agents/` and `.claude/skills/`,
 the same way it links everything else under `agents/` and `skills/` at repo root.
 
@@ -15,8 +15,8 @@ ZotPilot's skills for the same reason.
 
 ## What was taken
 
-- `agents/claim-verifier.md`, `agents/humanize-auditor.md`
-- `skills/humanize/SKILL.md`, `skills/verify-claims/SKILL.md`
+- `agents/claim-verifier.md`, `agents/civilize-auditor.md`
+- `skills/civilize/SKILL.md`, `skills/verify-claims/SKILL.md`
 - `README.md` (upstream's own, describing both tools — copied verbatim)
 
 ## What was deliberately left out
@@ -38,7 +38,9 @@ ZotPilot's skills for the same reason.
 ## Provenance / refresh
 
 - Source: `https://github.com/EconGeo/ai-audit.git`
-- Vendored from commit: `2e9a1ac8bd265982ee9b07109d79287158c2a08e` (PR #1: dangling references removed)
+- Vendored from commit: `a99c7a75b9aee85ad4e9755cf5d2124d12b3e07a` (PR #2: rename `/humanize`
+  skill and `humanize-auditor` agent to `/civilize` and `civilize-auditor`, to avoid colliding
+  with research-claude's own `/write humanize` mode)
 
 To refresh after the upstream repo's skills or agents change, run:
 

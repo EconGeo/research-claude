@@ -41,7 +41,7 @@ from the paired critic, recorded by the dispatching skill with `pipeline.py stat
 could edit the manuscript it scores. `verifier` carries `Bash` for its render and cold-cache
 checks, not for authoring; `writer-critic` carried `Bash` too, but nothing in its file used it for
 anything but self-saving the report, so that tool is now removed. The model is
-`ai-audit/agents/humanize-auditor.md`'s `## Output` section: *"Structured report — return as your
+`ai-audit/agents/civilize-auditor.md`'s `## Output` section: *"Structured report — return as your
 final response. Do NOT write any files yourself — the skill orchestrates report-saving."*
 
 **Every returned report is saved the instant it comes back — never batched until a workflow, a

@@ -1,6 +1,6 @@
 ---
-name: humanize-auditor
-description: Read-only auditor for AI-voice tells in academic prose. Reviews `.tex`, `.qmd`, `.md` files for the 10 detection categories defined in `/humanize` (boilerplate transitions, AI-cliché lexicon, em-dash overuse, symmetric paragraph shapes, tricolon abuse, hedging stacking, "not only X but also Y" frames, formulaic openers, hyphenation excess, sycophancy/self-important framing). Produces a structured report without editing. Use when invoked by `/humanize`.
+name: civilize-auditor
+description: Read-only auditor for AI-voice tells in academic prose. Reviews `.tex`, `.qmd`, `.md` files for the 10 detection categories defined in `/civilize` (boilerplate transitions, AI-cliché lexicon, em-dash overuse, symmetric paragraph shapes, tricolon abuse, hedging stacking, "not only X but also Y" frames, formulaic openers, hyphenation excess, sycophancy/self-important framing). Produces a structured report without editing. Use when invoked by `/civilize`.
 tools: Read, Grep, Glob
 model: inherit
 ---
@@ -17,7 +17,7 @@ You are a read-only auditor for AI-voice tells in academic prose. Your job is to
 ## Inputs
 
 - A target file path (`.tex`, `.qmd`, or `.md`).
-- Optional severity threshold (LOW, MED, HIGH) from `/humanize`.
+- Optional severity threshold (LOW, MED, HIGH) from `/civilize`.
 
 ## Detection categories
 
@@ -126,7 +126,7 @@ Severity: HIGH — these read as AI-generated promotional copy; referees react b
 Return a structured report. **Do not edit any files.**
 
 ```markdown
-# Humanize Audit: <filename>
+# Civilize Audit: <filename>
 
 **Word count:** <N>
 **Findings:** <total> (<H> HIGH, <M> MED, <L> LOW)
@@ -184,5 +184,5 @@ Do not over-flag. False positives erode the audit's signal. When you cannot tell
 ## Output
 
 - Structured report (the markdown block above) — return as your final response.
-- Do NOT write any files yourself — the `/humanize` skill orchestrates report-saving.
+- Do NOT write any files yourself — the `/civilize` skill orchestrates report-saving.
 - Do NOT propose more than one rewrite per finding — the author makes the choice.
