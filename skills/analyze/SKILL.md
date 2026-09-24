@@ -31,6 +31,8 @@ chunk. Then `python3 .claude/scripts/pipeline.py log data-engineer` (standalone)
 **coder-critic** on the manuscript. It returns its report as text; session saves it to
 `quality_reports/reviews/coder-critic_<date>.md` first, then records its score:
 `python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report quality_reports/reviews/coder-critic_<date>.md`.
+Three rounds maximum (`pipeline.py state strike data-engineer` after each failing round;
+escalation target from the registry).
 
 ### Step 3: Estimation — coder, then its paired critic
 Dispatch **coder**: `estimate-*`, `robustness-*`, `tbl-*`, `fig-*` chunks per

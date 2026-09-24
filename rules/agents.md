@@ -68,6 +68,12 @@ Round 1: critic reviews → creator fixes. Round 2. Round 3. Still below thresho
 the `ESCALATION_TARGET` declared for the creator in the registry. `pipeline.py state strike
 <creator>` counts rounds and prints the target at three.
 
+- **The stage skill owns `state strike` for its own creator** — the same convention as
+  `record-score`. `/pipeline` reads the count (`state show`) and escalates on it; it never adds
+  to it. `pipeline.py state strike` is an unconditional increment with no round key, so a second
+  call in the same failing round is a second strike, and a stage with no call site at all never
+  escalates. Exceptions, stated in their reference files: `/review --all` re-scores existing
+  work and sends it back to its creator's stage; `/submit` has no creator.
 - Max 3 rounds per pair per invocation; 5 rounds overall; never loop indefinitely.
 - Escalation is logged in the research journal with the strike count.
 - Escalating to the user requires a specific question: "strategist-critic requires X, which

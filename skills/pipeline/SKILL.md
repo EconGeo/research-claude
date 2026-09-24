@@ -48,8 +48,11 @@ loop over stages from start in REQUIRES order, stop after --until:
   read references/<stage>.md; dispatch the creator per that file (Agent)
   dispatch the critic per that file; record-score <component> <score> --critic … [--deductions …] --report …
   post <creator>           → FAIL (critic-ran / render / prose-check): re-dispatch or stop
-  below 80: creator fixes → critic re-scores; `state strike <creator>`; at 3 → escalate to
-            registry's ESCALATION_TARGET with a specific question
+  below 80: the stage skill loops creator → critic and owns the strike for its creator
+            (the driver never issues one — `strike` has no round key, so a second call in
+            the same round is a second strike); the driver reads the count from `state show`
+            and at `limits.rounds_per_pair` escalates to the registry's ESCALATION_TARGET
+            with the question in references/<stage>.md's Escalation block
   approval gate: present the stage summary and the score; wait unless --yes
 after the loop: score; "Suggested Learnings" (strikes, escalations, first-pass ≥ 90) per
   .claude/rules/meta-governance.md — suggestions only, user approves, /promote lands
