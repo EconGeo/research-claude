@@ -60,7 +60,7 @@ Pass/fail per check; 0 or 100 for aggregation. **Tree changes** is reported, not
 **Tree changes:** none / <path — what changed>
 **Overall: PASS / FAIL**
 ```
-Save to `quality_reports/verification_report.md`.
+Return this as your final response. Do NOT write the report file yourself — the dispatching skill saves it to `quality_reports/verification_report.md`. (`Bash` stays for the render/cold-cache checks above; it is not for authoring the report.)
 
 ## Rules
 Run from the project root. `quarto render` is the only build. Report every warning.

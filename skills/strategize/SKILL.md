@@ -38,18 +38,17 @@ Workflow:
    `.claude/skills/strategize/templates/design-checklists/<design>.md`, one of `did`,
    `event-study`, `iv`, `rdd`, `structural`, `descriptive`. Naming all seven is what makes an
    agent read all seven.
-4. Dispatch strategist-critic, which runs its own 4-phase audit
-   (`.claude/skills/review/templates/causal-audit-4-phases.md`).
-
-   Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report quality_reports/reviews/strategist-critic_<date>.md`.
+4. Dispatch strategist-critic (4-phase audit,
+   `.claude/skills/review/templates/causal-audit-4-phases.md`). Returns text; **session saves**
+   to `quality_reports/reviews/strategist-critic_<date>.md`, then records:
+   `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report <path>`.
 5. Below 80 → Strategist revises → critic re-scores; `pipeline.py state strike strategist` per
    failing round; strike three → escalate to the registry's escalation target with a specific
    question.
 6. Save to `quality_reports/strategy/<project>/`: `strategy_memo.md` (all 5 required sections —
    Estimand, Specification, Assumptions, Robustness Plan, Threats), `pseudo_code.md`,
    `robustness_plan.md`, `falsification_tests.md`
-7. Save review to `quality_reports/reviews/strategist-critic_<date>.md`
-8. **Save decision record** → `quality_reports/decisions/strategy_[topic].md`, using
+7. **Save decision record** → `quality_reports/decisions/strategy_[topic].md`, using
    `.claude/skills/strategize/templates/decision-record.md`. It owns the field list: decision,
    alternatives considered with why each was rejected, rationale, key assumptions with
    credibility, what would invalidate the strategy, and risks.
@@ -94,9 +93,8 @@ Drafting and review both follow `.claude/skills/strategize/templates/pap-safety.
 and list every `[ASSUMED]` item, the mandatory Pre-Registration Checklist that closes every PAP,
 and the PAP-specific criteria the strategist-critic applies on top of its own rubric.
 
-Dispatch the strategist-critic after the PAP is drafted — this is mandatory, not conditional.
-
-Save review to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --scope section:pre-analysis-plan --report quality_reports/reviews/strategist-critic_<date>.md`.
+Dispatch the strategist-critic after the PAP is drafted — mandatory, not conditional. It returns
+text; **session saves** to `quality_reports/reviews/strategist-critic_<date>.md`, records: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --scope section:pre-analysis-plan --report <path>`.
 
 The `--scope section:` prefix is load-bearing and must not be dropped or reworded — see
 `.claude/skills/strategize/gotchas.md` ("Why the PAP score is section-scoped") for what breaks
@@ -135,14 +133,13 @@ Workflow:
    - `quality_reports/theory/[topic]/theory_memo.md`
    - a `# Theory` section and proofs appendix written directly into the manuscript
    - `quality_reports/theory/[topic]/notation_glossary.md`
-4. Dispatch **theorist-critic**, which runs its own 4-phase review
-   (`.claude/skills/review/templates/theory-review-4-phases.md`), early-stopping on critical
-   proof gaps.
-
-   Record: `python3 .claude/scripts/pipeline.py state record-score theory <score> --critic theorist-critic --deductions <total> --report quality_reports/reviews/theorist-critic_<date>.md`.
+4. Dispatch **theorist-critic** (4-phase review,
+   `.claude/skills/review/templates/theory-review-4-phases.md`, early-stopping on critical proof
+   gaps). Returns text; **session saves** to `quality_reports/reviews/theorist-critic_<date>.md`,
+   then records:
+   `python3 .claude/scripts/pipeline.py state record-score theory <score> --critic theorist-critic --deductions <total> --report <path>`.
 5. If CRITICAL issues found, iterate (max 3 rounds per three-strikes). Escalation target: User.
-6. Save review to `quality_reports/reviews/theorist-critic_<date>.md`
-7. **Save decision record** → `quality_reports/decisions/theory_[topic].md`
+6. **Save decision record** → `quality_reports/decisions/theory_[topic].md`
    Record:
    - **Decision:** The theoretical objects proved (identification, asymptotic distribution, etc.)
    - **Assumptions:** Full list with interpretation

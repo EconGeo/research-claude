@@ -83,7 +83,8 @@ Workflow:
    compatibility. The local-first search order in `.claude/rules/literature-search-order.md`
    applies to any literature it cites about a dataset's known issues.
 
-   Save the critic's report to `quality_reports/reviews/explorer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score data <score> --critic explorer-critic --deductions <total> --report quality_reports/reviews/explorer-critic_<date>.md`.
+   Returns text; session saves it to
+   `quality_reports/reviews/explorer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score data <score> --critic explorer-critic --deductions <total> --report quality_reports/reviews/explorer-critic_<date>.md`.
 7. Save to `quality_reports/data-assessment/<project>/`:
    - `data_sources.md` — the per-dataset report from Step 5: name, provider, access level, key variables, coverage, feasibility grade (A–F), strengths and limitations, plus the rejection table below. This is the file the downstream gate (`strategist.requires` in `.claude/rules/registry.yaml`) keys on, so it must be the one that always exists.
    - `data_dictionary.md` — the variables needed (Step 3: treatment, outcome, controls, time period, geography) crossed with what each dataset in Step 5 actually supplies for them

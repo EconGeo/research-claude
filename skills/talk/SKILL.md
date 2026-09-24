@@ -72,7 +72,7 @@ After the Storyteller returns, dispatch the storyteller-critic to review across 
 | **Scope for format** | Right amount of content for the duration — not cramming a seminar into a lightning talk, not padding a short talk to seminar length |
 | **Compilation** | Does it compile cleanly without errors or warnings? |
 
-Score as advisory (non-blocking). Save report to `quality_reports/reviews/storyteller-critic_<date>.md`.
+Score as advisory (non-blocking). storyteller-critic returns its report as text; session saves it to `quality_reports/reviews/storyteller-critic_<date>.md`.
 
 **Step 4: Fix Critical Issues**
 
