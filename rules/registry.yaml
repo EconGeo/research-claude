@@ -367,6 +367,8 @@ agents:
         glob: quality_reports/peer_review_*/desk_review.md
       - type: path
         glob: quality_reports/peer_review_*/editorial_decision.md
+      - type: path
+        glob: quality_reports/peer_review_*/stress_gauntlet.md
     critic: none
     escalation_target: user
     component: referees

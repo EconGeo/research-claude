@@ -49,8 +49,13 @@ KNOWN_UNBOUND = {
 # `.claude/references/narrative-arcs.md` (the same file `/talk` reads) so the file actually
 # delivers what its spec asked for — "independent of `/talk`", usable from `/write` too. One
 # sentence, not a table; new measured size 7,589.
+# 2026-09-24 (09-16 closeout, Task 1): review's cap raised 11,500 -> 12,500. `--theory` was
+# advertised in the flag list with no mode section — a weight-20 component whose critic-only
+# route dispatched nothing — and `--stress` reused --peer's Phase 3 recording from a file stress
+# mode never writes. The new mode section, the `--variance` refusal line (D-19) and the stress
+# fix cost +861 net after moving two incident paragraphs to gotchas.md. Measured size 12,157.
 BUDGET = {
-    "review": 11500,
+    "review": 12500,
     "strategize": 8000,
     "write": 7600,
     "discover": 6000,

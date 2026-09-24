@@ -25,6 +25,7 @@ Unified review command that routes to the appropriate critic agents based on the
 - `--peer --r2` `[journal]` → **R&R second round** (same referees, same dispositions, memory of prior review)
 - `--stress` `[journal]` → **Hostile stress test** (same flow, adversarial referee dispositions)
 - `--methods` → **Causal audit** (strategist-critic standalone, 4-phase review)
+- `--variance N` → **not wired; refuse and say so.** Specified in `.claude/agents/editor.md`, no referee-3…N dispatch exists (D-19). Do not improvise one.
 - `--theory` `[target]` → **Proof audit** (theorist-critic standalone, 4-phase review — logical validity, assumption minimality, citations, linkage)
 - `--proofread` → **Manuscript polish** (writer-critic standalone, 6 categories)
 - `--code` `[file]` → **Code review** (coder-critic standalone, categories 5-16)
@@ -42,16 +43,10 @@ Dispatch in parallel:
 3. **verifier** — standard checks 1–4c (`.claude/agents/verifier.md`). Session saves to `quality_reports/verification_report.md`. Record: `python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report <path>`.
 Compute weighted aggregate score from the recorded component scores.
 
-**Save each report the moment its critic returns**, and record that score then — not after all
-three. Critics are read-only, returning reports as text for this session to write; a session
-that dies before the last critic finishes loses every report not yet on disk (observed:
-strategist-critic done, report unsaved, run lost).
-
-**Check the tree around the verifier.** Record `git status --porcelain` before dispatching it and
-again when it returns. Put every tracked path that changed — other than the manuscript's rendered
-outputs — in front of the user, and keep it out of any commit of the scores. Do not revert it
-unasked. The verifier is told not to run a project's own gate scripts; this check is what notices
-when one did anyway (observed: a project gate restamped two committed reports).
+Save each report the moment its critic returns and record its score then, not after all three.
+Record `git status --porcelain` before dispatching the verifier and again when it returns, and
+put any changed tracked path in front of the user; the rest of both incidents is in
+`.claude/skills/review/gotchas.md`.
 
 ### Full Peer Review (`--peer [journal]`)
 
@@ -124,10 +119,12 @@ Continues the review cycle after the author has revised the paper.
 
 ### Hostile Stress Test (`--stress [journal]`)
 
-Same three-phase flow as `--peer`, dispatched with `--stress`. The editor forces both referees to
-SKEPTIC and doubles the critical peeves; append the hostile block from
-`.claude/skills/review/templates/peer-review-prompts.md` to each referee prompt. Pre-submission
-only — the score is advisory.
+Phases 1–2 as in `--peer`, dispatched with `--stress`: the editor forces both referees to SKEPTIC
+and doubles the critical peeves; append the hostile block from
+`.claude/skills/review/templates/peer-review-prompts.md` to each referee prompt. Phase 3 returns a
+concern-list gauntlet, **not** an `editorial_decision.md`, so this mode **records no score**
+(deliberate, as `--replicate`). Session saves to
+`quality_reports/peer_review_<manuscript-stem>/stress_gauntlet.md`. Pre-submission only.
 
 ### Code Review (`--code` or auto-detect .R/.py/.jl/.qmd under `scripts/acquire/` or `explorations/`)
 
@@ -171,6 +168,19 @@ the score, not instead of it. The score is 100 minus the fixed per-severity dedu
 
 strategist-critic returns text; session saves to `quality_reports/reviews/strategist-critic_<date>.md`
 
+### Proof Audit (`--theory` `[target]`)
+
+Dispatch **theorist-critic** standalone for the 4-phase proof review in
+`.claude/skills/review/templates/theory-review-4-phases.md`, against `[target]` or the
+manuscript's `# Theory` section. Deductions: `.claude/skills/review/config/scoring-rubrics.md`
+(Theorist-Critic).
+
+theorist-critic returns text; session saves to `quality_reports/reviews/theorist-critic_<date>.md`.
+Record: `python3 .claude/scripts/pipeline.py state record-score theory <score> --critic theorist-critic --deductions <total> --report <path>`.
+`theory` is **conditional** — counted only when the manuscript has a `# Theory` heading
+(`.claude/rules/registry.yaml`). Critic-only route used by `.claude/skills/pipeline/references/adopt.md`;
+the creator route is `/strategize theory`.
+
 ### Manuscript Polish (`--proofread`)
 Dispatch **writer-critic** standalone:
 - 6 categories: structure, claims-evidence, ID fidelity, writing, grammar, render
@@ -201,9 +211,11 @@ Verifier score maps to 0 (FAIL) or 100 (PASS).
 | Mode | Blocking? | Gate |
 |------|-----------|------|
 | Comprehensive | Yes | 80 commit, 90 PR |
-| Peer Review | Yes | Editorial decision |
-| Stress Test | Advisory | Reported, non-blocking |
+| Peer Review | Yes | Editorial decision — overall score per the Editor rubric |
+| Stress Test | Advisory | Records nothing (gauntlet only) |
 | Code Review | Yes | 80 commit |
 | Causal Audit | Yes | 80 commit |
+| Theory | Yes (conditional) | 80 commit — counted only with a `# Theory` heading |
+| Replication | Yes | 0/100 from the verifier (inside Comprehensive) |
 | Proofread | Yes (paper), Advisory (talks) | 80 commit |
 

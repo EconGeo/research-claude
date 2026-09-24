@@ -121,7 +121,7 @@ For each referee, draw **1 critical peeve + 1 constructive peeve** from the pool
 3. For each of the N referees, draw 1 critical + 1 constructive peeve (same rule as default).
 4. Record the realized disposition distribution + the stratification override (if any) — this metadata goes into `decision_distribution.md`.
 
-`--variance` cannot combine with `--stress` (which would force-fix SKEPTIC × 2, defeating sampling) or `--r2`/`--r3` (which reuses prior dispositions). **Nothing currently enforces this — `.claude/skills/review/SKILL.md` has no `--variance` flag, so this mode is unreachable through `/review` today** (D-19, `docs/decisions/clo-author-divergences.md`). This is not a clo-author capability that regressed: clo-author's editor is fixed at exactly two referees, with no variance mode at all — `--variance` is net-new work whose referee-3-through-N agent identity was never resolved (checked directly against clo-author at the pinned `d36c408` commit). If this halt is ever wired into a real dispatch path, enforce it there.
+`--variance` cannot combine with `--stress` (which would force-fix SKEPTIC × 2, defeating sampling) or `--r2`/`--r3` (which reuses prior dispositions). **`/review` names this flag only to refuse it, so this mode is unreachable through `/review` today** (D-19, `docs/decisions/clo-author-divergences.md`). This is not a clo-author capability that regressed: clo-author's editor is fixed at exactly two referees, with no variance mode at all — `--variance` is net-new work whose referee-3-through-N agent identity was never resolved (checked directly against clo-author at the pinned `d36c408` commit). If this halt is ever wired into a real dispatch path, enforce it there.
 
 Add this section to your Phase 1 response, immediately after the desk-review markdown above — it is the same dispatch and the same saved file:
 
@@ -174,6 +174,7 @@ Return this as your final response. Do NOT write any files yourself — the disp
 
 **Calibrated to:** [Journal Full Name]
 **Decision:** [Accept / Minor Rev / Major Rev / Reject]
+**Overall score:** NN/100 — the mean of the two referee scores, clamped to the decision's band in `.claude/skills/review/config/scoring-rubrics.md` (Editor); say "clamped" if it was. This is the number `/review --peer` records as `referees`.
 
 ## One-paragraph editor's assessment
 
