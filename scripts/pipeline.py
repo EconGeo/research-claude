@@ -143,8 +143,19 @@ class Ctx:
         if self._ms is None: self._ms = declared_manuscript(self.root)
         return self._ms
 
+HASH_LABEL_RE = re.compile(r"^#\|\s*label:\s*([A-Za-z0-9_-]+)", re.M)
+BRACE_NAMED_LABEL_RE = re.compile(r'^```\{[a-zA-Z]+[^}\n]*?\blabel\s*=\s*["\']([A-Za-z0-9_-]+)["\']', re.M)
+BRACE_POSITIONAL_LABEL_RE = re.compile(r"^```\{[a-zA-Z]+[ \t]+([A-Za-z0-9_-]+)\s*[,}]", re.M)
+
 def chunk_labels(ms: Path) -> List[str]:
-    return re.findall(r"^#\|\s*label:\s*([A-Za-z0-9_-]+)", ms.read_text(), re.M)
+    """Every chunk label in the manuscript, in whichever of Quarto's three spellings a chunk
+    uses: a `#\\| label:` option line, the brace-header positional form (`{r foo, ...}`), or the
+    brace-header named form (`{r, label="foo"}`). `#\\| label:` alone undercounts by
+    construction: tested against a real 80-chunk manuscript, 79 chunks carried their label in
+    the brace header and only one (`setup`) used `#\\| label:` — so the pre-fix version returned
+    a single label for the whole document (Phase 1.1)."""
+    text = ms.read_text()
+    return HASH_LABEL_RE.findall(text) + BRACE_NAMED_LABEL_RE.findall(text) + BRACE_POSITIONAL_LABEL_RE.findall(text)
 
 def headings(path: Path) -> List[str]:
     return [h.strip() for h in re.findall(r"^#{1,6}\s+(.+?)\s*(?:\{[^}]*\})?\s*$", path.read_text(), re.M)]

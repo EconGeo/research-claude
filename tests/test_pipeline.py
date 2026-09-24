@@ -27,6 +27,37 @@ class TestManuscript(FixtureCase):
         (self.t / "CLAUDE.md").write_text("manuscript: a.qmd\nmanuscript: b.qmd\n")
         self.assertEqual(run("manuscript", root=self.t)[0], 1)
 
+class TestChunkLabels(unittest.TestCase):
+    """`chunk_labels()` must parse every spelling Quarto accepts for a chunk label, not only
+    `#| label:` — tested against a real 80-chunk manuscript, 79 chunks carried their label in
+    the brace header and exactly one used `#| label:` (Phase 1.1)."""
+    def setUp(self):
+        if str(ROOT / "scripts") not in sys.path: sys.path.insert(0, str(ROOT / "scripts"))
+        import pipeline as _p
+        self.chunk_labels = _p.chunk_labels
+        self.t = pathlib.Path(tempfile.mkdtemp())
+    def tearDown(self): shutil.rmtree(self.t)
+    def _labels(self, body):
+        p = self.t / "m.qmd"; p.write_text(body); return self.chunk_labels(p)
+    def test_hash_label_line(self):
+        self.assertEqual(self._labels("```{r}\n#| label: setup\nx <- 1\n```\n"), ["setup"])
+    def test_brace_positional_bare(self):
+        self.assertEqual(self._labels("```{r tbl-main}\nx <- 1\n```\n"), ["tbl-main"])
+    def test_brace_positional_with_trailing_options(self):
+        self.assertEqual(self._labels('```{r fig-trends, fig.width=6.5}\nx <- 1\n```\n'), ["fig-trends"])
+    def test_brace_named_label_option(self):
+        self.assertEqual(self._labels('```{r, label="tbl-alt"}\nx <- 1\n```\n'), ["tbl-alt"])
+    def test_unlabelled_chunk_contributes_no_label(self):
+        self.assertEqual(self._labels("```{r}\nx <- 1\n```\n"), [])
+        self.assertEqual(self._labels("```{r, echo=FALSE}\nx <- 1\n```\n"), [])
+    def test_non_r_engine_brace_label(self):
+        self.assertEqual(self._labels("```{python py-check}\nx = 1\n```\n"), ["py-check"])
+    def test_mixed_document(self):
+        body = ("```{r}\n#| label: setup\nlibrary(x)\n```\n\n"
+                "```{r tbl-main, echo=FALSE}\nt <- 1\n```\n\n"
+                "```{r fig-trends}\nplot(1)\n```\n")
+        self.assertEqual(sorted(self._labels(body)), ["fig-trends", "setup", "tbl-main"])
+
 class TestState(FixtureCase):
     def test_init_validate_roundtrip(self):
         self.assertEqual(run("state", "init", root=self.t)[0], 0)
