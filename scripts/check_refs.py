@@ -193,11 +193,17 @@ def _hook_readme_rows(readme_text):
             if n.endswith((".py", ".sh"))]
 
 def crit_hooks_readme(root):
+    """Spec (closeout handoff §4.2 item 2): 'every shipped hook is either wired or explicitly
+    exempt.' A hook file with no README row was previously invisible to this criterion — it
+    passed both hooks-readme (nothing to contradict) and hooks-wired-source (nothing to check
+    wiring for), so a hook could ship fully undocumented. This also walks the top-level
+    hooks/*.py and hooks/*.sh files and flags any with no README row."""
     readme = root / "hooks" / "README.md"
     hits = []
     if not readme.exists():
         return report("hooks-readme", ["hooks/README.md missing"])
-    rows = _hook_readme_rows(readme.read_text())
+    readme_text = readme.read_text()
+    rows = _hook_readme_rows(readme_text)
     for name, event in rows:
         hook = root / "hooks" / name
         if not hook.exists():
@@ -209,6 +215,12 @@ def crit_hooks_readme(root):
             hits.append(f"hooks/README.md: {name} row says '{event}', hook says '{m.group(1)}'")
         if event.lower().startswith("git"):
             hits.append(f"hooks/README.md: {name} is a git hook listed in the Claude hook table")
+    documented = {n for n, _ in rows}
+    hooks_dir = root / "hooks"
+    if hooks_dir.is_dir():
+        for hook in sorted(hooks_dir.glob("*.py")) + sorted(hooks_dir.glob("*.sh")):
+            if hook.name not in documented:
+                hits.append(f"hooks/{hook.name}: no row in hooks/README.md")
     return report("hooks-readme", hits)
 
 def crit_hooks_wired_source(root):

@@ -143,6 +143,37 @@ class TestPromoteRegisterCheck(unittest.TestCase):
             self.assertEqual(cr.crit_promote_register_check(ROOT), 0)
 
 
+class TestHooksReadme(unittest.TestCase):
+    """closeout handoff §4.2 item 2: 'every shipped hook is either wired or explicitly exempt.'
+    A hook file with no README row was invisible to both hooks criteria — hooks-readme had
+    nothing to contradict, hooks-wired-source had nothing to check wiring for — so a hook could
+    ship fully undocumented. crit_hooks_readme now also walks hooks/*.py and hooks/*.sh."""
+
+    def _run(self, extra_files=()):
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "hooks").mkdir()
+            (root / "hooks" / "probe.py").write_text("#!/usr/bin/env python3\n# Hook Event: PreToolUse\n")
+            (root / "hooks" / "README.md").write_text(
+                "| Hook | Event | What it does |\n|---|---|---|\n"
+                "| `probe.py` | PreToolUse | does a thing |\n")
+            for name, text in extra_files:
+                (root / "hooks" / name).write_text(text)
+            with contextlib.redirect_stdout(io.StringIO()):
+                return cr.crit_hooks_readme(root)
+
+    def test_fully_documented_hooks_pass(self):
+        self.assertEqual(self._run(), 0)
+
+    def test_undocumented_hook_file_flagged(self):
+        self.assertEqual(self._run(
+            extra_files=[("unlisted.py", "#!/usr/bin/env python3\n# Hook Event: PostToolUse\n")]), 1)
+
+    def test_the_shipped_tree_passes(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cr.crit_hooks_readme(ROOT), 0)
+
+
 class TestHooksWiredSource(unittest.TestCase):
     """hooks/README.md documents which hooks are wired directly vs. invoked indirectly (an
     Event cell containing 'via'). A directly-documented hook that seeds/settings.json never
