@@ -110,3 +110,7 @@ It is deliberately not a pairing table: a creator's bound critic, its escalation
 component weight are declared once, in `.claude/rules/registry.yaml`, and rendered to
 `.claude/rules/permissions.md`. Where the two could ever disagree, the registry is right and this
 table is stale. Read `permissions.md` before relying on a pairing.
+
+A skill that offers the user a ranked choice before dispatching does so as an **Option gate**
+under `.claude/rules/option-gates.md` — one mechanism, `--yes` takes rank 1, the pick lands
+in the artifact the step already writes.
