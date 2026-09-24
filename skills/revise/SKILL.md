@@ -2,7 +2,7 @@
 name: revise
 description: R&R cycle — classify referee comments and route to appropriate agents. Replaces the old respond-to-referee command.
 argument-hint: "[referee-report file path] [paper path (optional)]"
-allowed-tools: Read,Grep,Glob,Write,Edit,Agent
+allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
 # Revise
@@ -18,7 +18,8 @@ Structure point-by-point referee responses with classification, agent routing pe
 ### Step 1: Parse Inputs
 1. Read referee report(s) from `$ARGUMENTS`
 2. Read the manuscript (`manuscript_<project>.qmd` or specified path)
-3. Read revision protocol from rules
+3. Read the revision protocol (`.claude/rules/revision.md`) and the known failure points in
+   `.claude/skills/revise/gotchas.md`
 4. Read the manuscript's chunk labels and the setup-chunk naming map to know what analyses already exist
 
 ### Step 2: Classify severity, then route
@@ -40,13 +41,14 @@ comment answered with prose is how papers get rejected on the second round.
 | Class | Routing | Action |
 |-------|---------|--------|
 | **NEW ANALYSIS** | → Coder agent | Flag for user, create analysis task |
-| **CLARIFICATION** | → Writer agent | Draft rewritten section |
-| **REWRITE** | → Writer agent | Draft structural revision |
+| **CLARIFICATION** | → Writer agent | Draft rewritten passage (local) |
+| **REWRITE** | → Writer agent | Draft structural revision (section or argument reorganised) |
 | **DISAGREE** | → User (mandatory) | Draft diplomatic pushback, flag for review |
 | **MINOR** | → Writer agent | Draft fix directly |
 
 ### Step 4: Build Tracking Document
-Save to `quality_reports/referee_response_tracker.md` with:
+Fill `.claude/skills/revise/templates/response-tracker.md` and save it to
+`quality_reports/referee_response_tracker.md` with:
 - Summary counts per referee
 - Action items by priority (HIGH: new analysis, MEDIUM: clarification, FLAGGED: disagreements, LOW: minor)
 
@@ -57,31 +59,27 @@ Save to `quality_reports/referee_response_tracker.md` with:
   - `manuscript`: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<name>`
 - DISAGREE → draft diplomatic response, flag prominently for user
 
+After the last critic dispatch and its `record-score`, run
+`python3 .claude/scripts/pipeline.py post writer`. FAIL (critic-ran / render / prose-check) →
+fix and re-dispatch; do not write the response letter against a manuscript that has not
+passed `post`.
+
 ### Step 6: Draft Response Letter
-Generate the response letter (Markdown) with:
+Write the letter **from** `.claude/skills/revise/templates/response-letter.qmd` (one `##` per
+referee, one `###` per comment):
 - Summary of major changes
-- Point-by-point responses with exact referee quotes
-- Clear visual separation between referee quote and response
-- Page/section references for each change
+- Point-by-point responses quoting each referee comment verbatim, visually separated from the response
+- Where each change landed, by cross-reference (`@sec-`, `@tbl-`, `@fig-`) — never a page number; pages move, anchors do not
 
 ### Step 7: Diplomatic Disagreement Protocol
-When DISAGREE: open with acknowledgment, provide evidence, offer partial concession, NEVER say "the referee is wrong." FLAG for user review.
+When DISAGREE: open with acknowledgment, provide evidence, offer partial concession, NEVER say
+"the referee is wrong" — the phrasing patterns are
+`.claude/skills/revise/templates/diplomatic-disagreement.md`. FLAG for user review.
 
 ### Step 8: Save Outputs
 1. Tracker: `quality_reports/referee_response_tracker.md`
-2. Response letter: `quality_reports/referee_response_[journal]_[date].md`
+2. Response letter: `quality_reports/referee_response_[journal]_[date].qmd` (renders to PDF or Word from its own YAML)
 3. Revised prose: edited in place in `manuscript_<project>.qmd` (for CLARIFICATION/REWRITE items)
-
----
-
-## Bundled Resources (Level 3)
-
-| Resource | Path | When |
-|----------|------|------|
-| Response tracker | `.claude/skills/revise/templates/response-tracker.md` | Step 4 — tracking document |
-| Response letter | `.claude/skills/revise/templates/response-letter.qmd` | Step 6 — response-letter boilerplate |
-| Diplomatic disagreement | `.claude/skills/revise/templates/diplomatic-disagreement.md` | Step 7 — DISAGREE phrasing |
-| Gotchas | `gotchas.md` | Always — known failure points |
 
 ---
 
