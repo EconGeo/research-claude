@@ -7,7 +7,8 @@
 | Classification | What It Means | Routed To |
 |---------------|---------------|-----------|
 | **NEW ANALYSIS** | Requires new estimation or data work | Coder, then coder-critic |
-| **CLARIFICATION** | Text revision sufficient | Writer, then writer-critic |
+| **CLARIFICATION** | Text revision sufficient — a local passage | Writer, then writer-critic |
+| **REWRITE** | Text revision sufficient — a section or argument reorganised | Writer, then writer-critic |
 | **DISAGREE** | Diplomatic pushback needed | Flagged for User review |
 | **MINOR** | Typos, formatting | Writer, then writer-critic |
 | **FATAL** | Invalidates a headline claim if correct | Stop; escalate to User before any drafting |
@@ -24,6 +25,7 @@ Referee reports arrive (real, not simulated)
         │
         ├── NEW ANALYSIS → Coder, then coder-critic → Writer updates
         ├── CLARIFICATION → Writer, then writer-critic
+        ├── REWRITE → Writer, then writer-critic
         ├── DISAGREE → User decides → diplomatic response drafted
         └── MINOR → Writer, then writer-critic
         │

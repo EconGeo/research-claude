@@ -286,7 +286,7 @@ AP_ALLOW = {
     "quality_reports/journal_recommendations_*.md": "/submit target output — not gated (R-112)",
     "quality_reports/quality_gate_*.md":          "/submit final gate summary — derived from `score --gate`",
     "quality_reports/referee_response_tracker.md": "/revise tracker — not gated (R-112)",
-    "quality_reports/referee_response_*_*.md":    "/revise response letter — not gated",
+    "quality_reports/referee_response_*_*.qmd":   "/revise response letter (written from response-letter.qmd) — not gated",
     "quality_reports/reviews/replication_*_*.md": "/review --replicate report — records no score (R-106)",
     "quality_reports/claim_source_map_*.md":      "named only as retired INV-22's former artifact",
     "quality_reports/deposit_manifest_*.md":      "/submit deposit output — not gated (Phase 3.5)",
