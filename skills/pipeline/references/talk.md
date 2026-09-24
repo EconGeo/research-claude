@@ -13,7 +13,7 @@ submission (registry: `component: none`).
 ## Driver sequence
 ```
 python3 .claude/scripts/pipeline.py pre storyteller
-                                                       # invoke /talk create [format]
+                                                       # invoke /talk create [format] [--yes if run carried it]
 python3 .claude/scripts/pipeline.py post storyteller
 ```
 Because the component is `none`, `post`'s `critic-ran` check only needs the dispatch log

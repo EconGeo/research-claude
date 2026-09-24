@@ -1,7 +1,7 @@
 ---
 name: talk
 description: Create and audit Quarto RevealJS presentations. Combines talk creation, visual audit, and rendering.
-argument-hint: "[mode: create | audit | render] [format: job-market | seminar | short | lightning] [file path]"
+argument-hint: "[mode: create | audit | render] [format: job-market | seminar | short | lightning] [file path] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Agent,Bash
 ---
 
@@ -41,6 +41,14 @@ Slide counts, durations and per-format rules for all four formats are
   from inside `talks/`. (The embed probe that established this lives in the
   research-claude repo's `docs/audits/`, which is NOT linked into a project — do not
   expect to find it here.)
+
+**Step 1b: Option gate — hook and outline**
+
+Read the paper's arc (`.claude/references/narrative-arcs.md`, the `**Arc:**` line for its
+type). **Option gate** (`.claude/rules/option-gates.md`): 5–8 hooks / key-slide framings —
+columns *hook*, *key slide*, *first result shown*, *what is cut for this format* — each with a
+one-line outline, ranked, wait (`--yes` takes rank 1). The Storyteller is dispatched with the
+pick; the pick is recorded in the talk file's YAML comment block.
 
 **Step 2: Dispatch Storyteller**
 
