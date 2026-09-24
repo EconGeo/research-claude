@@ -126,7 +126,8 @@ kept rather than reused so older reports and reviews still resolve.
 | INV-14, INV-15, INV-16, INV-19 | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) + `coder-critic` (chunk-level: `set.seed()`, cache setup, `source()`) + verifier check 4c (mandatory FAIL) |
 | INV-25 | `.claude/scripts/quarto_structure_check.py` — FAIL blocks the commit gate |
 | INV-23, INV-24 | `coder-critic` against `data/raw/data_manifest.md`; verifier check 4c for INV-24 (and check 7, data provenance, in submission mode) |
-| INV-9, INV-13 | `quarto render` fails or degrades visibly; writer-critic category 5; verifier check 4c for INV-9 |
+| INV-13 | `.claude/scripts/quarto_structure_check.py` (label prefix, caption placement, dangling `@tbl-`/`@fig-`) — FAIL blocks the commit gate; the `chunk` predicate runs its code-only findings at `post coder`/`pre writer`; `pipeline.py`'s `render` predicate additionally fails on an unresolved-crossref WARNING even when `quarto render` exits 0; writer-critic category 5 |
+| INV-9 | **No executable check exists for a manuscript.** `check_refs.py`'s `latex-residue` regex (which matches raw LaTeX citation/reference macros) scans only this repo's own tree, never a project manuscript — `reviewer-judgment` only: writer-critic category 5; verifier check 4c |
 | INV-18 | `coder-critic` category 13 (manuscript-model) |
 | INV-1..INV-8, INV-10, INV-12, INV-17, INV-20..INV-21 | `reviewer-judgment` — no script checks these |
 

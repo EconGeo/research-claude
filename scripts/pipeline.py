@@ -204,9 +204,25 @@ def is_fresh(root: Path, ms: Path) -> Tuple[bool, str]:
         return False, f"{', '.join(s.name for s in stale)} older than newest input"
     return True, f"{', '.join(o.name for o in outs)} vs newest input"
 
+RENDER_WARNING_RE = re.compile(r"WARNING.*?(?:crossref|cross-reference)", re.I)
+
 def do_render(root: Path, target: Path) -> Tuple[bool, str]:
+    """`returncode == 0` is not "the render is clean": tested on Quarto 1.9.37, a dangling
+    `@tbl-`/`@fig-` produces `WARNING … Unable to resolve crossref @tbl-x` and still exits 0.
+    Raw LaTeX citation/reference macros produce no warning at all — that case is not caught
+    here; it needs quarto_structure_check.py's source-level `dangling-ref`/`label-prefix` checks, which the
+    `chunk` predicate already wires in (Phase 1.2). This function closes the half the exit code
+    silently passed: an unresolved cross-reference that DOES surface, in the log, as a warning
+    quarto itself chose not to fail on (Phase 1.3)."""
     p = subprocess.run(["quarto", "render", str(target.relative_to(root))], cwd=root, capture_output=True, text=True)
-    return p.returncode == 0, (p.stderr or p.stdout).strip().splitlines()[-1:] and (p.stderr or p.stdout).strip().splitlines()[-1] or ""
+    out = p.stdout + p.stderr
+    lines = out.strip().splitlines()
+    if p.returncode != 0:
+        return False, lines[-1] if lines else ""
+    warn = RENDER_WARNING_RE.search(out)
+    if warn:
+        return False, f"exit 0 but {warn.group(0).strip()}"
+    return True, ""
 
 def producer_hint(pred: Dict[str, Any], ok: bool) -> str:
     """The `— run `/skill`` tail on a failing predicate. Shared by run_preds() and the

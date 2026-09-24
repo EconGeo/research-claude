@@ -85,6 +85,14 @@ class TestPredicates(FixtureCase):
         self.assertEqual(rc, 1, out)
         self.assertIn("label-prefix", out)
         self.assertIn("tab-secondary", out)
+    def test_render_predicate_fails_on_unresolved_crossref_even_at_exit_0(self):
+        """`quarto render` exits 0 on a dangling `@tbl-`/`@fig-` reference — it is a WARNING,
+        not an error. The `render` predicate must not read exit 0 as clean (Phase 1.3)."""
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text().replace("@fig-trends plots", "@fig-trends and @tbl-nonexistent plot"))
+        rc, out = run("pre", "writer", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("crossref", out.lower())
     def test_pre_writer_red_then_green(self):
         run("state", "init", root=self.t)
         rc, out = run("pre", "writer", root=self.t); self.assertEqual(rc, 1); self.assertIn("code score", out)
