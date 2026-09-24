@@ -18,7 +18,7 @@ confirms a critic ran recently — not that it reviewed coder's chunks specifica
 ```
 python3 .claude/scripts/pipeline.py pre coder
 python3 .claude/scripts/pipeline.py conflicts data-engineer coder     # sanity: never concurrent
-                                                                         # invoke /analyze [goal]
+                                                                         # invoke /analyze [goal] [--yes if run carried it]
 python3 .claude/scripts/pipeline.py post coder
 ```
 `/analyze` dispatches data-engineer then coder-critic (Step 2), then coder then coder-critic
