@@ -59,6 +59,31 @@ class TestChunkLabels(unittest.TestCase):
                 "```{r fig-trends}\nplot(1)\n```\n")
         self.assertEqual(sorted(self._labels(body)), ["fig-trends", "setup", "tbl-main"])
 
+class TestSourceCalls(unittest.TestCase):
+    """INV-19b: no `source()` call inside any chunk. `source_calls()` reuses qmd_chunks.py's
+    extraction, so it must see only R-chunk bodies and skip comments (Phase 1.4)."""
+    def setUp(self):
+        if str(ROOT / "scripts") not in sys.path: sys.path.insert(0, str(ROOT / "scripts"))
+        import pipeline as _p
+        self.source_calls = _p.source_calls
+        self.t = pathlib.Path(tempfile.mkdtemp())
+    def tearDown(self): shutil.rmtree(self.t)
+    def _hits(self, body):
+        p = self.t / "m.qmd"; p.write_text(body); return self.source_calls(p)
+    def test_clean_chunk_no_hits(self):
+        self.assertEqual(self._hits("```{r}\n#| label: setup\nlibrary(x)\n```\n"), [])
+    def test_source_call_flagged_at_its_line(self):
+        hits = self._hits('```{r}\n#| label: setup\nlibrary(x)\nsource("helper.R")\n```\n')
+        self.assertEqual(hits, [4])
+    def test_commented_source_call_ignored(self):
+        self.assertEqual(self._hits('```{r}\n# source("helper.R")\n```\n'), [])
+    def test_source_outside_a_chunk_ignored(self):
+        # Prose mentioning source() is not code; qmd_chunks.py blanks everything outside a
+        # ```{r fence, so this must never fire.
+        self.assertEqual(self._hits('See `source("helper.R")` in prose.\n\n```{r}\nx <- 1\n```\n'), [])
+    def test_similarly_named_identifier_not_flagged(self):
+        self.assertEqual(self._hits('```{r}\ndata_source(1)\n```\n'), [])
+
 class TestState(FixtureCase):
     def test_init_validate_roundtrip(self):
         self.assertEqual(run("state", "init", root=self.t)[0], 0)
@@ -93,6 +118,15 @@ class TestPredicates(FixtureCase):
         rc, out = run("pre", "writer", root=self.t)
         self.assertEqual(rc, 1, out)
         self.assertIn("crossref", out.lower())
+    def test_post_coder_fails_on_source_call(self):
+        """INV-19b: a `source()` call in any chunk must fail `post coder` (Phase 1.4)."""
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text().replace(
+            "#| label: build-panel\n", '#| label: build-panel\nsource("helpers.R")\n'))
+        rc, out = run("post", "coder", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("no-source", out)
+        self.assertIn("INV-19", out)
     def test_pre_writer_red_then_green(self):
         run("state", "init", root=self.t)
         rc, out = run("pre", "writer", root=self.t); self.assertEqual(rc, 1); self.assertIn("code score", out)

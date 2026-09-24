@@ -176,6 +176,20 @@ def chunk_structure_findings(root: Path, ms: Path) -> List[str]:
     p = subprocess.run([sys.executable, str(script), str(ms.relative_to(root))], cwd=root, capture_output=True, text=True)
     return [f"[{m.group(1)}] {m.group(2)}" for ln in p.stdout.splitlines() if (m := CHUNK_FINDING_RE.search(ln))]
 
+SOURCE_CALL_RE = re.compile(r"(?<![.\w])source\s*\(")
+
+def source_calls(ms: Path) -> List[int]:
+    """INV-19b: no `source()` call inside any chunk — the one construct
+    content-invariants.md attributed to the lint hook although the lint hook never checked
+    for it (tested: seven prohibited constructs planted in one chunk, `source()` was the only
+    one of seven lint-scripts.sh missed). Reuses qmd_chunks.py's own chunk-body extraction —
+    its stated purpose is exactly this: line numbers identical to the .qmd source (Phase 1.4).
+    Comment-only lines are skipped, matching lint-scripts.sh's convention for the sibling
+    INV-19a checks."""
+    import qmd_chunks
+    lines = qmd_chunks.extract(ms.read_text().split("\n"))
+    return [i + 1 for i, l in enumerate(lines) if not l.lstrip().startswith("#") and SOURCE_CALL_RE.search(l)]
+
 def headings(path: Path) -> List[str]:
     return [h.strip() for h in re.findall(r"^#{1,6}\s+(.+?)\s*(?:\{[^}]*\})?\s*$", path.read_text(), re.M)]
 
@@ -314,6 +328,10 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         bad = chunk_structure_findings(root, ctx.ms)
         if bad: return False, desc + f"; but quarto_structure_check.py: {'; '.join(bad[:2])}" + (f" (+{len(bad)-2} more)" if len(bad) > 2 else "")
         return True, desc
+    if t == "no-source":
+        hits = source_calls(ctx.ms)
+        if hits: return False, f"no-source: source() at line(s) {', '.join(str(h) for h in hits)} (INV-19)"
+        return True, "no-source: clean (INV-19)"
     if t == "any_of":
         results = [(q, evaluate(q, ctx, post)) for q in pred["of"]]
         passed = any(ok for _, (ok, _d) in results)

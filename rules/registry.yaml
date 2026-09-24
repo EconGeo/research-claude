@@ -277,6 +277,7 @@ agents:
         min: 1
       - type: render
       - type: prose-check
+      - type: no-source
     critic: coder-critic
     escalation_target: strategist-critic
     component: code

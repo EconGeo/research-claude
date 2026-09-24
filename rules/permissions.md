@@ -167,6 +167,7 @@ read; this file exists so the registry is readable in a linked project.
   - ≥1 chunk(s) labelled `fig-*`
   - `quarto render` exit 0
   - `prose_number_check.py` exit 0
+  - no `source()` call inside any chunk (INV-19)
   - paired critic completed after the creator, **and** the creator's component carries a score recorded after that completion (no component: log only) — *appended by `post`, not declared*
 - **CRITIC:** coder-critic
 - **ESCALATION_TARGET:** strategist-critic

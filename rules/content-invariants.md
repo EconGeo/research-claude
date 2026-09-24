@@ -123,7 +123,8 @@ kept rather than reused so older reports and reviews still resolve.
 | Invariant | Enforced by |
 |---|---|
 | INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required; verifier check 4b |
-| INV-14, INV-15, INV-16, INV-19 | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) + `coder-critic` (chunk-level: `set.seed()`, cache setup, `source()`) + verifier check 4c (mandatory FAIL) |
+| INV-14, INV-15, INV-16, INV-19a (`setwd()`/`rm(list=ls())`/`install.packages()`/`attach()`) | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) — advisory only (always exit 0) + `coder-critic` (chunk-level: `set.seed()`, cache setup) + verifier check 4c (mandatory FAIL) |
+| INV-19b (`source()` inside a chunk) | `pipeline.py`'s `no-source` predicate on `coder.produces` — blocking, fails `post coder`; also flagged advisory by the lint hook; `coder-critic` |
 | INV-25 | `.claude/scripts/quarto_structure_check.py` — FAIL blocks the commit gate |
 | INV-23, INV-24 | `coder-critic` against `data/raw/data_manifest.md`; verifier check 4c for INV-24 (and check 7, data provenance, in submission mode) |
 | INV-13 | `.claude/scripts/quarto_structure_check.py` (label prefix, caption placement, dangling `@tbl-`/`@fig-`) — FAIL blocks the commit gate; the `chunk` predicate runs its code-only findings at `post coder`/`pre writer`; `pipeline.py`'s `render` predicate additionally fails on an unresolved-crossref WARNING even when `quarto render` exits 0; writer-critic category 5 |
