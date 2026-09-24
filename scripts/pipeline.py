@@ -157,6 +157,25 @@ def chunk_labels(ms: Path) -> List[str]:
     text = ms.read_text()
     return HASH_LABEL_RE.findall(text) + BRACE_NAMED_LABEL_RE.findall(text) + BRACE_POSITIONAL_LABEL_RE.findall(text)
 
+# The subset of quarto_structure_check.py's finding kinds decidable from chunk code alone —
+# label prefix, caption placement, the obsolete quarto.version hack — independent of whether
+# prose or a render exist yet. `typed-ref`, `orphan-label` and `dangling-ref` are excluded: they
+# depend on prose the writer has not drafted at `post coder` / `pre writer` time, so gating on
+# them here would couple the coder stage to work that is not the coder's to close.
+CHUNK_STRUCTURE_KINDS = {"label-prefix", "caption-in-r", "quarto-version-hack"}
+CHUNK_FINDING_RE = re.compile(r":\d+: \[(" + "|".join(CHUNK_STRUCTURE_KINDS) + r")\] (.+)$")
+
+def chunk_structure_findings(root: Path, ms: Path) -> List[str]:
+    """The `chunk` predicate's `n >= min` count cannot fail on prefix correctness — a manuscript
+    with 34 correct `tbl-*` chunks and one stray `tab-*` chunk still has ≥ 1 `tbl-*` label
+    (Phase 1.2). This asks the linked project's own quarto_structure_check.py instead, the same
+    script `/tools commit` already runs, so the two never disagree about what native Quarto
+    structure means."""
+    script = root / ".claude" / "scripts" / "quarto_structure_check.py"
+    if not script.exists(): return ["quarto_structure_check.py: .claude/scripts/quarto_structure_check.py not linked"]
+    p = subprocess.run([sys.executable, str(script), str(ms.relative_to(root))], cwd=root, capture_output=True, text=True)
+    return [f"[{m.group(1)}] {m.group(2)}" for ln in p.stdout.splitlines() if (m := CHUNK_FINDING_RE.search(ln))]
+
 def headings(path: Path) -> List[str]:
     return [h.strip() for h in re.findall(r"^#{1,6}\s+(.+?)\s*(?:\{[^}]*\})?\s*$", path.read_text(), re.M)]
 
@@ -273,7 +292,12 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         return p.returncode == 0, "prose_number_check.py exit " + str(p.returncode)
     if t == "chunk":
         n = sum(1 for l in chunk_labels(ctx.ms) if fnmatch.fnmatch(l, pred["label_glob"]))
-        return n >= int(pred["min"]), f"chunks {pred['label_glob']} ({n} found, need {pred['min']})"
+        ok = n >= int(pred["min"])
+        desc = f"chunks {pred['label_glob']} ({n} found, need {pred['min']})"
+        if not ok: return False, desc
+        bad = chunk_structure_findings(root, ctx.ms)
+        if bad: return False, desc + f"; but quarto_structure_check.py: {'; '.join(bad[:2])}" + (f" (+{len(bad)-2} more)" if len(bad) > 2 else "")
+        return True, desc
     if t == "any_of":
         results = [(q, evaluate(q, ctx, post)) for q in pred["of"]]
         passed = any(ok for _, (ok, _d) in results)

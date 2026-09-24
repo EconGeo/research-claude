@@ -12,6 +12,7 @@ class FixtureCase(unittest.TestCase):
         shutil.copytree(ROOT / "tests" / "fixture-project", self.t, dirs_exist_ok=True)
         (self.t / ".claude" / "scripts").mkdir(parents=True, exist_ok=True)
         os.symlink(ROOT / "scripts" / "prose_number_check.py", self.t / ".claude" / "scripts" / "prose_number_check.py")
+        os.symlink(ROOT / "scripts" / "quarto_structure_check.py", self.t / ".claude" / "scripts" / "quarto_structure_check.py")
         (self.t / ".claude" / "rules").mkdir(exist_ok=True)
         os.symlink(ROOT / "rules" / "registry.yaml", self.t / ".claude" / "rules" / "registry.yaml")
     def tearDown(self): shutil.rmtree(self.t)
@@ -73,6 +74,17 @@ class TestState(FixtureCase):
 class TestPredicates(FixtureCase):
     def test_pre_explorer_green_no_requires(self):
         self.assertEqual(run("pre", "explorer", root=self.t)[0], 0)
+    def test_post_coder_fails_on_stray_non_native_label(self):
+        """The `chunk` predicate's naive `n >= min` count passes as long as ONE `tbl-*` chunk
+        exists; it cannot fail on a DIFFERENT chunk that uses the wrong prefix. A fixture with
+        `tbl-main` intact plus one stray `tab-*` chunk must still fail `post coder`, via
+        quarto_structure_check.py's `label-prefix` finding (Phase 1.2)."""
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text() + '\n```{r}\n#| label: tab-secondary\n#| tbl-cap: "A second table"\n1\n```\n')
+        rc, out = run("post", "coder", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("label-prefix", out)
+        self.assertIn("tab-secondary", out)
     def test_pre_writer_red_then_green(self):
         run("state", "init", root=self.t)
         rc, out = run("pre", "writer", root=self.t); self.assertEqual(rc, 1); self.assertIn("code score", out)
