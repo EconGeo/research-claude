@@ -1,5 +1,7 @@
 # Skill Token Optimization — Implementation Plan
 
+**Status:** complete (2026-09-24)
+
 **Goal:** Cut the SKILL.md body text that loads on every skill invocation by ~40%, bind every
 bundled reference file to the step that needs it, and close the correctness defects found in
 `docs/audits/2026-09-15_skill-best-practices-audit.md` — without changing any pipeline behaviour.

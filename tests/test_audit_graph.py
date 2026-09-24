@@ -48,4 +48,36 @@ class TestAuditGraphCli(unittest.TestCase):
         self.assertEqual(r.returncode, 2)
         self.assertNotIn("Traceback", r.stderr)
 
+class TestAuditGraphLogic(unittest.TestCase):
+    """Logic-level regression, not CLI plumbing (TestAuditGraphCli above only exercises argv
+    handling). Found 2026-09-24: rules/agents.md names agents/civilize-auditor.md, a real file
+    that lives at ai-audit/agents/civilize-auditor.md — audit_graph.py reported it dangling
+    because it never tried the vendored-tree alias registry_lib.AGENT_DIRS already knows."""
+
+    def test_vendored_agent_reference_resolves(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "rules").mkdir()
+            (root / "rules" / "probe.md").write_text("See agents/probe-agent.md for the contract.\n")
+            (root / "ai-audit" / "agents").mkdir(parents=True)
+            (root / "ai-audit" / "agents" / "probe-agent.md").write_text("---\ntools: Read\n---\n")
+            r = run(str(root))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertIn("dangling path refs        : 0", r.stdout)
+
+    def test_genuinely_dangling_path_still_caught(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "rules").mkdir()
+            (root / "rules" / "probe.md").write_text("See agents/does-not-exist.md.\n")
+            r = run(str(root))
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertIn("dangling path refs        : 1", r.stdout)
+
+    def test_real_tree_has_zero_dangling_paths(self):
+        r = run(str(ROOT))
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("dangling path refs        : 0", r.stdout)
+
+
 if __name__ == "__main__": unittest.main()

@@ -91,7 +91,7 @@ for g in skills/analyze/templates/r-script-structure.R skills/analyze/templates/
 for g in skills/analyze/templates/results-summary.md skills/submit/templates/cover-letter.tex root-skills; do absent d1-deletions "$g"; done  # <!-- residue:prohibition -->
 
 echo "── text criteria (scripts/check_refs.py) ──"
-for c in latex-residue manuscript-model deleted-things inv-refs skill-refs tool-name hooks-readme artifact-paths promote-vendor-warn promote-register-check; do
+for c in latex-residue manuscript-model deleted-things inv-refs skill-refs tool-name script-refs hooks-readme hooks-wired-source artifact-paths promote-vendor-warn promote-register-check writes-tools; do
   py check_refs.py --criterion "$c"
 done
 
@@ -110,6 +110,13 @@ if [[ -f "$RC/scripts/SHIPPED" ]]; then
   while read -r s; do [[ -z "$s" || -f "$RC/scripts/$s" ]] || { echo "FAIL [scripts-manifest] $s listed but absent"; fail=1; manifest_ok=false; }; done < "$RC/scripts/SHIPPED"
   [[ "$manifest_ok" == true ]] && echo "PASS [scripts-manifest]"
 else echo "FAIL [scripts-manifest] scripts/SHIPPED missing"; fail=1; fi
+
+echo "── dependency graph (scripts/audit_graph.py) ──"
+python3 "$RC/scripts/audit_graph.py" "$RC"
+if [[ $? -ne 0 ]]; then echo "FAIL [graph-dangling]"; fail=1; else echo "PASS [graph-dangling]"; fi
+
+echo "── plan liveness (advisory, scripts/check_plan_liveness.py) ──"
+python3 "$RC/scripts/check_plan_liveness.py" --root "$RC"
 
 echo "── fixture ──"
 if [[ -x "$RC/tests/run_fixture.sh" ]]; then "$RC/tests/run_fixture.sh" >/tmp/run_fixture.$$ 2>&1 && echo "PASS [fixture]" || { echo "FAIL [fixture]"; tail -15 /tmp/run_fixture.$$ | sed 's/^/    /'; fail=1; }; rm -f /tmp/run_fixture.$$

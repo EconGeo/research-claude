@@ -12,6 +12,7 @@ import argparse, fnmatch, re, sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import registry_lib as rl
+import check_paths as cpaths
 
 SHIP = ["agents", "skills", "rules", "references", "hooks", "templates", "seeds", "scripts"]
 VENDORED = ["zotpilot-skills", "ai-audit"]
@@ -162,18 +163,68 @@ def crit_tool_name(root):
                 hits.append(f"{f.relative_to(root)}:{n}: Task in tools line (use Agent)")
     return report("tool-name", hits)
 
+SCRIPT_REF = re.compile(r"(?<![A-Za-z0-9_./-])(?:\.claude/)?scripts/[A-Za-z0-9_./-]+\.(?:py|sh)\b")
+SCRIPT_REF_EXEMPT_PREFIX = ("scripts/acquire/",)
+
+def crit_script_refs(root):
+    """A scripts/<path>.py or .sh cited in prose that does not exist on disk, or (for the
+    `.claude/scripts/` form only) exists but is not in scripts/SHIPPED — the
+    quarto_structure_check.py/INV-25 shape (closeout handoff §4.2 item 4), generalized.
+
+    Coverage, stated honestly: check_paths.py's own PATH_RE/resolve() already validate every
+    `.claude/scripts/<x>` reference inside skills/ and agents/ text, and it already checks the
+    SHIPPED set there — only scripts actually installed by apply.sh resolve at that prefix in a
+    real project. This criterion's DISTINCT value over check_paths.py is (a) bare `scripts/<x>`
+    references, a project-root path form check_paths.py's `.claude/`-prefix rule does not cover
+    at all, and (b) scanning every SHIP directory this file's `shipped_files()` covers
+    (references/, templates/, seeds/, hooks/, scripts/ itself — not just skills/ and agents/)
+    across every TEXT_SUFFIX file type (not just .md/.py/.sh/.json/.R/.qmd/.yaml/.tex). For the
+    `.claude/scripts/` form specifically, this reuses check_paths.shipped_scripts(root) rather
+    than re-deriving the manifest, so the two criteria cannot silently disagree about it."""
+    hits = []
+    shipped = cpaths.shipped_scripts(root)
+    for f in shipped_files(root, SHIP):
+        for n, ln in lines_of(f):
+            for m in SCRIPT_REF.finditer(ln):
+                tok = m.group(0)
+                is_claude_prefixed = tok.startswith(".claude/")
+                # A literal prefix slice, not .lstrip(".claude/") — lstrip strips any of those
+                # CHARACTERS from the left, not the literal substring, and happened to work here
+                # only because "scripts" starts with 's', a character not in ".claude/".
+                check_tok = tok[len(".claude/"):] if is_claude_prefixed else tok
+                if check_tok.startswith(SCRIPT_REF_EXEMPT_PREFIX):
+                    continue
+                if not (root / check_tok).exists():
+                    hits.append(f"{f.relative_to(root)}:{n}: {tok} does not exist")
+                    continue
+                if is_claude_prefixed:
+                    rest = check_tok[len("scripts/"):]
+                    if rest not in shipped:
+                        hits.append(f"{f.relative_to(root)}:{n}: {tok} exists in scripts/ but "
+                                    f"is not in scripts/SHIPPED — never installed at .claude/scripts/")
+    return report("script-refs", hits)
+
+def _hook_readme_rows(readme_text):
+    """Parse hooks/README.md's table for (name, event) pairs. Only rows whose first cell is
+    a hook FILENAME are hook rows. The "Getting the contract right" table below the hook
+    table also leads with a backticked token — an EVENT name — and without this the parser
+    would report hits for files like hooks/PreToolUse that do not exist."""
+    return [(n, e) for n, e in
+            re.findall(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|", readme_text, re.M)
+            if n.endswith((".py", ".sh"))]
+
 def crit_hooks_readme(root):
+    """Spec (closeout handoff §4.2 item 2): 'every shipped hook is either wired or explicitly
+    exempt.' A hook file with no README row was previously invisible to this criterion — it
+    passed both hooks-readme (nothing to contradict) and hooks-wired-source (nothing to check
+    wiring for), so a hook could ship fully undocumented. This also walks the top-level
+    hooks/*.py and hooks/*.sh files and flags any with no README row."""
     readme = root / "hooks" / "README.md"
     hits = []
     if not readme.exists():
         return report("hooks-readme", ["hooks/README.md missing"])
-    # Only rows whose first cell is a hook FILENAME are hook rows. The "Getting the
-    # contract right" table below the hook table also leads with a backticked token —
-    # an EVENT name — and without this the criterion hunts for a file called
-    # hooks/PreToolUse and reports three hits that name nothing wrong.
-    rows = [(n, e) for n, e in
-            re.findall(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|", readme.read_text(), re.M)
-            if n.endswith((".py", ".sh"))]
+    readme_text = readme.read_text()
+    rows = _hook_readme_rows(readme_text)
     for name, event in rows:
         hook = root / "hooks" / name
         if not hook.exists():
@@ -185,7 +236,35 @@ def crit_hooks_readme(root):
             hits.append(f"hooks/README.md: {name} row says '{event}', hook says '{m.group(1)}'")
         if event.lower().startswith("git"):
             hits.append(f"hooks/README.md: {name} is a git hook listed in the Claude hook table")
+    documented = {n for n, _ in rows}
+    hooks_dir = root / "hooks"
+    if hooks_dir.is_dir():
+        for hook in sorted(hooks_dir.glob("*.py")) + sorted(hooks_dir.glob("*.sh")):
+            if hook.name not in documented:
+                hits.append(f"hooks/{hook.name}: no row in hooks/README.md")
     return report("hooks-readme", hits)
+
+def crit_hooks_wired_source(root):
+    """hooks/README.md's table cell for Event states, per hook, whether it fires by direct
+    settings.json wiring or 'via' another hook / the CLI. A directly-documented hook that
+    seeds/settings.json never names is an unwired promise (hooks/README.md's own 'not a
+    dormant feature' section, written after session-guard.py shipped exactly this way)."""
+    readme = root / "hooks" / "README.md"
+    settings = root / "seeds" / "settings.json"
+    if not readme.exists():
+        return report("hooks-wired-source", ["hooks/README.md missing"])
+    if not settings.exists():
+        return report("hooks-wired-source", ["seeds/settings.json missing"])
+    settings_text = settings.read_text()
+    rows = _hook_readme_rows(readme.read_text())
+    hits = []
+    for name, event in rows:
+        if re.search(r"\bvia\b", event, re.I):
+            continue
+        if name not in settings_text:
+            hits.append(f"hooks/{name}: README documents direct wiring ('{event.strip()}') "
+                        f"but seeds/settings.json never names it")
+    return report("hooks-wired-source", hits)
 
 # ── artifact-paths (R-112) ──────────────────────────────────────────────────
 # A path token under quality_reports/, with its placeholders: <x>, [x], {x} and {a,b} brace groups.
@@ -284,12 +363,59 @@ def crit_promote_register_check(root):
                      "a bare mention of the file is not a checklist step")
     return report("promote-register-check", hits)
 
+WRITE_CAPABLE_TOOLS = {"Write", "Edit", "NotebookEdit"}
+# Must name what is not written/edited (files/the report file) — not just "do not write X",
+# which also matches creator-role prose like "Do not write the paper (that's the Writer)"
+# (agents/strategist.md, coder.md, theorist.md). Those name a *deliverable*, not a tool
+# capability, and must not exempt an agent that lost its Write/Edit tool.
+NO_WRITE_MARKER = re.compile(r"do\s+not\s+(?:write|edit)\s+(?:any\s+)?(?:files?|the\s+report\s+file)\b", re.I)
+
+def _agent_tools(root, name):
+    """Resolve an agent's own .md file across both roster directories (rl.AGENT_DIRS) and
+    return (path, full text, tools set) — or (None, "", set()) if no file exists anywhere."""
+    for d in rl.AGENT_DIRS:
+        f = root / d / f"{name}.md"
+        if f.exists():
+            text = f.read_text(errors="ignore")
+            m = re.search(r"^(?:allowed-)?tools:\s*(.*)$", text, re.M)
+            tools = {tok.strip() for tok in m.group(1).split(",")} if m else set()
+            return f, text, tools
+    return None, "", set()
+
+def crit_writes_tools(root):
+    """Phase 2.1 of the 2026-09-23 repair plan fixed nine agents by hand: declared to write a
+    path in registry.yaml, with no Write/Edit tool and no instruction that the dispatching
+    skill writes on their behalf, so the write silently never happened. This is the check that
+    should have existed to catch it. An agent whose own .md file cannot be resolved is skipped —
+    that is registry-complete's job (pipeline.py registry check), not this criterion's.
+
+    Coverage: this reads the agent's own .md file only — its `tools:`/`allowed-tools:` line and
+    NO_WRITE_MARKER's disclaimer phrase. It does not verify that the dispatching skill named in
+    that disclaimer actually saves the output anywhere; a skill that drops the save step after
+    its critic returns a report would still pass this check."""
+    reg = rl.load_registry(root)
+    hits = []
+    for name, e in reg["agents"].items():
+        writes = e.get("writes") or []
+        if not writes:
+            continue
+        f, text, tools = _agent_tools(root, name)
+        if f is None:
+            continue
+        if tools & WRITE_CAPABLE_TOOLS:
+            continue
+        if NO_WRITE_MARKER.search(text):
+            continue
+        hits.append(f"{f.relative_to(root)}: registry.yaml declares writes: {writes} but this "
+                    f"agent has no write-capable tool and no 'do not write/edit' disclaimer")
+    return report("writes-tools", hits)
+
 CRITERIA = {
     "latex-residue": crit_latex_residue, "manuscript-model": crit_manuscript_model,
     "deleted-things": crit_deleted_things, "inv-refs": crit_inv_refs, "skill-refs": crit_skill_refs,
-    "tool-name": crit_tool_name, "hooks-readme": crit_hooks_readme,
+    "tool-name": crit_tool_name, "script-refs": crit_script_refs, "hooks-readme": crit_hooks_readme, "hooks-wired-source": crit_hooks_wired_source,
     "artifact-paths": crit_artifact_paths, "promote-vendor-warn": crit_promote_vendor_warn,
-    "promote-register-check": crit_promote_register_check,
+    "promote-register-check": crit_promote_register_check, "writes-tools": crit_writes_tools,
 }
 
 def main():

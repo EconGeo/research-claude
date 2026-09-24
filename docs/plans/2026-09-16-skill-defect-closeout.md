@@ -3,10 +3,13 @@
 > promised test file absent, eight of nine baselined skills byte-identical. 0 of 7 defect tasks.
 > The status table is accurate — this is unstarted work, correctly recorded as unstarted.
 >
-> **Resumable at Task 1**, but apply the §6.4 amendments first. One is blocking: every task's
-> verification block chains `python3 scripts/check_paths.py` with **no `--root`**, which exits on
-> an argparse usage error and kills the `&&` chain before `run_fixture.sh`, `check_refs` and
-> `check_install --all` ever run.
+> **Resumable at Task 1. The §6.4 amendments were applied on 2026-09-24:** every task's
+> verification block now chains `python3 scripts/check_paths.py --root
+> /Users/andrew.mueller/Academic/research-claude` (the un-rooted form exited on an argparse
+> usage error and killed the `&&` chain before `run_fixture.sh`, `check_refs` and
+> `check_install --all` ever ran — this is fixed at all 7 occurrences); the Task 6
+> `/obsidian-digest-sync` occurrence count was corrected from three to two; and D2 was resolved
+> as moot (see the amendment under Task 6 and its Answer cell in the Open decisions table).
 >
 > Sequencing and full context: `docs/2026-09-23_pipeline-closeout-handoff.md`.
 > Audit: `docs/audits/2026-09-23_closeout-delivery-audit.md`.
@@ -116,7 +119,7 @@ notes; this table is the handoff.
 
 | Task | Status | Branch | Merged | Notes |
 |---|---|---|---|---|
-| 0 — Land the pending `new-project-ztp` edit; baseline | done | `fix/new-project-ztp-registration` | yes (`b0a95af`) | The draft that had sat uncommitted (and live in all six papers) asserted two mechanisms. **Both were checked against the installed build, not the vendored text.** `zotpilot status` reports `Client integration — Registered: claude-code, opencode`, so the client-level half is right; and `Secrets file: ~/.secrets.env` with `Write ops ready: yes`, while `~/.config/zotpilot/config.json` holds only non-secret settings plus `zotero_user_id` — so the secrets half is right too, and **the vendored `ztp-setup` step 5 ("API keys are stored in `~/.config/zotpilot/config.json`") is stale, as is the audit's "still open" finding on it.** Two draft claims were wrong and were dropped before landing: a `claude mcp add --scope user` invocation (`zotpilot setup` does the registration itself — vendored step 7) and a reference to Codex, which is not a detected client. Suite **159 passed, 3 subtests**; `check_fork` PASS. Baseline: review 10,878 / revise 4,109 / tools 4,347 / promote 3,176 / lit-position 6,093 / ztp-data-tag 9,173 / pipeline 4,183 / write 7,482 / new-project-ztp 3,966; all 18 = 98,894. |
+| 0 — Land the pending `new-project-ztp` edit; baseline | done | `fix/new-project-ztp-registration` | yes (`b0a95af`) | The draft that had sat uncommitted (and live in all six papers) asserted two mechanisms. **Both were checked against the installed build, not the vendored text.** `zotpilot status` reports `Client integration — Registered: claude-code, opencode`, so the client-level half is right; and `Secrets file: ~/.secrets.env` with `Write ops ready: yes`, while `~/.config/zotpilot/config.json` holds only non-secret settings plus `zotero_user_id` — so the secrets half is right too, and **the vendored `ztp-setup` step 5 ("API keys are stored in `~/.config/zotpilot/config.json`") is stale, as is the audit's "still open" finding on it.** Two draft claims were wrong and were dropped before landing: a `claude mcp add --scope user` invocation (`zotpilot setup` does the registration itself — vendored step 7) and a reference to Codex, which is not a detected client. Suite **159 passed, 3 subtests**; `check_fork` PASS. Baseline: review 10,878 / revise 4,109 / tools 4,347 (note, 2026-09-24: grown to 7,321 chars since, for reasons unrelated to this plan — this session's connectivity-check work touches `check_refs.py`/`check_fork.sh`, not `skills/tools/SKILL.md`; Task 7's re-baseline step should not read this drift as a regression from this plan's own work) / promote 3,176 / lit-position 6,093 / ztp-data-tag 9,173 / pipeline 4,183 / write 7,482 / new-project-ztp 3,966; all 18 = 98,894. |
 | 1 — `review`: `--theory`, `--variance`, `--peer` score, `--stress` | not started | | | |
 | 2 — `revise`: `allowed-tools`, `post writer`, REWRITE, the letter | not started | | | |
 | 3 — `pipeline`: single owner for `state strike` | not started | | | |
@@ -129,7 +132,7 @@ notes; this table is the handoff.
 
 | # | Decision | Raised by | Answer |
 |---|---|---|---|
-| D2 | `/write humanize` rewrites in place; `/humanize` is detect-only **by design** and cites a cross-vendor finding that auto-rewriting degrades prose. Two near-identically named skills do opposite things. (a) Rename the mode to `/write cleanup` and have it name `/humanize` as the detect-only audit — touches `skills/write/SKILL.md`, any `pipeline/references/*.md` that names the mode, and `tests/`; (b) keep both names and state the distinction in both files, with `/write humanize` documented as "apply the 24 cleanup patterns to prose you drafted", not "de-AI a finished paper". **Recommend (a)** — the collision is the defect; a note does not remove it. | Task 6 | |
+| D2 | `/write humanize` rewrites in place; `/humanize` is detect-only **by design** and cites a cross-vendor finding that auto-rewriting degrades prose. Two near-identically named skills do opposite things. (a) Rename the mode to `/write cleanup` and have it name `/humanize` as the detect-only audit — touches `skills/write/SKILL.md`, any `pipeline/references/*.md` that names the mode, and `tests/`; (b) keep both names and state the distinction in both files, with `/write humanize` documented as "apply the 24 cleanup patterns to prose you drafted", not "de-AI a finished paper". **Recommend (a)** — the collision is the defect; a note does not remove it. | Task 6 | Moot (2026-09-24) — vendored /humanize renamed /civilize upstream (c737ac6); see the amendment under Task 6. |
 | D3 | `/review --peer` records `referees` (weight **25**) with `--critic editor`, but `agents/editor.md`'s `editorial_decision.md` format has **no overall score field** — only per-referee scores and a verdict — and `skills/review/config/scoring-rubrics.md` has **no Editor section at all**. (a) Add an Editor rubric and an explicit overall-score line to the decision format, sourced from the two referee scores and the verdict tier; (b) map the verdict tier to a fixed score (Accept 95 / Minor 85 / Major 70 / Reject 40); (c) leave `referees` unscored. **Recommend (a)** — (b) hides judgment behind a lookup table and (c) strands 25 weight points that R-104–R-107 were written to reconnect. | Task 1 | |
 
 ---
@@ -432,7 +435,7 @@ Progress Log what changed.
 - [ ] **Step 10: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_review_modes.py tests/test_review_contracts.py tests/test_skill_contracts.py -q && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py; echo "exit=$?"
+cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_review_modes.py tests/test_review_contracts.py tests/test_skill_contracts.py -q && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
 ```
 
 Expected: all green. `test_review_contracts.py` must be **9/9** — the three pinned strings.
@@ -627,7 +630,7 @@ entries from `KNOWN_UNBOUND` in `tests/test_skill_contracts.py`.
 - [ ] **Step 8: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py; echo "exit=$?"
+cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
 ```
 
 - [ ] **Step 9: Commit and merge**
@@ -809,7 +812,7 @@ unconditional increment with no round key, so a second call in the same round is
 - [ ] **Step 8: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py && ./tests/run_fixture.sh; echo "exit=$?"
+cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && ./tests/run_fixture.sh; echo "exit=$?"
 ```
 
 `run_fixture.sh`'s mechanical tier simulates dispatch lines and is the closest thing to an
@@ -992,7 +995,7 @@ or delete the file if nothing survives.
 - [ ] **Step 8: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py && python3 scripts/check_refs.py; echo "exit=$?"
+cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && python3 scripts/check_refs.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
 ```
 
 - [ ] **Step 9: Commit and merge**
@@ -1167,7 +1170,7 @@ Add `Bash` to `allowed-tools`.
 - [ ] **Step 6: Verify nothing vendored moved**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git status --short zotpilot-skills/ ai-audit/ && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py; echo "exit=$?"
+cd /Users/andrew.mueller/Academic/research-claude && git status --short zotpilot-skills/ ai-audit/ && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
 ```
 
 Expected: **no output** from the first command, everything else green.
@@ -1201,6 +1204,15 @@ EOF
 
 ## Task 6: Low sweep — `promote`, `state/`, `new-project-ztp`, `/write humanize`
 
+> **Amendment, 2026-09-24 (before resuming this task):** D2 is moot. The vendored skill this
+> defect names — `ai-audit`'s `/humanize` — was renamed to `/civilize` upstream
+> (`docs/plans/2026-09-23_pipeline-repair.md` Phase 2.4, gate met 2026-09-24, commit `c737ac6`).
+> There is no longer a second skill named `/humanize` for `/write humanize` to collide with.
+> Skip Step 2 ("Put D2 to the user") and Step 8 ("Apply D2") below — do not rename `/write
+> humanize`; there is nothing left to disambiguate it from. Re-verify with
+> `grep -rn humanize skills/ agents/ ai-audit/ rules/` before skipping: it should show only
+> `skills/write/SKILL.md`'s own humanize mode and `ai-audit/VENDORED.md`'s provenance note.
+
 **Cold start:** read these to end-of-file before editing anything.
 
 - `skills/promote/SKILL.md`
@@ -1230,8 +1242,8 @@ EOF
    symlink, so a file added inside an existing skill propagates immediately; only a **new
    top-level item** (a new skill, agent, rule or hook) needs a re-link. Narrow the claim to that.
 3. **`state/obsidian-config.md.example` names a skill that was deleted on 2026-09-09.**
-   `/obsidian-digest-sync` appears three times: the header comment and the two
-   "Knowledge-base folders (used by `/obsidian-digest-sync`)" lines. `CLAUDE.md` records the
+   `/obsidian-digest-sync` appears twice: the header comment and the
+   "Knowledge-base folders (used by `/obsidian-digest-sync`)" line. `CLAUDE.md` records the
    skill's removal.
 4. **`check_refs.py` cannot catch that, twice over.** `SHIP` (line 16) is
    `["agents", "skills", "rules", "references", "hooks", "templates", "seeds", "scripts"]` —
@@ -1381,7 +1393,7 @@ do not edit `ai-audit/`.
 - [ ] **Step 9: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git status --short zotpilot-skills/ ai-audit/ && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py && python3 scripts/check_refs.py; echo "exit=$?"
+cd /Users/andrew.mueller/Academic/research-claude && git status --short zotpilot-skills/ ai-audit/ && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && python3 scripts/check_refs.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
 ```
 
 - [ ] **Step 10: Commit and merge**
@@ -1418,7 +1430,7 @@ EOF
 - [ ] **Step 1: Full verification from a clean tree**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git status --short && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py && python3 scripts/check_refs.py && ./scripts/check_install.sh --all; echo "exit=$?"
+cd /Users/andrew.mueller/Academic/research-claude && git status --short && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && python3 scripts/check_refs.py --root /Users/andrew.mueller/Academic/research-claude && ./scripts/check_install.sh --all; echo "exit=$?"
 ```
 
 `check_install --all` is **expected RED** — `clone-links` fails in BRI, NAR_settlement, POGM4,
