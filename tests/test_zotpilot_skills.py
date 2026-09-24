@@ -27,6 +27,15 @@ class TestDataTagAtomicity(unittest.TestCase):
         self.assertIn("no Data note", TAG)
 
 
+class TestDataTagVocabularyMerge(unittest.TestCase):
+    def test_step_5b_merges_near_duplicate_tags_before_the_report(self):
+        i = TAG.index("## Step 5b"); j = TAG.index("## Step 6")
+        self.assertLess(TAG.index("## Step 5 "), i)
+        step5b = TAG[i:j]
+        self.assertIn("near-duplicate", step5b)
+        self.assertNotIn('action="set"', step5b.replace('never `set`', ''))
+
+
 class TestLitPositionLocalFirst(unittest.TestCase):
     def test_ztp_research_still_starts_externally(self):
         """If this ever fails, upstream changed and the bridge workaround can be revisited."""
