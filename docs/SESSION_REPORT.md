@@ -834,3 +834,41 @@ POGM4 `e6a99bc` (Phase 1.6); ESG `98de0c5`, `1d072d7` (adoption round, field aud
   `civilize`) and `seed-papers`' domain-profile field — all upstream work;
   `skills/submit/templates/audit-10-checks.md` still in `KNOWN_UNBOUND`.
 - Pending (user): push research-claude and the six paper repos.
+
+## 2026-09-24 (later) — Audit residue: allowed-tools sweep, KNOWN_UNBOUND emptied, plan for P4/P5/P7
+
+**Context:** "Start the remaining plan items" — the residue the 09-16 close-out listed under
+"What this plan deliberately leaves open". Two items were closable without a decision; the
+other three are design work and got a plan with the decisions named.
+
+**Operations (one merge per item, on `main`):**
+- `736939f` **allowed-tools sweep.** `discover`, `strategize`, `write` run `pipeline.py` and
+  now pre-approve `Bash`; `lit-position`, `new-project-ztp`, `ztp-data-tag` and (from the
+  second merge) `pipeline` call `mcp__zotpilot__*` and now pre-approve it. New
+  `tests/test_allowed_tools.py` derives both requirements from the SKILL.md body, so it went
+  red on `pipeline` the moment the second merge put the ZotPilot check in the driver — the
+  check working as intended. `mcp__zotpilot__*` spelling is per the permissions docs (fetched
+  this session): an allow glob is valid only after a literal `mcp__<server>__` prefix.
+- `7365613` **KNOWN_UNBOUND emptied.** `skills/submit/templates/audit-10-checks.md` deleted:
+  `agents/verifier.md` is the one pass/fail definition (both files said so), the skill's own
+  list indexes into it, and the 09-23 inventory found the copy drifted a second time.
+  `/submit final` now reads `gotchas.md` before reporting. `pipeline/SKILL.md` `run` binds
+  `references/setup.md` before the loop (a normal run previously skipped the ZotPilot check)
+  and names `talk.md` in the stage list. The ratchet is a real `set()`, not `{}`.
+- `docs/plans/2026-09-24-option-gates-subagent-routing-evals.md` written: Part A option gates
+  (one shared `rules/option-gates.md`, `--yes` takes rank 1, picks recorded in the artifact the
+  step already writes, 12 tasks), Part B subagent routing (registry-declared agents with
+  `mcpServers: [zotpilot]`, the `lit-critic` shape), Part C a stdio ZotPilot mock and the first
+  two mechanism evals. Open decisions D1–D5 with recommendations; Part A is executable now
+  under them.
+
+**Found in passing:** `check_paths` caught a bare `references/setup.md` (Global constraint 9
+again); `check_install --all` fails its `[branch]` check on any feature branch by design —
+run it from `main` after the merge.
+
+**Results:** 275 tests OK (+1) · `check_fork` PASS · `check_paths` PASS · `check_install --all`
+PASS ×6 from `main` · `run_fixture` mechanical PASS (inside `check_fork`).
+
+**Status:** Open from the 09-15 audit: P4, P5, P7 (planned above, awaiting D1–D5); vendored
+P1 offenders and `seed-papers` (upstream). Pending (user): push research-claude and the six
+paper repos — still nothing pushed.

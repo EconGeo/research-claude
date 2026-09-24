@@ -28,10 +28,12 @@ Its §3 records what landed and §4 the open work in dependency order. As of 202
 and §4.3 (`docs/plans/2026-09-16-skill-defect-closeout.md`, Tasks 0–7) completed on
 2026-09-24 — its close-out is the 2026-09-24 entry in `docs/SESSION_REPORT.md`, and
 `tests/run_fixture.sh --live` ran green the same day. **Nothing from that handoff's §4 is
-open.** What remains is the audit residue listed under "What this plan deliberately leaves
-open" at the end of the 09-16 plan (P4 option points, P5 subagent routing, the `allowed-tools`
-sweep, P7 evals, vendored P1 offenders). The earlier `docs/2026-09-10_final-cleanup-handoff.md`
-is history: every item it carried is closed.
+open.** Of the audit residue the 09-16 plan left open, the `allowed-tools` sweep (`736939f`)
+and the `KNOWN_UNBOUND` ratchet (`7365613`) closed on 2026-09-24; what remains — P4 option
+gates, P5 subagent routing, P7 evals — is planned in
+`docs/plans/2026-09-24-option-gates-subagent-routing-evals.md`, whose Open decisions table
+(D1–D5) gates each part. Vendored P1 offenders go upstream. The earlier
+`docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 
 Standing pointers it depends on, and which no session should change without reading:
 `docs/decisions/2026-09-08_pipeline-repair-rulings.md` (R-1…R-136 — §1 explains why things
