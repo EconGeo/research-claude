@@ -872,3 +872,53 @@ PASS ×6 from `main` · `run_fixture` mechanical PASS (inside `check_fork`).
 **Status:** Open from the 09-15 audit: P4, P5, P7 (planned above, awaiting D1–D5); vendored
 P1 offenders and `seed-papers` (upstream). Pending (user): push research-claude and the six
 paper repos — still nothing pushed.
+
+## 2026-09-24 (evening) — Option gates, subagent routing, functionality evals: plan executed in full
+
+**Plan:** `docs/plans/2026-09-24-option-gates-subagent-routing-evals.md`, D1–D5 answered "go
+with recommendations" by the user, then A1–A13, B1–B6, C1–C3 one branch per task, red test
+first, `check_fork` + full suite before every commit.
+
+**Part A — option gates (`rules/option-gates.md`, 12 gated modes).** One rule defines the
+mechanism (5–8 ranked options, `--yes` takes rank 1, pick recorded in the artifact the step
+already writes; never between a critic score and the below-80 loop). Gates in strategize,
+discover ×4, lit-position ×3, submit target, review --peer ×2, revise ×2, talk, write ×2,
+pipeline (strike-3 menus from ranked Escalation blocks; theory opt-in), analyze, ztp-data-tag
+(+ Step 5b tag merge). Every stage reference passes `--yes` through.
+`tests/test_option_gates.py` checks each declared gate. Caps raised with reasons: strategize
+8,000→8,500; discover 6,200→7,500; write 7,600→8,200; review 12,500→12,700.
+
+**Part B — routing.** Three registry-declared read-only agents with `mcpServers: [zotpilot]`
+where needed: `data-tag-extractor` (per-batch records), `lit-scout` (local sweep + in-library
+citation chains; `/ztp-research` stays in the main context), `journal-scout` (the 547-line
+profiles read). D4b: Obsidian sync stays home, reason in `checkpoint/gotchas.md`. revise/write
+list the manuscript's labels and headings; the writer reads. explorer keeps its web tools —
+read in full, its search uses them, so the audit's "unused" did not hold for the agent.
+
+**Part C — evals.** `tests/mock_zotpilot.py`: a stdio MCP stand-in for ten ZotPilot tools
+from a checked-in fixture, logging every CALL/WRITE to a file named in the MCP config's env.
+`tests/evals/ztp-data-tag.sh` PASS (extractor dispatched before any write; 0 writes because
+`--yes` never answers the batch confirmation — noted as vacuous by the checker).
+`tests/evals/lit-position.sh` PASS (lit-scout before external search; no writes in the sweep).
+Both checkers are unit-tested red and green.
+
+**Found and fixed (not caused by the gates):**
+- `hooks/protect-files.sh` blocked every stage from closing since `5305d11`: its
+  `*-critic_*.md` pattern denied the Write that saves a returned critic report, so `post`
+  never saw one. The 12:47 green run had saved through Bash. Creation now allowed; Edit and
+  overwrite blocked; `rules/agents.md` §3 names round files `_r2`/`_r3`.
+- Live tier under `--yes`: two data rounds ran, score and strike recorded; the run halted only
+  when `claude -p` refused the round-2 `record-score` Bash call. The fixture now pre-approves
+  `pipeline.py` for the live tier.
+- Mock: MCP results need the `content` envelope; the client does not forward server stderr.
+
+**User instruction (standing):** keep-on-failure is the default for these tests and builds —
+`run_fixture.sh` and both eval runners now keep their temp copies on any failure.
+
+**Results:** 302+ tests OK · `check_fork` PASS · `check_install --all` PASS ×6 (re-linked for
+three new agents and one new rule; lock refresh committed in each paper repo) ·
+`run_fixture --live` GREEN · two evals PASS. **Nothing pushed** — main is ~50 ahead of origin.
+
+**Open:** the plan's "What this plan deliberately leaves open" — vendored P1 offenders
+upstream; P6 self-improvement rule needs its own decision; evals for the remaining skills one
+at a time; a same-day round-2 collision is now a naming rule, not a mechanism.

@@ -29,10 +29,12 @@ and §4.3 (`docs/plans/2026-09-16-skill-defect-closeout.md`, Tasks 0–7) comple
 2026-09-24 — its close-out is the 2026-09-24 entry in `docs/SESSION_REPORT.md`, and
 `tests/run_fixture.sh --live` ran green the same day. **Nothing from that handoff's §4 is
 open.** Of the audit residue the 09-16 plan left open, the `allowed-tools` sweep (`736939f`)
-and the `KNOWN_UNBOUND` ratchet (`7365613`) closed on 2026-09-24; what remains — P4 option
-gates, P5 subagent routing, P7 evals — is planned in
-`docs/plans/2026-09-24-option-gates-subagent-routing-evals.md`, whose Open decisions table
-(D1–D5) gates each part. Vendored P1 offenders go upstream. The earlier
+and the `KNOWN_UNBOUND` ratchet (`7365613`) closed on 2026-09-24, and P4 option gates, P5
+subagent routing and P7 evals closed the same day under
+`docs/plans/2026-09-24-option-gates-subagent-routing-evals.md` (complete; its "What this plan
+deliberately leaves open" is the current residue: vendored P1 offenders upstream, the P6
+self-improvement rule pending its own decision, evals for the other skills one at a time).
+The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 
 Standing pointers it depends on, and which no session should change without reading:

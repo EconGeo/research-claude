@@ -1,6 +1,6 @@
 # Option Gates, Subagent Routing and Functionality Evals — Implementation Plan
 
-**Status:** in progress (2026-09-24) — D1–D5 answered with the recommendations; executing A1 onward.
+**Status:** complete (2026-09-24) — A1–A13, B1–B6, C1–C3 done under D1–D5's recommended answers; see the Progress Log and `docs/SESSION_REPORT.md` 2026-09-24 (later).
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -953,7 +953,7 @@ Same shape: assert `search_topic` and `advanced_search` calls precede any
 | B6 | done 2026-09-24 | `b028cb3` | revise/write list the manuscript; writer reads; write 8,100→8,200, discover 7,300→7,500 |
 | C1 | done 2026-09-24 | `2dd45e1` | tests/mock_zotpilot.py + fixture JSON; 8 tests |
 | C2 | done 2026-09-24 | `9023f2e` | PASS: 13 mock calls, extractor dispatched first, 0 writes (vacuous 2–4, noted); two mock defects fixed |
-| C3 | | | |
+| C3 | done 2026-09-24 | `a258b92` | PASS: 21 mock calls, lit-scout before external search, 0 writes during the sweep |
 
 ## What this plan deliberately leaves open
 
