@@ -21,10 +21,14 @@ a coauthor bootstrap the pipeline with a clone and no access grant.
 
 ## Start here — current state and open work
 
-**`docs/2026-09-10_final-cleanup-handoff.md`.** Read its progress log before picking up
-anything; it is the running record of what is done, what was deliberately NOT done and why,
-and what is still open. It supersedes the numbered sections lower in that same file wherever
-they disagree.
+**`docs/2026-09-23_pipeline-closeout-handoff.md`.** Read it before picking up anything.
+Its §3 records what landed and §4 the open work in dependency order. As of 2026-09-24, §4.1
+(`docs/plans/2026-09-23_pipeline-repair.md`, Phases 1–4), §4.2
+(`docs/plans/2026-09-24-connectivity-checks-and-closeout-resume.md`), §4.4 and §4.5 are done;
+what remains is §4.3 — `docs/plans/2026-09-16-skill-defect-closeout.md`, resumable at Task 1,
+which opens on decision D3 — and a full green `tests/run_fixture.sh --live`. The earlier
+`docs/2026-09-10_final-cleanup-handoff.md` is history: its progress log is accurate through
+2026-09-16 and is superseded after that.
 
 Standing pointers it depends on, and which no session should change without reading:
 `docs/decisions/2026-09-08_pipeline-repair-rulings.md` (R-1…R-136 — §1 explains why things

@@ -1,5 +1,7 @@
 # ZotPilot `delete_note` MCP Tool Implementation Plan
 
+**Status:** complete (marked 2026-09-24). `delete_note` ships in the EconGeo/ZotPilot fork that this repo vendors (`zotpilot-skills/VENDORED.md`, repo `CLAUDE.md`) and `skills/ztp-data-tag` uses it; the checkboxes below were never flipped because the work was tracked in `docs/SESSION_REPORT.md` (2026-06-12, 2026-06-22).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a `delete_note` MCP tool to ZotPilot so an agent can delete a child note by its key (closing the gap the `/ztp-data-tag` pilot exposed — there was no way to remove a Data note via MCP).

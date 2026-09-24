@@ -1,5 +1,7 @@
 # Pipeline Precedence + Per-Project Manuscript Naming Implementation Plan
 
+**Status:** superseded (marked 2026-09-24). This plan reconciled research-claude with the clo-author *submodule*; the submodule mechanism was removed on 2026-09-09 and clo-author's agents vendored, and the manuscript is now declared per project (`manuscript:` in `CLAUDE.md`) under `rules/quarto-empirical.md`. `rules/pipeline-precedence.md` was never created and is not needed. See `docs/decisions/2026-09-08_cut-the-orchestration-graph.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Resolve research-claude's clo-author layout conflicts by declaring precedence (one new rule, zero submodule edits), and make the manuscript default to `manuscript_<project>.qmd`.

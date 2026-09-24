@@ -1,5 +1,7 @@
 # ztp-data-tag Skill Implementation Plan
 
+**Status:** complete (marked 2026-09-24). Tasks 1–4 were executed the same day — see `docs/SESSION_REPORT.md` entries for 2026-06-12 20:20 and 20:30 UTC — and `skills/ztp-data-tag/` ships; the checkboxes below were never flipped.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add an opt-in `ztp-data-tag` skill that backfills a structured "data used" field (datasets, variables, unit, timespan, access) onto papers already in the user's Zotero library, stored as both namespaced tags and a structured note.
