@@ -919,6 +919,15 @@ Same shape: assert `search_topic` and `advanced_search` calls precede any
 
 ---
 
+## Found in passing
+
+- **`hooks/protect-files.sh` blocked every stage from closing** (`38cd58c`). Wired by default
+  in `5305d11` with a `*-critic_*.md` pattern, it denied the Write that saves a critic's
+  returned text, so `pipeline.py post` never saw a report. The 12:47 green live run had saved
+  through Bash, which the hook never sees. Creation is now allowed; Edit/overwrite stay blocked;
+  `rules/agents.md` §3 names round files `_r2`/`_r3` so a same-day second round does not
+  overwrite.
+
 ## Progress Log
 
 | Task | Status | Commit | Notes |
@@ -935,15 +944,15 @@ Same shape: assert `search_topic` and `advanced_search` calls precede any
 | A10 | done 2026-09-24 | `6d4c86c` | five ranked alternatives per stage reference; theory opt-in |
 | A11 | done 2026-09-24 | `dcbee58` |  |
 | A12 | done 2026-09-24 | `311ea53` | Step 5b; +1 test |
-| A13 | | | |
+| A13 | in progress | `38cd58c` | first live run stopped at `data`: protect-files.sh blocked creating the critic report (pre-existing since `5305d11`, hook fixed); re-run pending |
 | B1 | | | |
 | B2 | | | |
 | B3 | | | |
 | B4 | | | |
 | B5 | | | |
 | B6 | | | |
-| C1 | | | |
-| C2 | | | |
+| C1 | done 2026-09-24 | `2dd45e1` | tests/mock_zotpilot.py + fixture JSON; 8 tests |
+| C2 | scaffold 2026-09-24 | `b3b7815` | checker + runner + 5 checker tests; the run itself waits on B1 |
 | C3 | | | |
 
 ## What this plan deliberately leaves open
