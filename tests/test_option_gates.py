@@ -22,7 +22,7 @@ GATED = [
     ("lit-position", r"positioning", 5),
     ("lit-position", r"Dispatch `lit-critic`", 3),
     ("submit", r"Journal Targeting", 5),  # Task A5
-    # Task A6 — review --peer / --stress
+    ("review", r"Full Peer Review", 5),  # Task A6
     # Task A7 — revise
     # Task A8 — talk
     # Task A9 — write
