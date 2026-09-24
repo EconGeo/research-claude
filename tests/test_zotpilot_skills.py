@@ -68,6 +68,19 @@ class TestLitPositionLocalFirst(unittest.TestCase):
             self.assertIn(tool, step1)
         self.assertLess(step1.index("search_topic"), step1.index("/ztp-research"))
 
+    def test_the_local_sweep_and_citation_chains_run_in_lit_scout(self):
+        """Plan Task B2: the sweep's tool names stay in Step 1 (as the scout's brief) and still
+        precede /ztp-research; the scout holds zotpilot and writes nothing."""
+        step1 = LIT[LIT.index("## Step 1"):LIT.index("## Step 2")]
+        self.assertIn("lit-scout", step1)
+        self.assertIn(".claude/agents/lit-scout.md", step1)
+        a = (ROOT / "agents" / "lit-scout.md").read_text()
+        front = a.split("---")[1]
+        self.assertIn("zotpilot", front)
+        self.assertNotRegex(front, r"tools:.*\b(Write|Edit)\b")
+        self.assertIn("Do NOT write any files", a)
+        self.assertIn("search_academic_databases", a)  # named only to forbid it
+
     def test_bash_is_pre_approved_because_step_7_runs_pipeline_py(self):
         front = LIT.split("---")[1]
         self.assertIn("pipeline.py", LIT)
