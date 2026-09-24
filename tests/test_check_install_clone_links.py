@@ -1,10 +1,16 @@
 """check_install.sh's `clone-links` criterion — a committed symlink whose target leaves the repo.
 
-`dangling` resolves links on THIS machine, so a committed link into ~/Research/.claude/references
+`dangling` resolves links on THIS machine, so a committed link whose target leaves the repo
 passes here and is dead in every coauthor's clone (ESG a30b42f, 2026-09-13). `tracked-links`
 only looks under the pipeline-owned dirs. This reads the committed link target itself, so the
 answer does not depend on what happens to exist on the machine running the check.
 CHECK_INSTALL_UNDER_TEST lets a mutated copy be shown red.
+
+The original incident was a committed link under `.claude/references/`. Since D-26 (2026-09-23)
+references are pipeline-linked, gitignored and untracked like skills/agents/rules, so that exact
+path is now covered by `tracked-links` instead — asserted by the last test here. These cases
+therefore use `.claude/state/`, which is project-owned and still outside the linked set, so the
+criterion keeps being tested on the class of path it exists for.
 """
 import os, pathlib, subprocess, tempfile, unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -22,7 +28,8 @@ class TestCloneLinks(unittest.TestCase):
         git(t, "init", "-q", "-b", "main", str(self.rc)); git(self.rc, "add", "-A"); git(self.rc, "commit", "-qm", "one")
         # The link target exists on this machine, so `dangling` passes — exactly the blind spot.
         (t / "shared").mkdir(); (t / "shared" / "profile.md").write_text("shared\n")
-        self.p = t / "proj"; (self.p / ".claude" / "skills").mkdir(parents=True); (self.p / ".claude" / "references").mkdir()
+        self.p = t / "proj"; (self.p / ".claude" / "skills").mkdir(parents=True)
+        (self.p / ".claude" / "references").mkdir(); (self.p / ".claude" / "state").mkdir()
         os.symlink(self.rc / "skills" / "s", self.p / ".claude" / "skills" / "s")
         (self.p / ".gitignore").write_text(".claude/skills/*\n")
         (self.p / "notes.md").write_text("n\n")
@@ -30,7 +37,7 @@ class TestCloneLinks(unittest.TestCase):
     def tearDown(self): self.tmp.cleanup()
 
     def commit_link(self, target):
-        os.symlink(target, self.p / ".claude" / "references" / "profile.md")
+        os.symlink(target, self.p / ".claude" / "state" / "profile.md")
         git(self.p, "add", "-A"); git(self.p, "commit", "-qm", "link")
 
     def line(self):
@@ -41,7 +48,7 @@ class TestCloneLinks(unittest.TestCase):
         self.commit_link("../../../shared/profile.md")
         l, out = self.line()
         self.assertTrue(l.startswith("FAIL [clone-links]"), out)
-        self.assertIn(".claude/references/profile.md", out)
+        self.assertIn(".claude/state/profile.md", out)
         self.assertIn("PASS [dangling]", out)  # the blind spot this criterion exists for
 
     def test_absolute_link_fails(self):
@@ -53,8 +60,23 @@ class TestCloneLinks(unittest.TestCase):
         self.assertTrue(self.line()[0].startswith("PASS [clone-links]"), self.line()[1])
 
     def test_real_file_passes(self):
-        (self.p / ".claude" / "references" / "profile.md").write_text("copy\n")
+        (self.p / ".claude" / "state" / "profile.md").write_text("copy\n")
         git(self.p, "add", "-A"); git(self.p, "commit", "-qm", "copy")
         self.assertTrue(self.line()[0].startswith("PASS [clone-links]"), self.line()[1])
+
+    def test_committed_reference_link_is_caught_by_tracked_links(self):
+        """The original incident's path, under the post-D-26 design.
+
+        references/ is pipeline-linked now, so a committed link there is caught by
+        `tracked-links` rather than `clone-links`. Without this, D-26 would have
+        silently retired the protection the ESG incident bought.
+        """
+        os.symlink("../../../shared/profile.md", self.p / ".claude" / "references" / "profile.md")
+        git(self.p, "add", "-A"); git(self.p, "commit", "-qm", "ref link")
+        out = subprocess.run(["bash", SCRIPT, "--project-dir", str(self.p)],
+                             capture_output=True, text=True).stdout
+        tracked = next((l for l in out.splitlines() if "[tracked-links]" in l), "")
+        self.assertTrue(tracked.startswith("FAIL [tracked-links]"), out)
+
 
 if __name__ == "__main__": unittest.main()
