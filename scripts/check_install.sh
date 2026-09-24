@@ -304,15 +304,19 @@ check_project() {
   # A linked hook does nothing until settings.json names it, so membership is not
   # enough: dispatch-log.py feeds the log that pipeline.py's `critic-ran` reads, and
   # critic-pairing.py is what makes a session notice it skipped a critic.
-  # protect-files.sh stays deliberately unwired (R-7) -- it is opt-in per project.
   # The required set is DERIVED from seeds/settings.json, never hardcoded here. It was a
   # hardcoded trio, and that is exactly how two hooks went unwired in all six repos without
   # this check noticing: context-monitor.py (seeded 2026-09-10, required by Task 7.5) and
   # install-check.py (seeded 2026-09-23). Seeding a hook only affects NEW projects --
   # settings.json is project-owned and copy_seed never overwrites -- so an existing repo
   # silently never gets it. Deriving the list means a newly seeded hook is required
-  # everywhere the moment it is seeded. protect-files.sh needs no special case: it is
-  # deliberately not in the seed (R-7, opt-in per project), so it is never demanded.
+  # everywhere the moment it is seeded. protect-files.sh joined the seed 2026-09-24
+  # (Phase 4.1, divergence D-3) -- the 2026-09-08 "opt-in per project" ruling (design
+  # spec R-7, a different document's numbering than this repo's rulings appendix, which
+  # has its own, unrelated R-7 -- the two were conflated in one 2026-09-23 audit note)
+  # left every generated evidence file unprotected in all six repos, and `/review` had
+  # already bolted on its own `git status --porcelain` check for exactly the failure this
+  # hook exists to prevent.
   local sj="$P/.claude/settings.json" hw_missing=() h seed_hooks
   seed_hooks="$(jq -r '[.hooks[]?[]?.hooks[]?.command // empty] | .[]' \
                  "$RC/seeds/settings.json" 2>/dev/null | sed 's|.*/||' | sort -u)"
