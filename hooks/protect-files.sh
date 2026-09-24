@@ -20,6 +20,17 @@ if [ -z "$FILE" ]; then
   exit 0
 fi
 
+# A Write that CREATES a protected file is the pipeline working, not an accident: every
+# critic returns its report as text and the dispatching session saves it to
+# quality_reports/reviews/explorer-critic_<date>.md and the like, which match `*-critic_*.md`. Blocking
+# creation meant `pipeline.py post` never saw a report and no stage could close (live fixture,
+# 2026-09-24: the driver stopped at `data` with `post explorer: FAIL`). What this hook exists
+# to stop is a later Edit or overwrite of a report that already exists — R-7's incident was a
+# project gate restamping two committed reports. So: create freely, never rewrite.
+if [ "$TOOL" = "Write" ] && [ ! -e "$FILE" ]; then
+  exit 0
+fi
+
 # ============================================================
 # Quarto-native defaults — the pipeline's own config and generated evidence.
 # CUSTOMIZE: append patterns for a project's own extra artifacts.

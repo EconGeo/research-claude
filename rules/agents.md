@@ -75,6 +75,11 @@ the `ESCALATION_TARGET` declared for the creator in the registry. `pipeline.py s
   escalates. Exceptions, stated in their reference files: `/review --all` re-scores existing
   work and sends it back to its creator's stage; `/submit` has no creator.
 - Max 3 rounds per pair per invocation; 5 rounds overall; never loop indefinitely.
+- **Each round's critic report is its own file.** Round 1 saves to
+  `quality_reports/reviews/explorer-critic_<date>.md` (each critic under its own name); rounds 2 and 3 the same day save to
+  `explorer-critic_<date>_r2.md` and `_r3.md`, and `record-score --report` names that file. A report is
+  never overwritten: `.claude/hooks/protect-files.sh` lets a session create a report and blocks
+  every rewrite of one, so a second round saved to the first round's name stalls the loop.
 - Escalation is logged in the research journal with the strike count.
 - Escalating to the user requires a specific question: "strategist-critic requires X, which
   contradicts Y — which takes priority?", never "they disagree".
