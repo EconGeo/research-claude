@@ -17,10 +17,12 @@ Structure point-by-point referee responses with classification, agent routing pe
 
 ### Step 1: Parse Inputs
 1. Read referee report(s) from `$ARGUMENTS`
-2. Read the manuscript (`manuscript_<project>.qmd` or specified path)
+2. Resolve the manuscript (`python3 .claude/scripts/pipeline.py manuscript`, or the specified path)
 3. Read the revision protocol (`.claude/rules/revision.md`) and the known failure points in
    `.claude/skills/revise/gotchas.md`
-4. Read the manuscript's chunk labels and the setup-chunk naming map to know what analyses already exist
+4. **List** the manuscript's `#| label:` lines, `#` headings and the setup-chunk naming map (a
+   grep, not a read) to know what analyses already exist; the writer or coder dispatched in
+   Step 5 reads the sections it revises
 
 ### Step 2: Classify severity, then route
 

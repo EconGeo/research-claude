@@ -116,7 +116,10 @@ Generate structured research questions and hypotheses from a topic or dataset.
 **Output:** Research questions with empirical strategies
 
 Generate 5–10 research questions with clear hypotheses; for each, a potential identification
-strategy, data requirements and expected contribution; rank by feasibility and novelty, and offer
+strategy, data requirements and expected contribution. Novelty is checked against the local
+Zotero index first (`.claude/rules/literature-search-order.md`): dispatch **lit-scout**
+(`.claude/agents/lit-scout.md`) with each candidate question and treat a proximity-5 hit as
+"already asked". Rank by feasibility and novelty, and offer
 them as an **Option gate** (`.claude/rules/option-gates.md`; columns *question*, *hypothesis*,
 *identification*, *data*, *contribution*; `--yes` takes rank 1). The pick is written first with
 the rest below it. Save to
