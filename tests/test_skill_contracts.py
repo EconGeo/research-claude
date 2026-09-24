@@ -44,10 +44,15 @@ KNOWN_UNBOUND = {
 # (see the assertion message below), not as standing context in every session, so the exactness
 # this section restores costs nothing except in a /review session, where it's exactly what earns
 # its keep. Restored; new measured size 11,296.
+#
+# 2026-09-24: write's cap raised 7,500 -> 7,600. Phase 3.5 pointed Paper Type Detection at
+# `.claude/references/narrative-arcs.md` (the same file `/talk` reads) so the file actually
+# delivers what its spec asked for — "independent of `/talk`", usable from `/write` too. One
+# sentence, not a table; new measured size 7,589.
 BUDGET = {
     "review": 11500,
     "strategize": 8000,
-    "write": 7500,
+    "write": 7600,
     "discover": 6000,
     "checkpoint": 5500,
 }

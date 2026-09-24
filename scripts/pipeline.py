@@ -65,7 +65,8 @@ def state_path(root: Path) -> Path: return root / STATE_REL
 
 def empty_state(root: Path, ms: Path) -> Dict[str, Any]:
     return {"schema_version": 2, "project": root.name, "manuscript": str(ms.relative_to(root)), "updated": now(),
-            "components": {}, "sections": {}, "strikes": {}, "blocked_by": None, "overall": None}
+            "components": {}, "sections": {}, "strikes": {}, "blocked_by": None, "overall": None,
+            "verify_claims": None, "deposit": None}
 
 def load_state(root: Path) -> Dict[str, Any]:
     p = state_path(root)
@@ -93,6 +94,15 @@ def validate_state(st: Dict[str, Any], reg: Dict[str, Any]) -> List[str]:
             p.append(f"components.{c}: deductions must be a non-negative number when present")
     for a in (st.get("strikes") or {}):
         if a not in reg["agents"]: p.append(f"strikes.{a}: not a registry agent")
+    vc = st.get("verify_claims")
+    if vc is not None:
+        if not isinstance(vc, dict) or vc.get("result") not in ("pass", "fail") \
+                or not isinstance(vc.get("report"), str) or not isinstance(vc.get("at"), str):
+            p.append("verify_claims: must be null or {result: pass|fail, report: str, at: str}")
+    dep = st.get("deposit")
+    if dep is not None:
+        if not isinstance(dep, dict) or not all(isinstance(dep.get(k), str) for k in ("repository", "url", "report", "at")):
+            p.append("deposit: must be null or {repository: str, url: str, report: str, at: str}")
     return p
 
 # ── score ───────────────────────────────────────────────────────────────────
@@ -461,11 +471,12 @@ AUTH_ALLOW = {"rules/registry.yaml", "rules/permissions.md", "rules/quality.md"}
 def registry_check(root: Path) -> int:
     rc = 0; reg = rl.load_registry(root)
     probs = rl.validate_registry(reg)
-    roster = {p.stem for p in (root / "agents").glob("*.md")}
+    roster = rl.agent_roster(root)
     for a, e in reg["agents"].items():
-        if e.get("kind") == "agent" and a not in roster: probs.append(f"{a}: declared but agents/{a}.md missing")
-    for a in roster:
-        if a not in reg["agents"]: probs.append(f"agents/{a}.md exists but is not declared")
+        if e.get("kind") == "agent" and a not in roster:
+            probs.append(f"{a}: declared but not found under {'/ or '.join(rl.AGENT_DIRS)}")
+    for a, rel in roster.items():
+        if a not in reg["agents"]: probs.append(f"{rel} exists but is not declared")
     print("PASS [registry-complete]" if not probs else "FAIL [registry-complete]"); [print(f"    {p}") for p in probs]; rc |= bool(probs)
     hits = []
     for d in ["agents", "skills", "rules", "references", "hooks", "templates", "seeds"]:
@@ -491,8 +502,11 @@ def main() -> int:
     sub.add_parser("manuscript"); sub.add_parser("fresh"); sub.add_parser("next")
     for k in ("pre", "post"): sub.add_parser(k).add_argument("agent")
     sc = sub.add_parser("score"); sc.add_argument("--gate", choices=sorted(GATES))
-    st = sub.add_parser("state"); st.add_argument("op", choices=["init", "validate", "show", "record-score", "strike", "set-blocked", "clear-blocked"])
+    st = sub.add_parser("state"); st.add_argument("op", choices=["init", "validate", "show", "record-score", "record-verify-claims", "record-deposit", "strike", "set-blocked", "clear-blocked"])
     st.add_argument("args", nargs="*"); st.add_argument("--critic"); st.add_argument("--report"); st.add_argument("--scope")
+    st.add_argument("--result", choices=["pass", "fail"], help="record-verify-claims: the CoVe outcome")
+    st.add_argument("--repository", help="record-deposit: the archive name (openICPSR, Dataverse, Zenodo, ...)")
+    st.add_argument("--url", help="record-deposit: the deposit's resulting URL or DOI")
     st.add_argument("--deductions", type=float, help="record-score: the critic's unfloored deduction total")
     sub.add_parser("conflicts").add_argument("agents", nargs="+")
     sub.add_parser("registry").add_argument("op", choices=["check"])
@@ -520,6 +534,20 @@ def main() -> int:
         print(f"overall={ov if ov is not None else 'n/a'}")
         if a.gate:
             need, per = GATES[a.gate]; ok = ov is not None and ov >= need and (per is None or all(e["score"] >= per for e in stt["components"].values()))
+            if a.gate == "submission":
+                # Phase 3.1: /submit final could pass at >= 95 with `/verify-claims` never having
+                # run — a scored 95 says nothing about hallucinated citations or numbers, which
+                # is exactly what CoVe (ai-audit's claim-verifier) checks and nothing else does.
+                vc = stt.get("verify_claims")
+                if not vc:
+                    ok = False; print("gate submission: verify_claims: never recorded — run /verify-claims "
+                                       "and `state record-verify-claims --report P --result pass|fail`")
+                elif vc["result"] != "pass":
+                    ok = False; print(f"gate submission: verify_claims: last recorded result was "
+                                       f"{vc['result']!r} (report {vc['report']}) — resolve before submitting")
+                elif not (root / vc["report"]).is_file():
+                    ok = False; print(f"gate submission: verify_claims: its recorded report "
+                                       f"{vc['report']} no longer exists on disk")
             print(f"gate {a.gate}: " + ("PASS" if ok else "FAIL")); return 0 if ok else 1
         return 0
     if a.cmd == "state":
@@ -567,9 +595,38 @@ def main() -> int:
             else:
                 entry["rounds"] = stt["components"].get(comp, {}).get("rounds", 0) + 1; stt["components"][comp] = entry
             stt["overall"], _ = compute_overall(stt, reg); save_state(root, stt); print(f"recorded {comp}={score}"); return 0
+        if a.op == "record-verify-claims":
+            # `/submit final` (Phase 3.1) refuses without this: `ai-audit`'s own docs admit
+            # "no hook, setting or commit gate reads the report" from /verify-claims — this is
+            # that gate. Same report-must-exist contract as record-score (Phase 2.3): a CoVe
+            # result is only as good as the report backing it.
+            if not a.report or not a.result: sys.exit("usage: state record-verify-claims --report P --result pass|fail")
+            if not (root / a.report).is_file():
+                print(f"record-verify-claims: --report {a.report} does not exist — save the "
+                      f"/verify-claims report before recording its result, not after"); return 1
+            stt["verify_claims"] = {"result": a.result, "report": a.report, "at": now()}
+            save_state(root, stt); print(f"recorded verify_claims={a.result}"); return 0
+        if a.op == "record-deposit":
+            # Phase 3.5: `/submit` claimed to replace `data-deposit` with no step that actually
+            # deposits anything. This records that a human completed the (irreversible, external,
+            # credentialed) upload — the pipeline prepares the package and the manifest; it never
+            # performs the upload itself.
+            if not a.repository or not a.url or not a.report:
+                sys.exit("usage: state record-deposit --repository NAME --url URL --report P")
+            if not (root / a.report).is_file():
+                print(f"record-deposit: --report {a.report} does not exist — write the deposit "
+                      f"manifest before recording the deposit, not after"); return 1
+            stt["deposit"] = {"repository": a.repository, "url": a.url, "report": a.report, "at": now()}
+            save_state(root, stt); print(f"recorded deposit at {a.repository}: {a.url}"); return 0
         if a.op == "strike":
-            cr = a.args[0]; n = stt["strikes"].get(cr, 0) + 1; stt["strikes"][cr] = n; save_state(root, stt)
-            lim = int(reg["limits"]["rounds_per_pair"])
+            cr = a.args[0]
+            if cr not in reg["agents"]:
+                print(f"state strike: {cr!r} is not a registry agent"); return 1
+            lim = int(reg["limits"]["rounds_per_pair"]); n = stt["strikes"].get(cr, 0)
+            if n >= lim:
+                print(f"{cr}: already at strike {n} of {lim} — ESCALATE to "
+                      f"{reg['agents'][cr]['escalation_target']} (not recorded)"); return 1
+            n += 1; stt["strikes"][cr] = n; save_state(root, stt)
             print(f"{cr}: strike {n} of {lim}" + (f" — ESCALATE to {reg['agents'][cr]['escalation_target']}" if n >= lim else "")); return 0
         if a.op == "set-blocked": stt["blocked_by"] = " ".join(a.args); save_state(root, stt); return 0
         if a.op == "clear-blocked": stt["blocked_by"] = None; save_state(root, stt); return 0

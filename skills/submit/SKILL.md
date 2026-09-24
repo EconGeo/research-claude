@@ -1,13 +1,13 @@
 ---
 name: submit
-description: Submission pipeline — journal targeting, replication package, audit, and final gate. Replaces the old target-journal, audit-replication and data-deposit commands.
-argument-hint: "[mode: target | package | audit | final] [journal name (optional)]"
+description: Submission pipeline — journal targeting, replication package, audit, archive deposit, and final gate. Replaces the old target-journal, audit-replication and data-deposit commands.
+argument-hint: "[mode: target | package | audit | deposit | final] [journal name (optional)]"
 allowed-tools: Read,Grep,Glob,Write,Bash,Agent
 ---
 
 # Submit
 
-Submission pipeline with four modes covering journal selection through final verification.
+Submission pipeline with five modes covering journal selection through final verification.
 
 **Input:** `$ARGUMENTS` — mode keyword, optionally followed by journal name.
 
@@ -57,6 +57,34 @@ Checks:
 
 Save the report to `quality_reports/verification_report.md`. Record: `python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report quality_reports/verification_report.md`.
 
+### `/submit deposit [journal]` — Deposit the Replication Package
+Prepare the replication package for deposit at a public archive and record that it was deposited.
+
+**Performed by this skill** (no agent). Depositing to an external repository mints a permanent,
+public, often DOI-bearing record — an irreversible action this skill does not perform on its own.
+It prepares everything the repository needs and records the result once the user confirms the
+upload happened on the repository's own site.
+
+**Preconditions:** `/submit package` has assembled `replication/`, and `/submit audit` has
+recorded a `replication` score — refuse and name whichever is missing.
+
+Workflow:
+1. **Identify the repository.** If `[journal]` is given, read its entry in
+   `.claude/references/journal-profiles.md` for the named archive (openICPSR, Dataverse, Zenodo,
+   AEA Data and Code Repository, …) and any policy language (e.g. "deposit mandatory before
+   acceptance"). If no journal is given or its profile names none, ask the user which repository
+   to target.
+2. **Check package completeness** against `.claude/skills/submit/templates/replication-readme.md`'s
+   sections (Data Availability, Computational Requirements, Description of Programs, Instructions
+   for Replication) — every `[bracketed placeholder]` must be filled in `replication/README.md`.
+3. **Write the deposit manifest** to `quality_reports/deposit_manifest_[date].md`: repository
+   name, license, embargo (if any), the file list under `replication/` to upload, and a step-by-step
+   checklist of the manual actions the user performs on the repository's site (create the
+   deposit, upload the files, set metadata, reserve/mint the DOI).
+4. **Stop and wait.** Present the manifest and checklist; do not proceed until the user confirms
+   the upload is complete and reports the resulting URL/DOI.
+5. **Record it:** `python3 .claude/scripts/pipeline.py state record-deposit --repository <name> --url <url> --report quality_reports/deposit_manifest_[date].md`.
+
 ### `/submit final [journal]` — Final Submission Gate
 Full verification + score enforcement + submission checklist.
 
@@ -69,7 +97,14 @@ Workflow:
    - If the statement is missing or still contains placeholder text: **STOP** — "AI Use Statement not populated. Populate from ai_use_log.md using the Wiley/COPE-aligned template before submission."
    - If a journal is specified via `$ARGUMENTS`: check that the disclosure location matches that journal's `**AI disclosure:**` field in `.claude/references/journal-profiles.md`
    - If all checks pass: report "AI disclosure audit: [N] log entries found, statement populated ✓"
-3. Check score gate: `python3 .claude/scripts/pipeline.py score --gate submission`
+2.6. **Hallucination check (CoVe).** Run `/verify-claims` (ai-audit, vendored) against the
+   declared manuscript. Save its report to `quality_reports/verify_claims_[date].md`, then record
+   the result: `python3 .claude/scripts/pipeline.py state record-verify-claims --report <path>
+   --result pass|fail`. The `submission` gate below refuses without this — a scored 95 says
+   nothing about a hallucinated citation or number, which is exactly what CoVe checks and nothing
+   else does.
+3. Check score gate: `python3 .claude/scripts/pipeline.py score --gate submission` — FAILs on a
+   missing, failing, or since-deleted `verify_claims` result even at a qualifying score.
 3.5. **Coverage check (R-133).** `pipeline.py score` weights only components that carry a
    score, so a PASS can rest on one scored component out of eight. Run
    `python3 .claude/scripts/pipeline.py state show` and list every component the paper
@@ -97,6 +132,7 @@ Workflow:
 - **Score >= 95 + every SCORED component >= 80. No exceptions.**
   `pipeline.py score` weights only components that carry a score, so a component nothing ever scored does not hold the gate closed — it silently is not in it. Run `pipeline.py state show` and confirm every component the paper actually has is present before treating a PASS as a submission decision.
 - **AI disclosure must be populated before submission.** `ai_use_log.md` must exist and have entries; the AI Use Statement must not be a placeholder. No exceptions.
+- **`/verify-claims` must have recorded a passing result.** The `submission` gate refuses without a `verify_claims` entry whose report still exists on disk — a stale or deleted report reopens it.
 - **Don't skip verification.** Even if reports exist, check they're recent.
 - **If it fails, stop.** Don't generate materials for a failing paper.
 - **Cover letter is a draft.** User must review before sending.

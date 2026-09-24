@@ -14,10 +14,16 @@ class TestYamlSubset(unittest.TestCase):
 class TestRegistry(unittest.TestCase):
     def setUp(self): self.reg = rl.load_registry(ROOT)
     def test_roster_matches_agents_dir(self):
-        roster = {p.stem for p in (ROOT / "agents").glob("*.md")}
+        roster = set(rl.agent_roster(ROOT))
         declared = {a for a, e in self.reg["agents"].items() if e["kind"] == "agent"}
         self.assertEqual(declared - roster, set(), "declared but no agent file")
         self.assertEqual(roster - declared, set(), "agent file but not declared")
+    def test_roster_includes_vendored_ai_audit_agents(self):
+        """registry_check()'s roster used to glob only `agents/*.md`, so the vendored
+        `ai-audit/agents/*.md` tree was invisible to the registry (Phase 3.4)."""
+        roster = rl.agent_roster(ROOT)
+        self.assertIn("civilize-auditor", roster)
+        self.assertIn("claim-verifier", roster)
     def test_complete(self): self.assertEqual(rl.validate_registry(self.reg), [])
     def test_creator_without_critic_fails(self):
         reg = rl.load_registry(ROOT); reg["agents"]["coder"]["critic"] = "none"

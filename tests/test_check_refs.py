@@ -70,4 +70,40 @@ class TestArtifactPaths(unittest.TestCase):
     def test_residue_marker_exempts_the_line(self):
         self.assertEqual(self._run("never `quality_reports/strategy_memo_[topic].md` <!-- residue:prohibition -->\n"), 0)
 
+
+class TestPromoteVendorWarn(unittest.TestCase):
+    """Phase 3.2: `/promote`'s Step 2 pathspec never lists a vendored tree, so an edit made
+    through a project's link into one is invisible to it, and the matching `sync-*.sh`'s
+    `rm -rf` destroys it with no warning. Every entry in `check_refs.VENDORED` needs its own
+    warning line in skills/promote/SKILL.md, not just one of them."""
+
+    def _run(self, text: str) -> int:
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "skills" / "promote").mkdir(parents=True)
+            (root / "skills" / "promote" / "SKILL.md").write_text(text)
+            with contextlib.redirect_stdout(io.StringIO()):
+                return cr.crit_promote_vendor_warn(root)
+
+    def test_warning_for_only_one_vendored_tree_still_fails(self):
+        """The pre-fix shape: zotpilot-skills/ named, ai-audit/ not mentioned at all."""
+        self.assertEqual(self._run("Does not edit anything under `zotpilot-skills/`, vendored verbatim.\n"), 1)
+
+    def test_warning_for_both_vendored_trees_passes(self):
+        self.assertEqual(self._run(
+            "`zotpilot-skills/` and `ai-audit/` are vendored verbatim and never edited in place.\n"), 0)
+
+    def test_bare_mention_with_no_vendor_context_does_not_count(self):
+        """Naming the directory in an unrelated sentence (e.g. a file listing) is not a warning."""
+        self.assertEqual(self._run("See ai-audit/README.md and zotpilot-skills/README.md for details.\n"), 1)
+
+    def test_missing_file_reported(self):
+        with tempfile.TemporaryDirectory() as t:
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(cr.crit_promote_vendor_warn(pathlib.Path(t)), 1)
+
+    def test_the_shipped_skill_passes(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cr.crit_promote_vendor_warn(ROOT), 0)
+
 if __name__ == "__main__": unittest.main()

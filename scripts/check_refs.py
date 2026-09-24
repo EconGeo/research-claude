@@ -210,6 +210,7 @@ AP_ALLOW = {
     "quality_reports/referee_response_*_*.md":    "/revise response letter — not gated",
     "quality_reports/reviews/replication_*_*.md": "/review --replicate report — records no score (R-106)",
     "quality_reports/claim_source_map_*.md":      "named only as retired INV-22's former artifact",
+    "quality_reports/deposit_manifest_*.md":      "/submit deposit output — not gated (Phase 3.5)",
 }
 
 def _ap_expand(tok):
@@ -254,11 +255,23 @@ def crit_artifact_paths(root):
                         hits.append(f"{f.relative_to(root)}:{n}: {m.group(0).rstrip('.,;:)')} matches no registry glob")
     return report("artifact-paths", hits)
 
+def crit_promote_vendor_warn(root):
+    """`/promote` Step 2's `git status` pathspec never lists a VENDORED tree, so an edit made
+    through a project's link into one is invisible to it — and the matching `sync-*.sh`'s
+    `rm -rf` then destroys it with no warning ever surfacing (Phase 3.2). Every entry in
+    VENDORED must get its own warning in skills/promote/SKILL.md, not just one of them."""
+    f = root / "skills" / "promote" / "SKILL.md"
+    if not f.exists(): return report("promote-vendor-warn", ["skills/promote/SKILL.md missing"])
+    lines = f.read_text().splitlines()
+    hits = [f"skills/promote/SKILL.md: no line warns about vendored tree {v!r}"
+            for v in VENDORED if not any(v in ln and re.search(r"vendor", ln, re.I) for ln in lines)]
+    return report("promote-vendor-warn", hits)
+
 CRITERIA = {
     "latex-residue": crit_latex_residue, "manuscript-model": crit_manuscript_model,
     "deleted-things": crit_deleted_things, "inv-refs": crit_inv_refs, "skill-refs": crit_skill_refs,
     "tool-name": crit_tool_name, "hooks-readme": crit_hooks_readme,
-    "artifact-paths": crit_artifact_paths,
+    "artifact-paths": crit_artifact_paths, "promote-vendor-warn": crit_promote_vendor_warn,
 }
 
 def main():

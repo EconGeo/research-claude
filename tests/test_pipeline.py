@@ -112,6 +112,34 @@ class TestState(FixtureCase):
                           .get("components", {}).get("code"),
                           "a refused record-score must not have recorded a score")
 
+class TestStateStrike(FixtureCase):
+    """`state strike` (Phase 3.3): a 4th strike must not be accepted silently, and an unknown
+    agent must be rejected before anything is saved — not after, once a KeyError has already
+    poisoned `strikes` with a name `state validate` then rejects with no undo."""
+    def test_unknown_agent_rejected_before_save(self):
+        run("state", "init", root=self.t)
+        rc, out = run("state", "strike", "ghost-agent", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("not a registry agent", out)
+        st = json.loads((self.t / "quality_reports" / "pipeline_state.json").read_text())
+        self.assertNotIn("ghost-agent", st["strikes"])
+
+    def test_fourth_strike_exits_non_zero_and_is_not_recorded(self):
+        run("state", "init", root=self.t)
+        for i in range(3):
+            rc, out = run("state", "strike", "coder", root=self.t); self.assertEqual(rc, 0, out)
+        rc, out = run("state", "strike", "coder", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("already at strike 3 of 3", out)
+        st = json.loads((self.t / "quality_reports" / "pipeline_state.json").read_text())
+        self.assertEqual(st["strikes"]["coder"], 3)
+
+    def test_third_strike_escalates_and_still_succeeds(self):
+        run("state", "init", root=self.t)
+        run("state", "strike", "coder", root=self.t); run("state", "strike", "coder", root=self.t)
+        rc, out = run("state", "strike", "coder", root=self.t)
+        self.assertEqual(rc, 0, out); self.assertIn("ESCALATE to", out)
+        self.assertEqual(run("state", "validate", root=self.t)[0], 0)
+
+
 class TestPredicates(FixtureCase):
     def test_pre_explorer_green_no_requires(self):
         self.assertEqual(run("pre", "explorer", root=self.t)[0], 0)
@@ -333,6 +361,89 @@ class TestScore(FixtureCase):
     def test_conflicts(self):
         self.assertEqual(run("conflicts", "coder", "writer", root=self.t)[0], 1)
         self.assertEqual(run("conflicts", "explorer", "coder", root=self.t)[0], 0)
+
+class TestSubmissionGateNeedsVerifyClaims(FixtureCase):
+    """Phase 3.1: `/submit final` could pass the `submission` gate at >= 95 with `/verify-claims`
+    never having run — a scored 95 says nothing about hallucinated citations or numbers.
+    `score --gate submission` must refuse until a passing, on-disk-backed result is recorded."""
+    def _score_everything(self, value):
+        run("state", "init", root=self.t)
+        for c in ["literature", "data", "strategy", "theory", "code", "manuscript", "referees", "replication"]:
+            rc, out = run("state", "record-score", c, str(value), "--critic", _scorer(c), "--report", "r.md", root=self.t)
+            self.assertEqual(rc, 0, out)
+
+    def test_never_recorded_fails_even_at_a_qualifying_score(self):
+        self._score_everything(96)
+        rc, out = run("score", "--gate", "submission", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("verify_claims: never recorded", out)
+
+    def test_missing_report_is_refused_at_record_time(self):
+        run("state", "init", root=self.t)
+        rc, out = run("state", "record-verify-claims", "--report", "nope.md", "--result", "pass", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("does not exist", out)
+
+    def test_a_recorded_fail_blocks_the_gate(self):
+        self._score_everything(96)
+        run("state", "record-verify-claims", "--report", "r.md", "--result", "fail", root=self.t)
+        rc, out = run("score", "--gate", "submission", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("last recorded result was 'fail'", out)
+
+    def test_a_recorded_pass_lets_a_qualifying_score_through(self):
+        self._score_everything(96)
+        run("state", "record-verify-claims", "--report", "r.md", "--result", "pass", root=self.t)
+        rc, out = run("score", "--gate", "submission", root=self.t)
+        self.assertEqual(rc, 0, out); self.assertIn("gate submission: PASS", out)
+
+    def test_a_deleted_report_reopens_the_gate(self):
+        self._score_everything(96)
+        run("state", "record-verify-claims", "--report", "r.md", "--result", "pass", root=self.t)
+        (self.t / "r.md").unlink()
+        rc, out = run("score", "--gate", "submission", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("no longer exists on disk", out)
+
+    def test_state_validate_accepts_a_recorded_verify_claims(self):
+        run("state", "init", root=self.t)
+        run("state", "record-verify-claims", "--report", "r.md", "--result", "pass", root=self.t)
+        self.assertEqual(run("state", "validate", root=self.t)[0], 0)
+
+    def test_state_validate_rejects_a_malformed_verify_claims(self):
+        run("state", "init", root=self.t)
+        sp = self.t / "quality_reports" / "pipeline_state.json"; st = json.loads(sp.read_text())
+        st["verify_claims"] = {"result": "maybe", "report": "r.md", "at": "2026-09-24T00:00:00.000+00:00"}
+        sp.write_text(json.dumps(st))
+        rc, out = run("state", "validate", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("verify_claims", out)
+
+
+class TestRecordDeposit(FixtureCase):
+    """Phase 3.5: `/submit` claimed to replace `data-deposit` while nothing recorded that a
+    deposit ever happened. `state record-deposit` is the executable half of the new
+    `/submit deposit` mode — same report-must-exist contract as record-score (Phase 2.3)."""
+    def test_missing_report_refused(self):
+        run("state", "init", root=self.t)
+        rc, out = run("state", "record-deposit", "--repository", "openICPSR", "--url", "https://example.org/x",
+                      "--report", "nope.md", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("does not exist", out)
+
+    def test_recorded_deposit_round_trips(self):
+        run("state", "init", root=self.t)
+        rc, out = run("state", "record-deposit", "--repository", "openICPSR", "--url", "https://example.org/x",
+                      "--report", "r.md", root=self.t)
+        self.assertEqual(rc, 0, out)
+        st = json.loads((self.t / "quality_reports" / "pipeline_state.json").read_text())
+        self.assertEqual(st["deposit"]["repository"], "openICPSR")
+        self.assertEqual(st["deposit"]["url"], "https://example.org/x")
+        self.assertEqual(run("state", "validate", root=self.t)[0], 0)
+
+    def test_malformed_deposit_rejected_by_validate(self):
+        run("state", "init", root=self.t)
+        sp = self.t / "quality_reports" / "pipeline_state.json"; st = json.loads(sp.read_text())
+        st["deposit"] = {"repository": "openICPSR"}
+        sp.write_text(json.dumps(st))
+        rc, out = run("state", "validate", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("deposit", out)
+
 
 class TestRegistryCheck(unittest.TestCase):
     def test_runs(self):

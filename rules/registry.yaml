@@ -475,3 +475,40 @@ agents:
     conditional: false
     writes:
       - quality_reports/verification_report.md
+
+  # ── Vendored audits (ai-audit, VENDORED.md) ───────────────────────────────
+  # Standalone, user-invoked audits — not gated behind a pipeline stage, not scored, no critic
+  # of their own (they ARE the audit). Neither has a Write tool (ai-audit/agents/*.md), so
+  # neither declares writes: the dispatching skill (/civilize, /verify-claims) saves the report,
+  # same contract as the pipeline's own creators/critics (.claude/rules/agents.md §2, Phase 2.1).
+  civilize-auditor:
+    role: infrastructure
+    kind: agent
+    parallel_group: audit
+    requires: []
+    produces:
+      - type: path
+        glob: quality_reports/civilize_*_report.md
+        producer: /civilize
+    critic: none
+    escalation_target: user
+    component: none
+    quality_weight: 0
+    conditional: false
+    writes: []
+
+  claim-verifier:
+    role: infrastructure
+    kind: agent
+    parallel_group: audit
+    requires: []
+    produces:
+      - type: path
+        glob: quality_reports/verify_claims_*.md
+        producer: /verify-claims
+    critic: none
+    escalation_target: user
+    component: none
+    quality_weight: 0
+    conditional: false
+    writes: []

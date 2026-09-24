@@ -1,6 +1,11 @@
 # Narrative Arcs by Paper Type
 
-How to structure the story of a talk depends on what kind of paper you're presenting. Each arc below specifies the slide sequence, what to emphasize, what to deemphasize, and how to calibrate for different audiences.
+How to structure the story of a paper depends on what kind of paper it is. Each section below
+gives the high-level **Arc** — the same order of story beats whether the output is prose or
+slides — then a talk-specific slide sequence, what to emphasize, what to deemphasize, and how to
+calibrate for different audiences. `/write` (Step 2, Paper Type Detection) uses the **Arc** line
+to order a section's narrative; `/talk` uses the full slide-level detail. Independent of either
+skill — a shared reference, not a `/talk` template.
 
 ---
 

@@ -38,7 +38,8 @@ Before drafting, read all available context:
 Identify the paper type from the strategy memo or the existing draft — reduced-form, structural,
 theory+empirics, or descriptive/measurement. The signatures, and what each type turns the strategy
 section into, are in `.claude/skills/write/templates/section-templates.md` ("Paper Types"). The
-type decides which section template the Writer uses.
+type decides which section template the Writer uses. Each type's narrative arc (the `**Arc:**`
+line per type, shared with `/talk`) is in `.claude/references/narrative-arcs.md`.
 
 #### 3. Section Routing
 

@@ -46,6 +46,23 @@ committed. For each one:
 Do not batch unrelated edits into one commit. They came from different sessions
 for different reasons.
 
+## Step 2.5: Vendored trees
+
+`zotpilot-skills/` and `ai-audit/` are vendored verbatim (each has its own `VENDORED.md`) and
+are never edited in place — Step 2's pathspec deliberately excludes both, because an edit made
+there through a project's link is not "an improvement to land," it is a fork of upstream. Left
+unreported, the next `"$RC/scripts/sync-zotpilot-skills.sh"` / `"$RC/scripts/sync-ai-audit.sh"`
+refresh `rm -rf`s the vendored directory and destroys it with no warning at all (Phase 3.2).
+
+```bash
+git -C "$RC" status --porcelain -- zotpilot-skills ai-audit
+```
+
+Any output here is a change Step 2 will never surface. **Report it before doing anything else in
+this skill.** The fix belongs upstream (the `EconGeo/ZotPilot` fork or `EconGeo/ai-audit`) or in
+the bridge skill that mediates it (`.claude/skills/lit-position`, `.claude/skills/new-project-ztp`,
+etc. for ZotPilot); it is never committed here as-is.
+
 ## Step 3: Project overrides
 
 Every non-symlink in `.claude/{skills,agents,rules}` whose name also exists in the
@@ -100,4 +117,5 @@ link to it until each one re-links. Say so, and confirm the install here:
 - Does not push. Committing upstream is enough; the user decides when to publish.
 - Does not resolve merge conflicts in the shared checkout — if `$RC` has diverged
   from `origin/main`, stop and report it.
-- Does not edit anything under `zotpilot-skills/`, which is vendored verbatim.
+- Does not edit anything under `zotpilot-skills/` or `ai-audit/`, both vendored verbatim — see
+  Step 2.5.

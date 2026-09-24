@@ -6,13 +6,16 @@ the stalled 09-16 closeout (43 defects), the six divergence GAPs, the connectivi
 and the audit defects not yet planned. Do not start it until Phases 2–5 below are done.
 **Blocks:** POGM4's JRER submission plan, which is paused until Phase 2 lands.
 
-**Status (2026-09-24): Phases 1 and 2 done.** Phase 1 (`ec8905e`…`3b1eb9f`) is merged to `main`
-(`04375cb`). Phase 2 (`7424e79`, `71aaaf3`, `ab41926`, `8d65c68`) is committed on worktree branch
-`worktree-pipeline-repair` at `/Users/andrew.mueller/Academic/research-claude/.claude/worktrees/pipeline-repair`
-— **not yet merged to `main`.** Two items are deliberately not fully closed, not silently marked
-done: 1.6's POGM4 edit is uncommitted in POGM4's own repo (outside this session's scope to
-commit); 2.4's Gate is explicitly deferred pending an upstream `EconGeo/ai-audit` rename (see the
-item). POGM4 can resume once this branch merges. Next: Phase 3 (wiring gaps) — not started.
+**Status (2026-09-24): Phases 1–3 done.** Phase 1 (`ec8905e`…`3b1eb9f`) merged in `04375cb`.
+Phase 2 (`7424e79`, `71aaaf3`, `ab41926`, `8d65c68`) merged to `main` in `19aaac0`. The upstream
+`EconGeo/ai-audit` rename that 2.4 was waiting on has landed and been synced (`c737ac6`):
+`/humanize`/`humanize-auditor` are now `/civilize`/`civilize-auditor` throughout `ai-audit/`, so
+2.4's gate is met. Phase 3 (all five items, 3.1–3.5) is done as of this session — see each item
+for its gate evidence; every gate was reproduced failing before the fix and passing after, and
+`check_fork.sh` / `check_install.sh --all` / the full test suite (199 tests) all PASS as of the
+last item. One item remains not fully closed, not silently marked done: 1.6's POGM4 edit is
+uncommitted in POGM4's own repo (outside this session's scope to commit). POGM4 can resume — Phase
+2 landed. Next: Phase 4 (re-home the orphaned divergence purposes) — not started.
 
 ---
 
@@ -152,10 +155,18 @@ next task is a review round.
   **Ruled 2026-09-23** (`7424e79`): keep `/write humanize` as the pipeline's humanizer — the
   "cross-vendor research" `/humanize` cited turned out to be unattributed Cursor/Aider community
   observation, not a study. `/humanize` is not retired; the author wants it kept under a
-  different name for occasional detect-only use. **Gate NOT met — deferred, not done.** The
-  rename must happen upstream in `EconGeo/ai-audit` (vendored verbatim, never edited in place
-  here) and flow through `scripts/sync-ai-audit.sh`; nothing in this repo can close the trigger
-  overlap until that lands.
+  different name for occasional detect-only use.
+  **Gate met 2026-09-24** (`c737ac6`): upstream `EconGeo/ai-audit` PR #2 renamed the skill and
+  agent to `/civilize`/`civilize-auditor` (pinned commit `a99c7a75`), synced via
+  `scripts/sync-ai-audit.sh`. `tested:` full-repo grep for `humanize` outside `docs/` now hits
+  only `skills/write/SKILL.md` (the pipeline's own `/write humanize` mode) and
+  `ai-audit/VENDORED.md` (provenance note); `ai-audit/` itself carries no `humanize` string
+  anywhere. `/civilize`'s description still lists "de-AI this draft" as a trigger phrase, but
+  it carries `disable-model-invocation: true` and that phrase does not appear in `/write`'s
+  description, so no natural-language phrase auto-routes to both — the only remaining overlap is
+  that a user *could* mean either by that phrase, which is the intended behavior per the ruling
+  (auto-rewrite via `/write humanize` is the default; `/civilize` is manual detect-only). Neither
+  name is registered in `rules/registry.yaml` yet — that is Phase 3.4, not this item.
 - [x] **2.5 Fix the four remaining skill conflicts** from `docs/audits/2026-09-23_skill-inventory.md`:
   `data-engineer.md:92` recommends `kableExtra` while its own critic deducts −5 for it in Word;
   `/talk`'s inline format table disagrees with `format-constraints.md` on every row; two
@@ -174,23 +185,95 @@ next task is a review round.
 
 ## Phase 3 — Wiring gaps
 
-- [ ] **3.1 Wire `ai-audit`.** `/humanize` and `/verify-claims` are referenced only in the README —
-  no registry entry, no `/pipeline` stage, no `/review` route — so `/submit final` can pass at ≥95
-  with no hallucination check ever run. **Gate:** `/submit final` refuses without a recorded
+- [x] **3.1 Wire `ai-audit`'s hallucination check into `/submit final`.** `/civilize` and
+  `/verify-claims` were referenced only in the README — no registry entry (fixed in 3.4), no
+  `/submit final` enforcement — so a manuscript could clear the `submission` gate at ≥95 with no
+  hallucination check ever run. **Gate:** `/submit final` refuses without a recorded
   `verify-claims` result.
-- [ ] **3.2 Protect vendored trees in `/promote`.** Its pathspec excludes `ai-audit/` while
+  **Done 2026-09-24** for the stated gate. `tested:` before the fix, `score --gate submission`
+  PASSed on 8 components all scored 96 with `/verify-claims` never mentioned anywhere in state.
+  Added `pipeline.py state record-verify-claims --report P --result pass|fail` (refuses a
+  `--report` that doesn't exist yet, same contract as `record-score`, Phase 2.3) writing
+  `st["verify_claims"] = {result, report, at}`; `score --gate submission` now FAILs — even at a
+  qualifying overall score — when `verify_claims` was never recorded, its last result was
+  `fail`, or its recorded report has since been deleted. `state validate` checks its shape.
+  `skills/submit/SKILL.md` step 2.6 dispatches `/verify-claims` and records the result before the
+  gate check; the Principles list states the "no exceptions" rule the way the AI-disclosure rule
+  already does. `claim-verifier`'s registry entry (added in 3.4) now declares the
+  `quality_reports/verify_claims_*.md` path `/verify-claims` produces, closing an
+  `artifact-paths` gap the fix itself exposed. 7 new tests
+  (`TestSubmissionGateNeedsVerifyClaims`); full suite (188 tests), `check_fork.sh` and
+  `check_install.sh --all` all PASS.
+  **Not done, and not claimed:** no `/pipeline` stage dispatches `/verify-claims` automatically,
+  and no `/review` route calls it either — it remains a skill the user (or `/submit final`) must
+  invoke explicitly. `/civilize` has no gate at all; nothing in the pipeline requires it to run,
+  by ruling (2.4) — it is detect-only, occasional-use, never mandatory.
+- [x] **3.2 Protect vendored trees in `/promote`.** Its pathspec excludes `ai-audit/` while
   `sync-ai-audit.sh` does `rm -rf`, so an edit made through a project link is destroyed silently.
   `/promote` warns for `zotpilot-skills/` only. **Gate:** `/promote` warns for both.
-- [ ] **3.3 Fix `state strike`.** Accepts strike 4 of 3 and returns 0; an unknown agent name is
+  **Done 2026-09-24.** Added `check_refs.py`'s `promote-vendor-warn` criterion (wired into
+  `check_fork.sh`): FAILs unless `skills/promote/SKILL.md` names every entry in `VENDORED`
+  (`zotpilot-skills`, `ai-audit`) on a line that also says "vendor" — `tested:` it FAILed on the
+  pre-fix file (only `zotpilot-skills/` named) and PASSes on the fixed one. Added Step 2.5 to
+  `skills/promote/SKILL.md`: runs `git status --porcelain -- zotpilot-skills ai-audit` (Step 2's
+  pathspec deliberately excludes both) and instructs reporting any hit before proceeding — the
+  fix belongs upstream or in a bridge skill, never committed as-is. Updated the "does NOT do"
+  section to name both trees symmetrically. 5 new tests (`TestPromoteVendorWarn` in
+  `tests/test_check_refs.py`, including one asserting the shipped file itself passes).
+  `check_fork.sh` PASS.
+- [x] **3.3 Fix `state strike`.** Accepts strike 4 of 3 and returns 0; an unknown agent name is
   accepted for strikes 1–2 then throws an unhandled `KeyError` **after saving**, poisoning
   `state validate` — which `/pipeline run` refuses on — with no command to undo.
   `rounds_overall` and `verification_retries` are declared and read by nothing.
   **Gate:** strike 4 exits non-zero; an unknown agent is rejected before the save.
-- [ ] **3.4 Register `claim-verifier` and `humanize-auditor`.** `registry_check()` globs only
+  **Done 2026-09-24.** `tested:` reproduced both defects first (`ghost-agent` strike 3 raised
+  `KeyError` after two silent saves; a 4th `coder` strike printed "strike 4 of 3" and returned 0).
+  Fixed in `scripts/pipeline.py`'s `state strike` handler: an unknown agent is now rejected
+  (exit 1) before any write, and a strike at or past `rounds_per_pair` is refused (exit 1,
+  nothing recorded) instead of silently incrementing past the limit. Three tests added
+  (`TestStateStrike` in `tests/test_pipeline.py`); full suite (181 tests) passes.
+  `rounds_overall`/`verification_retries` remain declared-and-unread — out of this item's scope,
+  not claimed fixed here.
+- [x] **3.4 Register `claim-verifier` and `civilize-auditor`.** `registry_check()` globs only
   `<root>/agents/*.md`, so both are installed in every project and invisible to the registry.
   **Gate:** `registry check` counts them.
-- [ ] **3.5 Close the two parity gaps.** `/submit` claims to replace `data-deposit` and has no
+  **Done 2026-09-24.** `tested:` before the fix, `registry check` reported PASS while silently
+  never looking at `ai-audit/agents/*.md` at all. Added `registry_lib.agent_roster()` (scans
+  `agents/` and `ai-audit/agents/`, shared by `pipeline.py registry_check()` and
+  `tests/test_registry_lib.py` so the two rosters cannot drift apart); this immediately turned
+  up both agents as "exists but is not declared" (`registry-complete` FAIL) — the blind spot
+  made concrete. Declared both in `rules/registry.yaml` as `role: infrastructure`,
+  `component: none`, `quality_weight: 0`, `writes: []` (neither agent carries a `Write` tool —
+  same write contract as Phase 2.1: the dispatching skill saves the report). Re-rendered
+  `rules/permissions.md`. `check_fork.sh`, `check_install.sh --all` and the full test suite
+  (181 tests) all PASS.
+- [x] **3.5 Close the two parity gaps.** `/submit` claims to replace `data-deposit` and has no
   deposit step; `narrative-arcs.md` shipped inside `/talk` rather than independent of it.
+  **Done 2026-09-24.**
+  **Deposit:** added a fifth `/submit deposit [journal]` mode — reads the target journal's
+  archive/policy from `.claude/references/journal-profiles.md`, checks `replication/README.md`'s
+  placeholders are filled, writes a deposit manifest + manual upload checklist, then **stops and
+  waits** for the user to complete the upload themselves (an external, credentialed, irreversible
+  publish action this pipeline does not perform). Added `pipeline.py state record-deposit
+  --repository --url --report` (refuses a missing `--report`, same contract as `record-score`)
+  so "recorded" is a real state entry, not a claim. **Deliberately not done:** `score --gate
+  submission` does NOT hard-require a deposit — unlike `verify-claims` (3.1), deposit timing is
+  journal-specific (some require it before acceptance, most after), so gating `/submit final` on
+  it would be wrong for the common case; this is a documented scope boundary, not an oversight.
+  6 new tests (`TestRecordDeposit` in `tests/test_pipeline.py`, `TestDepositModeExists` in
+  `tests/test_submit_gate.py`, the latter asserting the mode section exists and calls
+  `state record-deposit`).
+  **narrative-arcs.md:** moved `skills/talk/templates/narrative-arcs.md` →
+  `references/narrative-arcs.md` (repo-root, cross-skill — the same tier as `journal-profiles.md`,
+  not namespaced under any one skill). Repointed the two existing references
+  (`skills/talk/SKILL.md`, `agents/storyteller.md`) and added a new one from `/write`'s Paper
+  Type Detection step, which the audit found missing. Re-worded the file's own opening to state
+  its dual audience. Required a documented, minimal budget raise (write's Level-2 cap, 7,500 ->
+  7,600 chars, `tests/test_skill_contracts.py`) to fit the one added sentence — the review
+  precedent for a reasoned raise, not a silent one.
+  **Fleet:** the move/add touches `references/` and `skills/`, both linked directories — re-ran
+  `apply.sh --link --tip` against all six projects (membership FAILed on the new file until this
+  ran); `check_install.sh --all` now PASS. `check_fork.sh` and the full suite (199 tests) PASS.
 
 ---
 

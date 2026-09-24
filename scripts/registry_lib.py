@@ -102,6 +102,23 @@ def _list(lines, i, indent):
 def registry_path(root: Path) -> Path:
     return Path(root) / "rules" / "registry.yaml"
 
+# Every directory whose *.md files are agent definitions the registry can declare. `agents/`
+# is the pipeline's own; `ai-audit/agents/` is EconGeo/ai-audit's vendored tree (VENDORED.md) —
+# apply.sh links both into a project's single .claude/agents/, but in this repo's own layout
+# they are separate directories, so a roster built from `agents/` alone left `claim-verifier`
+# and `civilize-auditor` invisible to `registry check` (Phase 3.4).
+AGENT_DIRS = ["agents", "ai-audit/agents"]
+
+def agent_roster(root: Path) -> Dict[str, Path]:
+    """Map agent name -> its .md file's path relative to root, across every AGENT_DIRS entry."""
+    out: Dict[str, Path] = {}
+    for d in AGENT_DIRS:
+        p = Path(root) / d
+        if not p.is_dir(): continue
+        for f in sorted(p.glob("*.md")):
+            out[f.stem] = f.relative_to(root)
+    return out
+
 def load_registry(root: Path) -> Dict[str, Any]:
     reg = load_yaml_subset(registry_path(root).read_text())
     if reg.get("schema_version") != 1:

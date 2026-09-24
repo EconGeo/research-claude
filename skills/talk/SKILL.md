@@ -114,7 +114,7 @@ and for unresolved cross-references.
 
 | Resource | Path | What It Contains |
 |----------|------|-----------------|
-| Narrative arcs | `talk/templates/narrative-arcs.md` | Paper-type-specific story structures (reduced-form, structural, theory+empirics, descriptive) with pacing and audience calibration |
+| Narrative arcs | `.claude/references/narrative-arcs.md` | Paper-type-specific story structures (reduced-form, structural, theory+empirics, descriptive) with pacing and audience calibration — shared with `/write` (Step 2), not `/talk`-only |
 | Format constraints | `talk/templates/format-constraints.md` | Slide counts, durations, per-format rules for all 4 formats |
 | Quarto scaffold | `.claude/skills/talk/templates/quarto-scaffold.qmd` | RevealJS skeleton with YAML config, section dividers, figure/equation slots (default) |
 | Slide design | `talk/references/slide-design-principles.md` | Visual design principles: font sizes, colors, builds, rhythm |

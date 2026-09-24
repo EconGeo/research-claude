@@ -28,5 +28,24 @@ class TestFinalGateChecksCoverage(unittest.TestCase):
         self.assertIn("scored", SUBMIT.read_text())
 
 
+class TestDepositModeExists(unittest.TestCase):
+    """Phase 3.5: `/submit`'s description claimed to replace `data-deposit`; `/submit package`
+    only assembled a replication package, and nothing deposited it anywhere. A real `deposit`
+    mode must exist and actually record the result through pipeline.py, not just narrate it."""
+
+    def test_deposit_mode_section_exists(self):
+        body = mode_body(SUBMIT.read_text(), re.escape("`/submit deposit"))
+        self.assertIsNotNone(body, "submit has no `/submit deposit` mode section")
+
+    def test_deposit_mode_records_through_pipeline_py(self):
+        body = mode_body(SUBMIT.read_text(), re.escape("`/submit deposit"))
+        self.assertIn("state record-deposit", body)
+
+    def test_deposit_mode_requires_package_and_audit_first(self):
+        body = mode_body(SUBMIT.read_text(), re.escape("`/submit deposit"))
+        self.assertIn("/submit package", body)
+        self.assertIn("/submit audit", body)
+
+
 if __name__ == "__main__":
     unittest.main()

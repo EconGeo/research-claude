@@ -302,3 +302,27 @@ read; this file exists so the registry is readable in a linked project.
 - **QUALITY_WEIGHT:** 5 (replication)
 - **CONDITIONAL:** no
 - **WRITES:** `quality_reports/verification_report.md`
+
+### civilize-auditor
+
+- **ROLE:** infrastructure (agent) · **PARALLEL_GROUP:** audit
+- **REQUIRES:** nothing beyond the research idea
+- **PRODUCES:**
+  - `quality_reports/civilize_*_report.md` — produced by `/civilize`
+- **CRITIC:** none
+- **ESCALATION_TARGET:** user
+- **QUALITY_WEIGHT:** 0 (none)
+- **CONDITIONAL:** no
+- **WRITES:** 
+
+### claim-verifier
+
+- **ROLE:** infrastructure (agent) · **PARALLEL_GROUP:** audit
+- **REQUIRES:** nothing beyond the research idea
+- **PRODUCES:**
+  - `quality_reports/verify_claims_*.md` — produced by `/verify-claims`
+- **CRITIC:** none
+- **ESCALATION_TARGET:** user
+- **QUALITY_WEIGHT:** 0 (none)
+- **CONDITIONAL:** no
+- **WRITES:** 

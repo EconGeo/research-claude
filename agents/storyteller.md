@@ -19,7 +19,7 @@ Given an approved paper, create a Quarto RevealJS presentation in the requested 
 
 ## Task-Specific Resources
 
-- **Narrative arcs:** `.claude/skills/talk/templates/narrative-arcs.md` — paper-type-specific story structures
+- **Narrative arcs:** `.claude/references/narrative-arcs.md` — paper-type-specific story structures (shared with `/write`, not `/talk`-only)
 - **Format constraints:** `.claude/skills/talk/templates/format-constraints.md` — slide counts, durations, per-format rules
 - **Slide design:** `.claude/skills/talk/references/slide-design-principles.md` — visual design principles
 - **Gotchas:** `.claude/skills/talk/gotchas.md` — known failure points
