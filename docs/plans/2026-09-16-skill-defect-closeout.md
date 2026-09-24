@@ -3,10 +3,13 @@
 > promised test file absent, eight of nine baselined skills byte-identical. 0 of 7 defect tasks.
 > The status table is accurate — this is unstarted work, correctly recorded as unstarted.
 >
-> **Resumable at Task 1**, but apply the §6.4 amendments first. One is blocking: every task's
-> verification block chains `python3 scripts/check_paths.py` with **no `--root`**, which exits on
-> an argparse usage error and kills the `&&` chain before `run_fixture.sh`, `check_refs` and
-> `check_install --all` ever run.
+> **Resumable at Task 1. The §6.4 amendments were applied on 2026-09-24:** every task's
+> verification block now chains `python3 scripts/check_paths.py --root
+> /Users/andrew.mueller/Academic/research-claude` (the un-rooted form exited on an argparse
+> usage error and killed the `&&` chain before `run_fixture.sh`, `check_refs` and
+> `check_install --all` ever ran — this is fixed at all 7 occurrences); the Task 6
+> `/obsidian-digest-sync` occurrence count was corrected from three to two; and D2 was resolved
+> as moot (see the amendment under Task 6 and its Answer cell in the Open decisions table).
 >
 > Sequencing and full context: `docs/2026-09-23_pipeline-closeout-handoff.md`.
 > Audit: `docs/audits/2026-09-23_closeout-delivery-audit.md`.
@@ -129,7 +132,7 @@ notes; this table is the handoff.
 
 | # | Decision | Raised by | Answer |
 |---|---|---|---|
-| D2 | `/write humanize` rewrites in place; `/humanize` is detect-only **by design** and cites a cross-vendor finding that auto-rewriting degrades prose. Two near-identically named skills do opposite things. (a) Rename the mode to `/write cleanup` and have it name `/humanize` as the detect-only audit — touches `skills/write/SKILL.md`, any `pipeline/references/*.md` that names the mode, and `tests/`; (b) keep both names and state the distinction in both files, with `/write humanize` documented as "apply the 24 cleanup patterns to prose you drafted", not "de-AI a finished paper". **Recommend (a)** — the collision is the defect; a note does not remove it. | Task 6 | |
+| D2 | `/write humanize` rewrites in place; `/humanize` is detect-only **by design** and cites a cross-vendor finding that auto-rewriting degrades prose. Two near-identically named skills do opposite things. (a) Rename the mode to `/write cleanup` and have it name `/humanize` as the detect-only audit — touches `skills/write/SKILL.md`, any `pipeline/references/*.md` that names the mode, and `tests/`; (b) keep both names and state the distinction in both files, with `/write humanize` documented as "apply the 24 cleanup patterns to prose you drafted", not "de-AI a finished paper". **Recommend (a)** — the collision is the defect; a note does not remove it. | Task 6 | Moot (2026-09-24) — vendored /humanize renamed /civilize upstream (c737ac6); see the amendment under Task 6. |
 | D3 | `/review --peer` records `referees` (weight **25**) with `--critic editor`, but `agents/editor.md`'s `editorial_decision.md` format has **no overall score field** — only per-referee scores and a verdict — and `skills/review/config/scoring-rubrics.md` has **no Editor section at all**. (a) Add an Editor rubric and an explicit overall-score line to the decision format, sourced from the two referee scores and the verdict tier; (b) map the verdict tier to a fixed score (Accept 95 / Minor 85 / Major 70 / Reject 40); (c) leave `referees` unscored. **Recommend (a)** — (b) hides judgment behind a lookup table and (c) strands 25 weight points that R-104–R-107 were written to reconnect. | Task 1 | |
 
 ---
@@ -1199,6 +1202,8 @@ EOF
 
 ---
 
+## Task 6: Low sweep — `promote`, `state/`, `new-project-ztp`, `/write humanize`
+
 > **Amendment, 2026-09-24 (before resuming this task):** D2 is moot. The vendored skill this
 > defect names — `ai-audit`'s `/humanize` — was renamed to `/civilize` upstream
 > (`docs/plans/2026-09-23_pipeline-repair.md` Phase 2.4, gate met 2026-09-24, commit `c737ac6`).
@@ -1207,8 +1212,6 @@ EOF
 > humanize`; there is nothing left to disambiguate it from. Re-verify with
 > `grep -rn humanize skills/ agents/ ai-audit/ rules/` before skipping: it should show only
 > `skills/write/SKILL.md`'s own humanize mode and `ai-audit/VENDORED.md`'s provenance note.
-
-## Task 6: Low sweep — `promote`, `state/`, `new-project-ztp`, `/write humanize`
 
 **Cold start:** read these to end-of-file before editing anything.
 
