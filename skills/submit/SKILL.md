@@ -18,13 +18,16 @@ Submission pipeline with five modes covering journal selection through final ver
 ### `/submit target` — Journal Targeting
 Get ranked journal recommendations.
 
-**Performed by this skill** (no agent): read `.claude/references/journal-profiles.md` and
-`.claude/references/discipline-cards.md`.
+Dispatch **journal-scout** (`.claude/agents/journal-scout.md`; `Agent`,
+`subagent_type=journal-scout`) with the manuscript path, the paper type and the field. It
+reads `.claude/references/journal-profiles.md` (long — that read is the scout's, not this
+context's) and `.claude/references/discipline-cards.md`, and returns a ranked table of 5–10
+journals — columns *contribution fit*, *methodology fit*, *audience*, *desk-reject risk*,
+*AI-disclosure field* (from the profile) — with a one-line rationale for rank 1.
 
-**Option gate** (`.claude/rules/option-gates.md`): rank 5–10 journals — columns
-*contribution fit*, *methodology fit*, *audience*, *desk-reject risk*, *AI-disclosure field*
-(from the profile) — and wait (`--yes` takes rank 1). This skill has no web tool; "recent
-publications" is judged from the profile's stated scope, not a search.
+**Option gate** (`.claude/rules/option-gates.md`): present that table and wait (`--yes` takes
+rank 1). Neither this skill nor the scout has a web tool; "recent publications" is judged
+from the profile's stated scope, not a search.
 
 Save the full table to `quality_reports/journal_recommendations_[date].md` with the pick
 marked. `/review --peer`, `/review --stress` and `/submit final` read the pick from that file
