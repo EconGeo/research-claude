@@ -1,3 +1,16 @@
+> **STALLED 2026-09-16, AUDITED 2026-09-23 — read before resuming.**
+> `tested:` nothing ran past Task 0: zero commits between `3ad638e` and 2026-09-23, every
+> promised test file absent, eight of nine baselined skills byte-identical. 0 of 7 defect tasks.
+> The status table is accurate — this is unstarted work, correctly recorded as unstarted.
+>
+> **Resumable at Task 1**, but apply the §6.4 amendments first. One is blocking: every task's
+> verification block chains `python3 scripts/check_paths.py` with **no `--root`**, which exits on
+> an argparse usage error and kills the `&&` chain before `run_fixture.sh`, `check_refs` and
+> `check_install --all` ever run.
+>
+> Sequencing and full context: `docs/2026-09-23_pipeline-closeout-handoff.md`.
+> Audit: `docs/audits/2026-09-23_closeout-delivery-audit.md`.
+
 # Skill Defect Close-Out (Phase 2) — Implementation Plan
 
 **Goal:** Close the Medium- and Low-severity defects that

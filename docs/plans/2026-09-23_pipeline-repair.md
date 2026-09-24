@@ -1,6 +1,9 @@
 # Pipeline Repair Plan — 2026-09-23
 
 **Scope:** `~/Academic/research-claude` (the pipeline) and the six paper repos that link it.
+**After this plan:** `docs/2026-09-23_pipeline-closeout-handoff.md` gathers everything remaining —
+the stalled 09-16 closeout (43 defects), the six divergence GAPs, the connectivity check class,
+and the audit defects not yet planned. Do not start it until Phases 2–5 below are done.
 **Blocks:** POGM4's JRER submission plan, which is paused until Phase 2 lands.
 
 ---
