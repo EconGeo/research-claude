@@ -169,6 +169,34 @@ The overall assessment label below is reported beside the score, never instead o
 
 ---
 
+## Editor (Peer Review Synthesis)
+
+The `referees` component (weight 25) is recorded from the editor's `editorial_decision.md`,
+which must carry an explicit **Overall score** line. Its source is fixed so that two editors
+reading the same referee reports produce the same number:
+
+1. **Start from the mean** of Referee A's and Referee B's scores (each referee's report ends
+   in a score out of 100).
+2. **Clamp to the decision's band.** The verdict is the editor's judgment; the band is what
+   keeps the number honest to it.
+
+| Decision | Band |
+|---|---|
+| Accept | 90–100 |
+| Minor revision | 80–89 |
+| Major revision | 60–79 |
+| Reject | 0–59 |
+
+If the mean falls outside the band, record the nearest band edge and write "clamped" beside
+it: a Major-revision verdict with two 85s records 79 and says so, because the editor found a
+concern the referees under-weighted (or the reverse). No `--deductions` total is recorded —
+this is a band, not a deduction table. A Minor revision clears the 80 commit gate; a Major
+revision does not, which is the intended reading of that verdict.
+
+`--stress` and `--variance` produce no `editorial_decision.md` and record nothing.
+
+---
+
 ## Storyteller-Critic (Talk Review)
 
 **Advisory -- non-blocking.** Talk scores do not gate commits or PRs.

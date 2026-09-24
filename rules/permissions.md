@@ -228,6 +228,7 @@ read; this file exists so the registry is readable in a linked project.
 - **PRODUCES:**
   - `quality_reports/peer_review_*/desk_review.md`
   - `quality_reports/peer_review_*/editorial_decision.md`
+  - `quality_reports/peer_review_*/stress_gauntlet.md`
 - **CRITIC:** none
 - **ESCALATION_TARGET:** user
 - **QUALITY_WEIGHT:** 0 (referees)
