@@ -99,6 +99,15 @@ Returns text; session saves to
 `quality_reports/peer_review_<manuscript-stem>/editorial_decision.md`, records:
 `python3 .claude/scripts/pipeline.py state record-score referees <score> --critic editor --report <path>`.
 
+#### Save Reports
+All outputs land in `quality_reports/peer_review_<manuscript-stem>/`:
+- `desk_review.md` (Phase 1)
+- `referee_domain.md`, `referee_methods.md` (Phase 2)
+- `editorial_decision.md` (Phase 3)
+
+Log the referee assignments (dispositions + pet peeves) in the editorial decision so the
+user can re-run with different combinations.
+
 ### R&R Second Round (`--peer --r2 [journal]`)
 
 Continues the review cycle after the author has revised the paper.
