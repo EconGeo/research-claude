@@ -26,7 +26,7 @@ Workflow:
 #### 1. Context Gathering
 
 Before drafting, read all available context:
-1. `python3 .claude/scripts/pipeline.py manuscript` — read the declared manuscript in full: YAML, the `setup` chunk's naming map, every chunk label, every section already drafted
+1. `python3 .claude/scripts/pipeline.py manuscript` — resolve the declared manuscript, then **list** it, not read it: the YAML keys, the `setup` chunk's naming map, every `#| label:` line and every `#` heading (a grep). The writer reads the sections it drafts against.
 2. Read `master_supporting_docs/` for notes, outlines, research specs
 3. Read `quality_reports/strategy/<project>/strategy_memo.md` and `quality_reports/literature/<project>/positioning.md`
 4. Read `.claude/references/domain-profile.md` for field conventions

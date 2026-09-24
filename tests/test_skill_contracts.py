@@ -61,10 +61,14 @@ BUDGET = {
     "strategize": 8500,
     # 2026-09-24 (option gates, Task A9): write 7,600 -> 8,100. The GATE 1 / abstract hook
     # gate and the ambiguous-paper-type confirmation; measured 8,033.
-    "write": 8100,
+    # 2026-09-24 (routing, Task B6): write 8,100 -> 8,200. Step 1 lists the manuscript
+    # instead of reading it in full — a longer sentence for a much smaller context; measured 8,123.
+    "write": 8200,
     # 2026-09-24 (option gates, Task A3): discover 6,200 -> 7,300. Four gates (question
     # framings, journal tiers, data shortlist, ideas), each a wait instruction; measured 7,195.
-    "discover": 7300,
+    # 2026-09-24 (routing, Task B5): discover 7,300 -> 7,500. Ideate's novelty check now
+    # names lit-scout and the local-first rule; measured 7,429.
+    "discover": 7500,
     "checkpoint": 5500,
 }
 
