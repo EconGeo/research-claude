@@ -28,6 +28,10 @@ but behind the furthest stage reached — excluded from `overall`, never suggest
 and a stage after the one about to be suggested does not get to spend that). Report the table
 and the `next:` line. `next` stops here.
 
+Before `run` reaches `theory`, ask once — "Does this paper need a formal theory section?" (the
+four paper types in `.claude/skills/strategize/SKILL.md`, theory mode) — and record the answer
+in `quality_reports/decisions/theory_opt-in.md`; `--yes` answers no.
+
 Component → stage reference: `literature` → `literature.md`, `data` → `data.md`, `strategy` →
 `strategy.md`, `theory` → `theory.md`, `code` → `analyze.md`, `manuscript` → `write.md`,
 `referees` → `/review --peer` (see `review.md`), `replication` → `submit.md`. The parallel,
@@ -54,8 +58,11 @@ loop over stages from start in REQUIRES order, stop after --until:
   below 80: the stage skill loops creator → critic and owns the strike for its creator
             (the driver never issues one — `strike` has no round key, so a second call in
             the same round is a second strike); the driver reads the count from `state show`
-            and at `limits.rounds_per_pair` escalates to the registry's ESCALATION_TARGET
-            with the question in references/<stage>.md's Escalation block
+            and at `limits.rounds_per_pair` escalates to the registry's ESCALATION_TARGET:
+            when the target is the user, as an **Option gate** (`.claude/rules/option-gates.md`)
+            of 5–10 alternatives drawn from the Escalation block of
+            `.claude/skills/pipeline/references/<stage>.md`, `--yes` takes rank 1; when the
+            target is an agent, with that block's question
   approval gate: present the stage summary and the score; wait unless --yes
 after the loop: score; "Suggested Learnings" (strikes, escalations, first-pass ≥ 90) per
   .claude/rules/meta-governance.md — suggestions only, user approves, /promote lands

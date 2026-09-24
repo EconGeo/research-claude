@@ -27,3 +27,10 @@ Specification, Assumptions, Robustness Plan, Threats), `pseudo_code.md`,
 ## Escalation (strike 3, target: user)
 "The critic finds <the identifying assumption> not defensible after 3 rounds — accept the
 design with that limitation disclosed, or pivot to <alternative design>?"
+
+Alternatives (rank 1 first; the driver offers these as the option gate, never invents its own):
+1. Accept the design with the assumption's limitation disclosed in *Threats*.
+2. Pivot to the design the strategist ranked second in `/strategize`'s option gate.
+3. Pivot to the design ranked third.
+4. Add the falsification test the critic says would make the assumption defensible, and re-run.
+5. Return to `/discover data` for the variation the assumption needs.

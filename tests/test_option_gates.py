@@ -26,7 +26,7 @@ GATED = [
     ("revise", r"Classify severity", 5),  # Task A7
     ("talk", r"Create Quarto RevealJS Talk", 5),  # Task A8
     ("write", r"Draft Paper Section", 5),  # Task A9
-    # Task A10 — pipeline
+    ("pipeline", r"run \[", 5),  # Task A10
     # Task A11 — analyze
     # Task A12 — ztp-data-tag
 ]
