@@ -2,7 +2,7 @@
 name: pipeline
 description: Drive the research pipeline end to end or from any stage — resolves the manuscript, evaluates REQUIRES/PRODUCES with pipeline.py, dispatches each stage skill's creator→critic pair, holds approval gates, escalates on three strikes, records state, recovers after /compact. Use for "run the pipeline", "what's next", "resume", or to run a stage under validation.
 argument-hint: "[run | status | next | resume] [--from <stage>] [--until <stage>] [--yes]"
-allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
+allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent,mcp__zotpilot__*
 ---
 
 # Pipeline
@@ -30,7 +30,8 @@ and the `next:` line. `next` stops here.
 
 Component → stage reference: `literature` → `literature.md`, `data` → `data.md`, `strategy` →
 `strategy.md`, `theory` → `theory.md`, `code` → `analyze.md`, `manuscript` → `write.md`,
-`referees` → `/review --peer` (see `review.md`), `replication` → `submit.md`.
+`referees` → `/review --peer` (see `review.md`), `replication` → `submit.md`. The parallel,
+advisory `talk` stage (no component) → `talk.md`.
 
 **A project with existing work and no state file** — a manuscript, an analysis, referee rounds —
 is adopted, not restarted: read `.claude/skills/pipeline/references/adopt.md` before `run`. Its
@@ -38,8 +39,10 @@ stages are scored by dispatching each critic on the work that exists; nothing is
 
 ## `run [--from <stage>] [--until <stage>] [--yes]`
 ```
-resolve manuscript (refuse if absent/ambiguous: "declare `manuscript:` in CLAUDE.md")
-state init (no-op if present); state validate (refuse on INVALID)
+read .claude/skills/pipeline/references/setup.md and run its driver sequence:
+  resolve manuscript (refuse if absent/ambiguous: "declare `manuscript:` in CLAUDE.md")
+  ZotPilot check (`mcp__zotpilot__get_index_stats` available, else /new-project-ztp)
+  state init (no-op if present); state validate (refuse on INVALID)
 start = the stage `pipeline.py next` names (`next: none` → report its table and stop);
         --from <stage> overrides it and re-opens that stage whatever its status
 loop over stages from start in REQUIRES order, stop after --until:

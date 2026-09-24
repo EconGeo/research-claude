@@ -17,14 +17,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 CATALOGUE = re.compile(r"^## (Bundled [Rr]esources|Resources|Principles|Rules)\b.*?(?=^## |\Z)",
                        re.M | re.S)
 
-KNOWN_UNBOUND = {
-    # Task 4 — strategize
-    # Task 5 — write
-    # Not in this plan's scope — pipeline, submit
-    "skills/pipeline/references/setup.md",
-    "skills/pipeline/references/talk.md",
-    "skills/submit/templates/audit-10-checks.md",
-}
+# Emptied 2026-09-24: setup.md and talk.md bound in pipeline/SKILL.md; audit-10-checks.md deleted
+# (verifier.md is the one definition). Nothing goes in.
+KNOWN_UNBOUND: set[str] = set()
 
 # Level-2 budget in characters of SKILL.md body (frontmatter excluded). Ratchet downward only,
 # except for a deliberate, documented raise (see 2026-09-24 note below).
