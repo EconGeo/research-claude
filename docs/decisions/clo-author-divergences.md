@@ -68,7 +68,7 @@ file); `CLAUDE.md` §"Where things go".
 
 ---
 
-### D-2 — Install / connection / shadowing safeguard — **GAP, and the priority finding**
+### D-2 — Install / connection / shadowing safeguard — **CLOSED 2026-09-24** (was GAP, the priority finding)
 
 **clo-author:** Had none, and **needed none.** With `.claude/` as real tracked files in the same
 repo, there is no install step to verify, no link to dangle, and no shared item a local file can
@@ -97,16 +97,25 @@ This is the mechanism behind the reported incident in which a project-local skil
 shared rule for three months and waived a real defect through two critic rounds. The detector
 existed the whole time.
 
-**Reason for the current state:** unknown — the audit found no decision record choosing manual
-invocation over automatic.
+**Reason for the current state (as of 2026-09-23):** unknown — the audit found no decision record
+choosing manual invocation over automatic.
 
-**Recorded on disk:** the *script* is documented (`README.md:207`, `CLAUDE.md:103`). **That it is
-never automatically run is unrecorded**, and no rule, hook or skill states who is responsible for
-running it.
+**Re-homed 2026-09-24 (Phase 0 of `docs/plans/2026-09-23_pipeline-repair.md`, verified in Phase
+4.1).** `hooks/install-check.py` runs `check_install.sh` at every `SessionStart` and is wired in
+`seeds/settings.json`, so `check_install.sh`'s own required-hook derivation (`hooks-wired`) demands
+it fleet-wide the moment it is seeded — the same mechanism that closed D-3 below. `tested:`
+`./scripts/check_install.sh --all` reports `PASS [hooks-wired]` in all six linked repos, each of
+which carries `install-check.py` in its own committed `.claude/settings.json`. The install/
+connection/shadowing check now runs automatically on every session, not only inside `/promote`.
+
+**Class:** now DELIBERATE DIVERGENCE — purpose **re-homed**, matching the D-4/D-11 pattern.
+
+**Recorded on disk:** `hooks/install-check.py`'s own docstring states why it exists (quoted in
+`hooks/README.md`); `seeds/settings.json`; this entry.
 
 ---
 
-### D-3 — `protect-files.sh`: wired in clo-author, shipped dead here — **GAP**
+### D-3 — `protect-files.sh`: wired in clo-author, shipped dead here — **CLOSED 2026-09-24** (was GAP)
 
 **clo-author:** `.claude/settings.json` wires it as the **first** `PreToolUse` hook on
 `Edit|Write`. The script blocks edits to `settings.json`, `strategy-memo-*.md`,
@@ -119,16 +128,47 @@ never names it** (`grep -c protect-files seeds/settings.json` → `0`), and that
 `$comment` states the rule: *"Hooks are linked into `.claude/hooks/` but fire only because they
 are named here."* The hook therefore never fires in any project.
 
-**Class:** **GAP** — a regression introduced by the port, not a decision.
+**Class:** was **GAP** — but not quite "a regression introduced by the port, not a decision," as
+first written. A reason *does* exist on disk: `docs/superpowers/specs/2026-09-08-pipeline-repair-design.md`
+has its own ruling numbered R-7, *"Wire `context-monitor.py` after the per-session fix;
+`protect-files.sh` stays opt-in,"* executed in that plan's Task 7.5. The 2026-09-23 audits (this
+entry, the skill-inventory audit, the overhaul-delivery audit) all missed it and called it
+unrecorded, because `docs/decisions/2026-09-08_pipeline-repair-rulings.md` — a *different* document
+from a *later* session — happens to have its own, unrelated R-7 in its own appendix (*"`coder-critic.md`
+must retain `Correctness Layer` and `INV-23`"*), and one line in that later rulings doc (§6, "landed
+today") cites "R-7" for the opt-in decision as if it were self-referential. It never was; the two
+R-7s are a same-day numbering collision between two independent documents. Chasing the citation to
+its actual source (the design spec, not the rulings appendix) is what surfaced this.
 
-**Does the problem still exist under Quarto?** Yes. The protected class is even more exposed now:
-critic reports and `pipeline_state.json` are the pipeline's own evidence, and `/review` already
-had to add a `git status --porcelain` check because *"a project gate restamped two committed
-reports"* (`skills/review/SKILL.md`).
+**Does the problem still exist under Quarto?** Yes, and the 2026-09-08 ruling's premise did not
+survive contact with reality: by 2026-09-23, `/review` had already had to bolt on its own `git
+status --porcelain` check because *"a project gate restamped two committed reports"* — the exact
+failure `protect-files.sh` exists to prevent, happening under the "opt-in" default. Critic reports
+and `pipeline_state.json` are the pipeline's own evidence, more exposed now than in clo-author, not
+less.
 
-**Reason:** none found. The hooks README documents behaviour the shipped wiring does not deliver.
+**Reason:** the 2026-09-08 ruling had a reason (avoid a blanket default before any project had
+opted in); it just stopped being the right call once a live incident showed the default insufficient,
+and nothing revisited it for two weeks because nothing was wired to notice.
 
-**Recorded on disk:** **unrecorded.** `hooks/README.md:35` asserts the opposite of the truth.
+**Ruled 2026-09-24 (Phase 4.1):** the 2026-09-08 opt-in default is superseded. `protect-files.sh` is
+now wired in `seeds/settings.json`'s `PreToolUse` (matcher `Edit|Write`) and in all six linked
+repos' own `.claude/settings.json`. `PROTECTED_PATTERNS` was repointed from clo-author's inherited
+LaTeX-era names (`strategy-memo-*.md`, `referee-report-*.md`, `quality-score-*.json`) to the actual
+Quarto-era artifacts (`pipeline_state.json`, `*-critic_*.md`, `civilize_*_report.md`,
+`verify_claims_*.md`, `desk_review.md`, `referee_domain.md`, `referee_methods.md`, `strategy_memo.md`).
+Fixing this also surfaced a second, independent bug never caught because the hook was never
+exercised: `[[ "$BASENAME" == "$PATTERN" ]]` quotes `$PATTERN`, which disables glob matching in
+bash, so every wildcard pattern — including the original clo-author-inherited ones — silently never
+matched anything. `tested:` `tests/test_protect_files.py` (8 cases, including a wildcard case that
+fails on the pre-fix quoting). `check_install.sh --all`'s `hooks-wired` derives its required set
+from `seeds/settings.json`, so it FAILed on all six repos the moment the hook joined the seed and
+PASSed once each repo's `settings.json` was updated to match — the same derive-don't-hardcode
+mechanism that closed D-2 above.
+
+**Recorded on disk:** now — this entry; `hooks/protect-files.sh`'s own header comment; the correction
+in `scripts/check_install.sh`'s `hooks-wired` comment block, which carried the same "R-7, opt-in"
+claim into the checker itself and has been corrected alongside.
 
 ---
 
@@ -246,15 +286,28 @@ with `relative_tolerance`, `absolute_tolerance`, a `significance_boundary_flag`,
 **values are identical** — point estimates relative `1e-6` / absolute `1e-10`, SEs relative `1e-4`,
 p-values relative `0.01` with 0.10/0.05/0.01 boundaries flagged regardless, sample sizes exact.
 
-**Class:** INHERITED (values) with an unlitigated format change.
+**Class:** INHERITED (values); DELIBERATE DIVERGENCE (format) — litigated 2026-09-24, see below.
 
 **Does the problem still exist?** Yes, unchanged — cross-language replication is format-agnostic.
 
-**Reason:** unknown. `skills/review/config/` exists and holds only `scoring-rubrics.md`, so the
-config directory was kept while this one config was prosified. A number in a table is read by an
-LLM; a number in JSON can be asserted against.
+**Reason (as of 2026-09-23):** unknown. `skills/review/config/` exists and holds only
+`scoring-rubrics.md`, so the config directory was kept while this one config was prosified. A
+number in a table is read by an LLM; a number in JSON can be asserted against.
 
-**Recorded on disk:** **unrecorded.**
+**Ruled 2026-09-24 (Phase 4.2):** keep the prose table — not OBSOLETE (the tolerances are real and
+still needed) and not a GAP requiring new machinery. The distinction from D-6/INV-11 is volume and
+kind of judgment, not principle: INV-11 needed a mechanical gate because a manuscript carries
+hundreds of individual prose numbers, cheap to state and expensive to eyeball one-by-one, and
+"matches the table" is a fact, not a judgment call. `replication-comparison.md` carries five stable
+threshold values, read once per `/review --replicate`, where the actual work — deciding whether an
+observed point-estimate or SE divergence is *material* given `common_divergence_sources` (solver
+tolerance, RNG seed, library version) — is an interpretive judgment the critic is already making,
+not a comparison a script can finish alone. Converting to JSON would let a script assert the five
+thresholds exist and are well-formed; it would not remove the critic from the loop, so it buys
+less than INV-11's conversion did. **This is a live scope boundary, not an oversight** — record it
+as such if it is ever revisited, rather than re-opening the question from zero.
+
+**Recorded on disk:** now — this entry.
 
 ---
 
@@ -434,7 +487,7 @@ site.
 
 ## F. Prose quality
 
-### D-17 — Two humanizers inherited from two upstreams, never litigated — **GAP**
+### D-17 — Two humanizers inherited from two upstreams, never litigated — **CLOSED 2026-09-24** (was GAP)
 
 **clo-author:** `/write humanize` — and the intent is inherited **verbatim**. clo-author's
 `write/SKILL.md:137-141`: *"### `/write humanize [file]` — Cleanup Pass Only … **Agent:** Writer
@@ -448,7 +501,7 @@ today. clo-author shipped a **rewriter**, and only a rewriter.
 `--rewrite` mode. Auto-rewriting AI tells degrades prose quality … the author preserves voice by
 editing manually."*
 
-**Class:** **DELIBERATE DIVERGENCE — ruled 2026-09-23, execution deferred.** (Was GAP — two
+**Class:** **DELIBERATE DIVERGENCE — ruled 2026-09-23, executed 2026-09-24.** (Was GAP — two
 upstreams, two answers, no decision — until litigated below.)
 
 **Ruling (2026-09-23), Phase 2.4 of `docs/plans/2026-09-23_pipeline-repair.md`:** `/write humanize`
@@ -465,31 +518,47 @@ the rename happens **upstream, in `EconGeo/ai-audit`**, not as a local edit or b
 author will rename `skills/humanize` there and this repo picks it up on the next
 `scripts/sync-ai-audit.sh`.
 
-**This defers the item's own Gate** ("the two skills' trigger lists no longer overlap"): it cannot
-close from inside research-claude today. Recorded here rather than marked done — the collision
-described below is still live until the upstream rename lands and is synced.
+**Gate met 2026-09-24** (`c737ac6`): upstream `EconGeo/ai-audit` PR #2 renamed the skill and agent
+to `/civilize`/`civilize-auditor` (pinned commit `a99c7a75`), synced via `scripts/sync-ai-audit.sh`.
+`tested:` a full-repo grep for `humanize` outside `docs/` now hits only `skills/write/SKILL.md`
+(the pipeline's own `/write humanize` mode) and `ai-audit/VENDORED.md` (a provenance note);
+`ai-audit/` itself carries no `humanize` string anywhere.
 
-**Does the problem still exist?** Yes, and the collision is worse than a duplicate. The two
-overlap heavily in detection (AI vocabulary, em-dash overuse, tricolon abuse, hedge stacking, "not
-only X but also Y", filler phrases, promotional framing) while disagreeing on thresholds — *"more
-than 2 em dashes per page"* (`cleanup-patterns.md:13`) against *"more than 3 em-dashes per
-paragraph"* (`humanize` category 3). And because `/humanize` sets
-`disable-model-invocation: true` while `/write humanize` does not, the **wrong** one wins: a user
-typing *"de-AI this draft"* — a phrase in `/humanize`'s own trigger list — is routed to the
-rewriter that `/humanize` exists to argue against. A third copy exists in
-`agents/writer-critic.md`, which scores *"AI PATTERNS FOUND"*.
+**Did the problem still exist, before the rename?** Yes, and the collision was worse than a
+duplicate. The two overlapped heavily in detection (AI vocabulary, em-dash overuse, tricolon
+abuse, hedge stacking, "not only X but also Y", filler phrases, promotional framing) while
+disagreeing on thresholds — *"more than 2 em dashes per page"* (`cleanup-patterns.md:13`) against
+*"more than 3 em-dashes per paragraph"* (`humanize` category 3, now `/civilize`). And because
+`/humanize` set `disable-model-invocation: true` while `/write humanize` did not, the **wrong** one
+won: a user typing *"de-AI this draft"* — a phrase in `/humanize`'s own trigger list — routed to
+the rewriter `/humanize` existed to argue against.
 
-**Reason:** none. The vendoring of ai-audit (2026-09-09) and the retention of clo-author's
-`/write humanize` were separate decisions; neither considered the other.
+**Does it still exist, after the rename?** No natural-language phrase auto-routes to both any
+more: `/civilize`'s description still lists "de-AI this draft" as a trigger phrase, but it carries
+`disable-model-invocation: true` and that phrase does not appear in `/write`'s description, so the
+ambiguity that remains is a user *meaning* either by that phrase — the intended behavior per this
+ruling (`/write humanize`'s auto-rewrite is the default; `/civilize` is manual detect-only). A
+third copy of AI-pattern detection exists in `agents/writer-critic.md`, which scores *"AI PATTERNS
+FOUND"* — unchanged by this ruling, since it is the paired critic's own scoring category, not a
+user-facing dispatch route, and out of this entry's scope.
 
-**Recorded on disk:** **unrecorded as a decision.** Noted as a symptom at "Low" severity in
-`docs/audits/2026-09-15_skill-best-practices-audit.md` §4 — *"`/write humanize` rewrites in place
-while `/humanize` is detect-only by design"* — and not acted on. **Needs litigating: one of the two
-must win, and the loser must say so in its own file.**
+**Reason:** the vendoring of ai-audit (2026-09-09) and the retention of clo-author's `/write
+humanize` were separate decisions; neither considered the other, until Phase 2.4 of
+`docs/plans/2026-09-23_pipeline-repair.md` litigated them on 2026-09-23. The ruling itself: keep
+`/write humanize` (clo-author's rewriter, inherited and working) as the default; keep `/civilize`
+available under its own name for occasional manual detect-only use, because the "cross-vendor
+research" `/humanize` cited for its detect-only design turned out to be unattributed Cursor/Aider
+community observation, not a study — not strong enough to override the inherited, working
+rewriter, but not a reason to delete a capability the author wants kept.
+
+**Recorded on disk:** now — this entry; `docs/plans/2026-09-23_pipeline-repair.md` Phase 2.4;
+`ai-audit/VENDORED.md`'s provenance note on the upstream rename. Previously noted only as a
+symptom, not litigated, at "Low" severity in `docs/audits/2026-09-15_skill-best-practices-audit.md`
+§4.
 
 ---
 
-### D-18 — `ai-audit` installed but connected to nothing — **GAP**
+### D-18 — `ai-audit` installed but connected to nothing — **CLOSED 2026-09-24** (was GAP)
 
 **clo-author:** Not applicable — ai-audit was never clo-author's. This is a divergence from the
 *fork's own stated intent*, recorded here because the register is the place where intent is
@@ -518,15 +587,33 @@ project symlink is therefore destroyed on the next sync, silently. `/promote` wa
 one tree only: *"Does not edit anything under `zotpilot-skills/`, which is vendored verbatim."*
 `ai-audit/` gets no equivalent warning anywhere.
 
-**Reason:** none found. Vendoring solved *distribution* and stopped there.
+**Reason (as of 2026-09-23):** none found. Vendoring solved *distribution* and stopped there.
 
-**Recorded on disk:** **unrecorded.**
+**Re-homed 2026-09-23–24, across Phase 3 of `docs/plans/2026-09-23_pipeline-repair.md`** (landed
+before this register entry was updated to say so):
+- **Reachability:** Phase 3.1 gates `/submit final` on a recorded `/verify-claims` result
+  (`pipeline.py state record-verify-claims`; `score --gate submission` FAILs without one). Phase
+  3.4 registers `claim-verifier` and `civilize-auditor` in `rules/registry.yaml` (`role:
+  infrastructure`) and makes `registry_check()` scan `ai-audit/agents/*.md`, not just `agents/*.md`,
+  so `registry check` counts them instead of silently skipping the whole tree.
+- **Vendored-tree protection:** Phase 3.2 makes `/promote`'s Step 2.5 warn for `ai-audit/` the same
+  way it already warned for `zotpilot-skills/`, and `check_refs.py`'s `promote-vendor-warn`
+  criterion (wired into `check_fork.sh`) FAILs if `skills/promote/SKILL.md` ever stops naming both.
+
+**Does the problem still exist?** No longer sharply — `/verify-claims` is now a real, enforced gate
+on the one path (`/submit final`) that certifies a manuscript ready to send. `/civilize` remains
+detect-only and un-gated by design (ruling D-17, 2.4): occasional, manual use, never mandatory —
+that is a scope decision, not a residual instance of this GAP.
+
+**Recorded on disk:** now — this entry; `rules/registry.yaml`'s `claim-verifier`/`civilize-auditor`
+entries; `skills/submit/SKILL.md` step 2.6; `skills/promote/SKILL.md` step 2.5;
+`scripts/check_refs.py`'s `promote-vendor-warn`.
 
 ---
 
 ## G. Port fidelity
 
-### D-19 — Harvested capability whose caller was never updated: `editor --variance`
+### D-19 — Harvested capability whose caller was never updated: `editor --variance` — **CLOSED 2026-09-24** (was GAP)
 
 **clo-author:** `editor` at 67 lines, without variance mode.
 
@@ -555,6 +642,17 @@ open design question.
 design spec lists `--variance` among the capabilities `editor` *brings*, with no note that no
 skill exposes it.
 
+**Ruled 2026-09-24 (Phase 4.1):** re-homing this the way D-4/D-2/D-3 were — building the missing
+gate — is not the right move here, because there is no missing *check*; there is a missing
+*design decision* (which agent identity referees 3-through-N should use), and the user was
+consulted directly rather than the plan guessing. **User decision (2026-09-24, recorded at Phase
+2.5):** do not build variance-mode dispatch now — a third *named, specialized* referee agent is of
+more interest than N-way disposition sampling, and that is a future design task, not a connectivity
+fix. **Class, finalized:** DELIBERATE DIVERGENCE (scope boundary, user-ruled) — not OBSOLETE (the
+capability is real and still wanted) and not an open GAP (the false enforcement claim that made it
+look reachable is already corrected). `editor.md:124` no longer overclaims; `/review --variance`
+remains a documented future capability, not a broken promise.
+
 **Related port artifacts** — same shape, **fixed 2026-09-23 (Phase 2.5)**, since each was a
 reconciliation bug rather than a divergence in intent:
 `skills/analyze/templates/paper-to-code-map.md:36`'s naming rule now names `treated` (matching
@@ -574,22 +672,36 @@ that will drift again.
 
 ## Summary
 
+**Updated 2026-09-24 (Phase 4 of `docs/plans/2026-09-23_pipeline-repair.md`).** D-2, D-3, D-18 and
+D-19 — every entry the audits classed GAP — are re-homed and closed, and the register's own
+"unrecorded reason" finding is closed out to a single remaining, deliberate scope boundary (D-8).
+Class changes made today are noted inline below; each entry above carries the reasoning and the
+gate evidence.
+
 | Class | Entries |
 |---|---|
-| INHERITED | D-8 (values; format change unrecorded) |
-| DELIBERATE DIVERGENCE | D-1, D-5, D-6, D-9, D-10 (weakly recorded), D-11, D-12, D-13, D-14, D-15, D-16 (fixed 2026-09-23), D-17 (ruled 2026-09-23, execution deferred to an upstream `EconGeo/ai-audit` rename) |
+| INHERITED | D-8 (values) |
+| DELIBERATE DIVERGENCE | D-1, D-2 (re-homed 2026-09-24), D-3 (re-homed 2026-09-24), D-5, D-6, D-8 (format, litigated 2026-09-24), D-9, D-10 (weakly recorded), D-11, D-12, D-13, D-14, D-15, D-16 (fixed 2026-09-23), D-17 (ruled 2026-09-23, executed 2026-09-24), D-18 (re-homed 2026-09-23–24), D-19 (ruled 2026-09-24 — scope boundary) |
 | OBSOLETE | D-4 (mechanism), D-7 |
-| **GAP — defects** | **D-2, D-3, D-18, D-19 (partially corrected 2026-09-23 — see entry)** |
+| **GAP — defects** | **none open** |
 
-**Unrecorded reasons — the register's own finding:** D-2 (that `check_install.sh` never runs
-automatically), D-3, D-8, D-16 (now recorded — see the entry above), D-17 (now recorded — see the
-ruling above), D-18, D-19 (now recorded — see the entry above). Seven of nineteen divergences had
-no reason recorded anywhere on disk before this file existed.
+**Unrecorded reasons — closed out 2026-09-24.** The register's own 2026-09-23 finding was that
+seven of nineteen divergences (D-2, D-3, D-8, D-16, D-17, D-18, D-19) had no reason recorded
+anywhere on disk. D-16, D-17 and D-19 already carried recorded reasons by the time this line was
+first written; D-2, D-3 and D-18 are re-homed above with reasons and gate evidence; D-8 is the one
+genuinely new ruling made today (Phase 4.2), because no prior decision existed anywhere to recover
+— keep the prose table, a documented scope boundary rather than an oversight. **Zero remain
+unrecorded.**
 
-**The pattern worth carrying forward.** Five of the six GAPs share one shape: *a mechanism was
-correctly retired or correctly introduced, and its **purpose** was never assigned a new owner.*
-D-4 is the case that was eventually caught and fixed — but only after four wrong numbers reached a
-manuscript that scored 100/100. D-2, D-3 and D-18 are the same shape, still open; D-19's false
-enforcement claim is corrected but the underlying capability remains unreachable through `/review`.
-When retiring, porting or vendoring anything, state the purpose separately from the mechanism and
-name where the purpose now lives — and add an entry here.
+**The pattern this register exists to carry forward.** Four of the five GAPs shared one shape: *a
+mechanism was correctly retired or correctly introduced, and its **purpose** was never assigned a
+new owner.* D-4 is the case that was eventually caught and fixed — but only after four wrong
+numbers reached a manuscript that scored 100/100. D-2 (install-check.py wired at `SessionStart`),
+D-3 (protect-files.sh wired by default, its patterns repointed at Quarto-era artifacts) and D-18
+(`/verify-claims` gated on `/submit final`, `ai-audit/` protected in `/promote`) closed the same
+way: name what reaches the mechanism, and make the required-set check *derive* from the seed
+rather than trust a hardcoded list, so a newly seeded requirement is demanded everywhere the moment
+it is seeded. D-19 was the one exception in this set — not a missing check but a missing design
+decision, closed by asking the user rather than guessing. When retiring, porting or vendoring
+anything, state the purpose separately from the mechanism and name where the purpose now lives —
+and add an entry here.
