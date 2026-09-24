@@ -210,4 +210,36 @@ class TestWritesTools(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(cr.crit_writes_tools(ROOT), 0)
 
+
+class TestScriptRefs(unittest.TestCase):
+    """R-fix, closeout handoff §4.2 item 4: a script path named in prose (a rule, a skill, an
+    agent) that does not exist on disk. quarto_structure_check.py/INV-25 was cited before it
+    existed once; this is the check that stops the next one."""
+
+    def _run(self, text: str, create=()) -> int:
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "rules").mkdir()
+            (root / "rules" / "probe.md").write_text(text)
+            for rel in create:
+                p = root / rel
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text("")
+            with contextlib.redirect_stdout(io.StringIO()):
+                return cr.crit_script_refs(root)
+
+    def test_nonexistent_script_flagged(self):
+        self.assertEqual(self._run("Run `scripts/does_not_exist.py` first.\n"), 1)
+
+    def test_existing_script_passes(self):
+        self.assertEqual(self._run("Run `scripts/check_fork.sh` first.\n",
+                                    create=["scripts/check_fork.sh"]), 0)
+
+    def test_acquire_scripts_exempt(self):
+        self.assertEqual(self._run("Run `scripts/acquire/clean_raw.py` (project-specific).\n"), 0)
+
+    def test_real_tree_passes(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cr.crit_script_refs(ROOT), 0)
+
 if __name__ == "__main__": unittest.main()

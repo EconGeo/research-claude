@@ -162,6 +162,23 @@ def crit_tool_name(root):
                 hits.append(f"{f.relative_to(root)}:{n}: Task in tools line (use Agent)")
     return report("tool-name", hits)
 
+SCRIPT_REF = re.compile(r"(?<![A-Za-z0-9_./-])scripts/[A-Za-z0-9_./-]+\.(?:py|sh)\b")
+SCRIPT_REF_EXEMPT_PREFIX = ("scripts/acquire/",)
+
+def crit_script_refs(root):
+    """A scripts/<path>.py or .sh cited in prose that does not exist on disk — the
+    quarto_structure_check.py/INV-25 shape (closeout handoff §4.2 item 4), generalized."""
+    hits = []
+    for f in shipped_files(root, SHIP):
+        for n, ln in lines_of(f):
+            for m in SCRIPT_REF.finditer(ln):
+                tok = m.group(0)
+                if tok.startswith(SCRIPT_REF_EXEMPT_PREFIX):
+                    continue
+                if not (root / tok).exists():
+                    hits.append(f"{f.relative_to(root)}:{n}: {tok} does not exist")
+    return report("script-refs", hits)
+
 def _hook_readme_rows(readme_text):
     """Parse hooks/README.md's table for (name, event) pairs. Only rows whose first cell is
     a hook FILENAME are hook rows. The "Getting the contract right" table below the hook
@@ -350,7 +367,7 @@ def crit_writes_tools(root):
 CRITERIA = {
     "latex-residue": crit_latex_residue, "manuscript-model": crit_manuscript_model,
     "deleted-things": crit_deleted_things, "inv-refs": crit_inv_refs, "skill-refs": crit_skill_refs,
-    "tool-name": crit_tool_name, "hooks-readme": crit_hooks_readme, "hooks-wired-source": crit_hooks_wired_source,
+    "tool-name": crit_tool_name, "script-refs": crit_script_refs, "hooks-readme": crit_hooks_readme, "hooks-wired-source": crit_hooks_wired_source,
     "artifact-paths": crit_artifact_paths, "promote-vendor-warn": crit_promote_vendor_warn,
     "promote-register-check": crit_promote_register_check, "writes-tools": crit_writes_tools,
 }
