@@ -1,0 +1,20 @@
+{
+  "collections": {"Pilot": ["D1", "D2", "D3", "D7"], "Background": ["D4", "D5", "D6", "D8"]},
+  "papers": [
+    {"doc_id": "D1", "key": "K1", "title": "Mortgage denial and neighborhood change", "year": 2019, "authors": ["A. Author", "B. Coauthor"], "abstract": "We study loan denial rates across census tracts using administrative lending records from 2010 to 2018.", "tags": [], "notes": [], "indexed": true,
+     "chunks": [{"section": "methods", "text": "Our data come from the public HMDA loan-application register, 2010-2018, aggregated to the census tract. The key variables are the loan-denial rate and the loan-to-value ratio."},
+                {"section": "results", "text": "Denial rates fall by 2 points in treated tracts."}]},
+    {"doc_id": "D2", "key": "K2", "title": "House prices after zoning reform", "year": 2021, "authors": ["C. Writer"], "abstract": "Zoning reform and prices in a large metropolitan area.", "tags": ["dataset:zillow-ztrax"], "notes": [{"key": "N2", "title": "Reading notes", "source": "ztp-tutor"}], "indexed": true,
+     "chunks": [{"section": "methods", "text": "We use Zillow ZTRAX transaction records, 2005-2019, at the parcel level; the outcome is the log sale price."}]},
+    {"doc_id": "D3", "key": "K3", "title": "Rent control and mobility", "year": 2018, "authors": ["D. Person"], "abstract": "Rent control and household mobility.", "tags": [], "notes": [], "indexed": true,
+     "chunks": [{"section": "methods", "text": "The sample is the restricted-access PSID, 1990-2015, household-year observations; the outcome is a move indicator."}]},
+    {"doc_id": "D4", "key": "K4", "title": "Event studies with staggered adoption", "year": 2021, "authors": ["E. Econometrician"], "abstract": "Estimators for staggered treatment timing.", "tags": [], "notes": [], "indexed": true,
+     "chunks": [{"section": "methods", "text": "We compare estimators on simulated panels; no observational dataset is used."}]},
+    {"doc_id": "D5", "key": "K5", "title": "Transit access and employment", "year": 2016, "authors": ["F. Planner"], "abstract": "Transit and jobs.", "tags": [], "notes": [], "indexed": true,
+     "chunks": [{"section": "methods", "text": "LEHD origin-destination employment statistics, 2002-2014, census block level."}]},
+    {"doc_id": "D6", "key": "K6", "title": "Housing supply elasticities", "year": 2010, "authors": ["G. Geographer"], "abstract": "Elasticities across metropolitan areas.", "tags": [], "notes": [], "indexed": true,
+     "chunks": [{"section": "methods", "text": "Metropolitan-area panel built from the decennial Census and ACS, 1980-2008."}]},
+    {"doc_id": "D7", "key": "K7", "title": "Eviction filings and health", "year": 2022, "authors": ["H. Health"], "abstract": "Eviction court filings linked to hospital records.", "tags": [], "notes": [], "indexed": false, "chunks": []},
+    {"doc_id": "D8", "key": "K8", "title": "Short-term rentals and rents", "year": 2020, "authors": ["I. Analyst"], "abstract": "Short-term rental listings and long-term rents.", "tags": [], "notes": [], "indexed": false, "chunks": []}
+  ]
+}
