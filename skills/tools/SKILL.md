@@ -1,7 +1,7 @@
 ---
 name: tools
 description: Utility commands — commit (with blocking quality/number/structure gates), render, validate-bib, lint, journal, learn. Replaces individual utility skills.
-argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | learn] [args]"
+argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | learn] [args] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
@@ -15,9 +15,13 @@ Utility subcommands for project maintenance and infrastructure.
 
 ## Subcommands
 
-### `/tools commit [message]` — Git Commit
+### `/tools commit [message] [--yes]` — Git Commit
 
-Stage changes, **verify the blocking gates**, commit, open a PR, and merge.
+Stage changes, **verify the blocking gates**, confirm, commit, confirm again, open a PR, and
+merge. Two confirmation gates (A before the commit, B before the PR and merge) wait for the
+user; `--yes` answers both with their default so `/pipeline` and the live fixture tier do not
+stall. **`--yes` never skips Step 0** — those are blocking safety gates, not waits, and only
+an explicit "commit anyway" with a stated reason overrides them (R-42, R-132).
 
 #### Step 0 — Quality gate (blocking, runs before branching)
 
@@ -60,13 +64,22 @@ cross-reference checks. Report pass/fail before committing.
 2. Create a branch — **never commit directly to main**.
 3. Stage named files. Never `git add -A`; never stage `.claude/settings.local.json`,
    `.env`, `.claude/state/`, or anything holding a secret.
-4. Commit. If `$ARGUMENTS` is given use it verbatim; otherwise write a message that
+   **Gate A — confirm the commit.** Show the branch, `git diff --cached --stat`, the Step 0
+   results, and the exact commit message, then **wait**: `commit` / `edit the message` /
+   `abort`. Under `--yes`, proceed as if `commit`.
+4. `git commit`. If `$ARGUMENTS` is given use it verbatim; otherwise write a message that
    explains *why*, not *what*.
+   **Gate B — confirm publication.** A push, a PR and a merge are outward-facing and hard to
+   undo. Show the base branch, the PR title, and what will merge, then **wait**:
+   `PR and merge` / `PR only` / `push only` / `stop here` (the commit stays local). Under
+   `--yes`, proceed as if `PR and merge`.
 5. Push, `gh pr create`.
 6. `gh pr merge --merge --delete-branch` (not squash or rebase unless asked).
-7. Report the PR URL and what merged.
+7. Report the PR URL and what merged (or, after `stop here` / `push only`, where the commit
+   is and what remains).
 
 **Never skip Step 0.** If the user insists, the override reason goes in the commit message.
+`--yes` is not that insistence: it answers Gates A and B only.
 
 ### `/tools render [file]` — Quarto Render
 Single-step render. There is no separate LaTeX build.
