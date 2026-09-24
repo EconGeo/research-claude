@@ -52,11 +52,15 @@ KNOWN_UNBOUND = {
 # route dispatched nothing — and `--stress` reused --peer's Phase 3 recording from a file stress
 # mode never writes. The new mode section, the `--variance` refusal line (D-19) and the stress
 # fix cost +861 net after moving two incident paragraphs to gotchas.md. Measured size 12,157.
+# 2026-09-24 (09-16 closeout, Task 3): discover's cap raised 6,000 -> 6,200. `/discover data`
+# had no `state strike explorer` line, so the data stage could never escalate (the driver's
+# generic strike, now removed, was the only thing that ever counted a round there). The strike
+# line is a dispatch instruction, not prose; measured size 6,141.
 BUDGET = {
     "review": 12500,
     "strategize": 8000,
     "write": 7600,
-    "discover": 6000,
+    "discover": 6200,
     "checkpoint": 5500,
 }
 

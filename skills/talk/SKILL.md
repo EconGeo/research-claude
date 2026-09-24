@@ -69,7 +69,9 @@ Score as advisory (non-blocking). storyteller-critic returns its report as text;
 **Step 4: Fix Critical Issues**
 
 If the storyteller-critic finds Critical issues (compilation failures, content not in paper):
-1. Re-dispatch Storyteller with specific fixes (max 3 rounds per three-strikes rule)
+1. Re-dispatch Storyteller with specific fixes; `pipeline.py state strike storyteller` per
+   failing round; strike three → escalate to the registry's escalation target (writer) with a
+   specific question
 2. Re-run storyteller-critic to verify
 
 **Step 5: Present Results**

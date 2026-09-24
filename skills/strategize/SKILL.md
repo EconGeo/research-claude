@@ -138,7 +138,9 @@ Workflow:
    gaps). Returns text; **session saves** to `quality_reports/reviews/theorist-critic_<date>.md`,
    then records:
    `python3 .claude/scripts/pipeline.py state record-score theory <score> --critic theorist-critic --deductions <total> --report <path>`.
-5. If CRITICAL issues found, iterate (max 3 rounds per three-strikes). Escalation target: User.
+5. Below 80 → Theorist revises → critic re-scores; `pipeline.py state strike theorist` per
+   failing round; strike three → escalate to the registry's escalation target with a specific
+   question.
 6. **Save decision record** → `quality_reports/decisions/theory_[topic].md`
    Record:
    - **Decision:** The theoretical objects proved (identification, asymptotic distribution, etc.)
