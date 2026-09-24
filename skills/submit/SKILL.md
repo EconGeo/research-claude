@@ -39,7 +39,10 @@ coder-critic returns its report as text; session saves it to `quality_reports/re
 ### `/submit audit` — Audit Replication Package
 Verify replication package completeness.
 
-**Agent:** Verifier (submission mode — 10 checks, full text in `.claude/agents/verifier.md`)
+**Agent:** Verifier (submission mode — 10 checks). `.claude/agents/verifier.md` is the only
+definition; the list below is an index into it, not a restatement. (A separate
+`audit-10-checks.md` copy used to sit beside this skill; it drifted from the verifier twice and
+was deleted on 2026-09-24.)
 
 Checks:
 1. Render
@@ -114,6 +117,9 @@ Workflow:
 5. If PASS: generate cover letter draft (`.claude/skills/submit/templates/cover-letter.qmd`) + submission checklist (`.claude/skills/submit/templates/submission-checklist.md`)
 6. If FAIL: list blocking issues and stop
 
+Before reporting PASS or FAIL, read `.claude/skills/submit/gotchas.md` — the coverage trap in
+Step 3.5 and the cold-cache render are both there.
+
 ---
 
 ## Bundled Resources (Level 3)
@@ -123,7 +129,6 @@ Workflow:
 | Submission checklist | `.claude/skills/submit/templates/submission-checklist.md` | `/submit final` — pre-submission verification |
 | Cover letter | `.claude/skills/submit/templates/cover-letter.qmd` | `/submit final` — draft cover letter |
 | Replication README | `.claude/skills/submit/templates/replication-readme.md` | `/submit package` — AEA-compliant README |
-| Audit checklist | `.claude/skills/submit/templates/audit-10-checks.md` | `/submit audit` — verifier submission mode |
 | Gotchas | `.claude/skills/submit/gotchas.md` | Always — known failure points |
 
 ---
