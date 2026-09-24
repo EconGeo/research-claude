@@ -83,6 +83,27 @@ For each, diff against canonical and decide:
   no recorded reason becomes indistinguishable from an accident.
 - **Generally useful** — upstream it, then replace the real file with a link.
 
+## Step 3.5: Divergence register
+
+`docs/decisions/clo-author-divergences.md` exists because a divergence litigated once, on the day
+it happens, costs one paragraph; the same divergence found three months later by an audit costs a
+priority finding (D-2, D-3 and D-18 were exactly that — a mechanism correctly retired or
+correctly introduced whose *purpose* nobody re-homed, found only because a 2026-09-23 audit went
+looking). This is the point to catch the next one, not the audit that finds it later.
+
+Ask, for every change from Step 2 and Step 3 about to be committed upstream:
+
+- Does it **retire, replace, or newly diverge from** something clo-author did — a safeguard, a
+  mechanism, a default? If clo-author is not the origin of what's changing, this does not apply.
+- If yes: does an entry already cover it? If not, add one before committing — class it
+  (`INHERITED` / `DELIBERATE DIVERGENCE` / `GAP` / `OBSOLETE`), name the purpose the old mechanism
+  served, and say where that purpose lives now (a gate, a rule, or explicitly nowhere, with a
+  reason). An entry with no recorded reason is indistinguishable from an oversight to the next
+  reader — that is the register's own founding complaint about itself.
+
+Skip this for changes with no clo-author lineage at all (most project overrides in Step 3 are
+purely local additions, not divergences from anything upstream).
+
 ## Step 4: De-projectification check
 
 Before any upstream commit, run the D5 scan from the gate:

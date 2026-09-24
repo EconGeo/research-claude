@@ -6,16 +6,18 @@ the stalled 09-16 closeout (43 defects), the six divergence GAPs, the connectivi
 and the audit defects not yet planned. Do not start it until Phases 2–5 below are done.
 **Blocks:** POGM4's JRER submission plan, which is paused until Phase 2 lands.
 
-**Status (2026-09-24): Phases 1–3 done.** Phase 1 (`ec8905e`…`3b1eb9f`) merged in `04375cb`.
+**Status (2026-09-24): Phases 1–4 done.** Phase 1 (`ec8905e`…`3b1eb9f`) merged in `04375cb`.
 Phase 2 (`7424e79`, `71aaaf3`, `ab41926`, `8d65c68`) merged to `main` in `19aaac0`. The upstream
 `EconGeo/ai-audit` rename that 2.4 was waiting on has landed and been synced (`c737ac6`):
 `/humanize`/`humanize-auditor` are now `/civilize`/`civilize-auditor` throughout `ai-audit/`, so
-2.4's gate is met. Phase 3 (all five items, 3.1–3.5) is done as of this session — see each item
-for its gate evidence; every gate was reproduced failing before the fix and passing after, and
-`check_fork.sh` / `check_install.sh --all` / the full test suite (199 tests) all PASS as of the
+2.4's gate is met. Phase 3 (all five items, 3.1–3.5) landed in a prior session. Phase 4 (all three
+items, 4.1–4.3) is done as of this session on branch `phase4-repair-plan` — see each item for its
+gate evidence; every gate was reproduced failing before the fix and passing after, and
+`check_fork.sh` / `check_install.sh --all` / the full test suite (212 tests) all PASS as of the
 last item. One item remains not fully closed, not silently marked done: 1.6's POGM4 edit is
 uncommitted in POGM4's own repo (outside this session's scope to commit). POGM4 can resume — Phase
-2 landed. Next: Phase 4 (re-home the orphaned divergence purposes) — not started.
+2 landed. Next: Phase 5 (resume POGM4) — the closeout handoff (`docs/2026-09-23_pipeline-closeout-handoff.md`)
+is what comes after this plan finishes, not started.
 
 ---
 
@@ -277,7 +279,7 @@ next task is a review round.
 
 ---
 
-## Phase 4 — Re-home the orphaned purposes
+## Phase 4 — Re-home the orphaned purposes — **done 2026-09-24**
 
 Five of the six GAPs in the divergence register share one shape: **the mechanism was correctly
 retired or replaced, and the purpose it served was never re-homed.** The registry is the proven
@@ -285,12 +287,48 @@ case — it existed "for writer handoff" because the writer could not see number
 objects; Quarto dissolved that for expressions, and nothing owned it for literals until
 `prose_number_check.py` was written, years of manuscripts later.
 
-- [ ] **4.1** Work D-2, D-3, D-18 and D-19 the same way: name the purpose, decide whether it still
+- [x] **4.1** Work D-2, D-3, D-18 and D-19 the same way: name the purpose, decide whether it still
   exists under Quarto, and either re-home it in a gate or record it OBSOLETE with the reason.
-- [ ] **4.2** Record a reason on disk for the **7 divergences that currently have none**.
-- [ ] **4.3** Add the register to `/promote`'s checklist so the next divergence is litigated when
+  **Done 2026-09-24.** All four closed — see `docs/decisions/clo-author-divergences.md`.
+  **D-2:** already re-homed as of Phase 0 (`hooks/install-check.py` at `SessionStart`) but never
+  verified against the register; `tested:` `check_install.sh --all` → `PASS [hooks-wired]` ×6.
+  **D-3:** genuinely open — `protect-files.sh` was never wired. Traced the "opt-in" citation to its
+  actual source (`docs/superpowers/specs/2026-09-08-pipeline-repair-design.md`'s own R-7 — a
+  different document's numbering than this repo's rulings appendix, which has an unrelated R-7 of
+  its own; the two were conflated in three separate 2026-09-23 audit notes). Superseded that ruling
+  given the concrete evidence it produced (`/review`'s own ad hoc `git status --porcelain` patch
+  for a report restamped mid-review): wired `protect-files.sh` in `seeds/settings.json` and all six
+  linked repos, repointed `PROTECTED_PATTERNS` from inherited LaTeX-era names to the actual
+  Quarto-era artifacts. Also found and fixed a second, independent bug while testing: `[[
+  "$BASENAME" == "$PATTERN" ]]` quotes the pattern, which disables bash glob matching, so every
+  wildcard pattern — including the ones shipped since 2026-09-08 — silently never matched. `tested:`
+  `tests/test_protect_files.py` (8 cases); `check_install.sh --all` `hooks-wired` FAILed on all six
+  repos the moment the hook joined the seed, PASSed once each repo's `settings.json` caught up.
+  **D-18:** already closed as a side effect of Phase 3.1/3.2/3.4; the register just hadn't been
+  told. **D-19:** not a missing check but a missing design decision — already settled at Phase 2.5
+  (user: build a named third referee agent later, not N-way dispatch now); recorded as a closed
+  scope boundary rather than a live GAP. Full suite (212 tests after 4.1–4.3), `check_fork.sh` and
+  `check_install.sh --all` all PASS.
+- [x] **4.2** Record a reason on disk for the **7 divergences that currently have none**.
+  **Done 2026-09-24.** D-2, D-3, D-18 closed above with reasons; D-16, D-17, D-19 already carried
+  recorded reasons by the time the register's own "7 unrecorded" finding was written (D-17's own
+  "Recorded on disk" field was stale and said otherwise — fixed alongside). **D-8 is the one
+  genuine gap**: no prior ruling existed anywhere to recover, so this is a new decision, not a
+  correction — ruled to keep the prose replication-tolerances table (a documented scope boundary:
+  five stable threshold values read once per `/review --replicate`, where the actual work is an
+  interpretive judgment call already made by the critic, unlike INV-11's hundreds of individual
+  prose numbers). Zero divergences now carry no recorded reason.
+- [x] **4.3** Add the register to `/promote`'s checklist so the next divergence is litigated when
   it is made, not three months later. **Gate:** `/promote` prompts for a register entry when a
   skill's behaviour changes.
+  **Done 2026-09-24.** Added Step 3.5 to `skills/promote/SKILL.md`: for every change about to be
+  committed upstream, ask whether it retires, replaces, or newly diverges from something
+  clo-author did, and add a register entry before committing if so. Added `check_refs.py`'s
+  `promote-register-check` criterion (wired into `check_fork.sh`): FAILs unless the skill both
+  references `docs/decisions/clo-author-divergences.md` and ties it to the commit step (not just a
+  passing mention), mirroring the `promote-vendor-warn` pattern from Phase 3.2. `tested:` FAILed on
+  a skill text naming the register file without a commit-time step, PASSed once the real step
+  language was added. 5 new tests (`TestPromoteRegisterCheck` in `tests/test_check_refs.py`).
 
 ---
 
