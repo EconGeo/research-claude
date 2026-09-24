@@ -1,7 +1,7 @@
 ---
 name: strategize
 description: Design identification strategy, pre-analysis plan, or formal theory section. Dispatches Strategist / Theorist (proposer) and the paired critic (validator). Replaces the old identify and pre-analysis-plan commands.
-argument-hint: "[mode: strategy | pap | pap interactive | theory] [research question or spec path]"
+argument-hint: "[mode: strategy | pap | pap interactive | theory] [research question or spec path] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Bash,Agent
 ---
 
@@ -26,7 +26,11 @@ Workflow:
    report in `.claude/skills/strategize/templates/pre-strategy-report.md`, proving it read the
    discovery inputs. Missing spec, literature review or data assessment → proceed with ASSUMED
    placeholders, each flagged.
-2. Read `.claude/references/domain-profile.md` for the field's common designs
+2. Read `.claude/references/domain-profile.md` for the field's common designs, then
+   **Option gate** (`.claude/rules/option-gates.md`): show 5–8 candidate designs — columns
+   *variation exploited*, *estimand*, *key assumption*, *main threat*, *data fit* — ranked,
+   rank 1 marked, and wait (rank / `edit` / `none`; `--yes` takes rank 1). The pick and the
+   losing designs land in Step 7's decision record under *Alternatives considered*.
 3. Dispatch Strategist to produce:
    - Strategy memo: design choice, estimand, assumptions, comparison group
    - Pseudo-code: implementation sketch
@@ -128,6 +132,8 @@ Workflow:
 1. **Pre-Theory Report (mandatory).** Before writing any math, the Theorist outputs the report in
    `.claude/skills/strategize/templates/pre-theory-report.md`, showing what it read. If the
    strategy memo or the paper type is missing, the Theorist flags it and asks before proceeding.
+   Any question the Theorist would ask is asked here, in the main session, before dispatch —
+   the theorist has no user-facing tool.
 2. Read `.claude/references/domain-profile.md` for the Theoretical Foundational References table and Author Team table.
 3. Dispatch **Theorist** to produce:
    - `quality_reports/theory/[topic]/theory_memo.md`

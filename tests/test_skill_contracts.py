@@ -51,9 +51,12 @@ KNOWN_UNBOUND: set[str] = set()
 # had no `state strike explorer` line, so the data stage could never escalate (the driver's
 # generic strike, now removed, was the only thing that ever counted a round there). The strike
 # line is a dispatch instruction, not prose; measured size 6,141.
+# 2026-09-24 (option gates, Task A2): strategize's cap raised 8,000 -> 8,500. The design gate
+# (audit §3 P4 row 1) is a wait instruction, plus the theorist's questions moved to the main
+# session; measured size 8,464.
 BUDGET = {
     "review": 12500,
-    "strategize": 8000,
+    "strategize": 8500,
     "write": 7600,
     "discover": 6200,
     "checkpoint": 5500,
