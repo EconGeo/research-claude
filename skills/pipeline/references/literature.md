@@ -28,3 +28,10 @@ log entry for `post`'s `critic-ran` check, so confirm it happened before trustin
 ## Escalation (strike 3, target: user)
 "The critic requires coverage of X, which the library lacks and external search did not
 find — narrow the claim or extend the search?"
+
+Alternatives (rank 1 first; the driver offers these as the option gate, never invents its own):
+1. Narrow the claim to what the corpus supports and say so in `positioning.md`.
+2. Extend the search to the adjacent literature the critic named, via `/ztp-research`.
+3. Re-scope the setting so the closest paper is a benchmark rather than a competitor.
+4. Treat the closest paper as the baseline and position as an extension of it.
+5. Downgrade the contribution to a data update and label it honestly.

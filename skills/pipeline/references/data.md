@@ -26,3 +26,10 @@ rejection table, and the explorer-critic score.
 ## Escalation (strike 3, target: user)
 "The critic rejects every candidate on identification compatibility — accept a lower
 feasibility grade for <dataset>, or does the research question need to change?"
+
+Alternatives (rank 1 first; the driver offers these as the option gate, never invents its own):
+1. Accept the lower feasibility grade for the best-fitting dataset and disclose the limitation.
+2. Apply for the restricted version the critic's compatibility check would pass.
+3. Switch to a proxy dataset that measures the outcome less directly but covers the variation.
+4. Narrow the geography or period to where a public dataset is compatible.
+5. Change the unit of observation to one the data support, and redesign around it.
