@@ -7,7 +7,8 @@ Purpose: functionality evals that assert MECHANISM — which tool, in what order
 flags — with no Zotero, no ChromaDB and no embedding provider (audit 2026-09-15 §3 P7;
 docs/plans/2026-09-24-option-gates-subagent-routing-evals.md Part C). Ranking is token
 overlap, so it is deterministic. Writes mutate an in-memory copy of the fixture and are
-echoed to stderr as `WRITE <tool> <json>` — that line is the eval's assertion source.
+echoed to stderr as `WRITE <tool> <args-json> -> <result-json>` — that line is the eval's
+assertion source.
 
 Two ZotPilot behaviours are reproduced on purpose because the skills guard against them:
 - `manage_tags(action="set")` is refused (destructive; the skill forbids it), and
@@ -162,7 +163,8 @@ def main():
                 if name not in dict(TOOLS): raise ValueError(f"unknown tool {name}")
                 result = getattr(lib, name)(**args)
                 if name in WRITES:
-                    print(f"WRITE {name} {json.dumps(args, sort_keys=True)}", file=sys.stderr, flush=True)
+                    print(f"WRITE {name} {json.dumps(args, sort_keys=True)} -> {json.dumps(result, sort_keys=True)}",
+                          file=sys.stderr, flush=True)
             else:
                 raise ValueError(f"unknown method {method}")
             out = {"jsonrpc": "2.0", "id": rid, "result": result}
