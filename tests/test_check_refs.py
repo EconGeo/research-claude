@@ -252,9 +252,11 @@ class TestWritesTools(unittest.TestCase):
 class TestScriptRefs(unittest.TestCase):
     """R-fix, closeout handoff §4.2 item 4: a script path named in prose (a rule, a skill, an
     agent) that does not exist on disk. quarto_structure_check.py/INV-25 was cited before it
-    existed once; this is the check that stops the next one."""
+    existed once; this is the check that stops the next one. For the `.claude/scripts/` form
+    specifically, also requires the script to be in scripts/SHIPPED — only what apply.sh
+    actually installs into a project's `.claude/scripts/` resolves there for real."""
 
-    def _run(self, text: str, create=()) -> int:
+    def _run(self, text: str, create=(), shipped=None) -> int:
         with tempfile.TemporaryDirectory() as t:
             root = pathlib.Path(t)
             (root / "rules").mkdir()
@@ -263,6 +265,9 @@ class TestScriptRefs(unittest.TestCase):
                 p = root / rel
                 p.parent.mkdir(parents=True, exist_ok=True)
                 p.write_text("")
+            if shipped is not None:
+                (root / "scripts").mkdir(exist_ok=True)
+                (root / "scripts" / "SHIPPED").write_text("\n".join(shipped) + "\n")
             with contextlib.redirect_stdout(io.StringIO()):
                 return cr.crit_script_refs(root)
 
@@ -280,8 +285,19 @@ class TestScriptRefs(unittest.TestCase):
         self.assertEqual(self._run("Run `python3 .claude/scripts/does_not_exist.py`.\n"), 1)
 
     def test_claude_scripts_existing_passes(self):
+        """The script exists on disk AND is listed in scripts/SHIPPED — the only combination
+        that actually resolves at .claude/scripts/ in an installed project."""
         self.assertEqual(self._run("Run `python3 .claude/scripts/check_fork.sh`.\n",
-                                    create=["scripts/check_fork.sh"]), 0)
+                                    create=["scripts/check_fork.sh"],
+                                    shipped=["check_fork.sh"]), 0)
+
+    def test_claude_scripts_existing_but_not_shipped_flagged(self):
+        """check_refs.py itself exists in scripts/ but is a repo-maintenance gate, never
+        installed into a project's .claude/scripts/ — apply.sh/scripts/SHIPPED never ships it.
+        A `.claude/scripts/check_refs.py` citation is dead the moment it is installed."""
+        self.assertEqual(self._run("Run `python3 .claude/scripts/foo.py`.\n",
+                                    create=["scripts/foo.py"],
+                                    shipped=["some_other_script.py"]), 1)
 
     def test_real_tree_passes(self):
         with contextlib.redirect_stdout(io.StringIO()):

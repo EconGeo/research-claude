@@ -136,9 +136,12 @@ print(f"  roster agents never dispatched anywhere: {report['agents_on_roster_nev
 print(f"  skills never invoked      : {report['skills_never_invoked_by_anything']}")
 print(f"  orphan files (0 inbound)  : {len(report['orphan_files_no_inbound_reference'])}")
 # Only dangling_paths is a verified-zero-false-positive gate (fixed 2026-09-24). The other
-# three are printed for visibility but not yet triaged for false positives (gotchas.md and
+# four categories above (agents named not on roster, roster agents never dispatched, skills
+# never invoked, orphan files) are not yet triaged for false positives (gotchas.md and
 # pipeline/references/*.md are loaded by naming convention, not a textual reference this
-# regex-based scanner can see) — WARN, never blocking, per this plan's coverage rule.
+# regex-based scanner can see) and never block. Of those four, only the two below (skills never
+# invoked, orphan files) also print a WARN line — per this plan's coverage rule, not yet
+# extended to the other two, which stay summary-only until they are triaged.
 if report["skills_never_invoked_by_anything"]:
     print(f"WARN [graph-skills] never invoked by anything: {report['skills_never_invoked_by_anything']}")
 if report["orphan_files_no_inbound_reference"]:

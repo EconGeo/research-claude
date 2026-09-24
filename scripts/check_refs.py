@@ -12,6 +12,7 @@ import argparse, fnmatch, re, sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import registry_lib as rl
+import check_paths as cpaths
 
 SHIP = ["agents", "skills", "rules", "references", "hooks", "templates", "seeds", "scripts"]
 VENDORED = ["zotpilot-skills", "ai-audit"]
@@ -166,21 +167,41 @@ SCRIPT_REF = re.compile(r"(?<![A-Za-z0-9_./-])(?:\.claude/)?scripts/[A-Za-z0-9_.
 SCRIPT_REF_EXEMPT_PREFIX = ("scripts/acquire/",)
 
 def crit_script_refs(root):
-    """A scripts/<path>.py or .sh (or .claude/scripts/<path>.py or .sh) cited in prose that
-    does not exist on disk — the quarto_structure_check.py/INV-25 shape (closeout handoff
-    §4.2 item 4), generalized."""
+    """A scripts/<path>.py or .sh cited in prose that does not exist on disk, or (for the
+    `.claude/scripts/` form only) exists but is not in scripts/SHIPPED — the
+    quarto_structure_check.py/INV-25 shape (closeout handoff §4.2 item 4), generalized.
+
+    Coverage, stated honestly: check_paths.py's own PATH_RE/resolve() already validate every
+    `.claude/scripts/<x>` reference inside skills/ and agents/ text, and it already checks the
+    SHIPPED set there — only scripts actually installed by apply.sh resolve at that prefix in a
+    real project. This criterion's DISTINCT value over check_paths.py is (a) bare `scripts/<x>`
+    references, a project-root path form check_paths.py's `.claude/`-prefix rule does not cover
+    at all, and (b) scanning every SHIP directory this file's `shipped_files()` covers
+    (references/, templates/, seeds/, hooks/, scripts/ itself — not just skills/ and agents/)
+    across every TEXT_SUFFIX file type (not just .md/.py/.sh/.json/.R/.qmd/.yaml/.tex). For the
+    `.claude/scripts/` form specifically, this reuses check_paths.shipped_scripts(root) rather
+    than re-deriving the manifest, so the two criteria cannot silently disagree about it."""
     hits = []
+    shipped = cpaths.shipped_scripts(root)
     for f in shipped_files(root, SHIP):
         for n, ln in lines_of(f):
             for m in SCRIPT_REF.finditer(ln):
                 tok = m.group(0)
-                # Strip leading .claude/ for exemption and existence checks (in an installed
-                # project .claude/scripts/ is a link to this repo's scripts/).
-                check_tok = tok.lstrip(".claude/") if tok.startswith(".claude/") else tok
+                is_claude_prefixed = tok.startswith(".claude/")
+                # A literal prefix slice, not .lstrip(".claude/") — lstrip strips any of those
+                # CHARACTERS from the left, not the literal substring, and happened to work here
+                # only because "scripts" starts with 's', a character not in ".claude/".
+                check_tok = tok[len(".claude/"):] if is_claude_prefixed else tok
                 if check_tok.startswith(SCRIPT_REF_EXEMPT_PREFIX):
                     continue
                 if not (root / check_tok).exists():
                     hits.append(f"{f.relative_to(root)}:{n}: {tok} does not exist")
+                    continue
+                if is_claude_prefixed:
+                    rest = check_tok[len("scripts/"):]
+                    if rest not in shipped:
+                        hits.append(f"{f.relative_to(root)}:{n}: {tok} exists in scripts/ but "
+                                    f"is not in scripts/SHIPPED — never installed at .claude/scripts/")
     return report("script-refs", hits)
 
 def _hook_readme_rows(readme_text):
