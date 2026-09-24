@@ -10,6 +10,7 @@ just the literal ones.
 import json
 import pathlib
 import subprocess
+import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -56,9 +57,25 @@ class TestProtectFiles(unittest.TestCase):
     def test_non_edit_tool_allowed(self):
         self.assertAllowed("Bash", "/tmp/proj/quality_reports/pipeline_state.json")
 
-    def test_write_tool_also_protected(self):
-        code, _ = run("Write", "/tmp/proj/quality_reports/pipeline_state.json")
-        self.assertEqual(code, 2)
+    def test_write_over_an_existing_protected_file_blocked(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = pathlib.Path(d, "pipeline_state.json"); f.write_text("{}")
+            code, _ = run("Write", str(f))
+            self.assertEqual(code, 2)
+
+    def test_write_that_creates_a_protected_file_allowed(self):
+        """2026-09-24, live fixture: every critic returns text and the SESSION saves it to
+        quality_reports/reviews/<critic>_<date>.md — a Write that CREATES a file matching
+        `*-critic_*.md`. Blocking creation meant `post` could never see a report, so no
+        stage could close (the driver stopped at `data` with `post explorer: FAIL`). The
+        protection exists to stop a later restamp of a committed report, which is the
+        Edit/overwrite case; creation is the pipeline working."""
+        with tempfile.TemporaryDirectory() as d:
+            f = pathlib.Path(d, "quality_reports", "reviews", "explorer-critic_2026-09-24.md")
+            self.assertAllowed("Write", str(f))
+            self.assertFalse(f.exists())
+            code, _ = run("Edit", str(f))
+            self.assertEqual(code, 2, "Edit of a protected path is blocked even when absent")
 
     def test_hook_is_wired_in_the_seed(self):
         seed = json.loads((ROOT / "seeds" / "settings.json").read_text())

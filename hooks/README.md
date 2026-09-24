@@ -33,7 +33,7 @@ Before shipping a skill that depends on a hook, check that the hook is wired.
 | `post-edit-lint.sh` | PostToolUse (Edit/Write) | Advisory lint on edited scripts and `.qmd` files, emitted as `additionalContext` |
 | `lint-scripts.sh` | PostToolUse (via `post-edit-lint.sh`) / CLI | Lints acquisition scripts and a manuscript's `.qmd` R chunks against INV-14..19 |
 | `install-check.py` | SessionStart | Runs check_install.sh; silent when clean, injects the FAIL lines otherwise |
-| `protect-files.sh` | PreToolUse | Blocks edits to protected paths |
+| `protect-files.sh` | PreToolUse | Blocks Edit of, and Write over, protected paths (generated evidence, state, settings); a Write that creates one is allowed — critics return text and the session saves it |
 | `context-monitor.py` | PostToolUse | Progressive nudges at 40/55/65% (/tools learn), 80% (info), 90% (caution), once per session each |
 | `log-reminder.py` | Stop | Counts responses since the session log was last touched and nudges via `additionalContext`. Never blocks |
 | `verify-reminder.py` | PostToolUse (Write/Edit) | Reminds you to render before calling a task done, on `.qmd`/`.R` edits |
