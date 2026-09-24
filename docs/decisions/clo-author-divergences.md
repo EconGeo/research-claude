@@ -418,15 +418,17 @@ LaTeX and produces garbage in Word — use **flextable**"* — and `:169` deduct
 `agents/data-engineer.md:92` still carries the inherited, unqualified line:
 `| Tables | gt, kableExtra, modelsummary |`, with **flextable absent entirely**.
 
-**Class:** **GAP** — an inherited instruction the format change invalidated and the port did not
-reconcile. The agent is told to do the thing its own paired critic deducts for.
+**Class:** **DELIBERATE DIVERGENCE** — **fixed 2026-09-23 (Phase 2.5).** (Was GAP — an inherited
+instruction the format change invalidated and the port did not reconcile; the agent was told to
+do the thing its own paired critic deducts for.)
 
-**Does the problem still exist?** The *guidance* is correct for PDF and wrong for Word; every other
-site qualifies it (`chunk-structure.md:71`, `quarto-pdf.md`, `coding-standards-r.md`). This agent
-file is the sole outlier.
+**Did the problem still exist?** Yes until fixed: the *guidance* was correct for PDF and wrong for
+Word; every other site already qualified it (`chunk-structure.md:71`, `quarto-pdf.md`,
+`coding-standards-r.md`). This agent file was the sole outlier.
 
-**Recorded on disk:** **unrecorded** — no decision says the data-engineer is PDF-only, and nothing
-is.
+**Recorded on disk:** now — `agents/data-engineer.md:92`'s table row is qualified by format
+(PDF: `kableExtra`; Word: `flextable`, pointing at `rules/quarto-word.md`), matching every other
+site.
 
 ---
 
@@ -538,19 +540,35 @@ its full option list is `--peer`, `--r2`, `--stress`, `--methods`, `--theory`, `
 
 **Does the problem still exist?** The capability is real and useful (estimating referee variance
 rather than enforcing diversity) but reachable only by a user who has read `editor.md`. The
-conflict rule it delegates is enforced by nobody.
+conflict rule it delegates was enforced by nobody — **corrected 2026-09-23 (Phase 2.5):**
+`editor.md:124` no longer claims `/review --peer` enforces a conflict rule that has no dispatch
+path to run in. Checked directly against clo-author at the pinned `d36c408` commit before
+correcting: clo-author's `editor` is fixed at exactly two referees with no variance mode at all,
+so this is not a capability that regressed in the port — it is net-new work (from POGM4) whose
+referee-3-through-N agent identity (the registry has only two specialized referee agents,
+`domain-referee` and `methods-referee`, never a generic disposition-driven one) was never
+resolved anywhere, including in the source it was harvested from. **Still unreachable through
+`/review`** — the honest correction records that plainly rather than inventing a resolution to an
+open design question.
 
-**Recorded on disk:** **unrecorded.** The design spec lists `--variance` among the capabilities
-`editor` *brings*, with no note that no skill exposes it.
+**Recorded on disk:** now — this entry, and `editor.md:124` itself. Previously unrecorded; the
+design spec lists `--variance` among the capabilities `editor` *brings*, with no note that no
+skill exposes it.
 
-**Related port artifacts** — same shape, tracked in the audit report rather than as separate
-entries here, since each is a reconciliation bug rather than a divergence in intent:
-`skills/analyze/templates/paper-to-code-map.md:36` forbids the variable name
-`chunk-structure.md:19,54,55` demonstrates (clo-author's script templates
-`r-script-structure.R` / `python-script-structure.py` were replaced by `chunk-structure.md`
-without reconciling the naming map); `agents/data-engineer.md:40` sets `base_size >= 14` against
-`figure-standards.md:41`'s `base_size = 11`; and `skills/talk/SKILL.md`'s format table disagrees
-with `templates/format-constraints.md` on every row.
+**Related port artifacts** — same shape, **fixed 2026-09-23 (Phase 2.5)**, since each was a
+reconciliation bug rather than a divergence in intent:
+`skills/analyze/templates/paper-to-code-map.md:36`'s naming rule now names `treated` (matching
+`chunk-structure.md:19,54,55`'s worked example) instead of forbidding it, and no longer
+self-contradicts by both endorsing and forbidding `treat` in the same sentence;
+`agents/data-engineer.md:40` now points at `figure-standards.md`'s `base_size = 11` instead of
+asserting `base_size >= 14`; `agents/data-engineer.md:92`'s table package row now qualifies
+`kableExtra` to PDF and names `flextable` for Word (matching `rules/quarto-word.md`); and
+`skills/talk/SKILL.md`'s inline format-constraints and critic-category tables — which disagreed
+with `templates/format-constraints.md` and `review/templates/talk-review-6-categories.md` on
+every row, and which the actually-dispatched agent files (`storyteller.md`,
+`storyteller-critic.md`) never read in the first place — are deleted in favour of the one
+canonical file each, closing the same class of drift for good rather than resyncing two copies
+that will drift again.
 
 ---
 
@@ -559,17 +577,19 @@ with `templates/format-constraints.md` on every row.
 | Class | Entries |
 |---|---|
 | INHERITED | D-8 (values; format change unrecorded) |
-| DELIBERATE DIVERGENCE | D-1, D-5, D-6, D-9, D-10 (weakly recorded), D-11, D-12, D-13, D-14, D-15, D-17 (ruled 2026-09-23, execution deferred to an upstream `EconGeo/ai-audit` rename) |
+| DELIBERATE DIVERGENCE | D-1, D-5, D-6, D-9, D-10 (weakly recorded), D-11, D-12, D-13, D-14, D-15, D-16 (fixed 2026-09-23), D-17 (ruled 2026-09-23, execution deferred to an upstream `EconGeo/ai-audit` rename) |
 | OBSOLETE | D-4 (mechanism), D-7 |
-| **GAP — defects** | **D-2, D-3, D-16, D-18, D-19** |
+| **GAP — defects** | **D-2, D-3, D-18, D-19 (partially corrected 2026-09-23 — see entry)** |
 
 **Unrecorded reasons — the register's own finding:** D-2 (that `check_install.sh` never runs
-automatically), D-3, D-8, D-16, D-17 (now recorded — see the ruling above), D-18, D-19. Seven of
-nineteen divergences had no reason recorded anywhere on disk before this file existed.
+automatically), D-3, D-8, D-16 (now recorded — see the entry above), D-17 (now recorded — see the
+ruling above), D-18, D-19 (now recorded — see the entry above). Seven of nineteen divergences had
+no reason recorded anywhere on disk before this file existed.
 
 **The pattern worth carrying forward.** Five of the six GAPs share one shape: *a mechanism was
 correctly retired or correctly introduced, and its **purpose** was never assigned a new owner.*
 D-4 is the case that was eventually caught and fixed — but only after four wrong numbers reached a
-manuscript that scored 100/100. D-2, D-3, D-18 and D-19 are the same shape, still open. When
-retiring, porting or vendoring anything, state the purpose separately from the mechanism and name
-where the purpose now lives — and add an entry here.
+manuscript that scored 100/100. D-2, D-3 and D-18 are the same shape, still open; D-19's false
+enforcement claim is corrected but the underlying capability remains unreachable through `/review`.
+When retiring, porting or vendoring anything, state the purpose separately from the mechanism and
+name where the purpose now lives — and add an entry here.

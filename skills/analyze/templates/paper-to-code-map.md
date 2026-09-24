@@ -33,7 +33,7 @@ Copy this into the `setup` chunk as a comment block and fill in project-specific
 1. **Every symbol that appears in the paper's equations gets a row.** Error terms can be marked "not in code."
 2. **Code names use snake_case.** No camelCase, no dots-in-names.
 3. **The Source column documents provenance.** Where does this variable come from? Raw data column? Constructed how?
-4. **Match is exact.** If the paper calls it $D_{it}$, the code variable is `treatment` (or `treat` — pick one and stick with it). Never `treated`, `Treatment`, `is_treated`, and `treat` in different scripts.
+4. **Match is exact and consistent.** If the paper calls it $D_{it}$, the code variable is `treated` (`.claude/skills/analyze/templates/chunk-structure.md`'s worked example uses this name throughout). Pick one name and use it in every chunk and every script — never let `treated`/`Treatment`/`is_treated`/`treat` drift across scripts within the same project.
 5. **The map is established in the Pre-Code Report** before any code is written. Mid-script name invention is a coder-critic deduction.
 6. **The writer reads the setup chunk.** Prose notation must match this map (INV-7).
 

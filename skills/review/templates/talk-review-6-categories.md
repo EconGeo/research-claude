@@ -34,7 +34,7 @@ Extracted from `storyteller-critic.md`. Used by the storyteller-critic agent for
 ## 2. Visual Quality
 
 - Text overflow on any slide?
-- Font sizes readable for projection (>= 10pt)?
+- Font sizes readable for projection — matching `.claude/skills/talk/references/slide-design-principles.md`: title >= 24pt, body >= 18pt, footnotes/sources >= 12pt (the same floors the Storyteller was told to build to)?
 - Tables readable (not too many columns/rows)?
 - Figures at appropriate size with clear labels?
 - Consistent formatting throughout?
