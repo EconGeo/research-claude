@@ -1,7 +1,7 @@
 ---
 name: review
 description: All quality reviews — routes to appropriate critics based on target file type and flags. Replaces the old paper-excellence, proofread, econometrics-check, review-r and review-paper commands.
-argument-hint: "[file path] Options: --peer [journal], --stress [journal], --methods, --theory [target], --proofread, --code [file], --replicate [language], --all"
+argument-hint: "[file path] Options: --peer [journal], --stress [journal], --methods, --theory [target], --proofread, --code [file], --replicate [language], --all, --yes"
 allowed-tools: Read,Grep,Glob,Write,Bash,Agent
 ---
 
@@ -53,7 +53,11 @@ put any changed tracked path in front of the user; the rest of both incidents is
 Simulates a realistic journal submission. Three phases, orchestrated sequentially.
 
 #### Phase 1: Editor Desk Review
-Dispatch the **editor** agent with the paper and target journal. Returns text (desk review +
+The target journal is `[journal]`, else the pick in the newest
+`quality_reports/journal_recommendations_*.md`; with neither, **Option gate**
+(`.claude/rules/option-gates.md`): 5–10 candidates from
+`.claude/references/journal-profiles.md`, `--yes` takes rank 1. Dispatch the **editor** agent
+with the paper and that journal. Returns text (desk review +
 referee selection if SEND OUT). Session saves to
 `quality_reports/peer_review_<manuscript-stem>/desk_review.md`.
 
@@ -61,7 +65,8 @@ The editor:
 1. Reads the paper (abstract, intro, contribution, identification, results)
 2. Searches the literature via WebSearch to verify novelty claims
 3. Decides: **DESK REJECT** or **SEND TO REFEREES**
-4. If desk reject → report with reasons + suggested alternative journals. Done.
+4. If desk reject → report with reasons, then **Option gate**: 5 alternative venues with the
+   desk review's stated reason mapped to each; `--yes` takes rank 1 and reports it. Done.
 5. If send to referees → editor selects referee dispositions and pet peeves from the journal's **Referee pool** (see .claude/references/journal-profiles.md). The six dispositions are defined in `.claude/skills/review/templates/disposition-pool.md`; the peeve pools and sampling rules are in `.claude/agents/editor.md`.
 
 #### Phase 2: Referee Reports

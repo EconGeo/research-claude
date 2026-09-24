@@ -54,8 +54,10 @@ KNOWN_UNBOUND: set[str] = set()
 # 2026-09-24 (option gates, Task A2): strategize's cap raised 8,000 -> 8,500. The design gate
 # (audit §3 P4 row 1) is a wait instruction, plus the theorist's questions moved to the main
 # session; measured size 8,464.
+# 2026-09-24 (option gates, Task A6): review 12,500 -> 12,700. Two gate lines in --peer
+# (journal candidates when none is given; alternative venues on desk reject); measured 12,521.
 BUDGET = {
-    "review": 12500,
+    "review": 12700,
     "strategize": 8500,
     "write": 7600,
     # 2026-09-24 (option gates, Task A3): discover 6,200 -> 7,300. Four gates (question
