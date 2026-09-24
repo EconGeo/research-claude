@@ -63,4 +63,23 @@ class TestCheckPlanLiveness(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertIn("PASS [plan-liveness]", r.stdout)
 
+    def test_old_plan_with_status_complete_marker_passes_despite_open_boxes(self):
+        """superpowers-style plans never flip - [ ] to - [x] even when fully delivered; the
+        **Status:** marker is how such a plan says so without ticking a single box."""
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            init_repo(root)
+            (root / "docs" / "plans").mkdir(parents=True)
+            (root / "docs" / "plans" / "old-delivered-plan.md").write_text(
+                "# Old Plan — Implementation Plan\n\n"
+                "**Status:** complete (2026-09-24)\n\n"
+                "**Goal:** do the thing.\n\n"
+                "- [ ] Step 1\n")
+            git(["add", "."], root)
+            git(["commit", "-q", "-m", "old"], root, when="2020-01-01T00:00:00")
+            r = run_check(root)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("PASS [plan-liveness]", r.stdout)
+            self.assertNotIn("old-delivered-plan.md", r.stdout)
+
 if __name__ == "__main__": unittest.main()
