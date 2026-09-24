@@ -59,7 +59,9 @@ KNOWN_UNBOUND: set[str] = set()
 BUDGET = {
     "review": 12700,
     "strategize": 8500,
-    "write": 7600,
+    # 2026-09-24 (option gates, Task A9): write 7,600 -> 8,100. The GATE 1 / abstract hook
+    # gate and the ambiguous-paper-type confirmation; measured 8,033.
+    "write": 8100,
     # 2026-09-24 (option gates, Task A3): discover 6,200 -> 7,300. Four gates (question
     # framings, journal tiers, data shortlist, ideas), each a wait instruction; measured 7,195.
     "discover": 7300,

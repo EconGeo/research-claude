@@ -13,7 +13,7 @@ overwrite it (weight and threshold: `.claude/rules/quality.md`).
 ## Driver sequence
 ```
 python3 .claude/scripts/pipeline.py pre writer
-                                                   # invoke /write full
+                                                   # invoke /write full [--yes if run carried it]
 python3 .claude/scripts/pipeline.py post writer
 ```
 `/write full` walks GATE 1–3, dispatching writer then writer-critic after each section

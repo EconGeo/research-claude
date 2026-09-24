@@ -1,7 +1,7 @@
 ---
 name: write
 description: Draft academic paper sections using paragraph-level argument moves. Cleanup pass strips AI patterns after drafting. Replaces the old draft-paper and humanizer commands.
-argument-hint: "[section or mode: intro | strategy | results | conclusion | abstract | full | humanize | style-guide] [file path (optional)]"
+argument-hint: "[section or mode: intro | strategy | results | conclusion | abstract | full | humanize | style-guide] [file path (optional)] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
@@ -40,6 +40,8 @@ theory+empirics, or descriptive/measurement. The signatures, and what each type 
 section into, are in `.claude/skills/write/templates/section-templates.md` ("Paper Types"). The
 type decides which section template the Writer uses. Each type's narrative arc (the `**Arc:**`
 line per type, shared with `/talk`) is in `.claude/references/narrative-arcs.md`.
+If two types fit, confirm with the user before routing — a wrong type selects the wrong
+section template for every section after.
 
 #### 3. Section Routing
 
@@ -49,7 +51,7 @@ Based on `$ARGUMENTS`:
 - **`strategy`**: Draft empirical strategy (reduced-form), model + estimation (structural), or model + tests (theory+empirics)
 - **`results`**: Draft results — narration style depends on paper type and output type (regression tables, event study figures, counterfactual simulations, etc.)
 - **`conclusion`**: Draft conclusion with type-appropriate ending (policy implications, counterfactual implications, or research agenda)
-- **`abstract`**: Draft abstract (must have other sections first)
+- **`abstract`**: Draft abstract (must have other sections first); same option gate as GATE 1, over contribution statements
 - **`data`**: Draft data section — expanded for descriptive/measurement papers
 - **`model`**: Draft model section (structural or theory+empirics papers only)
 - **No argument**: Ask user which section to draft
@@ -71,7 +73,10 @@ session saves to `quality_reports/reviews/writer-critic_<date>.md` and
 #### 6. Present to user
 Only after the critic's score. Sections go through the drafting gates (`.claude/skills/write/templates/drafting-gates.md`), each gate closing with a score, pausing for approval at each:
 
-**GATE 1:** Introduction + Literature positioning → present, wait for approval
+**GATE 1:** Introduction + Literature positioning — before the writer drafts the intro,
+**Option gate** (`.claude/rules/option-gates.md`): 5–8 hooks / contribution statements,
+columns *hook*, *contribution sentence*, *closest paper it answers*; `--yes` takes rank 1; the
+pick is the intro's first paragraph → present, wait for approval
 **GATE 2:** Data + Empirical Strategy (or Model) → present, wait for approval
 **GATE 3:** Results + Robustness + Conclusion → present, wait for approval
 
