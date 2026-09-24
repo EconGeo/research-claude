@@ -478,6 +478,23 @@ agents:
     writes:
       - quality_reports/verification_report.md
 
+  # ── Extraction subagents (no component) ──────────────────────────────────
+  # Read-only helpers that hold `mcpServers: [zotpilot]` so a per-paper MCP loop runs outside
+  # the main context and returns compact records (audit 2026-09-15 §3 P5; plan Part B). No
+  # Write tool, so `writes: []` and the dispatching skill saves what it keeps.
+  data-tag-extractor:
+    role: infrastructure
+    kind: agent
+    parallel_group: extraction
+    requires: []
+    produces: []
+    critic: none
+    escalation_target: user
+    component: none
+    quality_weight: 0
+    conditional: false
+    writes: []
+
   # ── Vendored audits (ai-audit, VENDORED.md) ───────────────────────────────
   # Standalone, user-invoked audits — not gated behind a pipeline stage, not scored, no critic
   # of their own (they ARE the audit). Neither has a Write tool (ai-audit/agents/*.md), so

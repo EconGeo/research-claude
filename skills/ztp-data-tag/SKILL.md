@@ -72,34 +72,17 @@ If every item already carries `data-tagged`, report "collection already processe
 
 ## Step 3 — Extract the data field per paper
 
-**How text reaches you (important):** there are two channels and no full-PDF read.
-- `mcp__zotpilot__get_paper_details(doc_id=...)` returns **metadata + abstract** from
-  Zotero's SQLite — *not* the body.
-- The body (data/methods) lives only as **chunks in ChromaDB**. You retrieve it with
-  `mcp__zotpilot__search_papers` (semantic, returns top-K matching chunks) and
-  `mcp__zotpilot__get_passage_context` (surrounding chunks). There is **no tool that
-  returns a paper's full text or all of its chunks** — you extract from retrieved chunks.
+For each batch of 5 new items, dispatch **data-tag-extractor**
+(`.claude/agents/data-tag-extractor.md`; `Agent`, `subagent_type=data-tag-extractor`) with the
+`doc_id`s and the collection name. It holds ZotPilot itself, runs the per-paper loop —
+`get_paper_details` for metadata and abstract, one collection-scoped `search_papers` grouped by
+`doc_id` for the data/methods chunks, `get_passage_context` on the best hits — and returns one
+JSON record per paper in the schema above, with `source` set to `full-text` or `abstract-only`.
+The whole-library loop therefore never lives in this context; only the records do.
 
-For each new item (work in batches of 5):
-
-1. Get metadata + abstract via `mcp__zotpilot__get_paper_details(doc_id=...)`.
-2. Get the data/methods passages from ChromaDB. **`search_papers` has no `doc_id` filter** —
-   scope by `collection` (or `author`/`tag`) instead. Run ONE collection-scoped search with a
-   data-oriented query such as `"data sources dataset sample period variables methods"` (add
-   `section_weights={"methods":1,"results":0.6}` to favor the data section — note there is no
-   `data` section key; data lives under `methods`). The results carry a `doc_id` per passage,
-   so **group them by `doc_id`** — one collection search returns the data passages for *several*
-   papers at once (more efficient than one search per paper). Use `mcp__zotpilot__get_passage_context`
-   on the best hits for adjacent context. Because results are top chunks (not the whole paper),
-   run a second query if a paper's data section is missing.
-3. Set `source`: "full-text" if the item is indexed and chunks came back; "abstract-only"
-   if it is **not** indexed (you then have only the abstract from step 1 — lower confidence,
-   datasets are often absent from abstracts).
-4. Fill the schema from the abstract + retrieved chunks. Datasets/variables are usually in
-   the data/methods section. If nothing is identifiable, leave arrays empty and say so in
-   the report.
-5. Slugify tag values: lowercase, spaces → hyphens (e.g. `dataset:zillow-ztrax`,
-   `var:loan-denial-rate`). Keep the readable names in the note's JSON.
+Slugify tag values here: lowercase, spaces → hyphens (e.g. `dataset:zillow-ztrax`,
+`var:loan-denial-rate`). Keep the readable names in the note's JSON. A record with empty
+arrays is reported as such, not filled in.
 
 ## Step 4 — Preview and confirm (USER_REQUIRED before any write)
 

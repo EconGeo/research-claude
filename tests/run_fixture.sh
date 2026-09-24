@@ -206,8 +206,14 @@ SEED
     # so SIGALRM killed a 30-minute run and left a 0-line transcript — the run that finally
     # exercised the whole chain reported "claude produced no output at all". Streaming means
     # a killed run still leaves everything it had emitted.
+    # --allowedTools pipeline.py: 2026-09-24 a run recorded round 1's score, then the
+    # permission layer refused the identical round-2 `state record-score` and `state strike`
+    # (non-interactive, nothing to answer the prompt), so the driver halted at `data` after two
+    # real rounds. acceptEdits covers file edits, not Bash; the state writes are the mechanism
+    # this tier exists to observe, so they are pre-approved here and nowhere else.
     ( cd "$L" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "$LIVE_TIMEOUT" \
         claude -p "/pipeline run --until $LIVE_UNTIL --yes" --permission-mode acceptEdits \
+        --allowedTools "Bash(python3 .claude/scripts/pipeline.py *)" \
         --output-format stream-json --verbose \
     ) >"$LIVE_LOG" 2>&1
     lrc=$?
