@@ -23,10 +23,18 @@ unless something surfaces it. That is this skill's job.
 readlink .claude/skills/write
 ```
 
-Take the research-claude path from the link target. Call it `$RC`. Confirm it
-against `.claude/pipeline.lock` — if the lock names a commit but `$RC` is on
-`main`, this project is on the shared (`--tip`) checkout, which is expected for
-the maintainer and wrong for a coauthor.
+Take the research-claude path from the link target. Call it `$RC`. Then read the
+lock's last line — `apply.sh` writes `commit=<sha>` in **both** install modes, so
+the commit line cannot tell them apart; the discriminator is
+`# installed via: tip (shared checkout)` versus `# installed via: pinned`:
+
+```bash
+grep '^# installed via' .claude/pipeline.lock
+```
+
+`tip` means this project is on the shared checkout — expected for the maintainer,
+wrong for a coauthor. `pinned` means a project-local checkout detached at the lock
+SHA, where a promotion lands in the wrong place; stop and say so.
 
 ## Step 2: Uncommitted upstream edits
 
@@ -119,12 +127,18 @@ with `<project>` and the specific dataset with a description of its role.
 
 ## Step 5: Refresh the lock
 
-Offer to re-run `apply.sh --link` so `.claude/pipeline.lock` records the new SHA.
-Without this the lock still names the pre-promotion commit, and a coauthor
-bootstrapping from it gets the pipeline as it was before the improvement.
+Offer to re-link so `.claude/pipeline.lock` records the new SHA — from the project,
+`./bootstrap-pipeline.sh --tip` (`.claude/rules/shared-pipeline.md`), or from the
+checkout, `"$RC/apply.sh" --project-dir "$PWD" --link --tip` (`--project-dir` is
+required; `apply.sh` exits 1 without it). Without this the lock still names the
+pre-promotion commit, and a coauthor bootstrapping from it gets the pipeline as it
+was before the improvement.
 
-A promotion that **adds** a file matters beyond the lock: no other project has a
-link to it until each one re-links. Say so, and confirm the install here:
+A promotion that **adds a new top-level item** — a new skill directory, agent, rule
+or hook — matters beyond the lock: no other project has a link to it until each one
+re-links. A file added *inside* an existing skill directory needs no re-link, because
+the link is to the directory and propagates on save. Say which case this is, and
+confirm the install here:
 
 ```bash
 "$RC/scripts/check_install.sh"          # this project

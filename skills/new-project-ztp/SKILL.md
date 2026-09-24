@@ -57,8 +57,10 @@ Report to the user:
 - **Unindexed:** M papers
 
 If M > 0 (unindexed papers exist), ask:
-> "Your Zotero library has M papers not yet indexed. Index them now? This takes ~15–20 min
-> for 300 papers (Gemini free tier). You can also skip and index later with `/ztp-setup`."
+> "Your Zotero library has M papers not yet indexed. Index them now? 200 papers ≈ 10–20
+> minutes with either provider — Ollama (recommended, fully local; ~2–4 s/paper) or Gemini
+> (cloud; free tier 100 req/min, the indexer retries). You can also skip and index later
+> with `/ztp-setup`."
 
 If YES → run `mcp__zotpilot__index_library` with default settings.  
 If NO → continue; remind user to run `/ztp-setup` → index before using `/seed-papers`.
@@ -78,7 +80,9 @@ Append (or update) the `## Tools` section in the project's `CLAUDE.md`:
 | Zotero library indexed | Yes / Partial (N of M) / No |
 ```
 
-If `## Tools` already exists, update in place. If not, append after `## Current Project State`.
+If `## Tools` already exists, update it in place. If not, append the section at the end of
+`CLAUDE.md` — no shipped template defines a project `CLAUDE.md`, so no other heading can be
+assumed to exist.
 
 ---
 
