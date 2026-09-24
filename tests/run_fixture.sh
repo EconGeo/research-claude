@@ -2,7 +2,9 @@
 # run_fixture.sh — the repeatable end-to-end check against tests/fixture-project.
 #   tests/run_fixture.sh               # mechanical tier: no LLM, simulated dispatch log
 #   tests/run_fixture.sh --live        # also runs `claude -p '/pipeline ...'` in the temp copy
-#   tests/run_fixture.sh --keep        # leave the temp copy on disk and print its path
+#   tests/run_fixture.sh --keep        # leave the temp copies on disk even on PASS
+# A FAILED run always keeps its temp copies and prints their paths (default since 2026-09-24:
+# a deleted transcript cost a 40-minute re-run to diagnose one halt). PASS cleans up unless --keep.
 # Exit 0 = every check passed. Every check is named so a red can be cited.
 set -uo pipefail
 RC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -19,7 +21,8 @@ T="$(mktemp -d)"; H="$(mktemp -d)"; export T H RC
 L=""; [[ "$LIVE" == true ]] && L="$(mktemp -d)"
 # H: an isolated fake HOME for critic-pairing.py's checks below. Its sentinel file lives
 # under Path.home()/.claude/sessions/ (R-114) — never the developer's real home directory.
-[[ "$KEEP" == true ]] || trap 'rm -rf "$T" "$H" ${L:+"$L"}' EXIT
+cleanup() { if [[ "$KEEP" == true || "${fail:-1}" != 0 ]]; then echo "kept: $T"; [[ -n "${L:-}" ]] && echo "kept (live): $L"; else rm -rf "$T" "$H" ${L:+"$L"}; fi; }
+trap cleanup EXIT
 cp -R "$RC/tests/fixture-project/." "$T/"
 git -C "$T" init -q && git -C "$T" add -A && git -C "$T" -c user.name=fx -c user.email=fx@x commit -qm "fixture"
 fail=0
@@ -251,5 +254,4 @@ SEED
 fi
 
 [[ $fail -eq 0 ]] && echo "✓ run_fixture: PASS" || echo "✗ run_fixture: FAIL"
-[[ "$KEEP" == true ]] && { echo "kept: $T"; [[ -n "$L" ]] && echo "kept (live): $L"; }
 exit $fail
