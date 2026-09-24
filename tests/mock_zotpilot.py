@@ -7,8 +7,14 @@ Purpose: functionality evals that assert MECHANISM — which tool, in what order
 flags — with no Zotero, no ChromaDB and no embedding provider (audit 2026-09-15 §3 P7;
 docs/plans/2026-09-24-option-gates-subagent-routing-evals.md Part C). Ranking is token
 overlap, so it is deterministic. Writes mutate an in-memory copy of the fixture and are
-echoed to stderr as `WRITE <tool> <args-json> -> <result-json>` — that line is the eval's
-assertion source.
+logged as `WRITE <tool> <args-json> -> <result-json>`, and every call (known or not) as
+`CALL <tool> <args-json>` — those lines are the evals' assertion source. They go to the file
+named by MOCK_ZOTPILOT_LOG (set it in the MCP config's `env`), else to stderr; the client does
+not forward a server's stderr, so an eval must set the variable.
+
+Results are wrapped the way the MCP spec requires — `{"content": [{"type": "text", "text":
+<json>}]}` — an unwrapped result reads as "completed with no output" to the client (found by
+the first eval run, 2026-09-24).
 
 Two ZotPilot behaviours are reproduced on purpose because the skills guard against them:
 - `manage_tags(action="set")` is refused (destructive; the skill forbids it), and
@@ -20,7 +26,7 @@ Usage: register as `{"mcpServers": {"zotpilot": {"type": "stdio", "command": "py
 Stdlib only.
 """
 from __future__ import annotations
-import copy, json, pathlib, re, sys
+import copy, json, os, pathlib, re, sys
 
 FIXTURE = pathlib.Path(__file__).resolve().parent / "fixture-project" / "zotpilot_fixture.json"
 
@@ -140,6 +146,19 @@ class Library:
 WRITES = {"create_note", "manage_tags"}
 
 
+def log(line: str):
+    path = os.environ.get("MOCK_ZOTPILOT_LOG")
+    if path:
+        with open(path, "a") as f:
+            f.write(line + "\n")
+    else:
+        print(line, file=sys.stderr, flush=True)
+
+
+def wrap(result) -> dict:
+    return {"content": [{"type": "text", "text": json.dumps(result, sort_keys=True)}]}
+
+
 def main():
     lib = Library(json.loads(FIXTURE.read_text()))
     for line in sys.stdin:
@@ -160,16 +179,21 @@ def main():
                                     for n, d in TOOLS]}
             elif method == "tools/call":
                 name, args = params["name"], params.get("arguments") or {}
+                log(f"CALL {name} {json.dumps(args, sort_keys=True)}")
                 if name not in dict(TOOLS): raise ValueError(f"unknown tool {name}")
                 result = getattr(lib, name)(**args)
                 if name in WRITES:
-                    print(f"WRITE {name} {json.dumps(args, sort_keys=True)} -> {json.dumps(result, sort_keys=True)}",
-                          file=sys.stderr, flush=True)
+                    log(f"WRITE {name} {json.dumps(args, sort_keys=True)} -> {json.dumps(result, sort_keys=True)}")
+                result = wrap(result)
             else:
                 raise ValueError(f"unknown method {method}")
             out = {"jsonrpc": "2.0", "id": rid, "result": result}
-        except Exception as e:  # noqa: BLE001 — every failure is an RPC error to the client
-            out = {"jsonrpc": "2.0", "id": rid, "error": {"code": -32000, "message": str(e)}}
+        except Exception as e:  # noqa: BLE001 — a tool failure is an isError result (MCP), not an RPC error
+            if method == "tools/call":
+                out = {"jsonrpc": "2.0", "id": rid,
+                       "result": {"content": [{"type": "text", "text": str(e)}], "isError": True}}
+            else:
+                out = {"jsonrpc": "2.0", "id": rid, "error": {"code": -32000, "message": str(e)}}
         print(json.dumps(out), flush=True)
 
 

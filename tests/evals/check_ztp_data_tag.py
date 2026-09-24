@@ -72,6 +72,9 @@ for tool, args, result in writes:
 
 print(f"tool_use blocks: {len(uses)} · mock writes: {len(writes)} · "
       f"extractor dispatched: {first_extractor is not None}")
+if not writes:
+    print("  note: no writes reached the mock, so assertions 2–4 are vacuous — expected under "
+          "--yes, which answers option gates only; Step 4's batch confirmation is a hard wait")
 for f in fails:
     print(f"  FAIL {f}")
 print("check_ztp_data_tag: " + ("PASS" if not fails else "FAIL"))

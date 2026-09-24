@@ -17,7 +17,13 @@ def call(proc, method, params, id_=1):
 
 
 def tool(proc, name, **args):
-    return call(proc, "tools/call", {"name": name, "arguments": args})
+    """Unwrap the MCP content envelope: {"result": <json>} on success, {"error": <text>} on isError."""
+    r = call(proc, "tools/call", {"name": name, "arguments": args})
+    if "error" in r:
+        return r
+    res = r["result"]
+    text = res["content"][0]["text"]
+    return {"error": text} if res.get("isError") else {"result": json.loads(text)}
 
 
 class TestMock(unittest.TestCase):
@@ -70,11 +76,31 @@ class TestMock(unittest.TestCase):
         r = tool(self.p, "create_note", item_key="K1", idempotent=True, title="Data (auto-extracted)", content="{}")
         self.assertTrue(r["result"]["created"])
 
-    def test_writes_are_echoed_to_stderr(self):
+    def test_writes_are_echoed_to_stderr_by_default(self):
         tool(self.p, "manage_tags", action="add", allow_new=True, item_key="K3", tags=["var:move"])
         self.p.stdin.close()
         err = self.p.stderr.read()
+        self.assertIn("CALL manage_tags", err)
         self.assertIn("WRITE manage_tags", err)
+
+    def test_results_are_wrapped_in_mcp_content(self):
+        r = call(self.p, "tools/call", {"name": "get_index_stats", "arguments": {}})
+        self.assertEqual(r["result"]["content"][0]["type"], "text")
+
+    def test_calls_go_to_the_log_file_when_the_env_var_is_set(self):
+        import os, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            logf = os.path.join(d, "mock.log")
+            p = subprocess.Popen([sys.executable, str(MOCK)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE, text=True, env={**os.environ, "MOCK_ZOTPILOT_LOG": logf})
+            try:
+                tool(p, "get_index_stats")
+                tool(p, "create_note", item_key="K1", idempotent=True, title="Data (auto-extracted)", content="{}")
+            finally:
+                p.terminate()
+            text = open(logf).read()
+            self.assertIn("CALL get_index_stats", text)
+            self.assertIn("WRITE create_note", text)
 
 
 if __name__ == "__main__":
