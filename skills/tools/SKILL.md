@@ -1,7 +1,7 @@
 ---
 name: tools
-description: Utility commands — commit (with blocking quality/number/structure gates), render, validate-bib, lint, journal, context-status, learn. Replaces individual utility skills.
-argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | context | learn] [args]"
+description: Utility commands — commit (with blocking quality/number/structure gates), render, validate-bib, lint, journal, learn. Replaces individual utility skills.
+argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | learn] [args]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
@@ -59,7 +59,7 @@ cross-reference checks. Report pass/fail before committing.
 1. `git status`, `git diff --stat`, `git log --oneline -5`.
 2. Create a branch — **never commit directly to main**.
 3. Stage named files. Never `git add -A`; never stage `.claude/settings.local.json`,
-   `.env`, or anything holding a secret.
+   `.env`, `.claude/state/`, or anything holding a secret.
 4. Commit. If `$ARGUMENTS` is given use it verbatim; otherwise write a message that
    explains *why*, not *what*.
 5. Push, `gh pr create`.
@@ -71,12 +71,13 @@ cross-reference checks. Report pass/fail before committing.
 ### `/tools render [file]` — Quarto Render
 Single-step render. There is no separate LaTeX build.
 
-For the manuscript:
+For the manuscript — resolve the declared name; never guess it:
 ```bash
-quarto render manuscript_<project>.qmd
+MS=$(python3 .claude/scripts/pipeline.py manuscript) && quarto render "$MS"
 ```
+`pipeline.py manuscript` refuses when `CLAUDE.md` declares no manuscript or more than one.
 
-For talks:
+For talks (not the declared manuscript):
 ```bash
 quarto render talks/[file]
 ```
@@ -84,11 +85,30 @@ quarto render talks/[file]
 Pass: exit 0, output artifact newer than the source. Then grep the render log
 for `ERROR`/`WARNING` and the output for unresolved cross-references (`?@fig-`,
 `?@tbl-`). A clean render says nothing about hardcoded prose numbers — that is
-`prose_number_check.py` (INV-11).
+`prose_number_check.py` (INV-11). Do not invoke xelatex or pandoc by hand unless
+debugging a render failure — `quarto render` is the only build step.
 
 ### `/tools validate-bib` — Bibliography Validation
-Cross-reference all `@key` citations in the manuscript and talk `.qmd` files against the project `.bib`.
-Report: missing entries, unused entries, duplicate keys.
+Cross-reference every citation key in the manuscript and `talks/*.qmd` against the project's
+`references.bib` (the name the manuscript YAML's `bibliography:` field declares — read that
+field rather than assuming).
+
+```bash
+MS=$(python3 .claude/scripts/pipeline.py manuscript)
+grep -ohE '(^|[^A-Za-z0-9_])-?@[A-Za-z][A-Za-z0-9_:-]*[A-Za-z0-9]' "$MS" talks/*.qmd 2>/dev/null \
+  | sed -E 's/^[^@]*@//' | grep -vE '^(fig|tbl|eq|sec|thm|lem|cor|def|lst|exm)-' | sort -u > /tmp/cited.txt
+grep -oE '^@[A-Za-z]+\{[^,]+' references.bib | sed -E 's/^@[A-Za-z]+\{//' | sort > /tmp/bib_all.txt
+sort -u /tmp/bib_all.txt > /tmp/bib.txt
+echo "MISSING (cited, not in .bib):";   comm -23 /tmp/cited.txt /tmp/bib.txt
+echo "UNUSED (in .bib, never cited):";  comm -13 /tmp/cited.txt /tmp/bib.txt
+echo "DUPLICATE keys in .bib:";          uniq -d /tmp/bib_all.txt
+```
+
+Quarto cross-reference prefixes (`@fig-`, `@tbl-`, `@eq-`, `@sec-`, …) are excluded — they
+are not citations. **Output:** the three lists above, reported to the user. **Pass:** MISSING
+and DUPLICATE are both empty. UNUSED is informational, not a defect: Zotero is the source of truth for what has
+been read (`.claude/skills/lit-position/SKILL.md`), and `references.bib` is exported from it,
+so an entry the manuscript does not yet cite is normal mid-draft. Never delete entries here.
 
 ### `/tools lint [file|dir]` — Mechanical Code Linting
 Run grep-based checks on R/Python/Julia scripts against the coding standards' prohibited patterns. Catches mechanical violations before the coder-critic's judgment review.
@@ -99,7 +119,8 @@ Run grep-based checks on R/Python/Julia scripts against the coding standards' pr
 
 - **Single file:** `/tools lint scripts/acquire/01_download.py`
 - **Directory:** `/tools lint scripts/acquire/` (recursive)
-- **Default:** `/tools lint` (lints `scripts/acquire/` and `explorations/`)
+- **Default:** `/tools lint` (lints `scripts/acquire/` only — `.claude/hooks/lint-scripts.sh`'s one default target)
+- **Explorations:** `/tools lint explorations/` — not covered by the default; run it separately
 - **`.qmd` file:** also lints the R chunks of a `.qmd` (`.claude/scripts/qmd_chunks.py`)
 
 **What it checks (drawn from `.claude/references/coding-standards-*.md`):**
@@ -135,12 +156,21 @@ Run grep-based checks on R/Python/Julia scripts against the coding standards' pr
 - The coder-critic focuses on judgment (strategy alignment, numerical plausibility, design); this catches the grep-able stuff
 
 ### `/tools journal` — Research Journal
-Regenerate the research journal timeline from quality reports and git history.
-Shows chronological record of agent actions, phase transitions, scores, decisions.
+Bring `quality_reports/research_journal.md` up to date with the state file. The journal is
+append-only, one entry per agent completion (`.claude/rules/logging.md`), and is written
+**from** `quality_reports/pipeline_state.json` and `quality_reports/agent_dispatch.jsonl` —
+never the reverse. It never decides where the pipeline starts; `pipeline.py next` does.
 
-### `/tools context` — Context Status
-Show current context status and session health.
-Check context usage, whether auto-compact is approaching, what state will be preserved.
+```bash
+python3 .claude/scripts/pipeline.py state show          # components: score, critic, report, at
+tail -20 quality_reports/agent_dispatch.jsonl            # completions: agent, timestamp
+grep -n '^### ' quality_reports/research_journal.md      # entries already written
+```
+
+For every recorded component score and every logged completion with no journal entry naming
+its report (or its agent and timestamp), append one entry in the format of
+`.claude/skills/checkpoint/templates/research-journal-entry.md`. Do not edit or reorder
+existing entries. **Pass:** every `report` path in `pipeline_state.json` appears in the journal.
 
 ### `/tools learn` — Extract Learnings
 Extract a reusable multi-step workflow from the current session and propose it as a skill.
@@ -148,14 +178,6 @@ Extract a reusable multi-step workflow from the current session and propose it a
 A **correction** to a pipeline skill, agent or rule is not handled here and is never applied
 silently. It follows `.claude/rules/meta-governance.md`: `/checkpoint` names it as an improvement
 candidate, it must hold across 3+ projects, and `/promote` is the only thing that lands it.
-
----
-
-## Bundled Resources (Level 3)
-
-| Resource | Path | When |
-|----------|------|------|
-| Gotchas | `gotchas.md` | Always — known failure points |
 
 ---
 
