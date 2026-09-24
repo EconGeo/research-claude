@@ -446,7 +446,26 @@ today. clo-author shipped a **rewriter**, and only a rewriter.
 `--rewrite` mode. Auto-rewriting AI tells degrades prose quality … the author preserves voice by
 editing manually."*
 
-**Class:** **GAP** — two upstreams, two answers, no decision.
+**Class:** **DELIBERATE DIVERGENCE — ruled 2026-09-23, execution deferred.** (Was GAP — two
+upstreams, two answers, no decision — until litigated below.)
+
+**Ruling (2026-09-23), Phase 2.4 of `docs/plans/2026-09-23_pipeline-repair.md`:** `/write humanize`
+(clo-author's rewriter) is the pipeline's humanizer. The "cross-vendor research" `/humanize` cites
+for its detect-only design was checked before ruling: `ai-audit/skills/humanize/SKILL.md`'s own
+text is *"Cross-vendor research (Cursor / Aider community findings)"* — unattributed community
+observation from two AI coding tools' user bases, no paper, no author, no URL. Not a citation
+strong enough to override keeping the inherited, working rewriter.
+
+`/humanize` is **not retired** — the author wants it available under a different name for
+occasional detect-only use, distinct from `/write humanize`'s always-rewrite default. Because
+`ai-audit/` is vendored verbatim and never edited in place here (`CLAUDE.md` §"Where things go"),
+the rename happens **upstream, in `EconGeo/ai-audit`**, not as a local edit or bridge skill — the
+author will rename `skills/humanize` there and this repo picks it up on the next
+`scripts/sync-ai-audit.sh`.
+
+**This defers the item's own Gate** ("the two skills' trigger lists no longer overlap"): it cannot
+close from inside research-claude today. Recorded here rather than marked done — the collision
+described below is still live until the upstream rename lands and is synced.
 
 **Does the problem still exist?** Yes, and the collision is worse than a duplicate. The two
 overlap heavily in detection (AI vocabulary, em-dash overuse, tricolon abuse, hedge stacking, "not
@@ -540,17 +559,17 @@ with `templates/format-constraints.md` on every row.
 | Class | Entries |
 |---|---|
 | INHERITED | D-8 (values; format change unrecorded) |
-| DELIBERATE DIVERGENCE | D-1, D-5, D-6, D-9, D-10 (weakly recorded), D-11, D-12, D-13, D-14, D-15 |
+| DELIBERATE DIVERGENCE | D-1, D-5, D-6, D-9, D-10 (weakly recorded), D-11, D-12, D-13, D-14, D-15, D-17 (ruled 2026-09-23, execution deferred to an upstream `EconGeo/ai-audit` rename) |
 | OBSOLETE | D-4 (mechanism), D-7 |
-| **GAP — defects** | **D-2, D-3, D-16, D-17, D-18, D-19** |
+| **GAP — defects** | **D-2, D-3, D-16, D-18, D-19** |
 
 **Unrecorded reasons — the register's own finding:** D-2 (that `check_install.sh` never runs
-automatically), D-3, D-8, D-16, D-17, D-18, D-19. Seven of nineteen divergences had no reason
-recorded anywhere on disk before this file existed.
+automatically), D-3, D-8, D-16, D-17 (now recorded — see the ruling above), D-18, D-19. Seven of
+nineteen divergences had no reason recorded anywhere on disk before this file existed.
 
 **The pattern worth carrying forward.** Five of the six GAPs share one shape: *a mechanism was
 correctly retired or correctly introduced, and its **purpose** was never assigned a new owner.*
 D-4 is the case that was eventually caught and fixed — but only after four wrong numbers reached a
-manuscript that scored 100/100. D-2, D-3, D-17, D-18 and D-19 are the same shape, still open. When
+manuscript that scored 100/100. D-2, D-3, D-18 and D-19 are the same shape, still open. When
 retiring, porting or vendoring anything, state the purpose separately from the mechanism and name
 where the purpose now lives — and add an entry here.
