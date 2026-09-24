@@ -495,6 +495,19 @@ agents:
     conditional: false
     writes: []
 
+  lit-scout:
+    role: infrastructure
+    kind: agent
+    parallel_group: extraction
+    requires: []
+    produces: []
+    critic: none
+    escalation_target: user
+    component: none
+    quality_weight: 0
+    conditional: false
+    writes: []
+
   # ── Vendored audits (ai-audit, VENDORED.md) ───────────────────────────────
   # Standalone, user-invoked audits — not gated behind a pipeline stage, not scored, no critic
   # of their own (they ARE the audit). Neither has a Write tool (ai-audit/agents/*.md), so

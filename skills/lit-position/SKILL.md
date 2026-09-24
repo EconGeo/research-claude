@@ -50,18 +50,24 @@ local Zotero index first, external databases only for what the library lacks.
    and the *setting* terms separately — a paper using your method in another
    setting and a paper on your setting with another method are different kinds of
    neighbour, and you need both.
-2. **Local sweep, in the rule's order** — `mcp__zotpilot__search_topic` on the question and
-   on each method/setting term, then `mcp__zotpilot__advanced_search` for known authors,
-   years and tags, then `mcp__zotpilot__search_papers` for the specific claims you expect a
-   neighbour to make. Its output is the list of what the library already covers. **The sweep
-   lives here because `/ztp-research` is vendored and starts at external search
-   (`search_academic_databases`); its `local_duplicate` annotation is de-duplication of web
-   results, not local-first discovery.** Do not delete this step as redundant.
+2. **Local sweep, in the rule's order** — dispatch **lit-scout**
+   (`.claude/agents/lit-scout.md`; `Agent`, `subagent_type=lit-scout`) with the question, the
+   method terms, the setting terms and the seed's gaps. It holds ZotPilot itself and runs
+   `mcp__zotpilot__search_topic` on the question and on each method/setting term, then
+   `mcp__zotpilot__advanced_search` for known authors, years and tags, then
+   `mcp__zotpilot__search_papers` for the specific claims you expect a neighbour to make, and
+   follows citation chains inside the library. It returns a candidate table (proximity guess),
+   what the library already covers, the gap set, and scooping flags — that table, not the
+   search transcript, is what this context holds. **The sweep lives here because
+   `/ztp-research` is vendored and starts at external search (`search_academic_databases`);
+   its `local_duplicate` annotation is de-duplication of web results, not local-first
+   discovery.** Do not delete this step as redundant.
 3. Invoke `/ztp-research` for the **gap set only**: the terms and neighbours the sweep did not
    find, plus the gaps named in the seed's `## Notes for the Literature Review` (Step 0). It
    handles external search → candidate selection → PDF ingest → tagging → indexing.
-4. Follow citation chains on anything scoring 4 or 5 below: check its reference
-   list, and check who has cited it since.
+4. The scout followed citation chains inside the library for anything it scored 4 or 5;
+   for those, also check who has cited them since — that is external and goes through
+   `/ztp-research` with the gap set.
 5. Flag **scooping risks** explicitly: working papers from the last three years
    with the same question and the same data.
 
