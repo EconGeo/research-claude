@@ -162,20 +162,24 @@ def crit_tool_name(root):
                 hits.append(f"{f.relative_to(root)}:{n}: Task in tools line (use Agent)")
     return report("tool-name", hits)
 
-SCRIPT_REF = re.compile(r"(?<![A-Za-z0-9_./-])scripts/[A-Za-z0-9_./-]+\.(?:py|sh)\b")
+SCRIPT_REF = re.compile(r"(?<![A-Za-z0-9_./-])(?:\.claude/)?scripts/[A-Za-z0-9_./-]+\.(?:py|sh)\b")
 SCRIPT_REF_EXEMPT_PREFIX = ("scripts/acquire/",)
 
 def crit_script_refs(root):
-    """A scripts/<path>.py or .sh cited in prose that does not exist on disk — the
-    quarto_structure_check.py/INV-25 shape (closeout handoff §4.2 item 4), generalized."""
+    """A scripts/<path>.py or .sh (or .claude/scripts/<path>.py or .sh) cited in prose that
+    does not exist on disk — the quarto_structure_check.py/INV-25 shape (closeout handoff
+    §4.2 item 4), generalized."""
     hits = []
     for f in shipped_files(root, SHIP):
         for n, ln in lines_of(f):
             for m in SCRIPT_REF.finditer(ln):
                 tok = m.group(0)
-                if tok.startswith(SCRIPT_REF_EXEMPT_PREFIX):
+                # Strip leading .claude/ for exemption and existence checks (in an installed
+                # project .claude/scripts/ is a link to this repo's scripts/).
+                check_tok = tok.lstrip(".claude/") if tok.startswith(".claude/") else tok
+                if check_tok.startswith(SCRIPT_REF_EXEMPT_PREFIX):
                     continue
-                if not (root / tok).exists():
+                if not (root / check_tok).exists():
                     hits.append(f"{f.relative_to(root)}:{n}: {tok} does not exist")
     return report("script-refs", hits)
 

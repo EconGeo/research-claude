@@ -238,6 +238,13 @@ class TestScriptRefs(unittest.TestCase):
     def test_acquire_scripts_exempt(self):
         self.assertEqual(self._run("Run `scripts/acquire/clean_raw.py` (project-specific).\n"), 0)
 
+    def test_claude_scripts_nonexistent_flagged(self):
+        self.assertEqual(self._run("Run `python3 .claude/scripts/does_not_exist.py`.\n"), 1)
+
+    def test_claude_scripts_existing_passes(self):
+        self.assertEqual(self._run("Run `python3 .claude/scripts/check_fork.sh`.\n",
+                                    create=["scripts/check_fork.sh"]), 0)
+
     def test_real_tree_passes(self):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(cr.crit_script_refs(ROOT), 0)
