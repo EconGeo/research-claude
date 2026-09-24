@@ -12,7 +12,7 @@ calls `/ztp-research` and `/ztp-review` itself).
 ## Driver sequence
 ```
 python3 .claude/scripts/pipeline.py pre lit-position          # trivially passes (no REQUIRES)
-                                                                 # invoke /lit-position
+                                                                 # invoke /lit-position [--yes if run carried it]
 python3 .claude/scripts/pipeline.py post lit-position
 ```
 `/lit-position` (Step 7 of its own SKILL.md) dispatches lit-critic itself and records the
