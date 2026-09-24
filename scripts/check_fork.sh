@@ -115,6 +115,9 @@ echo "── dependency graph (scripts/audit_graph.py) ──"
 python3 "$RC/scripts/audit_graph.py" "$RC"
 if [[ $? -ne 0 ]]; then echo "FAIL [graph-dangling]"; fail=1; else echo "PASS [graph-dangling]"; fi
 
+echo "── plan liveness (advisory, scripts/check_plan_liveness.py) ──"
+python3 "$RC/scripts/check_plan_liveness.py" --root "$RC"
+
 echo "── fixture ──"
 if [[ -x "$RC/tests/run_fixture.sh" ]]; then "$RC/tests/run_fixture.sh" >/tmp/run_fixture.$$ 2>&1 && echo "PASS [fixture]" || { echo "FAIL [fixture]"; tail -15 /tmp/run_fixture.$$ | sed 's/^/    /'; fail=1; }; rm -f /tmp/run_fixture.$$
 else echo "FAIL [fixture] tests/run_fixture.sh missing"; fail=1; fi
