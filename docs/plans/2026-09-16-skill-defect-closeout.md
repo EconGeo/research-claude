@@ -1240,7 +1240,7 @@ EOF
    top-level item** (a new skill, agent, rule or hook) needs a re-link. Narrow the claim to that.
 3. **`state/obsidian-config.md.example` names a skill that was deleted on 2026-09-09.**
    `/obsidian-digest-sync` appears twice: the header comment and the
-   "Knowledge-base folders (used by `/obsidian-digest-sync`)" lines. `CLAUDE.md` records the
+   "Knowledge-base folders (used by `/obsidian-digest-sync`)" line. `CLAUDE.md` records the
    skill's removal.
 4. **`check_refs.py` cannot catch that, twice over.** `SHIP` (line 16) is
    `["agents", "skills", "rules", "references", "hooks", "templates", "seeds", "scripts"]` —
