@@ -6,6 +6,7 @@ description: >
   artifacts ZotPilot does not — frontier_map.md and positioning.md. Use when starting
   a project, writing an introduction, or defending a contribution claim.
   Local-first per .claude/rules/literature-search-order.md.
+argument-hint: "[research question or topic] [--yes]"
 allowed-tools: Read,Write,Edit,Grep,Glob,Bash,WebSearch,WebFetch,Agent,mcp__zotpilot__*
 ---
 
@@ -101,10 +102,19 @@ willing to put a paper in more than one:
   asked and it did not work," which looks identical in a literature search and is
   the more common case.
 
+**Option gate** (`.claude/rules/option-gates.md`): name 5–7 candidate gaps — columns *gap*,
+*state* (contested / unexamined), *nearest paper*, *why open* — ranked, and wait (`--yes`
+takes rank 1). The pick is the gap `positioning.md` is written against; the others stay in
+this file as *Other open questions*.
+
 ## Step 5 — `positioning.md`
 
 One paragraph. Name the two or three papers this project sits between, and state
-what it adds that they do not. Then stress-test it:
+what it adds that they do not.
+
+**Option gate** (`.claude/rules/option-gates.md`): draft 5–7 positioning variants — columns
+*sentence*, *papers it sits between*, *what it adds*, *the redundancy sentence it must
+survive* — and wait (`--yes` takes rank 1). Stress-test only the pick:
 
 - Take the single closest paper (highest proximity). Write the sentence its author
   would use to say this project is redundant. If you cannot answer that sentence,
@@ -128,8 +138,10 @@ as text; session saves it to `quality_reports/reviews/lit-critic_<date>.md` the 
 returns. Record:
 `python3 .claude/scripts/pipeline.py state record-score literature <score> --critic lit-critic --deductions <total> --report <path>`.
 Below 80 → return to Step 1 for the named gaps (max 3 rounds, `pipeline.py state strike lit-position`);
-strike three → User: "the critic requires coverage of X, which the library lacks and external
-search did not find — narrow the claim or extend the search?"
+strike three → **Option gate** (`.claude/rules/option-gates.md`): 3–5 narrowed claims, each
+with the search extension that would restore the wider one — "narrow the claim or extend the
+search?" is the user's pick, not a free-text question; `--yes` takes rank 1 (the narrowest
+claim the critic's named gaps allow).
 
 ---
 
