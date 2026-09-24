@@ -2,7 +2,7 @@
 name: discover
 description: Discovery phase combining research interviews, a pointer to /lit-position for literature, data discovery, and ideation. Routes to appropriate agents based on arguments. Replaces the old interview-me, lit-review, find-data and research-ideation commands.
 argument-hint: "[mode: interview | lit | data | ideate] [topic or query]"
-allowed-tools: Read,Grep,Glob,Write,Edit,Agent
+allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
 # Discover
