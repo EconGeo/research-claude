@@ -20,10 +20,19 @@ Targeted full-section reads elsewhere are cited inline. Greps were used only to 
 
 ## 0. Two corrections to the audit request, made before anything downstream
 
-**0.1 — The `/tools learn` quotation does not exist.** The request asked me to verify a claim
-attributed to `/tools learn`: that retired skills were *"folded into the canonical multi-skills
-(tools, discover, review)"*. That string appears nowhere in the repository. `skills/tools/SKILL.md`
-was read in full; its `learn` subcommand says only:
+**0.1 — The "folded into the canonical multi-skills" quotation is real, but it is not from
+`/tools learn` and not from this repo.** It is from **POGM4 commit `5f11c52`** ("Align agents and
+skills to research-claude canonical set"), verified this session:
+
+> Skills: 58 -> 18 (research-claude canonical + commit + flextable-quarto-word-captions …).
+> Removed course/teaching skills and standalone duplicates **now folded into the canonical
+> multi-skills (tools, discover, review)**.
+
+So the claim is a **project's** assertion about the pipeline, made in a paper repo's git history —
+exactly the kind of claim worth testing against the successor skills, which §2.2 does. Two things
+follow that the attribution obscured.
+
+First, `skills/tools/SKILL.md` makes no such claim. Read in full, its `learn` subcommand says only:
 
 > ### `/tools learn` — Extract Learnings
 > Extract a reusable multi-step workflow from the current session and propose it as a skill.
@@ -31,9 +40,24 @@ was read in full; its `learn` subcommand says only:
 > A **correction** to a pipeline skill, agent or rule is not handled here and is never applied
 > silently. It follows `.claude/rules/meta-governance.md` …
 
-The folding claims that *do* exist are the seven `Replaces the old …` clauses in the multi-skills'
-`description:` frontmatter. Those are what §2.2 verifies instead. Any recommendation keyed to the
-`/tools learn` wording is void.
+The folding claims that *do* exist **in this repo** are the seven `Replaces the old …` clauses in
+the multi-skills' `description:` frontmatter. Those are what §2.2 verifies.
+
+Second — and this is a finding, not a technicality — **`5f11c52`'s own closing line admits the
+consumer-side cleanup was deferred and it was never done:**
+
+> CLAUDE.md skill table still references removed skills and will be reconciled in the CLAUDE.md
+> refresh during the data-chain upgrade.
+
+POGM4's `CLAUDE.md` "Skills Quick Reference" today still lists `/review-paper`,
+`/respond-to-referees`, `/review-r`, `/data-analysis`, `/audit-reproducibility`, `/validate-bib`,
+`/lit-review`, `/research-ideation`, `/interview-me`, `/seven-pass-review`, `/proofread`,
+`/permission-check`, `/commit` and `/context-status` — most of them the very standalone skills
+that commit deleted, promised for reconciliation in June 2026. The fold was done correctly in the
+pipeline (§2.2); **the project-side table documenting it was not**, and a reader of POGM4's
+`CLAUDE.md` is still told to invoke skills that have not existed for three months. This is
+project-level residue rather than pipeline residue, so it is not in the prioritized list, but it
+is the same defect class and worth a single reconciliation pass.
 
 **0.2 — There is no clo-author checkout to read.** The request pointed at
 `submodules/`, `docs/`, or a sibling checkout. `CLAUDE.md` (read in full) states:
@@ -43,13 +67,21 @@ The folding claims that *do* exist are the seven `Replaces the old …` clauses 
 > vendored into `agents/` and maintained here)
 
 `find` over the filesystem confirms no `clo-author` directory anywhere, and `git remote -v` shows
-one remote (`EconGeo/research-claude`). The origin is `https://github.com/hugosantanna/clo-author`,
-a remote repo, not a local one. **The parity table in §3 is therefore built against the
+one remote (`EconGeo/research-claude`). **The parity table in §3 is therefore built against the
 contemporaneous inventory recorded in
 `docs/superpowers/specs/2026-09-08-quarto-native-research-pipeline-design.md` (read in full)**,
 which measured all 47 clo-author agent/rule/skill files and enumerates them in Work items A, B, C
-and D. That spec is the best available evidence; it is a record of clo-author, not clo-author
-itself, and §3 is labelled accordingly.
+and D. That spec is a record *of* clo-author, not clo-author itself, and §3 stays labelled
+accordingly.
+
+**Superseded in part, after the scope extension.** clo-author is a public repo. It was cloned from
+`https://github.com/hugosantanna/clo-author.git` and checked out at **`d36c408`** — the exact
+commit this repo's submodule was pinned to, recovered via
+`git ls-tree bda2d1b submodules/clo-author`. clo-author's own rules, skill headers and settings
+were then read directly. **That reading is the basis of the divergence register**
+(`docs/decisions/clo-author-divergences.md`), and it confirmed the spec's inventory on every point
+§3 relies on while adding intent the spec did not record. §3 is unchanged; nothing it claimed
+turned out to be wrong.
 
 ---
 
@@ -413,6 +445,26 @@ clo-author, not clo-author itself). Slides/presentations noted, not faulted.
 | `permissions.md`, `lifecycle.md` | delete (D1) | **Rewritten instead** — `permissions.md` is now *generated* from `registry.yaml` by `render_registry.py`; `lifecycle.md` (125 ln) is now the `pipeline.py` predicate contract. Both read in full; no retired-pattern content. |
 | `pipeline-precedence.md` | delete | **Deleted**; README states "there is nothing left to take precedence over." |
 
+### 3.4b Divergence register
+
+Parity as present/partial/missing answers *what* moved. It does not answer whether each divergence
+was **litigated and recorded** or merely drifted. That second question is now tracked separately
+and durably in **`docs/decisions/clo-author-divergences.md`**, written against clo-author's own
+files at `d36c408` (§0.2). It classifies 19 divergences as INHERITED / DELIBERATE DIVERGENCE /
+GAP / OBSOLETE, states for each whether the problem still exists under Quarto, and records whether
+the reason is on disk anywhere.
+
+Two results from it bear on this report:
+
+- **Seven of nineteen divergences had no recorded reason** before that file existed: D-2, D-3,
+  D-8, D-16, D-17, D-18, D-19.
+- **Five of the six GAPs share one shape** — a mechanism was correctly retired, introduced or
+  vendored, and its *purpose* was never assigned a new owner. The known-good instance is the
+  results registry (D-4): retired correctly, but its purpose — no stale or invented number reaches
+  prose — went unowned until `prose_number_check.py`, and in the interval a manuscript scored
+  100/100 while carrying four provably wrong numbers and a sentence contradicting its own table.
+  D-2, D-3, D-17, D-18 and D-19 are the same shape and still open.
+
 ### 3.5 Net parity verdict
 
 **Nothing needed was lost in the port, with two exceptions and one caveat.**
@@ -527,6 +579,16 @@ explicitly a driver/driven pair (`rules/agents.md` §4).
 | 3 | **`/talk`'s inline format table disagrees with `format-constraints.md` on every row**, plus 5-vs-6 critic categories and a 10pt-vs-18pt font floor. | `skills/talk/SKILL.md` vs `templates/format-constraints.md`, `review/templates/talk-review-6-categories.md`, `references/slide-design-principles.md:15-17` | §1.9 |
 | 4 | **`paper-to-code-map.md` forbids the variable name `chunk-structure.md` demonstrates**; `data-engineer` says `base_size >= 14` where `figure-standards.md` sets 11. Both pairs are bundled resources of the same skill. | `skills/analyze/templates/*`, `references/figure-standards.md:41`, `agents/data-engineer.md:40` | §1.8 |
 | 5 | **`editor.md` delegates `--variance` conflict enforcement to `/review --peer`, which has no `--variance` flag.** | `agents/editor.md:124` vs `skills/review/SKILL.md` | §1.10 |
+
+### Tier 1b — Safeguards that exist but never run (added by the divergence audit)
+
+Both are `GAP`s in `docs/decisions/clo-author-divergences.md`. Neither is inherited from
+clo-author; both are failure modes this pipeline's own architecture created.
+
+| # | Finding | Register |
+|---|---|---|
+| 1b-i | **`check_install.sh` is wired to no automatic trigger.** It detects all four symlink failure modes — item never linked, link dangling, link pointing at another checkout, and **a real file shadowing a canonical one**. It is named only in `README.md:207` and `CLAUDE.md:103` (instructions to a human), `/promote` Step 5, and two test files. `seeds/settings.json` carries eight hook entries and **none invokes it**; its only `SessionStart` hook matches `compact\|resume` and runs `post-compact-restore.py`. `/promote` is the sole in-session caller — a skill run only when someone is *already* reconciling the tree. This is the mechanism behind a project-local skill shadowing a shared rule for three months and waiving a real defect through two critic rounds: **the detector existed the whole time and nothing called it.** clo-author needed no such check (its `.claude/` was 138 real tracked files, 0 symlinks, no installer), so this is not a lost safeguard — it is an unguarded new hazard. | D-2 |
+| 1b-ii | **`protect-files.sh` ships dead.** clo-author wired it as the first `PreToolUse` hook on `Edit\|Write`, blocking edits to `settings.json`, `strategy-memo-*.md`, `referee-report-*.md` and `quality-score-*.json`. research-claude ships the script and documents it in `hooks/README.md:35` as *"PreToolUse \| Blocks edits to protected paths"* — but `grep -c protect-files seeds/settings.json` returns **0**, and that file's own `$comment` states hooks *"fire only because they are named here."* It never fires. The protected class matters more now, not less: `/review` already had to add a `git status --porcelain` check because *"a project gate restamped two committed reports."* | D-3 |
 
 ### Tier 2 — Residue and gaps (something claimed that is not delivered)
 
