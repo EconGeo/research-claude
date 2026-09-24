@@ -206,6 +206,13 @@ class TestWritesTools(unittest.TestCase):
     def test_write_tool_present_passes_without_disclaimer(self):
         self.assertEqual(self._run("---\ntools: Read, Write, Grep\n---\nWrite the report directly.\n"), 0)
 
+    def test_creator_role_prose_does_not_count_as_a_disclaimer(self):
+        """'Do not write the paper (that's the Writer)' names a deliverable, not a tool
+        capability — it must not exempt an agent that lost its Write/Edit tool."""
+        self.assertEqual(self._run(
+            "---\ntools: Read, Grep\n---\n"
+            "Do not write the paper (that's the Writer).\n"), 1)
+
     def test_real_tree_passes(self):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(cr.crit_writes_tools(ROOT), 0)

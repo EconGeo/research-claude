@@ -331,7 +331,11 @@ def crit_promote_register_check(root):
     return report("promote-register-check", hits)
 
 WRITE_CAPABLE_TOOLS = {"Write", "Edit", "NotebookEdit"}
-NO_WRITE_MARKER = re.compile(r"do\s+not\s+(write|edit)\b", re.I)
+# Must name what is not written/edited (files/the report file) — not just "do not write X",
+# which also matches creator-role prose like "Do not write the paper (that's the Writer)"
+# (agents/strategist.md, coder.md, theorist.md). Those name a *deliverable*, not a tool
+# capability, and must not exempt an agent that lost its Write/Edit tool.
+NO_WRITE_MARKER = re.compile(r"do\s+not\s+(?:write|edit)\s+(?:any\s+)?(?:files?|the\s+report\s+file)\b", re.I)
 
 def _agent_tools(root, name):
     """Resolve an agent's own .md file across both roster directories (rl.AGENT_DIRS) and
@@ -350,7 +354,12 @@ def crit_writes_tools(root):
     path in registry.yaml, with no Write/Edit tool and no instruction that the dispatching
     skill writes on their behalf, so the write silently never happened. This is the check that
     should have existed to catch it. An agent whose own .md file cannot be resolved is skipped —
-    that is registry-complete's job (pipeline.py registry check), not this criterion's."""
+    that is registry-complete's job (pipeline.py registry check), not this criterion's.
+
+    Coverage: this reads the agent's own .md file only — its `tools:`/`allowed-tools:` line and
+    NO_WRITE_MARKER's disclaimer phrase. It does not verify that the dispatching skill named in
+    that disclaimer actually saves the output anywhere; a skill that drops the save step after
+    its critic returns a report would still pass this check."""
     reg = rl.load_registry(root)
     hits = []
     for name, e in reg["agents"].items():
