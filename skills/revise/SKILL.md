@@ -1,7 +1,7 @@
 ---
 name: revise
 description: R&R cycle — classify referee comments and route to appropriate agents. Replaces the old respond-to-referee command.
-argument-hint: "[referee-report file path] [paper path (optional)]"
+argument-hint: "[referee-report file path] [paper path (optional)] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
@@ -36,6 +36,13 @@ decides whether the paper survives; the route only decides who does the work.
 A TASTE comment answered with new analysis wastes a revision cycle. A FATAL
 comment answered with prose is how papers get rejected on the second round.
 
+Show the classification table and **wait** for the user to confirm or re-class rows before
+routing — a mis-classed FATAL is the expensive mistake. For every FATAL, **Option gate**
+(`.claude/rules/option-gates.md`): at least 5 paths — *re-estimate*, *narrow the claim*,
+*add the robustness check the referee implies*, *concede in limitations*, *change venue* —
+each with what it costs and what it saves; `--yes` takes rank 1. The pick lands in the
+tracker's action item.
+
 ### Step 3: Route Every Comment
 
 | Class | Routing | Action |
@@ -43,7 +50,7 @@ comment answered with prose is how papers get rejected on the second round.
 | **NEW ANALYSIS** | → Coder agent | Flag for user, create analysis task |
 | **CLARIFICATION** | → Writer agent | Draft rewritten passage (local) |
 | **REWRITE** | → Writer agent | Draft structural revision (section or argument reorganised) |
-| **DISAGREE** | → User (mandatory) | Draft diplomatic pushback, flag for review |
+| **DISAGREE** | → User (mandatory) | **Option gate**: 3–5 response strategies (evidence-led, partial concession, reframing, scope clarification, decline with citation), pick one, then draft; flag for review |
 | **MINOR** | → Writer agent | Draft fix directly |
 
 ### Step 4: Build Tracking Document
