@@ -14,9 +14,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import registry_lib as rl
 import check_paths as cpaths
 
-SHIP = ["agents", "skills", "rules", "references", "hooks", "templates", "seeds", "scripts"]
+SHIP = ["agents", "skills", "rules", "references", "hooks", "templates", "seeds", "scripts", "state"]
 VENDORED = ["zotpilot-skills", "ai-audit"]
-TEXT_SUFFIX = {".md", ".py", ".sh", ".json", ".R", ".qmd", ".yaml", ".yml", ".tex", ".bib", ""}
+TEXT_SUFFIX = {".md", ".py", ".sh", ".json", ".R", ".qmd", ".yaml", ".yml", ".tex", ".bib", ".example", ""}
 MARK = re.compile(r"<!-- residue:(prohibition|historical) -->\s*$")
 
 LATEX_RESIDUE = re.compile(
