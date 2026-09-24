@@ -24,7 +24,7 @@ GATED = [
     ("submit", r"Journal Targeting", 5),  # Task A5
     ("review", r"Full Peer Review", 5),  # Task A6
     ("revise", r"Classify severity", 5),  # Task A7
-    # Task A8 — talk
+    ("talk", r"Create Quarto RevealJS Talk", 5),  # Task A8
     # Task A9 — write
     # Task A10 — pipeline
     # Task A11 — analyze
