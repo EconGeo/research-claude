@@ -12,6 +12,7 @@ class FixtureCase(unittest.TestCase):
         shutil.copytree(ROOT / "tests" / "fixture-project", self.t, dirs_exist_ok=True)
         (self.t / ".claude" / "scripts").mkdir(parents=True, exist_ok=True)
         os.symlink(ROOT / "scripts" / "prose_number_check.py", self.t / ".claude" / "scripts" / "prose_number_check.py")
+        os.symlink(ROOT / "scripts" / "quarto_structure_check.py", self.t / ".claude" / "scripts" / "quarto_structure_check.py")
         (self.t / ".claude" / "rules").mkdir(exist_ok=True)
         os.symlink(ROOT / "rules" / "registry.yaml", self.t / ".claude" / "rules" / "registry.yaml")
     def tearDown(self): shutil.rmtree(self.t)
@@ -26,6 +27,62 @@ class TestManuscript(FixtureCase):
     def test_ambiguous(self):
         (self.t / "CLAUDE.md").write_text("manuscript: a.qmd\nmanuscript: b.qmd\n")
         self.assertEqual(run("manuscript", root=self.t)[0], 1)
+
+class TestChunkLabels(unittest.TestCase):
+    """`chunk_labels()` must parse every spelling Quarto accepts for a chunk label, not only
+    `#| label:` — tested against a real 80-chunk manuscript, 79 chunks carried their label in
+    the brace header and exactly one used `#| label:` (Phase 1.1)."""
+    def setUp(self):
+        if str(ROOT / "scripts") not in sys.path: sys.path.insert(0, str(ROOT / "scripts"))
+        import pipeline as _p
+        self.chunk_labels = _p.chunk_labels
+        self.t = pathlib.Path(tempfile.mkdtemp())
+    def tearDown(self): shutil.rmtree(self.t)
+    def _labels(self, body):
+        p = self.t / "m.qmd"; p.write_text(body); return self.chunk_labels(p)
+    def test_hash_label_line(self):
+        self.assertEqual(self._labels("```{r}\n#| label: setup\nx <- 1\n```\n"), ["setup"])
+    def test_brace_positional_bare(self):
+        self.assertEqual(self._labels("```{r tbl-main}\nx <- 1\n```\n"), ["tbl-main"])
+    def test_brace_positional_with_trailing_options(self):
+        self.assertEqual(self._labels('```{r fig-trends, fig.width=6.5}\nx <- 1\n```\n'), ["fig-trends"])
+    def test_brace_named_label_option(self):
+        self.assertEqual(self._labels('```{r, label="tbl-alt"}\nx <- 1\n```\n'), ["tbl-alt"])
+    def test_unlabelled_chunk_contributes_no_label(self):
+        self.assertEqual(self._labels("```{r}\nx <- 1\n```\n"), [])
+        self.assertEqual(self._labels("```{r, echo=FALSE}\nx <- 1\n```\n"), [])
+    def test_non_r_engine_brace_label(self):
+        self.assertEqual(self._labels("```{python py-check}\nx = 1\n```\n"), ["py-check"])
+    def test_mixed_document(self):
+        body = ("```{r}\n#| label: setup\nlibrary(x)\n```\n\n"
+                "```{r tbl-main, echo=FALSE}\nt <- 1\n```\n\n"
+                "```{r fig-trends}\nplot(1)\n```\n")
+        self.assertEqual(sorted(self._labels(body)), ["fig-trends", "setup", "tbl-main"])
+
+class TestSourceCalls(unittest.TestCase):
+    """INV-19b: no `source()` call inside any chunk. `source_calls()` reuses qmd_chunks.py's
+    extraction, so it must see only R-chunk bodies and skip comments (Phase 1.4)."""
+    def setUp(self):
+        if str(ROOT / "scripts") not in sys.path: sys.path.insert(0, str(ROOT / "scripts"))
+        import pipeline as _p
+        self.source_calls = _p.source_calls
+        self.t = pathlib.Path(tempfile.mkdtemp())
+    def tearDown(self): shutil.rmtree(self.t)
+    def _hits(self, body):
+        p = self.t / "m.qmd"; p.write_text(body); return self.source_calls(p)
+    def test_clean_chunk_no_hits(self):
+        self.assertEqual(self._hits("```{r}\n#| label: setup\nlibrary(x)\n```\n"), [])
+    def test_source_call_flagged_at_its_line(self):
+        hits = self._hits('```{r}\n#| label: setup\nlibrary(x)\nsource("helper.R")\n```\n')
+        self.assertEqual(hits, [4])
+    def test_commented_source_call_ignored(self):
+        self.assertEqual(self._hits('```{r}\n# source("helper.R")\n```\n'), [])
+    def test_source_outside_a_chunk_ignored(self):
+        # Prose mentioning source() is not code; qmd_chunks.py blanks everything outside a
+        # ```{r fence, so this must never fire.
+        self.assertEqual(self._hits('See `source("helper.R")` in prose.\n\n```{r}\nx <- 1\n```\n'), [])
+    def test_similarly_named_identifier_not_flagged(self):
+        self.assertEqual(self._hits('```{r}\ndata_source(1)\n```\n'), [])
 
 class TestState(FixtureCase):
     def test_init_validate_roundtrip(self):
@@ -42,6 +99,34 @@ class TestState(FixtureCase):
 class TestPredicates(FixtureCase):
     def test_pre_explorer_green_no_requires(self):
         self.assertEqual(run("pre", "explorer", root=self.t)[0], 0)
+    def test_post_coder_fails_on_stray_non_native_label(self):
+        """The `chunk` predicate's naive `n >= min` count passes as long as ONE `tbl-*` chunk
+        exists; it cannot fail on a DIFFERENT chunk that uses the wrong prefix. A fixture with
+        `tbl-main` intact plus one stray `tab-*` chunk must still fail `post coder`, via
+        quarto_structure_check.py's `label-prefix` finding (Phase 1.2)."""
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text() + '\n```{r}\n#| label: tab-secondary\n#| tbl-cap: "A second table"\n1\n```\n')
+        rc, out = run("post", "coder", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("label-prefix", out)
+        self.assertIn("tab-secondary", out)
+    def test_render_predicate_fails_on_unresolved_crossref_even_at_exit_0(self):
+        """`quarto render` exits 0 on a dangling `@tbl-`/`@fig-` reference — it is a WARNING,
+        not an error. The `render` predicate must not read exit 0 as clean (Phase 1.3)."""
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text().replace("@fig-trends plots", "@fig-trends and @tbl-nonexistent plot"))
+        rc, out = run("pre", "writer", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("crossref", out.lower())
+    def test_post_coder_fails_on_source_call(self):
+        """INV-19b: a `source()` call in any chunk must fail `post coder` (Phase 1.4)."""
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text().replace(
+            "#| label: build-panel\n", '#| label: build-panel\nsource("helpers.R")\n'))
+        rc, out = run("post", "coder", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("no-source", out)
+        self.assertIn("INV-19", out)
     def test_pre_writer_red_then_green(self):
         run("state", "init", root=self.t)
         rc, out = run("pre", "writer", root=self.t); self.assertEqual(rc, 1); self.assertIn("code score", out)

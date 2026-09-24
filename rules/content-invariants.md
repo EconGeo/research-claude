@@ -123,10 +123,13 @@ kept rather than reused so older reports and reviews still resolve.
 | Invariant | Enforced by |
 |---|---|
 | INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required; verifier check 4b |
-| INV-14, INV-15, INV-16, INV-19 | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) + `coder-critic` (chunk-level: `set.seed()`, cache setup, `source()`) + verifier check 4c (mandatory FAIL) |
+| INV-14, INV-16, INV-19a (`setwd()`/`rm(list=ls())`/`install.packages()`/`attach()`) | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) — advisory only (always exit 0), tested to actually fire on each of these + `coder-critic` (chunk-level: `set.seed()`, cache setup) + verifier check 4c (mandatory FAIL) |
+| INV-15 (packages loaded in the setup chunk) | **The lint hook does not check this**, despite being named for it: its one relevant rule is "`library()` call after line 30", which is noise on any real manuscript (the setup chunk itself can run past line 30) rather than a check for "outside the setup chunk". `reviewer-judgment` only: `coder-critic`; verifier check 4c (mandatory FAIL) |
+| INV-19b (`source()` inside a chunk) | `pipeline.py`'s `no-source` predicate on `coder.produces` — blocking, fails `post coder`; also flagged advisory by the lint hook; `coder-critic` |
 | INV-25 | `.claude/scripts/quarto_structure_check.py` — FAIL blocks the commit gate |
 | INV-23, INV-24 | `coder-critic` against `data/raw/data_manifest.md`; verifier check 4c for INV-24 (and check 7, data provenance, in submission mode) |
-| INV-9, INV-13 | `quarto render` fails or degrades visibly; writer-critic category 5; verifier check 4c for INV-9 |
+| INV-13 | `.claude/scripts/quarto_structure_check.py` (label prefix, caption placement, dangling `@tbl-`/`@fig-`) — FAIL blocks the commit gate; the `chunk` predicate runs its code-only findings at `post coder`/`pre writer`; `pipeline.py`'s `render` predicate additionally fails on an unresolved-crossref WARNING even when `quarto render` exits 0; writer-critic category 5 |
+| INV-9 | **No executable check exists for a manuscript.** `check_refs.py`'s `latex-residue` regex (which matches raw LaTeX citation/reference macros) scans only this repo's own tree, never a project manuscript — `reviewer-judgment` only: writer-critic category 5; verifier check 4c |
 | INV-18 | `coder-critic` category 13 (manuscript-model) |
 | INV-1..INV-8, INV-10, INV-12, INV-17, INV-20..INV-21 | `reviewer-judgment` — no script checks these |
 
@@ -144,4 +147,4 @@ the specific false assumption this pipeline was rebuilt to remove.
 | **coder-critic** | INV-11, INV-13 through INV-19, INV-23, INV-24 | Deduct per scoring rubric |
 | **storyteller-critic** | INV-20, INV-21 | Deduct per scoring rubric |
 | **verifier** | INV-9, INV-11, INV-14, INV-15, INV-16, INV-19, INV-24 | FAIL if present |
-| **lint hook** | INV-14, INV-15, INV-16, INV-19 | Advisory warning |
+| **lint hook** | INV-14, INV-16, INV-19 | Advisory warning |

@@ -143,8 +143,52 @@ class Ctx:
         if self._ms is None: self._ms = declared_manuscript(self.root)
         return self._ms
 
+HASH_LABEL_RE = re.compile(r"^#\|\s*label:\s*([A-Za-z0-9_-]+)", re.M)
+BRACE_NAMED_LABEL_RE = re.compile(r'^```\{[a-zA-Z]+[^}\n]*?\blabel\s*=\s*["\']([A-Za-z0-9_-]+)["\']', re.M)
+BRACE_POSITIONAL_LABEL_RE = re.compile(r"^```\{[a-zA-Z]+[ \t]+([A-Za-z0-9_-]+)\s*[,}]", re.M)
+
 def chunk_labels(ms: Path) -> List[str]:
-    return re.findall(r"^#\|\s*label:\s*([A-Za-z0-9_-]+)", ms.read_text(), re.M)
+    """Every chunk label in the manuscript, in whichever of Quarto's three spellings a chunk
+    uses: a `#\\| label:` option line, the brace-header positional form (`{r foo, ...}`), or the
+    brace-header named form (`{r, label="foo"}`). `#\\| label:` alone undercounts by
+    construction: tested against a real 80-chunk manuscript, 79 chunks carried their label in
+    the brace header and only one (`setup`) used `#\\| label:` — so the pre-fix version returned
+    a single label for the whole document (Phase 1.1)."""
+    text = ms.read_text()
+    return HASH_LABEL_RE.findall(text) + BRACE_NAMED_LABEL_RE.findall(text) + BRACE_POSITIONAL_LABEL_RE.findall(text)
+
+# The subset of quarto_structure_check.py's finding kinds decidable from chunk code alone —
+# label prefix, caption placement, the obsolete quarto.version hack — independent of whether
+# prose or a render exist yet. `typed-ref`, `orphan-label` and `dangling-ref` are excluded: they
+# depend on prose the writer has not drafted at `post coder` / `pre writer` time, so gating on
+# them here would couple the coder stage to work that is not the coder's to close.
+CHUNK_STRUCTURE_KINDS = {"label-prefix", "caption-in-r", "quarto-version-hack"}
+CHUNK_FINDING_RE = re.compile(r":\d+: \[(" + "|".join(CHUNK_STRUCTURE_KINDS) + r")\] (.+)$")
+
+def chunk_structure_findings(root: Path, ms: Path) -> List[str]:
+    """The `chunk` predicate's `n >= min` count cannot fail on prefix correctness — a manuscript
+    with 34 correct `tbl-*` chunks and one stray `tab-*` chunk still has ≥ 1 `tbl-*` label
+    (Phase 1.2). This asks the linked project's own quarto_structure_check.py instead, the same
+    script `/tools commit` already runs, so the two never disagree about what native Quarto
+    structure means."""
+    script = root / ".claude" / "scripts" / "quarto_structure_check.py"
+    if not script.exists(): return ["quarto_structure_check.py: .claude/scripts/quarto_structure_check.py not linked"]
+    p = subprocess.run([sys.executable, str(script), str(ms.relative_to(root))], cwd=root, capture_output=True, text=True)
+    return [f"[{m.group(1)}] {m.group(2)}" for ln in p.stdout.splitlines() if (m := CHUNK_FINDING_RE.search(ln))]
+
+SOURCE_CALL_RE = re.compile(r"(?<![.\w])source\s*\(")
+
+def source_calls(ms: Path) -> List[int]:
+    """INV-19b: no `source()` call inside any chunk — the one construct
+    content-invariants.md attributed to the lint hook although the lint hook never checked
+    for it (tested: seven prohibited constructs planted in one chunk, `source()` was the only
+    one of seven lint-scripts.sh missed). Reuses qmd_chunks.py's own chunk-body extraction —
+    its stated purpose is exactly this: line numbers identical to the .qmd source (Phase 1.4).
+    Comment-only lines are skipped, matching lint-scripts.sh's convention for the sibling
+    INV-19a checks."""
+    import qmd_chunks
+    lines = qmd_chunks.extract(ms.read_text().split("\n"))
+    return [i + 1 for i, l in enumerate(lines) if not l.lstrip().startswith("#") and SOURCE_CALL_RE.search(l)]
 
 def headings(path: Path) -> List[str]:
     return [h.strip() for h in re.findall(r"^#{1,6}\s+(.+?)\s*(?:\{[^}]*\})?\s*$", path.read_text(), re.M)]
@@ -174,9 +218,25 @@ def is_fresh(root: Path, ms: Path) -> Tuple[bool, str]:
         return False, f"{', '.join(s.name for s in stale)} older than newest input"
     return True, f"{', '.join(o.name for o in outs)} vs newest input"
 
+RENDER_WARNING_RE = re.compile(r"WARNING.*?(?:crossref|cross-reference)", re.I)
+
 def do_render(root: Path, target: Path) -> Tuple[bool, str]:
+    """`returncode == 0` is not "the render is clean": tested on Quarto 1.9.37, a dangling
+    `@tbl-`/`@fig-` produces `WARNING … Unable to resolve crossref @tbl-x` and still exits 0.
+    Raw LaTeX citation/reference macros produce no warning at all — that case is not caught
+    here; it needs quarto_structure_check.py's source-level `dangling-ref`/`label-prefix` checks, which the
+    `chunk` predicate already wires in (Phase 1.2). This function closes the half the exit code
+    silently passed: an unresolved cross-reference that DOES surface, in the log, as a warning
+    quarto itself chose not to fail on (Phase 1.3)."""
     p = subprocess.run(["quarto", "render", str(target.relative_to(root))], cwd=root, capture_output=True, text=True)
-    return p.returncode == 0, (p.stderr or p.stdout).strip().splitlines()[-1:] and (p.stderr or p.stdout).strip().splitlines()[-1] or ""
+    out = p.stdout + p.stderr
+    lines = out.strip().splitlines()
+    if p.returncode != 0:
+        return False, lines[-1] if lines else ""
+    warn = RENDER_WARNING_RE.search(out)
+    if warn:
+        return False, f"exit 0 but {warn.group(0).strip()}"
+    return True, ""
 
 def producer_hint(pred: Dict[str, Any], ok: bool) -> str:
     """The `— run `/skill`` tail on a failing predicate. Shared by run_preds() and the
@@ -262,7 +322,16 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         return p.returncode == 0, "prose_number_check.py exit " + str(p.returncode)
     if t == "chunk":
         n = sum(1 for l in chunk_labels(ctx.ms) if fnmatch.fnmatch(l, pred["label_glob"]))
-        return n >= int(pred["min"]), f"chunks {pred['label_glob']} ({n} found, need {pred['min']})"
+        ok = n >= int(pred["min"])
+        desc = f"chunks {pred['label_glob']} ({n} found, need {pred['min']})"
+        if not ok: return False, desc
+        bad = chunk_structure_findings(root, ctx.ms)
+        if bad: return False, desc + f"; but quarto_structure_check.py: {'; '.join(bad[:2])}" + (f" (+{len(bad)-2} more)" if len(bad) > 2 else "")
+        return True, desc
+    if t == "no-source":
+        hits = source_calls(ctx.ms)
+        if hits: return False, f"no-source: source() at line(s) {', '.join(str(h) for h in hits)} (INV-19)"
+        return True, "no-source: clean (INV-19)"
     if t == "any_of":
         results = [(q, evaluate(q, ctx, post)) for q in pred["of"]]
         passed = any(ok for _, (ok, _d) in results)

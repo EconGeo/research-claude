@@ -50,6 +50,7 @@ class TestRegistry(unittest.TestCase):
                      "score-if-scored": {"type": "score-if-scored", "component": "code", "min": 80},
                      "path": {"type": "path", "glob": "x/*.md"}, "render": {"type": "render"},
                      "prose-check": {"type": "prose-check"}, "chunk": {"type": "chunk", "label_glob": "t-*", "min": 1},
+                     "no-source": {"type": "no-source"},
                      "section": {"type": "section", "file": "manuscript", "heading": "H"},
                      "any_of": {"type": "any_of", "of": [{"type": "path", "glob": "x/*.md"}]}}
         self.assertEqual(set(synthetic), rl.PRED_TYPES, "a new predicate type needs a synthetic case here")

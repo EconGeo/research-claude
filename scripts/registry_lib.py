@@ -14,7 +14,7 @@ ROLES = {"creator", "critic", "referee", "infrastructure"}
 FIELDS = ["role", "kind", "parallel_group", "requires", "produces", "critic",
           "escalation_target", "component", "quality_weight", "conditional", "writes"]
 PRED_TYPES = {"path", "section", "score", "score-if-scored", "fresh", "render", "critic-ran",
-              "prose-check", "chunk", "any_of"}
+              "prose-check", "chunk", "no-source", "any_of"}
 KEY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*:(\s|$)")
 
 # ── restricted YAML ─────────────────────────────────────────────────────────

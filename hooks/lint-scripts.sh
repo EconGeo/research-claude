@@ -124,6 +124,12 @@ lint_file() {
       [[ -n "$num" ]] && add_finding "MEDIUM" "$num" "attach()/detach() — use explicit references"
     done < <(grep -n 'attach(\|detach(' "$file" 2>/dev/null | grep -v '^\s*#' || true)
 
+    # source() inside a chunk (INV-19b) — blocked at commit time by pipeline.py's `no-source`
+    # predicate; flagged here too so a coder session sees it before that gate ever runs.
+    while IFS=: read -r num line; do
+      [[ -n "$num" ]] && add_finding "HIGH" "$num" "source() — inline the code into the chunk (INV-19)"
+    done < <(grep -n 'source(' "$file" 2>/dev/null | grep -v '^\s*#' || true)
+
     # <<- global assignment
     while IFS=: read -r num line; do
       [[ -n "$num" ]] && add_finding "MEDIUM" "$num" "<<- global assignment — pass through arguments"

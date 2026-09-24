@@ -114,6 +114,7 @@ Run grep-based checks on R/Python/Julia scripts against the coding standards' pr
 | `T`/`F` literals | x | | | MEDIUM |
 | `sapply()` | x | | | MEDIUM |
 | `attach()`/`detach()` | x | | | MEDIUM |
+| `source()` inside a chunk (INV-19) | x | | | HIGH |
 | `<<-` global assignment | x | | | MEDIUM |
 | `stargazer` / `plyr` | x | | | MEDIUM |
 | `set.seed()` position (after line 30) | x | | | MEDIUM |
