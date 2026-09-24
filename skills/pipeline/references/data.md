@@ -11,7 +11,7 @@
 ## Driver sequence
 ```
 python3 .claude/scripts/pipeline.py pre explorer          # trivially passes (no REQUIRES)
-                                                             # invoke /discover data [requirements]
+                                                             # invoke /discover data [requirements] [--yes if run carried it]
 python3 .claude/scripts/pipeline.py post explorer
 ```
 `/discover data` dispatches explorer, then explorer-critic (its Step 6), and records the

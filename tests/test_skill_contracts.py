@@ -58,7 +58,9 @@ BUDGET = {
     "review": 12500,
     "strategize": 8500,
     "write": 7600,
-    "discover": 6200,
+    # 2026-09-24 (option gates, Task A3): discover 6,200 -> 7,300. Four gates (question
+    # framings, journal tiers, data shortlist, ideas), each a wait instruction; measured 7,195.
+    "discover": 7300,
     "checkpoint": 5500,
 }
 
