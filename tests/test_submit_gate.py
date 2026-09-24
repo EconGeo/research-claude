@@ -49,3 +49,23 @@ class TestDepositModeExists(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestTargetRoutesTheProfileReadToAScout(unittest.TestCase):
+    """Plan Task B3 (audit §3 P5 submit row): the 547-line journal-profiles.md read moves out
+    of the main context; the option gate and the saved file stay in it; no web claim."""
+
+    def test_target_dispatches_journal_scout_and_keeps_the_gate(self):
+        body = mode_body(SUBMIT.read_text(), re.escape("`/submit target"))
+        self.assertIsNotNone(body)
+        self.assertIn("journal-scout", body)
+        self.assertIn(".claude/agents/journal-scout.md", body)
+        self.assertIn("**Option gate**", body)
+        self.assertNotIn("recent publications", body.lower().replace("\"recent publications\" is judged", ""))
+
+    def test_the_scout_reads_only(self):
+        a = (ROOT / "agents" / "journal-scout.md").read_text()
+        front = a.split("---")[1]
+        self.assertNotRegex(front, r"tools:.*\b(Write|Edit|WebSearch|WebFetch)\b")
+        self.assertIn("Do NOT write any files", a)
+

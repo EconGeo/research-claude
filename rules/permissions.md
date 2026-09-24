@@ -326,6 +326,17 @@ read; this file exists so the registry is readable in a linked project.
 - **CONDITIONAL:** no
 - **WRITES:** 
 
+### journal-scout
+
+- **ROLE:** infrastructure (agent) · **PARALLEL_GROUP:** extraction
+- **REQUIRES:** nothing beyond the research idea
+- **PRODUCES:**
+- **CRITIC:** none
+- **ESCALATION_TARGET:** user
+- **QUALITY_WEIGHT:** 0 (none)
+- **CONDITIONAL:** no
+- **WRITES:** 
+
 ### civilize-auditor
 
 - **ROLE:** infrastructure (agent) · **PARALLEL_GROUP:** audit
