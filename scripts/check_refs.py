@@ -162,18 +162,21 @@ def crit_tool_name(root):
                 hits.append(f"{f.relative_to(root)}:{n}: Task in tools line (use Agent)")
     return report("tool-name", hits)
 
+def _hook_readme_rows(readme_text):
+    """Parse hooks/README.md's table for (name, event) pairs. Only rows whose first cell is
+    a hook FILENAME are hook rows. The "Getting the contract right" table below the hook
+    table also leads with a backticked token — an EVENT name — and without this the parser
+    would report hits for files like hooks/PreToolUse that do not exist."""
+    return [(n, e) for n, e in
+            re.findall(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|", readme_text, re.M)
+            if n.endswith((".py", ".sh"))]
+
 def crit_hooks_readme(root):
     readme = root / "hooks" / "README.md"
     hits = []
     if not readme.exists():
         return report("hooks-readme", ["hooks/README.md missing"])
-    # Only rows whose first cell is a hook FILENAME are hook rows. The "Getting the
-    # contract right" table below the hook table also leads with a backticked token —
-    # an EVENT name — and without this the criterion hunts for a file called
-    # hooks/PreToolUse and reports three hits that name nothing wrong.
-    rows = [(n, e) for n, e in
-            re.findall(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|", readme.read_text(), re.M)
-            if n.endswith((".py", ".sh"))]
+    rows = _hook_readme_rows(readme.read_text())
     for name, event in rows:
         hook = root / "hooks" / name
         if not hook.exists():
@@ -199,9 +202,7 @@ def crit_hooks_wired_source(root):
     if not settings.exists():
         return report("hooks-wired-source", ["seeds/settings.json missing"])
     settings_text = settings.read_text()
-    rows = [(n, e) for n, e in
-            re.findall(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|", readme.read_text(), re.M)
-            if n.endswith((".py", ".sh"))]
+    rows = _hook_readme_rows(readme.read_text())
     hits = []
     for name, event in rows:
         if re.search(r"\bvia\b", event, re.I):
