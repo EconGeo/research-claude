@@ -15,5 +15,5 @@ rm "$E/.claude/rules/quality.md" && cp "$C/rules/quality.md" "$E/.claude/rules/q
 git -C "$E" add -A && git -C "$E" -c user.name=fx -c user.email=fx@x commit -qm "override" >/dev/null
 eval_run '/promote' "$LOG" "Read" "Grep" "Glob" "Bash" "Edit"
 python3 "$RC/tests/evals/check_promote.py" "$LOG" "$C" "$ORIG"; status=$?
-[[ "$(git -C "$RC" status --porcelain)" == "$RC_BEFORE" ]] || { echo "FAIL real checkout modified"; status=1; }
+[[ "$(git -C "$RC" status --porcelain | grep -E "$LINKED_DIRS_RE" || true)" == "$RC_BEFORE" ]] || { echo "FAIL real checkout modified"; status=1; }
 exit $status

@@ -13,9 +13,14 @@
 # eval_finish  checkout-drift check, then the checker. Its exit code is the eval's.
 #
 # Env: EVAL_TIMEOUT (s, default 1800) · KEEP=1 keeps $E on PASS (a FAIL always keeps it).
+# The drift check only watches paths apply.sh actually links into a project (agents/ skills/
+# rules/ hooks/ templates/ references/ scripts/ zotpilot-skills/ ai-audit/); an untracked file
+# elsewhere in the checkout (a scratch doc, a sibling eval task in progress) is not a write
+# through a link and must not fail the run.
 set -u
 RC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 status=1
+LINKED_DIRS_RE='^.. (agents|skills|rules|hooks|templates|references|scripts|zotpilot-skills|ai-audit)/'
 
 eval_cleanup() {
   if [[ "${KEEP:-0}" == 1 || "${status:-1}" != 0 ]]; then echo "kept: $E"; else rm -rf "$E"; fi
@@ -34,7 +39,7 @@ eval_setup() {
     rm "$f" && cp "$t" "$f"
   done
   git -C "$E" add -A && git -C "$E" -c user.name=fx -c user.email=fx@x commit -qm "linked + seeded" >/dev/null
-  RC_BEFORE="$(git -C "$RC" status --porcelain)"
+  RC_BEFORE="$(git -C "$RC" status --porcelain | grep -E "$LINKED_DIRS_RE" || true)"
   MCP_CFG="$E/mcp.json"; echo '{"mcpServers": {}}' >"$MCP_CFG"
   LOG="$E/eval.stream.jsonl"; ERR="$E/mock.calls.log"; : >"$ERR"
 }
@@ -61,7 +66,8 @@ eval_run() {  # eval_run <prompt> <logfile> <allowed-tool>...
 
 eval_finish() {  # eval_finish <checker-basename> <arg>...
   local checker="$1"; shift
-  if [[ "$(git -C "$RC" status --porcelain)" != "$RC_BEFORE" ]]; then
+  local rc_after; rc_after="$(git -C "$RC" status --porcelain | grep -E "$LINKED_DIRS_RE" || true)"
+  if [[ "$rc_after" != "$RC_BEFORE" ]]; then
     echo "FAIL the run modified the research-claude checkout through a link:"
     git -C "$RC" status --porcelain | sed 's/^/    /'; status=1; exit 1
   fi
