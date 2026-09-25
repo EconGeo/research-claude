@@ -71,6 +71,28 @@ this skill.** The fix belongs upstream (the `EconGeo/ZotPilot` fork or `EconGeo/
 the bridge skill that mediates it (`.claude/skills/lit-position`, `.claude/skills/new-project-ztp`,
 etc. for ZotPilot); it is never committed here as-is.
 
+## Step 2b: The improvement ledger
+
+`/checkpoint` in every project appends its pipeline-improvement candidates to
+`$RC/docs/improvement-ledger.md` (`.claude/rules/meta-governance.md`, User corrections).
+Read it here (`ledger.py show --open`) — this is the only step that does:
+
+```bash
+python3 "$RC/scripts/ledger.py" show --open
+```
+
+The output is grouped by target file and sorted so targets named by the most projects come
+first. A line ending **REPEATED** is a target two or more distinct projects corrected: present
+those first, with their rows, and ask whether to land a fix now. For each row the user acts on:
+
+- Landed here: after the upstream commit, `python3 "$RC/scripts/ledger.py" mark L-NNN landed <sha>`.
+- Declined as project-specific or wrong: `python3 "$RC/scripts/ledger.py" mark L-NNN declined "<reason>"`.
+- Target under `zotpilot-skills/` or `ai-audit/`: report "upstream PR" and leave the row open —
+  the fork PR closes it (Step 2.5).
+
+Rows for one project only are listed after; do not push them at the user unless asked. They
+are there so the next project's correction of the same target becomes REPEATED.
+
 ## Step 3: Project overrides
 
 Every non-symlink in `.claude/{skills,agents,rules}` whose name also exists in the
@@ -124,6 +146,7 @@ Before any upstream commit, run the D5 scan from the gate:
 in the canonical tree is how the next project scaffolds wrong. If the change is
 worth keeping but carries a project name, generalize it first — replace the name
 with `<project>` and the specific dataset with a description of its role.
+The same standard applies to a ledger row's note before it is quoted in a commit message.
 
 ## Step 5: Refresh the lock
 
@@ -154,3 +177,4 @@ confirm the install here:
   from `origin/main`, stop and report it.
 - Does not edit anything under `zotpilot-skills/` or `ai-audit/`, both vendored verbatim — see
   Step 2.5.
+- Does not edit the ledger by hand — rows are added by `/checkpoint` and marked by `ledger.py mark`, never rewritten.
