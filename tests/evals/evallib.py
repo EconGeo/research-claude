@@ -25,12 +25,37 @@ def _messages(path):
 
 
 def tool_uses(path) -> list[tuple[str, dict, str]]:
-    """(name, input, id) for every tool_use block, in transcript order."""
+    """(name, input, id) for every tool_use block, in transcript order. Includes tool calls
+    made inside a dispatched subagent's own turn — those transcript lines are flattened into
+    the same stream, tagged with a `parent_tool_use_id` pointing at the Agent tool_use block
+    that dispatched them (see `main_session_tool_uses` when that distinction matters)."""
     out = []
     for content in _messages(path):
         for b in content:
             if isinstance(b, dict) and b.get("type") == "tool_use":
                 out.append((b.get("name") or "", b.get("input") or {}, b.get("id") or ""))
+    return out
+
+
+def main_session_tool_uses(path) -> list[tuple[str, dict, str]]:
+    """Like `tool_uses`, but excludes tool calls made inside a dispatched subagent's own turn.
+    A subagent's tool calls (e.g. the explorer's own WebSearch/WebFetch) are flattened into the
+    same transcript as the main session's, distinguishable only by a `parent_tool_use_id` set
+    on the line — so a checker that means "the session itself never did X" must filter to this,
+    not `tool_uses`, or it will flag a subagent's permitted use of a tool the session avoids."""
+    out = []
+    for line in pathlib.Path(path).read_text().splitlines():
+        try:
+            m = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(m, dict) or m.get("parent_tool_use_id"):
+            continue
+        msg = m.get("message")
+        if isinstance(msg, dict) and isinstance(msg.get("content"), list):
+            for b in msg["content"]:
+                if isinstance(b, dict) and b.get("type") == "tool_use":
+                    out.append((b.get("name") or "", b.get("input") or {}, b.get("id") or ""))
     return out
 
 
