@@ -1098,3 +1098,71 @@ inconsistently `+x` (the runners invoke them through `python3`, so nothing depen
 
 **Still open.** The five skill reds above. Fleet re-link is not needed: no shipped file was
 added or removed.
+
+## 2026-09-25 — data-dict (tidyverse) trial: ruled DEFER
+
+**Scope.** Assessed Hadley Wickham's `data-dict` (spec 0.1.0, CLI 0.0.3) as a checkable replacement for `data-engineer`'s prose codebook, under `docs/plans/2026-09-25-data-dict-trial.md`. The trial ran on scratch copies of five `zoning2026` raw inputs. **No shipped file changed; the paper repo was read only.**
+
+**Findings** (`docs/audits/2026-09-25_data-dict-trial-findings.md`):
+- The validator caught 6/6 planted faults and the 10 real known AK/MD BPS duplicates, with line-level messages and a good self-contained HTML report.
+- It reads **Parquet only**, and `parquet:` globs are broken.
+- The `datadict` R wrapper calls a subcommand the released binary lacks.
+- `translate` to R covers `assert:` expressions only (no key, type or enum checks), and it silently passes an assertion on a type-changed column.
+- Relationship cardinality isn't validated.
+
+**Ruling: DEFER.** C1 (formats) fails and C3 (R translation) is partial. The re-test trigger is in the findings file: any two of CSV/data-frame source, working globs, wrapper and binary in sync, structural `translate`.
+
+**Left installed:** the `datadict` R package plus the CLI binary (in the R user cache), and `nanoparquet`. Three upstream issue drafts are in the findings file, unfiled.
+
+## 2026-09-25 — Pipeline-fix residue cleanup; five skill reds closed
+
+**Scope.** Housekeeping after the gstack and remaining-evals merges, then the five live-eval reds
+that `docs/plans/2026-09-25-remaining-skill-evals.md` left open. Built on `fix/skill-eval-reds`
+(in place, not a worktree, since evals link this checkout), merged to `main`.
+
+**Housekeeping.** The gstack merge (`ccea599`) added `rules/systematic-debugging.md` and
+`scripts/context_bill.py`, which no paper repo linked yet (`check_install --all` FAIL
+[membership] ×6). All six re-linked with `apply.sh --project-dir <p> --link` (pinned), locks
+refreshed to `ccea599` and committed: `affordable_housing_2026` `65898a4`, `BRI` `129c77b`, `ESG`
+`e101a17`, `NAR_settlement` `e3bb283`, `POGM4` `23db43d`, `zoning2026` `2632651`;
+`check_install --all` PASS. The user removed the merged gstack worktree, 27 merged local
+branches and a stash (an older copy of the committed gstack plan). Remote
+`evals/remaining-skills` and `evals/remaining-skills-7tvb54` (merged) deleted. The gstack merge
+itself had no session entry; its commits are `51cf860`, `3fa5b0b`, `e8a5cd8`, `982d640`,
+`78ecfe9` (subcommand shipped as `/tools context-bill`, see that plan's Task 3 note).
+
+**Fixes (commits oldest first).**
+- `3e3037b` — `/revise`: never Read the manuscript in the main session, even to check a FATAL
+  premise. `/submit final`: steps run in order, only an explicit STOP ends early; Step 1's
+  "recent" = every scored component's `at` within 7 days; Step 2 dispatches the Verifier
+  unconditionally. `/talk create`: never `record-score` a talk. `/strategize`: a sub-80 score
+  gets its revision round before Step 6; the Step 7 decision record is unconditional.
+- `ce142e0` — `check_strategize.py` reads every strategist dispatch (a correct run sent Step 1's
+  Pre-Strategy Report as its own dispatch, before any design was picked).
+- `328b9f1`, `e08a1ff` — `rules/agents.md` §4: every creator and critic dispatch is foreground
+  (`run_in_background: false`); §3: a revision round is a new `Agent` call, never `SendMessage`.
+  Two strategize runs ended headless with an agent still running in the background.
+- `4744cb9` — `ai-audit/` re-vendored at `1c237da` (`EconGeo/ai-audit#4`: `/verify-claims`
+  Phase 5 always saves `quality_reports/verify_claims_<draft-stem>_<date>.md`).
+- `b91b399` — `check_verify_claims.py` accepts Phase 0 done by listing `.claude/agents/`.
+- `cd8d613` — `/strategize` Step 5 names the foreground `Agent` call itself (the rule alone did
+  not reach round 2).
+- `9d1792c` — **no timeouts on live runs** (user ruling, recorded in `CLAUDE.md`):
+  `EVAL_TIMEOUT`/`LIVE_TIMEOUT` default 0, per-eval caps deleted. A watchdog killed two correct
+  strategize runs in the round-2 critic; raising it (3600 → 5400 → 9000) only moved the kill
+  point and wasted those runs.
+
+**Live re-runs.** `/revise` PASS · `/submit final` PASS (verifier dispatched, replication
+recorded, stopped at the disclosure audit) · `/talk create lightning` PASS · `/verify-claims`
+PASS (report written; checker corrected per `b91b399`, verified against that run's transcript) ·
+`/strategize` PASS on the sixth attempt (two records, revision round, decision record; the
+runner was edited mid-run so the checker was run by hand on the kept transcript).
+Earlier strategize attempts: timeout ×2, background dispatch ×1, `SendMessage` round 2 ×1.
+
+**Results:** 493 tests OK · `check_fork` PASS. No shipped file added or removed on the branch,
+so no re-link; paper locks record `ccea599` (WARN only).
+
+**Also on the branch:** a peer session's data-dict trial docs (`a038d60`, `ecb1883`,
+`43ff095`), docs only.
+
+**Still open:** nothing in this repo.

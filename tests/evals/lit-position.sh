@@ -7,7 +7,7 @@
 # and the mock's stderr (local-first as a transcript property). Asserts mechanism, not outcome. Run alone — never in
 # parallel with another eval (audit 2026-09-15 §3 P7 rule 4).
 #
-#   tests/evals/lit-position.sh            # EVAL_TIMEOUT (s, default 1800) bounds the run
+#   tests/evals/lit-position.sh            # no timeout (EVAL_TIMEOUT=<s> opts in)
 set -u
 RC="$(cd "$(dirname "$0")/../.." && pwd)"
 E="$(mktemp -d)"
@@ -26,7 +26,7 @@ JSON
 LOG="$E/eval.stream.jsonl"; : >"$ERR"
 command -v claude >/dev/null 2>&1 || { echo "claude not on PATH"; exit 1; }
 # The transcript goes to stdout; claude's own stderr is kept beside it.
-( cd "$E" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "${EVAL_TIMEOUT:-1800}" \
+( cd "$E" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "${EVAL_TIMEOUT:-0}" \
     claude -p '/lit-position "staggered adoption and local housing prices" --yes' --permission-mode acceptEdits \
     --mcp-config "$MCP_CFG" --strict-mcp-config \
     --allowedTools "mcp__zotpilot__*" "Agent" "Read" "Write" "Bash" "Skill" \

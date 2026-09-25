@@ -43,6 +43,14 @@ class TestVerifyClaimsChecker(unittest.TestCase):
     def test_no_preflight_fails(self):
         rc, out = go(CHECK, self.T.split("\n", 1)[1], self.p, S); self.assertEqual(rc, 1); self.assertIn("Phase 0", out)
 
+    def test_preflight_by_directory_listing_passes(self):
+        T = use("u0", "Bash", command=f"ls -la {self.p}/.claude/agents/") + self.T.split("\n", 1)[1]
+        rc, out = go(CHECK, T, self.p, S); self.assertEqual(rc, 0, out)
+
+    def test_unrelated_agents_path_is_not_preflight(self):
+        T = use("u0", "Read", file_path=str(self.p / ".claude/agents/coder.md")) + self.T.split("\n", 1)[1]
+        rc, out = go(CHECK, T, self.p, S); self.assertEqual(rc, 1); self.assertIn("Phase 0", out)
+
     def test_sentinel_in_prompt_fails(self):
         rc, out = go(CHECK, self.T.replace("Q1: does it?", f"Q1: {S}"), self.p, S); self.assertEqual(rc, 1); self.assertIn("sentinel", out)
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # tests/evals/analyze.sh — functionality eval for /analyze with no strategy memo. strategy=85 so
-# `pre coder` passes. Four agent dispatches: the longest eval — EVAL_TIMEOUT 5400. Run alone.
+# `pre coder` passes. Four agent dispatches: the longest eval. Run alone.
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=5400}"
 seed_score() {
   mkdir -p "$E/quality_reports/reviews"
   echo "# $3 — seeded fixture input ($(date +%F))" >"$E/quality_reports/reviews/$3_seed.md"

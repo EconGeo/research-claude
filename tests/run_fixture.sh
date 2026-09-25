@@ -196,7 +196,7 @@ SEED
   # chain — dispatch → SubagentStop → dispatch-log → critic → score → strike — and let a
   # fuller run be asked for explicitly.
   LIVE_UNTIL="${LIVE_UNTIL:-strategy}"
-  LIVE_TIMEOUT="${LIVE_TIMEOUT:-3600}"
+  LIVE_TIMEOUT="${LIVE_TIMEOUT:-0}"   # 0 = no limit; a watchdog is opt-in only (2026-09-25)
   if ! command -v claude >/dev/null 2>&1; then
     bad live-claude-present "claude not on PATH — the live tier cannot run"
   else
@@ -227,7 +227,7 @@ SEED
     if [[ $lrc -eq 142 ]]; then
       # FIRST: a timeout also produces an empty/short transcript, so testing emptiness ahead
       # of it reported every timeout as "claude produced no output at all" (observed).
-      bad live-pipeline "TIMED OUT after ${LIVE_TIMEOUT}s — raise LIVE_TIMEOUT, or lower LIVE_UNTIL"; live_bad=1
+      bad live-pipeline "killed by the opt-in LIVE_TIMEOUT=${LIVE_TIMEOUT}s watchdog"; live_bad=1
     elif grep -qi 'Unknown command:' "$LIVE_LOG"; then
       bad live-pipeline "claude did not recognise the command"; live_bad=1
     elif [[ ! -s "$LIVE_LOG" ]]; then

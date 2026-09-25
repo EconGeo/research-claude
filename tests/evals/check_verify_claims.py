@@ -9,7 +9,9 @@ import evallib
 uses, proj, sentinel = evallib.tool_uses(sys.argv[1]), pathlib.Path(sys.argv[2]), sys.argv[3]
 fails = []
 disp = evallib.agent(uses, "claim-verifier")
-pre = evallib.first(uses, lambda n, a: "claim-verifier.md" in (str(a.get("file_path", "")) + str(a.get("command", "")) + str(a.get("pattern", "")) + str(a.get("path", ""))))
+# Phase 0 names the file, or lists the directory it lives in (a live run checked with
+# `ls -la .claude/agents/` and confirmed claim-verifier.md from the listing).
+pre = evallib.first(uses, lambda n, a: re.search(r"claim-verifier\.md|\.claude/agents/?(\s|$|['\"*])", str(a.get("file_path", "")) + " " + str(a.get("command", "")) + " " + str(a.get("pattern", "")) + " " + str(a.get("path", "")) + " "))
 if disp is None: fails.append("claim-verifier was never dispatched")
 else:
     if pre is None or pre > disp: fails.append("the agent file .claude/agents/claim-verifier.md was not checked before the dispatch (Phase 0)")

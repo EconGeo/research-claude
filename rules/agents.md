@@ -81,6 +81,8 @@ the `ESCALATION_TARGET` declared for the creator in the registry. `pipeline.py s
   `explorer-critic_<date>_r2.md` and `_r3.md`, and `record-score --report` names that file. A report is
   never overwritten: `.claude/hooks/protect-files.sh` lets a session create a report and blocks
   every rewrite of one, so a second round saved to the first round's name stalls the loop.
+- **Each round is a fresh foreground `Agent` dispatch** (§4), never `SendMessage` to the
+  earlier agent — the round's result is what the critic re-scores.
 - Escalation is logged in the research journal with the strike count.
 - Escalating to the user requires a specific question: "strategist-critic requires X, which
   contradicts Y — which takes priority?", never "they disagree".
@@ -116,6 +118,16 @@ It is deliberately not a pairing table: a creator's bound critic, its escalation
 component weight are declared once, in `.claude/rules/registry.yaml`, and rendered to
 `.claude/rules/permissions.md`. Where the two could ever disagree, the registry is right and this
 table is stale. Read `permissions.md` before relying on a pairing.
+
+**Every creator and critic dispatch runs in the foreground and the session waits for it** —
+`Agent` with `run_in_background: false`, whatever the harness default is. Independent
+dispatches run in parallel as several foreground `Agent` calls in one message, not as
+background runs. A stage skill's next step always needs the agent's result (the critic needs
+the artifact, `record-score` needs the report); a session that ends its turn while an agent
+is still running leaves the stage unfinished, and headless `claude -p` exits right there
+(observed twice on 2026-09-25 in `/strategize` live evals: a background strategist in round 1,
+and a round 2 sent by `SendMessage` — both runs ended with no critic score and no decision
+record).
 
 A skill that offers the user a ranked choice before dispatching does so as an **Option gate**
 under `.claude/rules/option-gates.md` — one mechanism, `--yes` takes rank 1, the pick lands

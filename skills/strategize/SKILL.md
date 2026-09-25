@@ -40,22 +40,24 @@ Workflow:
 
    Pass the strategist **only the chosen design's** checklist —
    `.claude/skills/strategize/templates/design-checklists/<design>.md`, one of `did`,
-   `event-study`, `iv`, `rdd`, `structural`, `descriptive`. Naming all seven is what makes an
-   agent read all seven.
+   `event-study`, `iv`, `rdd`, `structural`, `descriptive`.
 4. Dispatch strategist-critic (4-phase audit,
    `.claude/skills/review/templates/causal-audit-4-phases.md`). Returns text; **session saves**
    to `quality_reports/reviews/strategist-critic_<date>.md`, then records:
    `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report <path>`.
-5. Below 80 → Strategist revises → critic re-scores; `pipeline.py state strike strategist` per
-   failing round; strike three → escalate to the registry's escalation target with a specific
-   question.
+5. **Below 80 → revise before Step 6** (`--yes` does not waive it): `pipeline.py state strike
+   strategist`, a **new foreground `Agent`** strategist call with the deductions (never
+   `SendMessage`), re-dispatch strategist-critic,
+   save, `record-score strategy` again. Repeat to ≥ 80 or strike three → escalate to the
+   registry's escalation target with a specific question.
 6. Save to `quality_reports/strategy/<project>/`: `strategy_memo.md` (all 5 required sections —
    Estimand, Specification, Assumptions, Robustness Plan, Threats), `pseudo_code.md`,
    `robustness_plan.md`, `falsification_tests.md`
 7. **Save decision record** → `quality_reports/decisions/strategy_[topic].md`, using
    `.claude/skills/strategize/templates/decision-record.md`. It owns the field list: decision,
    alternatives considered with why each was rejected, rationale, key assumptions with
-   credibility, what would invalidate the strategy, and risks.
+   credibility, what would invalidate the strategy, and risks. **Unconditional** — every run,
+   an escalated one included (open question under risks).
 
 ### `/strategize pap [spec]` — Pre-Analysis Plan
 Draft a pre-analysis plan following AEA/OSF/EGAP standards.
@@ -86,10 +88,8 @@ that registry's template**:
 | OSF | `osf.md` | Observational, quasi-experimental or archival work; flexible, versioned |
 | EGAP | `egap.md` | Development economics / political science, with governance and ethics questions |
 
-The template owns the section list, the section ordering and — for `osf.md` §6 — the
-observational adaptation (identification in place of randomization, comparison group, assumption
-credibility, placebo and falsification tests, pre-committed specification choices, endogeneity
-threats). Do not restate any of it here.
+The template owns the section list, the ordering and — for `osf.md` §6 — the observational
+adaptation. Do not restate any of it here.
 
 #### Safety and review
 

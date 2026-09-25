@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # tests/evals/revise.sh — functionality eval for /revise on a six-comment synthetic report whose
-# first comment is FATAL. Run alone. EVAL_TIMEOUT default 1800.
+# first comment is FATAL. Run alone.
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=1800}"
 eval_setup
 mkdir -p "$E/quality_reports"
 cat >"$E/quality_reports/referee_report_fixture.md" <<'MD'

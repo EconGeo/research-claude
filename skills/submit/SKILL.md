@@ -99,9 +99,16 @@ Workflow:
 ### `/submit final [journal]` — Final Submission Gate
 Full verification + score enforcement + submission checklist.
 
-Workflow:
-1. Run comprehensive review if not done recently
-2. Run replication audit
+Workflow — run the steps in order. Only an explicit **STOP** ends the run early; a blocker
+you can already see in `state show` or `score` does not skip Steps 1–2, and a static reading of
+the state never stands in for them.
+1. **Comprehensive review.** Run `python3 .claude/scripts/pipeline.py state show`. If every
+   scored component's `at` is within the last 7 days, the review is current — say so and
+   continue. Otherwise run `/review` first.
+2. **Replication audit — unconditional.** Dispatch the Verifier (`Agent`,
+   `subagent_type=verifier`) in submission mode exactly as `/submit audit` above does, save its
+   report to `quality_reports/verification_report.md`, and run `record-score replication`. An
+   existing verification report does not substitute (Principles: *Don't skip verification*).
 2.5. **AI Disclosure Audit** — read `ai_use_log.md` and the manuscript AI Use Statement:
    - If `ai_use_log.md` missing or empty: **STOP** — "AI disclosure log missing. Run agents or manually populate ai_use_log.md before submission. See .claude/rules/ai-disclosure.md."
    - Read the `## AI Use Statement {.unnumbered}` section in `manuscript_<project>.qmd`

@@ -2,9 +2,7 @@
 # tests/evals/write.sh — functionality eval for /write conclusion. code=85 so the writer's requires
 # pass; a filled style guide so the VOICE block does not halt the run. The mock is registered because
 # write's frontmatter does not need it but the writer-critic's local-literature sweep may. Run alone.
-# EVAL_TIMEOUT 3600.
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=3600}"
 seed_score() {
   mkdir -p "$E/quality_reports/reviews"
   echo "# $3 — seeded fixture input ($(date +%F))" >"$E/quality_reports/reviews/$3_seed.md"

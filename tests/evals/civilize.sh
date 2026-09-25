@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # tests/evals/civilize.sh — functionality eval for /civilize (ai-audit, vendored). Plants an
 # AI-voiced paragraph so the auditor has something to find; asserts dispatch scope and no edits.
-# Run alone. EVAL_TIMEOUT default 1800.
+# Run alone.
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=1800}"
 eval_setup
 python3 - "$E/manuscript_fixture.qmd" <<'PY'
 import pathlib, sys

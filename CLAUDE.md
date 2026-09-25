@@ -47,8 +47,10 @@ and lock refresh that plan's merge deferred landed the same day, all six paper r
 `1b11285` with `check_install --all` PASS. The evals for the remaining skills closed the same day
 under `docs/plans/2026-09-25-remaining-skill-evals.md` (one task per skill; `tests/evals/`); five
 live runs came back red on the skill, not the harness — `/verify-claims` (vendored), `/revise`,
-`/submit`, `/talk`, `/strategize` — see that plan's Findings. Those five skill fixes are the open
-work.
+`/submit`, `/talk`, `/strategize` — see that plan's Findings. All five were fixed and re-run
+green on 2026-09-25 (`EconGeo/ai-audit#4`, `ai-audit/` re-vendored at `1c237da`; foreground
+dispatch rule in `rules/agents.md` §4) — see the 2026-09-25 "Five skill reds closed" entry in
+`docs/SESSION_REPORT.md`. **Nothing is open in this repo.**
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 
@@ -60,6 +62,15 @@ that look wrong are deliberate, §2 lists permanent gate blind spots) and
 **Keep this pointer current.** A handoff nothing links to is a handoff nobody reads: the
 2026-09-10 session found the previous one only because the user named the file by hand. When
 a handoff is superseded, repoint this section at the new one rather than adding to a list.
+
+## Live evals and live runs: never put a time limit on them
+
+**Non-negotiable (user ruling, 2026-09-25).** Never add, raise, or pass a timeout to a live
+`claude -p` run — `tests/evals/*.sh`, `tests/run_fixture.sh --live`, or any agent/critic run
+driven by hand. The harness defaults are `EVAL_TIMEOUT=0` / `LIVE_TIMEOUT=0` (no watchdog);
+leave them there and do not set them. A watchdog killed two correct `/strategize` runs in
+the round-2 critic after 60–90 minutes of work each, and every raise ("3600 → 5400 → 9000")
+just moved the kill point. If a run is slow, let it finish, then diagnose what made it slow.
 
 ## Checkpoint / session-report location
 

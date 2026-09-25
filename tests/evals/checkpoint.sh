@@ -4,7 +4,6 @@
 # config, and a committed history to log. Memory writes land under ~/.claude/projects/<$E encoded>/,
 # a dir claude creates for every eval run anyway; it is removed on PASS. Run alone.
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=900}"
 eval_setup
 printf '\nSESSION_REPORT.md lives at docs/SESSION_REPORT.md, not the repo root.\n' >>"$E/CLAUDE.md"
 mkdir -p "$E/docs" "$E/quality_reports/plans"

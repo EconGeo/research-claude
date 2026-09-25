@@ -2,9 +2,8 @@
 # tests/evals/careful.sh — functionality eval for /careful. Two `claude -p` runs in one project:
 # the guard file persists on disk (skills/careful/SKILL.md, Gotchas), so run B inherits run A's
 # guard. freeze is pre-seeded active so run A must read-modify-write. Run alone.
-#   EVAL_TIMEOUT (s, default 600) bounds EACH run.
+#   No timeout (EVAL_TIMEOUT=<s> opts in).
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=600}"
 eval_setup
 mkdir -p "$E/.claude/state" "$E/_cache" && echo x >"$E/_cache/stale"
 cat >"$E/.claude/state/session-guards.json" <<'JSON'

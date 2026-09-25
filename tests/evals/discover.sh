@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # tests/evals/discover.sh — functionality eval for /discover data. The explorer has its own web tools
 # (agents/explorer.md); the main session must not. The mock is registered for the critic's local
-# literature sweep. Run alone. EVAL_TIMEOUT 3600.
+# literature sweep. Run alone.
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=3600}"
 eval_setup
 eval_mock
 python3 "$RC/scripts/pipeline.py" --root "$E" state init >/dev/null
