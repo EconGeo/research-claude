@@ -1098,3 +1098,18 @@ inconsistently `+x` (the runners invoke them through `python3`, so nothing depen
 
 **Still open.** The five skill reds above. Fleet re-link is not needed: no shipped file was
 added or removed.
+
+## 2026-09-25 — data-dict (tidyverse) trial: ruled DEFER
+
+**Scope.** Assessed Hadley Wickham's `data-dict` (spec 0.1.0, CLI 0.0.3) as a checkable replacement for `data-engineer`'s prose codebook, under `docs/plans/2026-09-25-data-dict-trial.md`. The trial ran on scratch copies of five `zoning2026` raw inputs. **No shipped file changed; the paper repo was read only.**
+
+**Findings** (`docs/audits/2026-09-25_data-dict-trial-findings.md`):
+- The validator caught 6/6 planted faults and the 10 real known AK/MD BPS duplicates, with line-level messages and a good self-contained HTML report.
+- It reads **Parquet only**, and `parquet:` globs are broken.
+- The `datadict` R wrapper calls a subcommand the released binary lacks.
+- `translate` to R covers `assert:` expressions only (no key, type or enum checks), and it silently passes an assertion on a type-changed column.
+- Relationship cardinality isn't validated.
+
+**Ruling: DEFER.** C1 (formats) fails and C3 (R translation) is partial. The re-test trigger is in the findings file: any two of CSV/data-frame source, working globs, wrapper and binary in sync, structural `translate`.
+
+**Left installed:** the `datadict` R package plus the CLI binary (in the R user cache), and `nanoparquet`. Three upstream issue drafts are in the findings file, unfiled.
