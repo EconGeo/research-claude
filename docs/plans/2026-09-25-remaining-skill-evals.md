@@ -63,8 +63,8 @@ The twenty, in the order the tasks run (cheap, no-agent evals first; agent-dispa
 - **Checker:** `tests/evals/check_<skill>.py`, imports `evallib`, prints one summary line, one `  FAIL …` line per failed assertion, then `check_<skill>: PASS|FAIL`, exit 0/1.
 - **Unit test:** `tests/test_eval_<skill>.py`, one file per skill (so twenty tasks never edit one shared file), using the `run()` helper shown in Task 1 verbatim in each file.
 - **Prompts** are the audit's §6 inputs, made non-interactive: a skill that waits for the user ends its turn, and the checker asserts what did *not* happen after the wait.
-- **What the transcript shows.** `--verbose` stream-json carries the main session's `tool_use` blocks (with `id`, `name`, `input`) and `tool_result` blocks (with `tool_use_id`, `content`, `is_error`). It does not reliably show a subagent's own tool calls, so no checker asserts what happened *inside* an Agent; the mock log is the only window into a subagent's MCP calls.
-- **Post-run facts** (does a file exist, is it a symlink, did a render exit 0) are computed by the runner in bash and passed to the checker as its extra arguments — never recomputed inside the checker.
+- **What the transcript shows.** `--verbose` stream-json carries the main session's `tool_use` blocks (with `id`, `name`, `input`) and `tool_result` blocks (with `tool_use_id`, `content`, `is_error`). A dispatched subagent's own tool calls are flattened into the same stream, tagged only by a `parent_tool_use_id` on the line (Task 18 finding): `evallib.tool_uses()` is the whole-transcript view, `evallib.main_session_tool_uses()` drops the nested lines, and every "the main session never X" assertion uses the latter. No checker asserts what happened *inside* an Agent beyond that; the mock log is the window into a subagent's MCP calls.
+- **Post-run facts** (did a render exit 0, did the mock see a call) are computed by the runner in bash and passed to the checker as its extra arguments; on-disk facts about the project (does a file exist, is it a symlink, what does `git status --porcelain` say) may instead be read from the project dir the runner passes, as `check_civilize`, `check_promote`, `check_revise`, `check_talk` and `check_verify_claims` do — their unit tests build a real temp repo for it. Neither is recomputed from the transcript.
 
 ---
 
@@ -2696,35 +2696,55 @@ eval_finish check_analyze.py "$LOG" "$E" "$RRC" "$PRC"
 
 ## Close-out (after Task 20)
 
-- [ ] Run the whole unit suite once: `python3 -m unittest discover -s tests -q` → OK (327 + 4 evallib + 6 mock + ~95 checker tests).
-- [ ] Update `docs/plans/2026-09-24-option-gates-subagent-routing-evals.md` "What this plan deliberately leaves open": replace the "20 remain" sentence with a pointer to this plan and its Progress Log.
-- [ ] Repoint `CLAUDE.md` § Start here: the "evals for the remaining skills" clause now reads "closed by `docs/plans/2026-09-25-remaining-skill-evals.md` (see its Progress Log for the runs that came back red on the skill)".
-- [ ] `/checkpoint` — append the session entry to `docs/SESSION_REPORT.md` with the table of PASS / FAIL (skill) / FAIL (design) results.
+- [x] Run the whole unit suite once: `python3 -m unittest discover -s tests -q` → OK (327 + 4 evallib + 6 mock + ~95 checker tests).
+- [x] Update `docs/plans/2026-09-24-option-gates-subagent-routing-evals.md` "What this plan deliberately leaves open": replace the "20 remain" sentence with a pointer to this plan and its Progress Log.
+- [x] Repoint `CLAUDE.md` § Start here: the "evals for the remaining skills" clause now reads "closed by `docs/plans/2026-09-25-remaining-skill-evals.md` (see its Progress Log for the runs that came back red on the skill)".
+- [x] `/checkpoint` — append the session entry to `docs/SESSION_REPORT.md` with the table of PASS / FAIL (skill) / FAIL (design) results.
 
 ## Progress Log
 
 | Task | Skill | Status | Commit | Live run summary (from the checker's summary line) |
 |---|---|---|---|---|
-| 0 | harness | | | |
-| 1 | careful | | | |
-| 2 | freeze | | | |
-| 3 | checkpoint | | | |
-| 4 | new-project-ztp | | | |
-| 5 | seed-papers | | | |
-| 6 | ztp-review | | | |
-| 7 | ztp-research | | | |
-| 8 | ztp-profile | | | |
-| 9 | ztp-tutor | | | |
-| 10 | promote | | | |
-| 11 | civilize | | | |
-| 12 | verify-claims | | | |
-| 13 | revise | | | |
-| 14 | submit | | | |
-| 15 | talk | | | |
-| 16 | write | | | |
-| 17 | strategize | | | |
-| 18 | discover | | | |
-| 19 | review | | | |
-| 20 | analyze | | | |
+| 0 | harness | OK (unit) | `6eb8755` | shared runner/checker libraries; mock grows the ten tools the vendored skills call |
+| 1 | careful | PASS | `3276e7e` | run A tool_use: 5 · run B tool_use: 3 · attempts: rm=1 push=1 |
+| 2 | freeze | PASS | `5b71fa8` | A: 1 · B: 5 (manuscript edits 1, talks edits 1) · C: 1 |
+| 3 | checkpoint | FAIL (harness → fixed, PASS) | `c9c76d1` + `b5bf148` | tool_use: 19 · report 163→2644 bytes |
+| 4 | new-project-ztp | PASS | `1cc523c` | tool_use: 5 · mock calls: 1 |
+| 5 | seed-papers | PASS | `a13e234` | tool_use: 6 · mock calls: 2 · search_topic queries: 2 |
+| 6 | ztp-review | PASS | `9155b4a` | tool_use: 12 · mock calls: 8 |
+| 7 | ztp-research | PASS | `2e16624` | tool_use: 5 · mock calls: 4 |
+| 8 | ztp-profile | PASS | `d84b78a` | tool_use: 18 · mock calls: 12 · views: ['collections', 'items', 'overview', 'tags'] |
+| 9 | ztp-tutor | PASS | `47f1a39` | tool_use: 3 · mock calls: 1 |
+| 10 | promote | PASS | `32cb6d6` | bash calls: 6 · clone HEAD moved: False |
+| 11 | civilize | FAIL (harness → fixed, PASS) | `0c53b10` | tool_use: 11 · auditor dispatches: 1 |
+| 12 | verify-claims | FAIL (skill, vendored: no `quality_reports/verify_claims_*.md` written) | `fae8ae7` + `922f047` + `204211f` | tool_use: 20 · verifier dispatched: True |
+| 13 | revise | FAIL (skill: manuscript read in full before the FATAL escalation) | `76474d6` | tool_use: 14 · tracker written: False |
+| 14 | submit | FAIL (skill: verifier never dispatched) | `a799004` | tool_use: 11 · verifier: False · bash: 6 |
+| 15 | talk | FAIL (harness → fixed) then FAIL (skill: `record-score talk` attempted on an advisory score) | `8649a94` + `2514c87` | tool_use: 158 · symlink: True · talk: True |
+| 16 | write | FAIL (harness → fixed, PASS) | `77011fb` | tool_use: 182 · records: 2 · prose check rc: 0 |
+| 17 | strategize | FAIL (skill: no `quality_reports/decisions/strategy_*.md`; first score 61 < 80 with no revision round) | `361654a` + close-out fix | tool_use: 68 · records: 1 · decision records: 0 |
+| 18 | discover | FAIL (harness → fixed, PASS) | `0c3029e` + `8858419` | tool_use: 120 · explorer: True · critic: True |
+| 19 | review | PASS | `cf46507` | tool_use: 75 · dispatched: ['strategist-critic', 'writer-critic', 'verifier'] |
+| 20 | analyze | PASS | `7268dc5` | tool_use: 168 · dispatches: ['coder', 'data-engineer', 'coder-critic', 'coder', 'coder-critic'] · render rc 0 · prose rc 0 |
 
 Status values: `PASS` · `FAIL (harness → fixed, PASS)` · `FAIL (skill: <assertion>)` · `FAIL (design: <assertion>)` · `timeout`.
+
+### Findings
+
+Reds on the **skill** (the eval is committed as is; the skill fix is a follow-up):
+
+- **12 `/verify-claims` (vendored).** Writes no `quality_reports/verify_claims_*.md`: the live run returned a "Post-Flight Verification … Outcome: FAIL" text block and saved nothing, while `registry.yaml` `claim-verifier.produces` expects the file. `ai-audit`'s `SKILL.md` Phase 4 names no report file ("return the report and let the user decide"); the checker keeps the report-file assertion because the registry is what `/submit` and `/review` read. Fix is a PR to `EconGeo/ai-audit`.
+- **13 `/revise`.** Read the manuscript in full from the main session, before the FATAL escalation, to verify the referee's premise. `SKILL.md` Step 1.4 says the manuscript is listed (grepped), not read — "the writer or coder dispatched in Step 5 reads the sections it revises". Everything else held: report Read, manuscript listed first, no dispatch, manuscript unedited, halt before routing.
+- **14 `/submit final`.** Skipped Step 1 (comprehensive review) and Step 2 (replication audit → Verifier dispatch), both unconditional; instead read `registry.yaml`, ran `state show` and `score --gate submission`, and wrote `quality_reports/quality_gate_2026-09-25.md` straight to a FAIL listing all six blockers as static analysis. No cover letter or checklist written; no `record-verify-claims`.
+- **15 `/talk create`.** Ran `pipeline.py state record-score talk 75 …`, which `pipeline.py` refused (`storyteller`/`storyteller-critic` are `component: none, quality_weight: 0`). `SKILL.md` never instructs `record-score` for a talk and says "Advisory scoring. Talk scores don't block commits." The session reasoned correctly about why not to retry, but the attempt happened. Not loosened further.
+- **17 `/strategize`.** Wrote no `quality_reports/decisions/strategy_*.md` although Step 7 requires one unconditionally (`templates/decision-record.md`, whose "Alternatives considered" is what Step 2's losing designs feed), and ran no revision round or second critic pass after `record-score strategy` came back at 61 (Step 5's revise-below-80 threshold). Step 6's four artifacts were saved with the 61 still open. Checker glob and heading regex verified against the templates. **Decision on Task 17 Step 5's "exactly one record" assertion** (the audit's wording, which would have gone red on a *correct* sub-80 run): replaced at close-out by the Step 5 rule itself — one record at >= 80, or a second strategist dispatch and a second record after a first score below 80 — so the missing revision round is now the checker's assertion, not a side observation; the live run's red stands under both readings.
+
+Reds on the **harness** (fixed in the task; re-run PASS):
+
+- **3 `/checkpoint`.** Unit-test syntax, runner filename mismatch and a seed-copy collision; drift check moved before the memory-dir cleanup (`b5bf148`).
+- **11 `/civilize`.** Checker's source-file scan excluded the root `SESSION_REPORT.md` that `rules/logging.md` asks for — the same carve-out `check_tools_validate_bib.py` has.
+- **12 `/verify-claims`.** The first checker version accepted a returned text report instead of the file; reverted to the registry's assertion (`922f047`), leftover helper dropped (`204211f`). The red that remains is the skill's.
+- **15 `/talk create`.** `talk.sh` now removes the fixture's pre-committed `talks/manuscript_fixture.qmd` symlink so the skill's own symlink step is exercised; `check_talk.py`'s `tbl-` assertion covers only the main deck, before the first `backup|appendix|q&a` heading (`SKILL.md` puts tables in backup slides) (`2514c87`).
+- **16 `/write`.** `eval_finish`'s drift check compared unfiltered `git status --porcelain`, so untracked scratch files outside the linked tree tripped it. `tests/evals/_lib.sh` now filters both snapshots to the linked dirs (`LINKED_DIRS_RE`); the inline checks in `checkpoint.sh`/`promote.sh` match.
+- **18 `/discover data`.** `evallib.tool_uses()` flattens a dispatched subagent's own tool calls into the main list (stream-json tags them only with `parent_tool_use_id`), so the explorer's permitted `WebSearch`/`WebFetch` calls read as main-session web calls. Added `evallib.main_session_tool_uses()` (lines with no `parent_tool_use_id`) and pointed the check at it (`8858419` unit-tests it). Every "main session never X" assertion should use it.
+

@@ -44,8 +44,11 @@ fork `6e63dd8`, `ai-audit/` at `fd4632d`). The P6 self-improvement rule closed o
 `docs/plans/2026-09-25-improvement-loop-and-quarto-render-gate.md` (correction rule at 2 projects,
 `docs/improvement-ledger.md`, `scripts/check_render.py` as write-gate item 4); the fleet re-link
 and lock refresh that plan's merge deferred landed the same day, all six paper repos on
-`1b11285` with `check_install --all` PASS. Still open: evals for the remaining skills, one at a
-time.
+`1b11285` with `check_install --all` PASS. The evals for the remaining skills closed the same day
+under `docs/plans/2026-09-25-remaining-skill-evals.md` (one task per skill; `tests/evals/`); five
+live runs came back red on the skill, not the harness — `/verify-claims` (vendored), `/revise`,
+`/submit`, `/talk`, `/strategize` — see that plan's Findings. Those five skill fixes are the open
+work.
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 
