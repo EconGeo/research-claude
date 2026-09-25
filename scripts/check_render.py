@@ -11,8 +11,9 @@ a human to do by eye — which two projects showed nobody does.
 Usage: check_render.py <manuscript.pdf | rendered.txt> [--expect TEXT]... [--columns "Table N: a,b,c"]...
   --expect   a phrase that must appear (keywords line, a mandated note phrase); whitespace and
              ligatures are normalised, so a line wrap is not a miss.
-  --columns  a table's caption prefix and its column headers; each header must appear after
-             that caption and before the next "Table"/"Figure" caption.
+  --columns  a table's caption prefix and its column headers; reads the block of text below
+             that caption (a caption below its own table, not above it, is not matched), up
+             to the next "Table"/"Figure" caption, for each header.
 Exit 0 = clean. Exit 1 = findings, one per line as KIND: detail. Exit 2 = cannot run.
 """
 from __future__ import annotations
@@ -25,10 +26,19 @@ import sys
 from pathlib import Path
 
 LIG = {"\ufb00": "ff", "\ufb01": "fi", "\ufb02": "fl", "\ufb03": "ffi", "\ufb04": "ffl", "\u2019": "'"}
+QUOTES = {"\u201c": '"', "\u201d": '"'}
+# Anchored to a caption line. `\f` is pdftotext's page break, so a caption that opens a page
+# starts with it. Both numbers must be followed by a separator: a doubled caption reads
+# `Figure 1: Figure 3.`; prose (`Table 3 shows`) does not, so a line-wrapped sentence cannot fire.
+DOUBLED = re.compile(r"^[ \t\f]*(Table|Figure)\s+([A-Z]?\d+[A-Za-z]?)\s*[:.][ \t]*\1\s+([A-Z]?\d+[A-Za-z]?)\s*[:.]", re.M)
+CAPTION = re.compile(r"^\s*(Table|Figure)\s+[A-Z]?\d+[A-Za-z]?[:.]", re.M)
 
 
 def norm(s: str) -> str:
+    s = re.sub(r"-\n\s*", "", s)  # joins a hyphenated line break; also fuses a compound word that broke at its hyphen
     for k, v in LIG.items():
+        s = s.replace(k, v)
+    for k, v in QUOTES.items():
         s = s.replace(k, v)
     return re.sub(r"\s+", " ", s)
 
@@ -66,13 +76,13 @@ def findings(text: str, expect: list[str], columns: list[str]) -> list[str]:
         out.append(f"LITERAL_MD: {m.group(0)}")
     for m in re.finditer(r"</?(span|div|br|b|i|em|strong|sup|sub)\b[^>]*>", text):
         out.append(f"LITERAL_HTML: {m.group(0)}")
-    for m in re.finditer(r"\b(Table|Figure)\s+(\d+[A-Za-z]?)\W{0,3}\1\s+\2\b", text):
-        out.append(f"DOUBLED: {m.group(1)} {m.group(2)}")
+    for m in DOUBLED.finditer(text):
+        out.append(f"DOUBLED: {m.group(1)} {m.group(2)} / {m.group(3)}")
     flat = norm(text)
     for e in expect:
         if norm(e) not in flat:
             out.append(f"MISSING: {e}")
-    caps = list(re.finditer(r"^\s*(Table|Figure)\s+\d+[A-Za-z]?[:.]", text, flags=re.M))
+    caps = list(CAPTION.finditer(text))
     for spec in columns:
         head, _, cols = spec.partition(":")
         head = head.strip()
@@ -84,7 +94,7 @@ def findings(text: str, expect: list[str], columns: list[str]) -> list[str]:
         if block is None:
             out.append(f"COLUMN: {head}: caption not found"); continue
         for col in [c.strip() for c in cols.split(",") if c.strip()]:
-            if norm(col) not in block:
+            if not re.search(r"(?<!\w)" + re.escape(norm(col)) + r"(?!\w)", block):
                 out.append(f"COLUMN: {head}: {col}")
     return out
 

@@ -77,7 +77,7 @@ and never prompt (`.claude/rules/meta-governance.md`, User corrections):
 
 ```bash
 python3 .claude/scripts/ledger.py add --project "$(basename "$PWD")" \
-  --target <shared file it would change> --note "<one generic sentence>"
+  --target <repo-relative shared file, e.g. .claude/rules/logging.md> --note "<one generic sentence>"
 ```
 
 The printed id goes on the report line. `/promote` reads the ledger and flags a target two

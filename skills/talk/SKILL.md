@@ -52,6 +52,11 @@ pick; the pick is recorded in the talk file's YAML comment block.
 
 **Step 2: Dispatch Storyteller**
 
+Read `.claude/references/quarto-authoring.md` (Raw HTML and raw LaTeX, Diagrams) first,
+before the Storyteller is dispatched and before any `.qmd` is written: RevealJS accepts raw
+HTML that Beamer and PDF drop, and a `{dot}`/`{mermaid}` cell without `fig-width` overflows
+the slide silently.
+
 Read the paper and extract: research question, identification strategy, main result, secondary results, robustness checks, key figures/tables, institutional background. Design narrative arc for the chosen format. Build the slide file with shared preamble if available.
 
 The Storyteller follows these design principles:
@@ -62,10 +67,6 @@ The Storyteller follows these design principles:
 - **All claims must appear in the paper** — the paper is the single source of truth; never add results or claims that are not in the manuscript
 
 Render with `quarto render`.
-
-Read `.claude/references/quarto-authoring.md` (Format matrix, Diagrams) first: RevealJS
-accepts raw HTML that Beamer and PDF drop, and a `{dot}`/`{mermaid}` cell without `fig-width`
-overflows the slide silently.
 
 Save to `talks/[format]_talk.qmd`.
 

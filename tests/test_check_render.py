@@ -43,13 +43,33 @@ class TestCheckRender(unittest.TestCase):
 
     def test_doubled_exhibit_number(self):
         r = run(CLEAN + "Table 2: Table 2: Robustness\n")
-        self.assertIn("DOUBLED: Table 2", r.stdout)
+        self.assertIn("DOUBLED: Table 2 / 2", r.stdout)
 
     def test_doubled_does_not_fire_on_two_different_exhibits(self):
         # Review finding (Task 7 fix report, item 2): the DOUBLED regex must require the
         # same exhibit word (Table/Table or Figure/Figure) to repeat, not just any
         # Table-then-Figure adjacency in ordinary prose.
         r = run(CLEAN + "as shown in Table 1. Figure 1 plots the same.\n")
+        self.assertNotIn("DOUBLED", r.stdout)
+
+    def test_doubled_catches_differing_numbers(self):
+        # Final-review Important 4: DOUBLED previously required the SAME number to repeat
+        # (\2 backreference on the number), so a caption doubled with a different number —
+        # a renumbering artifact, not a copy-paste artifact — slipped through silently.
+        r = run(CLEAN + "Figure 1: Figure 3. Event study\n")
+        self.assertIn("DOUBLED: Figure 1 / 3", r.stdout)
+
+    def test_doubled_anchored_to_caption_does_not_fire_in_prose(self):
+        r = run(CLEAN + "as reported in Table 2. Table 2 also shows the same pattern.\n")
+        self.assertNotIn("DOUBLED", r.stdout)
+
+    def test_doubled_caught_after_a_page_break(self):
+        # pdftotext separates pages with a form feed; a table floated to a page top starts with it.
+        r = run(CLEAN + "\fTable 2: Table 2: Robustness\n")
+        self.assertIn("DOUBLED: Table 2 / 2", r.stdout)
+
+    def test_doubled_does_not_fire_on_line_wrapped_prose_with_differing_numbers(self):
+        r = run(CLEAN + "as reported in\nTable 2. Table 3 shows the rest.\nTable 3.\nTable 4: Extra\n")
         self.assertNotIn("DOUBLED", r.stdout)
 
     def test_expect_phrase_missing_and_present_across_line_wrap(self):
@@ -76,6 +96,27 @@ class TestCheckRender(unittest.TestCase):
         self.assertEqual(0, r.returncode, r.stdout)
         r = run(CLEAN.replace("Outcome  Estimate  SE  N", "Outcome  Estimate  SE"), "--columns", "Table 1: Outcome,Estimate,SE,N")
         self.assertIn("COLUMN: Table 1: N", r.stdout)
+
+    def test_columns_binds_to_an_appendix_lettered_caption(self):
+        text = CLEAN + "Table A1: Appendix robustness\na  b\n"
+        r = run(text, "--columns", "Table A1: a,b")
+        self.assertEqual(0, r.returncode, r.stdout)
+
+    def test_column_word_boundary_does_not_match_inside_a_longer_word(self):
+        # Final-review Minor 2: a plain substring check for a short header like "N" matches
+        # inside an unrelated word (e.g. "Nonparametric") and never flags a genuinely
+        # missing column. Word-boundary anchoring fixes that.
+        text = CLEAN.replace(
+            "Table 1: Main estimates\nOutcome  Estimate  SE  N",
+            "Table 1: Main estimates\nOutcome  Estimate  SE\nNotes: Nonparametric estimates reported below.",
+        )
+        r = run(text, "--columns", "Table 1: Outcome,Estimate,SE,N")
+        self.assertIn("COLUMN: Table 1: N", r.stdout)
+
+    def test_norm_joins_hyphenated_line_breaks_and_maps_curly_quotes(self):
+        text = CLEAN.replace("assumption IS NOT MET", "assump-\ntion IS NOT MET")
+        r = run(text, "--expect", "assumption IS NOT MET")
+        self.assertEqual(0, r.returncode, r.stdout)
 
     def test_columns_caption_prefix_does_not_bind_to_a_longer_number(self):
         # Review finding (Task 7 fix report, item 1): "Table 1:" must not match a

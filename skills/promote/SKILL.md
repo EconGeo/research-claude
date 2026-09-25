@@ -71,11 +71,11 @@ this skill.** The fix belongs upstream (the `EconGeo/ZotPilot` fork or `EconGeo/
 the bridge skill that mediates it (`.claude/skills/lit-position`, `.claude/skills/new-project-ztp`,
 etc. for ZotPilot); it is never committed here as-is.
 
-## Step 2b: The improvement ledger
+## Step 2.6: The improvement ledger
 
 `/checkpoint` in every project appends its pipeline-improvement candidates to
 `$RC/docs/improvement-ledger.md` (`.claude/rules/meta-governance.md`, User corrections).
-Read it here (`ledger.py show --open`) — this is the only step that does:
+Read it here — this is the only step that runs `ledger.py show --open`:
 
 ```bash
 python3 "$RC/scripts/ledger.py" show --open
@@ -89,6 +89,13 @@ those first, with their rows, and ask whether to land a fix now. For each row th
 - Declined as project-specific or wrong: `python3 "$RC/scripts/ledger.py" mark L-NNN declined "<reason>"`.
 - Target under `zotpilot-skills/` or `ai-audit/`: report "upstream PR" and leave the row open —
   the fork PR closes it (Step 2.5).
+
+Then commit the ledger — rows arrive from every project's `/checkpoint` as uncommitted
+changes in this checkout, and nothing else surfaces them:
+
+```bash
+git -C "$RC" add docs/improvement-ledger.md && git -C "$RC" commit -m "ledger: <projects named>"
+```
 
 Rows for one project only are listed after; do not push them at the user unless asked. They
 are there so the next project's correction of the same target becomes REPEATED.

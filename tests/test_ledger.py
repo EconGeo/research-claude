@@ -45,7 +45,18 @@ class TestLedger(unittest.TestCase):
         run("add", "--project", "a", "--target", "t", "--note", "x | y", ledger=self.ledger)
         r = run("show", ledger=self.ledger)
         self.assertIn("x \\| y", self.ledger.read_text())
-        self.assertIn("t", r.stdout)
+        self.assertIn("projects=1", r.stdout)
+
+    def test_target_is_normalised_so_the_same_file_dedupes_across_projects(self):
+        run("add", "--project", "B", "--target", ".claude/rules/x.md", "--note", "n", ledger=self.ledger)
+        run("add", "--project", "A", "--target", "rules/x.md", "--note", "n", ledger=self.ledger)
+        r = run("show", ledger=self.ledger)
+        self.assertRegex(r.stdout, r"rules/x\.md\s+projects=2.*REPEATED")
+
+    def test_pipe_in_project_or_target_is_rejected(self):
+        r = run("add", "--project", "a|b", "--target", "t", "--note", "n", ledger=self.ledger)
+        self.assertEqual(2, r.returncode)
+        self.assertFalse(self.ledger.exists())
 
     def test_show_groups_by_target_and_flags_two_distinct_projects(self):
         run("add", "--project", "alpha", "--target", "rules/x.md", "--note", "a", ledger=self.ledger)

@@ -2,8 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** complete (2026-09-25) — merged as `e1923167eaa7f9646e3f2c63cb81caf12a4ca656`; fleet
-re-link pending (see SESSION_REPORT 2026-09-25 improvement-loop entry).
+**Status:** complete (2026-09-25) — merged as `e192316`; fleet re-linked and locks refreshed
+the same day; final-review fixes in `b3bb593`.
 
 **Goal:** Close the P6 self-improvement residue with two mechanisms — a correction rule that
 lands a user-confirmed fix at once, and a cross-project ledger that surfaces the same
@@ -1230,9 +1230,9 @@ Nothing is pushed. `main` stays ahead of `origin` until the user pushes.
 | 0 | done | `faff6c6` | plan written |
 | 1 | done | `1be0cab` | `scripts/ledger.py` |
 | 2 | done | `5a363a5` | ledger seed |
-| 3 | done | `1ff3895` | `rules/meta-governance.md` — User corrections + pointers |
-| 4 | done | `2b42e69` | `rules/logging.md` wording |
-| 5 | done | `423e5c3` | checkpoint 4a + budget 5,500→5,900 (measured 5,611) |
-| 6 | done | `02c137d` | promote Step 2b |
-| 7 | done | `d1a6322`, `98c776d`, `5c20cda`, `afb7cda` | `references/quarto-authoring.md` + five bindings (write trimmed to 8,199); `check_render.py` + gate item 4; ledger rows landed; check_render regex fixes (COLUMN non-digit boundary, DOUBLED same exhibit word) |
-| 8 | merge + docs done; fleet pending | `e1923167eaa7f9646e3f2c63cb81caf12a4ca656` (merge) | merged `improvement-loop` into `main` in a temporary worktree; docs close-out done (CLAUDE.md, 09-24 plan strike-through, this plan's Status/Progress Log, `docs/SESSION_REPORT.md`); fleet re-link, lock refresh for the three new shipped files, the `~/.claude/references/quarto-authoring.md` → canonical symlink, and `check_install --all` deferred — another session occupied the canonical checkout during this run |
+| 3 | done | `1ff3895` (+ `2b42e69` wording) | `rules/meta-governance.md` — User corrections + pointers; `rules/logging.md` wording |
+| 4 | done | `423e5c3` | checkpoint 4a + budget 5,500→5,900 (measured 5,611) |
+| 5 | done | `02c137d` | promote Step 2b |
+| 6 | done | `d1a6322` | `references/quarto-authoring.md` + five bindings (write trimmed to 8,199) |
+| 7 | done | `98c776d`, `5c20cda`, `afb7cda` | `check_render.py` + gate item 4; ledger rows landed; check_render regex fixes (COLUMN non-digit boundary, DOUBLED same exhibit word) |
+| 8 | done | `e192316`, `1b11285` + this wave | merged `improvement-loop` into `main` in a temporary worktree; docs close-out (CLAUDE.md, 09-24 plan strike-through, this plan's Status/Progress Log, `docs/SESSION_REPORT.md`) landed as `1b11285`; fleet re-linked, locks refreshed, `check_install --all` PASS, and `~/.claude/references/quarto-authoring.md` symlinked, all the same day; a final-review fix wave (`b3bb593`) closed the four Important findings from that review |

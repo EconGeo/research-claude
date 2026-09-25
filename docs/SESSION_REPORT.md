@@ -1001,10 +1001,24 @@ unprefixed vendored paths, orphan files, `ztp-ollama` never invoked). Smoke test
 `check_render.py /Users/andrew.mueller/Research/NAR_settlement/manuscript_NAR_settlement.pdf
 --expect "IS NOT MET"` → 0 findings.
 
-**Still open.** Fleet re-link and lock refresh for the three new shipped files
-(`references/quarto-authoring.md`, `scripts/check_render.py`, `scripts/ledger.py`), the
-`~/.claude/references/quarto-authoring.md` → canonical symlink, and `check_install --all` are
-pending because another session occupied the canonical checkout during this run — the
-controller will do them when it is free. Also still open: vendored P1 offenders (already
-tracked), evals for the remaining skills, and the 3+ bar for log-inferred learnings remains
-unenforced (no cross-project source; recorded, not built).
+**2026-09-25 (later) — fleet re-link and final-review fixes.** All six paper repos
+(`BRI`, `ESG`, `NAR_settlement`, `POGM4`, `zoning2026`, `affordable_housing_2026`) re-linked
+with `apply.sh --project-dir <p> --link` (pinned mode kept — `# installed via: pinned` in each
+`.claude/pipeline.lock`), locks refreshed to `1b11285` and committed: `BRI` `e50231a`, `ESG`
+`3cd1cab`, `NAR_settlement` `2039c39`, `POGM4` `c7a717d`, `zoning2026` `8072475`,
+`affordable_housing_2026` `3864103` (each is `git log -1 --format=%h .claude/pipeline.lock` in
+that repo). `./scripts/check_install.sh --all` PASS. `~/.claude/references/quarto-authoring.md`
+is now a symlink to the canonical checkout's `references/quarto-authoring.md`. Separately, a
+final-review fix wave landed as `b3bb593`, closing four Important findings: `/promote` now
+commits the ledger after acting on it (Step 2.6); `ledger.py add` normalises a `.claude/`- or
+`./`-prefixed `--target` and rejects `|` in `--project`/`--target`; `check_render.py`'s DOUBLED
+check is anchored to a caption line and catches a doubled exhibit with a *different* number
+(a renumbering artifact, not just a copy-paste one); its COLUMN check binds captions with
+appendix letters (`Table A1:`) and matches a header on a word boundary instead of by substring.
+Also landed: `norm()` joins hyphenated line breaks and maps curly quotes, and the Quarto
+authoring reference's binding moved earlier in `/talk create` and out from under a
+Results-only heading in `agents/writer.md` so it applies to every section.
+
+**Still open.** Vendored P1 offenders (already tracked), evals for the remaining skills, and
+the 3+ bar for log-inferred learnings remains unenforced (no cross-project source; recorded,
+not built).

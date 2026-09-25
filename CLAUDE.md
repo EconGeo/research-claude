@@ -42,8 +42,10 @@ SKILL.md + `references/`, deploy ships them) and `EconGeo/ai-audit#3` (`/civiliz
 categories in the agent, rationale in the README) are merged and re-synced (`zotpilot-skills/` at
 fork `6e63dd8`, `ai-audit/` at `fd4632d`). The P6 self-improvement rule closed on 2026-09-25 under
 `docs/plans/2026-09-25-improvement-loop-and-quarto-render-gate.md` (correction rule at 2 projects,
-`docs/improvement-ledger.md`, `scripts/check_render.py` as write-gate item 4). Still open: evals for
-the remaining skills, one at a time.
+`docs/improvement-ledger.md`, `scripts/check_render.py` as write-gate item 4); the fleet re-link
+and lock refresh that plan's merge deferred landed the same day, all six paper repos on
+`1b11285` with `check_install --all` PASS. Still open: evals for the remaining skills, one at a
+time.
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 
