@@ -40,14 +40,14 @@ Workflow:
 
    Pass the strategist **only the chosen design's** checklist —
    `.claude/skills/strategize/templates/design-checklists/<design>.md`, one of `did`,
-   `event-study`, `iv`, `rdd`, `structural`, `descriptive`. Naming all seven is what makes an
-   agent read all seven.
+   `event-study`, `iv`, `rdd`, `structural`, `descriptive`.
 4. Dispatch strategist-critic (4-phase audit,
    `.claude/skills/review/templates/causal-audit-4-phases.md`). Returns text; **session saves**
    to `quality_reports/reviews/strategist-critic_<date>.md`, then records:
    `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report <path>`.
 5. **Below 80 → revise before Step 6** (`--yes` does not waive it): `pipeline.py state strike
-   strategist`, re-dispatch Strategist with the deductions, re-dispatch strategist-critic,
+   strategist`, a **new foreground `Agent`** strategist call with the deductions (never
+   `SendMessage`), re-dispatch strategist-critic,
    save, `record-score strategy` again. Repeat to ≥ 80 or strike three → escalate to the
    registry's escalation target with a specific question.
 6. Save to `quality_reports/strategy/<project>/`: `strategy_memo.md` (all 5 required sections —
