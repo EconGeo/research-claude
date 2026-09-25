@@ -81,6 +81,12 @@ the `ESCALATION_TARGET` declared for the creator in the registry. `pipeline.py s
   `explorer-critic_<date>_r2.md` and `_r3.md`, and `record-score --report` names that file. A report is
   never overwritten: `.claude/hooks/protect-files.sh` lets a session create a report and blocks
   every rewrite of one, so a second round saved to the first round's name stalls the loop.
+- **Each round is a fresh foreground dispatch the session waits on** — a new `Agent` call with
+  `run_in_background: false`, never `SendMessage` to the earlier agent and never a background
+  run. The round's result is what the critic re-scores; a session that ends its turn while a
+  revision is still running (headless `claude -p` exits right there) leaves the stage at the
+  failing score, with no re-score and none of the stage's closing artifacts (observed:
+  `/strategize` 2026-09-25, round 2 sent by `SendMessage`, run ended at the round-1 49).
 - Escalation is logged in the research journal with the strike count.
 - Escalating to the user requires a specific question: "strategist-critic requires X, which
   contradicts Y — which takes priority?", never "they disagree".
