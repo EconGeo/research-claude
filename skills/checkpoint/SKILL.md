@@ -72,10 +72,16 @@ in `.claude/skills/checkpoint/templates/memory-entry-types.md`. Update existing 
 duplicating, then update the `MEMORY.md` index.
 
 **A `feedback` memory that corrects a pipeline skill, agent or rule** — rather than stating a
-project preference — is also named in the Step 5 report as an improvement candidate, with the
-file it would touch. Never edit the shared tree and never prompt: `.claude/rules/
-meta-governance.md` wants the pattern seen in 3+ projects and `/promote` is the only thing that
-lands it. The report line is what carries it forward.
+project preference — is also a ledger row and a Step 5 report line. Never edit the shared tree
+and never prompt (`.claude/rules/meta-governance.md`, User corrections):
+
+```bash
+python3 .claude/scripts/ledger.py add --project "$(basename "$PWD")" \
+  --target <shared file it would change> --note "<one generic sentence>"
+```
+
+The printed id goes on the report line. `/promote` reads the ledger and flags a target two
+projects named.
 
 #### 4b. SESSION_REPORT.md
 
@@ -120,7 +126,7 @@ Checkpoint saved:
 - Plan staleness sweep: [none | fixed: <plan> | flagged: <plan>]
 - Handoff reference dry-run: [clean | N unresolved | no HANDOFF.md]
 - ai_use_log.md: [N entries | absent — no agent work this session]
-- Pipeline improvement candidates: [none | N — <skill>: <one-line correction>]
+- Pipeline improvement candidates: [none | N — <skill>: <one-line correction> (L-NNN)]
 ```
 
 ---

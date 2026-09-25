@@ -69,7 +69,9 @@ BUDGET = {
     # 2026-09-24 (routing, Task B5): discover 7,300 -> 7,500. Ideate's novelty check now
     # names lit-scout and the local-first rule; measured 7,429.
     "discover": 7500,
-    "checkpoint": 5500,
+    # 2026-09-25 (improvement loop, Task 4): checkpoint 5,500 -> 5,900. 4a appends the
+    # correction to the shared ledger (one command, one id on the report line); measured 5611.
+    "checkpoint": 5900,
 }
 
 
