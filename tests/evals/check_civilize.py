@@ -19,7 +19,7 @@ else:
 if not list(proj.glob("quality_reports/civilize_manuscript_fixture*_report.md")): fails.append("no quality_reports/civilize_manuscript_fixture*_report.md was written")
 for n, x, _ in uses:
     fp = str(x.get("file_path", ""))
-    if n in ("Write", "Edit", "MultiEdit") and re.search(r"\.(qmd|bib|md)$", fp) and "/quality_reports/" not in fp and pathlib.Path(fp).name != "SESSION_REPORT.md":
+    if n in ("Write", "Edit", "MultiEdit") and re.search(r"\.(qmd|bib|md)$", fp) and "quality_reports/" not in fp and pathlib.Path(fp).name != "SESSION_REPORT.md":
         fails.append(f"{n} touched a source file: {fp}"); break
 porc = subprocess.run(["git", "-C", str(proj), "status", "--porcelain"], capture_output=True, text=True).stdout
 if re.search(r"^\s*M\s+manuscript_fixture\.qmd", porc, re.M): fails.append("manuscript_fixture.qmd is modified")

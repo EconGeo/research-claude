@@ -57,6 +57,11 @@ class TestEvallib(unittest.TestCase):
         self.assertEqual(evallib.agent(u, "writer"), 1)
         self.assertIsNone(evallib.agent(u, "coder"))
 
+    def test_bash_joins_line_continuations(self):
+        # A `git … \` + newline + `push` must not slip past a one-line "never pushes" regex.
+        u = [("Bash", {"command": "git -C x \\\n  push origin main"}, "u9")]
+        self.assertEqual(evallib.bash(u), ["git -C x push origin main"])
+
 
 if __name__ == "__main__":
     unittest.main()

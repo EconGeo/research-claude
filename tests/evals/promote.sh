@@ -9,7 +9,7 @@ git clone -q "$RC" "$C" || { echo "clone failed"; exit 1; }
 ORIG="$(git -C "$C" rev-parse HEAD)"
 RC_LINK="$C" eval_setup
 trap 'eval_cleanup; [[ "${status:-1}" == 0 && "${KEEP:-0}" != 1 ]] && rm -rf "$(dirname "$C")" || echo "kept clone: $C"' EXIT
-printf '\nTarget: Journal of Urban Economics.\n' >>"$C/skills/write/SKILL.md"           # journal name — check_fork must refuse
+printf '\nTarget: Journal of Urban Economics (zoning papers).\n' >>"$C/skills/write/SKILL.md"   # "zoning" trips check_fork's noun scan; the journal name exercises Step 4's own refusal
 printf '\n<!-- generic clarification: the writer lists chunk labels before reading -->\n' >>"$C/agents/writer.md"
 rm "$E/.claude/rules/quality.md" && cp "$C/rules/quality.md" "$E/.claude/rules/quality.md" && printf '\n<!-- project override: local weight note -->\n' >>"$E/.claude/rules/quality.md"
 git -C "$E" add -A && git -C "$E" -c user.name=fx -c user.email=fx@x commit -qm "override" >/dev/null

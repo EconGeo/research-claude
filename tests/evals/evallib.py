@@ -91,7 +91,8 @@ def first(uses, pred) -> int | None:
 
 
 def bash(uses) -> list[str]:
-    return [a.get("command", "") for n, a, _ in uses if n == "Bash"]
+    """Bash commands in transcript order; shell line continuations joined so one-line regexes see them."""
+    return [re.sub(r"\s*\\\n\s*", " ", a.get("command", "")) for n, a, _ in uses if n == "Bash"]
 
 
 def agent(uses, subagent_type) -> int | None:

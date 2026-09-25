@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """check_strategize.py — /strategize: strategist then strategist-critic; the strategist is handed only
 the chosen design's checklist (did or event-study for a staggered panel; never iv/rdd/structural/
-descriptive); exactly one record-score strategy; a decision record with Alternatives exists.
+descriptive); record-score strategy once at >= 80, or followed by a revision round and a second score below 80 (Step 5);
+a decision record with Alternatives exists.
 usage: check_strategize.py <transcript.jsonl> <project-dir>"""
 import re, sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -17,8 +18,17 @@ if s is not None:
     if not re.search(r"design-checklists/(did|event-study)\.md", p): fails.append("the strategist's prompt names neither did.md nor event-study.md")
     wrong = re.findall(r"design-checklists/(iv|rdd|structural|descriptive)\.md", p)
     if wrong: fails.append(f"the strategist's prompt names other designs' checklists: {sorted(set(wrong))}")
-recs = [x for x in evallib.bash(uses) if re.search(r"record-score\s+strategy\b", x)]
-if len(recs) != 1: fails.append(f"record-score strategy ran {len(recs)} times (expected exactly 1)")
+recs = [(i, a.get("command", "")) for i, (n, a, _) in enumerate(uses) if n == "Bash" and re.search(r"record-score\s+strategy\b", a.get("command", ""))]
+if not recs: fails.append("record-score strategy never ran")
+else:
+    # Step 5: below 80 the strategist revises and the critic re-scores (a second record); at or above 80 the
+    # first score is the only one.
+    m = re.search(r"record-score\s+strategy\s+(\d+)", recs[0][1]); first_score = int(m.group(1)) if m else None
+    revised = evallib.first(uses[recs[0][0]:], lambda n, a: n == "Agent" and a.get("subagent_type") == "strategist")
+    if first_score is not None and first_score < 80 and (len(recs) < 2 or revised is None):
+        fails.append(f"first strategy score {first_score} < 80 but no revision round followed (Step 5: strategist revises, critic re-scores)")
+    if (first_score is None or first_score >= 80) and len(recs) != 1:
+        fails.append(f"record-score strategy ran {len(recs)} times after a passing first score (expected exactly 1)")
 dec = list(proj.glob("quality_reports/decisions/strategy_*.md"))
 if not dec: fails.append("no quality_reports/decisions/strategy_*.md was written")
 elif not any(re.search(r"^#+\s*.*Alternatives", d.read_text(), re.M | re.I) for d in dec): fails.append("the decision record has no Alternatives section")

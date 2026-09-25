@@ -41,6 +41,15 @@ class TestStrategizeChecker(unittest.TestCase):
     def test_two_scores_fail(self):
         rc, out = go(CHECK, T + T.splitlines(keepends=True)[2], self.p); self.assertEqual(rc, 1); self.assertIn("ran 2 times", out)
 
+    def test_low_score_without_revision_fails(self):
+        rc, out = go(CHECK, T.replace("strategy 84", "strategy 61"), self.p); self.assertEqual(rc, 1); self.assertIn("no revision round", out)
+
+    def test_low_score_with_revision_passes(self):
+        second = (use("u4", "Agent", subagent_type="strategist", prompt="Revise per the critic; .claude/skills/strategize/templates/design-checklists/did.md")
+                  + use("u5", "Agent", subagent_type="strategist-critic", prompt="re-score")
+                  + use("u6", "Bash", command="python3 .claude/scripts/pipeline.py state record-score strategy 86 --critic strategist-critic --deductions 14 --report quality_reports/reviews/strategist-critic_y.md"))
+        rc, out = go(CHECK, T.replace("strategy 84", "strategy 61") + second, self.p); self.assertEqual(rc, 0, out)
+
     def test_critic_first_fails(self):
         lines = T.splitlines(keepends=True); rc, out = go(CHECK, lines[1] + lines[0] + lines[2], self.p); self.assertEqual(rc, 1); self.assertIn("before strategist", out)
 

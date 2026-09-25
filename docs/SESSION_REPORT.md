@@ -1013,7 +1013,7 @@ unenforced (no cross-project source; recorded, not built).
 
 **Scope.** Close the last residue of the 09-24 evals plan: one functionality eval per remaining
 skill, twenty tasks, under `docs/plans/2026-09-25-remaining-skill-evals.md`. Built on
-`evals/remaining-skills` (in place, not a worktree — see Rulings), subagent-driven, one
+`evals/remaining-skills-7tvb54` (in place, not a worktree — see Rulings), subagent-driven, one
 implementer per task (Tasks 4–10, the six same-shape mock evals plus `/promote`, as one
 batch), a review after each, live runs sequential. Nothing under `agents/`, `skills/`,
 `rules/`, `hooks/` or `templates/` changed; everything landed under `tests/`.
@@ -1027,8 +1027,8 @@ careful · `5b71fa8` freeze · `c9c76d1` + `b5bf148` checkpoint · `1cc523c` new
 `77011fb` write · `361654a` strategize · `0c3029e` + `8858419` discover · `cf46507` review ·
 `7268dc5` analyze · close-out commits (this entry).
 
-**Results by live run.** 15 PASS (1–11, 16, 18–20; five of those after a harness fix and a
-clean re-run) · 5 `FAIL (skill)`: `/verify-claims` (vendored), `/revise`, `/submit final`,
+**Results by live run.** 15 PASS (1–11, 16, 18–20; four of those — 3, 11, 16, 18 — after a
+harness fix and a clean re-run) · 5 `FAIL (skill)`: `/verify-claims` (vendored), `/revise`, `/submit final`,
 `/talk create`, `/strategize`. Each red is a finding recorded in the plan's Findings with the
 failing assertion and the `SKILL.md` step it contradicts; the checkers were not loosened. The
 skill fixes are the open work (the `/verify-claims` one is a PR to `EconGeo/ai-audit`).
@@ -1059,11 +1059,23 @@ skill fixes are the open work (the `/verify-claims` one is a PR to `EconGeo/ai-a
 - **Batch dispatch for Tasks 4–10.** Six mock evals of one shape plus `/promote` went to one
   implementer to keep the runner idiom identical; live runs still ran one at a time.
 
+**Final review (fix wave).** `check_strategize.py` now asserts Step 5's rule instead of the audit's
+"exactly one record" (a correct sub-80 run would have gone red); `evallib.bash()` joins shell
+line continuations so `check_promote.py`'s "never pushes" cannot be slipped by `git \`+newline;
+`promote.sh`'s plant now carries a noun `check_fork.sh` actually scans (`zoning`) — the journal
+name alone was never in its scan, so only the skill's own Step 4 refusal stood between it and a
+commit; `check_civilize.py` no longer flags a relative `quality_reports/` Write; the plan's
+convention bullets record the flattened-subagent transcript and the on-disk-facts practice.
+
 **Close-out.** Plan Progress Log filled (commit per task; rows 12–18 trimmed to the checker's
 summary line, diagnoses moved to a Findings list). 09-24 plan's "20 remain" bullet and
 `CLAUDE.md` § Start here repointed at the 09-25 plan.
 
-**Results:** RESULTS_PLACEHOLDER
+**Results:** 469 tests OK (1 skipped) · `check_fork` PASS (pre-existing WARNs only) · 20 live evals
+recorded in the Progress Log: 15 PASS · 5 `FAIL (skill)` · 0 `FAIL (design)`. Run in a cloud
+container: Quarto, R, xelatex and the fixture's R packages were installed for the run (CRAN is
+blocked there, so `fixest`, `modelsummary`, `tinytable`, `tables`, `data.table`, `xfun`, `knitr`,
+`rmarkdown`, `evaluate` came from their GitHub sources); no live `claude -p` re-runs this step.
 
 **Deferred minors** (from the task reviews, none blocking): `evallib._MOCK` splits on the
 literal `" -> "`; `check_freeze.py`'s two predicates both match `talks/manuscript_fixture.qmd`;
