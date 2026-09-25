@@ -54,16 +54,7 @@ class TestVerifyClaimsChecker(unittest.TestCase):
         rc, out = go(CHECK, self.T + use("u4", "Edit", file_path=str(self.p / "draft.md"), old_string="a", new_string="b"), self.p, S); self.assertEqual(rc, 1); self.assertIn("modified draft.md", out)
 
     def test_missing_report_fails(self):
-        (self.p / "quality_reports" / "verify_claims_2026-09-25.md").unlink(); rc, out = go(CHECK, self.T, self.p, S); self.assertEqual(rc, 1); self.assertIn("no verification report was produced", out)
-
-    def test_text_only_report_passes(self):
-        # SKILL.md Phase 4 names no report file — "return the report and let the user decide".
-        # The first live run (2026-09-25) wrote no file, only this text block. That is PASS.
-        (self.p / "quality_reports" / "verify_claims_2026-09-25.md").unlink()
-        T = (use("u1", "Read", file_path=str(self.p / ".claude/agents/claim-verifier.md"))
-             + use("u2", "Agent", subagent_type="claim-verifier", prompt="C1: Smith 2019 shows X. Q1: does it? Source: source.md")
-             + assistant_text("## Post-Flight Verification — draft.md\n\nOutcome: FAIL — 1 contradicted, 1 fabricated"))
-        rc, out = go(CHECK, T, self.p, S); self.assertEqual(rc, 0, out)
+        (self.p / "quality_reports" / "verify_claims_2026-09-25.md").unlink(); rc, out = go(CHECK, self.T, self.p, S); self.assertEqual(rc, 1); self.assertIn("no quality_reports/verify_claims", out)
 
 
 if __name__ == "__main__":
