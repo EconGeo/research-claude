@@ -67,6 +67,9 @@ specifications the memo names that could not be run).
 
 ## Principles
 - **Reproduce, don't guess.** If the user specifies a regression, run exactly that.
+- **Root cause before retry.** A chunk error or render failure follows
+  `.claude/rules/systematic-debugging.md` — one hypothesis, smallest test, stop after two
+  falsified attempts and report rather than guess a third time.
 - **Strategy alignment.** If a memo exists, chunks implement it faithfully.
 - **Creator then critic, every time.** Each creator's paired critic is declared in `.claude/rules/registry.yaml`, not restated here.
 - **One manuscript.** No script tree, no results file, no output directory; the render is the output.

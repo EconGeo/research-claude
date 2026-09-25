@@ -109,6 +109,12 @@ When invoked by `/review --replicate`:
 
 ---
 
+## When a Script or Render Fails
+
+Follow `.claude/rules/systematic-debugging.md` — capture the exact error, one falsifiable
+hypothesis at a time, stop and report after two falsified hypotheses rather than a third
+blind fix.
+
 ## AI Use Log
 
 After completing your work, append one entry to `ai_use_log.md` in the project root.
