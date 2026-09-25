@@ -35,7 +35,7 @@ git -C "$E" add -A && git -C "$E" -c user.name=fx -c user.email=fx@x commit -qm 
 eval_run '/checkpoint --auto' "$LOG" "Read" "Grep" "Glob" "Write" "Edit" "Bash"
 python3 "$RC/tests/evals/check_checkpoint.py" "$LOG" "$E" "$SEED/seed_report.md" "$SEED/2026-09-20-fixture-plan.md"; status=$?
 rm -rf "$SEED"
+[[ "$(git -C "$RC" status --porcelain)" == "$RC_BEFORE" ]] || { echo "FAIL checkout modified"; status=1; }
 enc="$(printf '%s' "$(cd "$E" && pwd -P)" | tr -c 'A-Za-z0-9\n' '-')"
 [[ $status -eq 0 && -d "$HOME/.claude/projects/$enc" ]] && rm -rf "$HOME/.claude/projects/$enc"
-[[ "$(git -C "$RC" status --porcelain)" == "$RC_BEFORE" ]] || { echo "FAIL checkout modified"; status=1; }
 exit $status
