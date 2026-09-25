@@ -37,12 +37,10 @@ closed (`scripts/validate_bib.py` shipped; `/tools journal` re-audited, stays ho
 `rounds_overall` limit gained its enforcer and `verification_retries` was deleted as unread, and
 a third eval (`tests/evals/tools-validate-bib.sh`) joined the harness — see the 2026-09-25
 entry in `docs/SESSION_REPORT.md`. **What is still open, all outside this repo or awaiting a
-decision:** the vendored P1 offenders — `EconGeo/ZotPilot#6` (ztp-tutor → SKILL.md +
-`references/`, deploy ships them) is **merged and re-synced** (`zotpilot-skills/` at fork
-`6e63dd8`, which also carries the fork's `~/.secrets.env` credential change and its `ztp-setup`
-rewrite); `EconGeo/ai-audit#3` (`/civilize` → steps; categories in the agent, rationale in the
-README) is **open, awaiting merge** — once merged, run `scripts/sync-ai-audit.sh`, update the
-commit line in `ai-audit/VENDORED.md`, and re-link — the P6 self-improvement rule (needs its own decision against
+decision:** the vendored P1 offenders are **closed** — `EconGeo/ZotPilot#6` (ztp-tutor →
+SKILL.md + `references/`, deploy ships them) and `EconGeo/ai-audit#3` (`/civilize` → steps;
+categories in the agent, rationale in the README) are merged and re-synced (`zotpilot-skills/` at
+fork `6e63dd8`, `ai-audit/` at `fd4632d`). Still open: the same residue as before — the P6 self-improvement rule (needs its own decision against
 `rules/meta-governance.md`'s 3+ project bar), and evals for the remaining skills, one at a time.
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.

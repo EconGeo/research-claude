@@ -1,6 +1,6 @@
 ---
 name: civilize-auditor
-description: Read-only auditor for AI-voice tells in academic prose. Reviews `.tex`, `.qmd`, `.md` files for the 10 detection categories defined in `/civilize` (boilerplate transitions, AI-cliché lexicon, em-dash overuse, symmetric paragraph shapes, tricolon abuse, hedging stacking, "not only X but also Y" frames, formulaic openers, hyphenation excess, sycophancy/self-important framing). Produces a structured report without editing. Use when invoked by `/civilize`.
+description: Read-only auditor for AI-voice tells in academic prose. Reviews `.tex`, `.qmd`, `.md` files for the 10 detection categories defined below (boilerplate transitions, AI-cliché lexicon, em-dash overuse, symmetric paragraph shapes, tricolon abuse, hedging stacking, "not only X but also Y" frames, formulaic openers, hyphenation excess, sycophancy/self-important framing). Produces a structured report without editing. Use when invoked by `/civilize`.
 tools: Read, Grep, Glob
 model: inherit
 ---

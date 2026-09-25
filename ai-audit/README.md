@@ -14,7 +14,9 @@ Both are **read-only auditors** — they flag problems but do not rewrite. The a
 
 ## Why detect-only (no auto-rewrite)?
 
-Cross-vendor research (Cursor/Aider community) shows that auto-rewriting AI-voice tells degrades prose quality and introduces *new* tells. The author edits manually — that's the price of preserving voice.
+We deliberately do not ship `/civilize --rewrite`. Cross-vendor research (Cursor / Aider community findings) finds that auto-rewriting prose to strip AI-voice tells degrades quality more often than it improves it — the rewriter introduces its *own* tells. The detect-and-flag pattern preserves authorial voice; the cost is your editing time, which is exactly the cost we want to pay.
+
+If you find yourself reaching for an auto-rewriter, that is the signal to rewrite the paragraph from scratch — not to patch the tells one by one.
 
 ---
 
@@ -61,19 +63,28 @@ If you're using [EconGeo/research-claude](https://github.com/EconGeo/research-cl
 /civilize all                               # audit all .tex/.qmd/.md files
 ```
 
-Checks for 10 detection categories:
-1. Boilerplate transitions ("Moreover", "Furthermore", "It is important to note that")
-2. AI-cliché lexicon ("delve", "navigate the complexities", "tapestry", "robust framework")
-3. Em-dash overuse (AI-drafted prose uses `—` at 3-5× human rate)
-4. Symmetric paragraph shapes (each paragraph same length — sign of templated structure)
-5. Tricolon abuse (three-part lists used compulsively)
-6. Hedging stacking ("it is worth noting that, while acknowledging that, it should be emphasized")
-7. "Not only X but also Y" frames
-8. Formulaic openers ("In today's rapidly evolving...", "This paper examines...")
-9. Hyphenation excess (AI over-hyphenates: "context-dependent", "evidence-based")
-10. Sycophancy / self-important framing ("groundbreaking", "novel contribution", "fills a gap")
+Output: a report at `quality_reports/civilize_<filename>_report.md` with location (line), category, severity (HIGH/MED/LOW) and one suggested rewrite per finding, plus a summary recommendation — rewrite the affected sections (> 8 HIGH per 1000 words), strip the tells (5–8), or cosmetic cleanup (< 5).
 
-Output: structured report with location (file:line), severity (HIGH/MED/LOW), and suggested rewrites.
+**Why audit before submission.** Referees and editors increasingly recognise AI-generated prose. The tells are not stylistic preferences — they are statistically conspicuous patterns the LLM training distribution produces at higher rates than human academic writers. Even good substance pays a credibility tax if the prose reads as AI-drafted; a growing number of venues require disclosure or prohibit AI-drafted text; boilerplate transitions usually cover a logical gap the author did not think through; and authors who use AI tools heavily can still keep their own voice by stripping the model's lexical fingerprint. The cost is detection, not rewriting — once the report flags the tells, removal is mechanical.
+
+**When to run it.** Before journal submission; before posting a working paper, preprint or SSRN draft; after any AI-assisted prose generation (R&R response drafts, lit-review synthesis, abstract revisions); and as a self-discipline pass after long writing sessions — your own writing drifts toward LLM patterns when you stare at LLM output all day, so run it even on prose you wrote yourself.
+
+**When not to.** Not on `.bib`, `.R`, or other non-prose files (the detectors are tuned for academic prose), not on code comments (the tells are different), not on UI/UX copy (voice norms diverge).
+
+**What it is not.** Not a rewriter (see [Why detect-only](#why-detect-only-no-auto-rewrite)); not a substance reviewer (use a manuscript review — in research-claude, `/review`); not a grammar checker (use a proofreading pass — in research-claude, `/review --proofread`); not a fact-checker (use `/verify-claims`). `/civilize` is the *voice* lens. Run it alongside the others — none of them substitute.
+
+**The 10 detection categories** are defined, with their severity rules, in [`agents/civilize-auditor.md`](agents/civilize-auditor.md):
+
+1. Boilerplate transitions ("Moreover,", "Furthermore,", "It is important to note that", "In conclusion,")
+2. AI-cliché lexicon ("delve into", "navigate the complexities", "rich tapestry", "robust framework", "shed light on", "play a crucial role")
+3. Em-dash and punctuation overuse (> 3 em-dashes or ≥ 3 semicolons in a paragraph; repeated triple-Oxford-comma cadence)
+4. Symmetric paragraph shapes (topic sentence → three examples → summarising clause, repeated across consecutive paragraphs)
+5. Tricolon abuse (> 4 three-part lists per page; stacked adjective tricolons)
+6. Hedging stacking ("might potentially be argued", "could possibly suggest")
+7. "Not only X, but also Y" frames (> 2 per paper, non-parallel X and Y, or as paragraph openers)
+8. Formulaic openers ("This paper does X.", openers that restate the section title, "In this paper, we..." where the discipline avoids it)
+9. Hyphenation excess (≥ 3 compound modifiers such as "data-driven", "evidence-based" in one paragraph)
+10. Sycophancy / self-important framing ("This important contribution", "Our novel approach", self-citation as "groundbreaking")
 
 ### `/verify-claims` — Chain-of-Verification
 
