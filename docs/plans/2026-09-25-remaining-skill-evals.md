@@ -2711,7 +2711,7 @@ eval_finish check_analyze.py "$LOG" "$E" "$RRC" "$PRC"
 | 3 | checkpoint | PASS | pending | tool_use: 19 · report 163→2644 bytes |
 | 4 | new-project-ztp | PASS | pending | tool_use: 5 · mock calls: 1 |
 | 5 | seed-papers | PASS | pending | tool_use: 6 · mock calls: 2 · search_topic queries: 2 |
-| 6 | ztp-review | | | |
+| 6 | ztp-review | PASS | pending | tool_use: 12 · mock calls: 8 |
 | 7 | ztp-research | | | |
 | 8 | ztp-profile | | | |
 | 9 | ztp-tutor | | | |
