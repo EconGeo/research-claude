@@ -969,3 +969,42 @@ rounds stay well under it — `TestOverallRoundLimit` covers the boundary).
 `EconGeo/ZotPilot` / `EconGeo/ai-audit` forks); the P6 self-improvement rule (a decision
 against `meta-governance.md`'s 3+ project bar, then a plan); evals for the remaining 20
 skills, one per task.
+
+## 2026-09-25 — Improvement loop (P6) and Quarto render gate; merge to main
+
+**Scope.** Close the P6 self-improvement residue and use its first repeated ledger entry to
+land the Quarto silent-failure fix those corrections never reached the shared tree with.
+Built on `improvement-loop` branch, then merged to `main` and closed out.
+
+**Branch commits (oldest first):** `faff6c6` plan · `1be0cab` `scripts/ledger.py` ·
+`5a363a5` ledger seed · `1ff3895` `rules/meta-governance.md` — User corrections + pointers ·
+`2b42e69` `rules/logging.md` wording · `423e5c3` checkpoint 4a + budget 5,500→5,900 (measured
+5,611) · `02c137d` promote Step 2b · `d1a6322` `references/quarto-authoring.md` + five
+bindings (write trimmed to 8,199) · `98c776d` `check_render.py` + gate item 4 · `5c20cda`
+ledger rows landed · `afb7cda` `check_render` regex fixes (COLUMN non-digit boundary, DOUBLED
+same exhibit word).
+
+**Decision.** The 3+ project bar in `rules/meta-governance.md` governs only log-inferred
+learnings; a user correction is instead asked once at the moment of correction and lands via
+`/promote`, otherwise `/checkpoint` writes it to `docs/improvement-ledger.md` and `/promote`
+flags a target two projects named. The ledger's first REPEATED target — Quarto silent-failure
+corrections, made in two projects — was closed by shipping the authoring reference bound into
+`writer`/`coder`/`write`/`talk`/`quarto-empirical` and by `scripts/check_render.py` as
+write-gate item 4.
+
+**Merge.** `improvement-loop` merged into `main` with `--no-ff` in a temporary worktree
+(`research-claude-main-tmp`), merge commit `e1923167eaa7f9646e3f2c63cb81caf12a4ca656`. No
+conflicts. Not pushed.
+
+**Results:** 355 tests passed (3 subtests) · `check_fork` PASS (pre-existing WARNs only —
+unprefixed vendored paths, orphan files, `ztp-ollama` never invoked). Smoke test:
+`check_render.py /Users/andrew.mueller/Research/NAR_settlement/manuscript_NAR_settlement.pdf
+--expect "IS NOT MET"` → 0 findings.
+
+**Still open.** Fleet re-link and lock refresh for the three new shipped files
+(`references/quarto-authoring.md`, `scripts/check_render.py`, `scripts/ledger.py`), the
+`~/.claude/references/quarto-authoring.md` → canonical symlink, and `check_install --all` are
+pending because another session occupied the canonical checkout during this run — the
+controller will do them when it is free. Also still open: vendored P1 offenders (already
+tracked), evals for the remaining skills, and the 3+ bar for log-inferred learnings remains
+unenforced (no cross-project source; recorded, not built).
