@@ -22,7 +22,9 @@ Structure point-by-point referee responses with classification, agent routing pe
    `.claude/skills/revise/gotchas.md`
 4. **List** the manuscript's `#| label:` lines, `#` headings and the setup-chunk naming map (a
    grep, not a read) to know what analyses already exist; the writer or coder dispatched in
-   Step 5 reads the sections it revises
+   Step 5 reads the sections it revises. **Do not Read the manuscript in this session** — not
+   in full and not to check whether a referee's premise holds. Checking a FATAL premise is the
+   re-estimation Step 2 escalates to the user, not something this step does first
 
 ### Step 2: Classify severity, then route
 
@@ -34,6 +36,10 @@ decides whether the paper survives; the route only decides who does the work.
 | **FATAL** | The finding, if correct, invalidates a headline claim | Stop. Re-estimate before drafting any response. Escalate to the user. |
 | **ADDRESSABLE** | Real, fixable within the current design | Route normally (table below). |
 | **TASTE** | The referee would have written a different paper | Draft a diplomatic disagreement; never silently comply. |
+
+Classify on the comment **as written** — FATAL means "invalidates a headline claim *if
+correct*", so the class does not wait on verifying the referee; the listing from Step 1.4 is
+all the manuscript context classification needs.
 
 A TASTE comment answered with new analysis wastes a revision cycle. A FATAL
 comment answered with prose is how papers get rejected on the second round.

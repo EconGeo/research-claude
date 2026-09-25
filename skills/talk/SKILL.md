@@ -78,6 +78,9 @@ coherence — defined in `.claude/skills/review/templates/talk-review-6-categori
 storyteller-critic already reads directly; not restated here.
 
 Score as advisory (non-blocking). storyteller-critic returns its report as text; session saves it to `quality_reports/reviews/storyteller-critic_<date>.md`.
+That saved report is the whole record: **do not run `pipeline.py state record-score`** for a
+talk, under any component name. A talk has no scored component in the registry, so
+`pipeline.py` refuses the call.
 
 **Step 4: Fix Critical Issues**
 
