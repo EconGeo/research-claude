@@ -50,9 +50,9 @@ critic or to the user — a third blind attempt adds a guess, not information.
 
 ## Where this applies
 
-`./.claude/agents/coder.md`, `./.claude/agents/data-engineer.md` (script and chunk failures);
-`./.claude/skills/analyze/SKILL.md` (the dispatching skill, when a dispatched agent's report names a
-two-hypothesis stop). It does not apply to `./.claude/agents/verifier.md` — the verifier only
-reports FAIL, it never fixes anything (`./.claude/rules/agents.md` §2, `verifier.md`: "The
+`.claude/agents/coder.md`, `.claude/agents/data-engineer.md` (script and chunk failures);
+`.claude/skills/analyze/SKILL.md` (the dispatching skill, when a dispatched agent's report names a
+two-hypothesis stop). It does not apply to `.claude/agents/verifier.md` — the verifier only
+reports FAIL, it never fixes anything (`.claude/rules/agents.md` §2, `verifier.md`: "The
 tree is not yours to change") — and it does not apply to a critic's quality deductions,
-which is `./.claude/rules/agents.md` §3, a different axis entirely.
+which is `.claude/rules/agents.md` §3, a different axis entirely.
