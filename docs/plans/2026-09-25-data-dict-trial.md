@@ -80,7 +80,7 @@ Confirm the choice with the user before Task 1.
 - [ ] **Step 2:** Tighten it by hand in the ways that matter for this paper:
   - primary keys;
   - at least one cross-table relationship (e.g. a FIPS or parcel ID);
-  - range and allowed-value constraints on 3+ analysis variables;
+  - `assert:` bounds on 3+ analysis variables (the spec says `range` is descriptive and never validated; see findings Task 0) plus `enum` `values` where they apply;
   - a vocabulary entry for 2+ domain terms.
 - [ ] **Step 3:** Run `validate-spec` until it is clean. Log every error message and whether it was **clear enough to fix without reading source**. Clarity of messages is a criterion in Task 5.
 - [ ] **Step 4:** Record the time spent, from first draft to clean spec.
@@ -90,13 +90,13 @@ Confirm the choice with the user before Task 1.
 - [ ] **Step 1:** Run `validate-meta` and `validate-data` on the real staged files. Log every failure, and for each one say whether it is a real data problem or a dictionary mistake.
 - [ ] **Step 2: A gate that cannot go red is not one.** Make `$TRIAL/raw_faulty/`, a copy containing these planted faults:
   - (a) one duplicated primary key;
-  - (b) one value outside a declared range;
+  - (b) one value that breaks a declared `assert:` bound;
   - (c) one orphan foreign key;
   - (d) one renamed column;
   - (e) one column with its type changed (numeric stored as text).
 
   Run both validations on it and record which of (a)–(e) are caught (`tested:`). Anything missed is a recorded blind spot.
-- [ ] **Step 3:** Run `render-report` and open the HTML. Note whether it is readable enough to go into a replication package or a coauthor handoff.
+- [ ] **Step 3:** Run `validate-data --html <file>`, then open the HTML (0.0.3 has no `render-report`; see findings Task 0). Note whether it is readable enough to go into a replication package or a coauthor handoff.
 
 ### Task 4: `translate` to R — the only route to cleaned data
 
