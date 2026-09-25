@@ -13,7 +13,7 @@ CLAUDE.md editing conventions assume elsewhere — good enough to RANK files aga
 other, not a claim about exact tokenizer output.
 """
 from __future__ import annotations
-import argparse, json, re, sys
+import argparse, json, os, re, sys
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -24,9 +24,18 @@ def est_tokens(size_bytes: int) -> int:
     return size_bytes // 4
 
 def iter_files(d: Path):
-    for p in sorted(d.rglob("*")):
-        if p.is_dir():
-            continue
+    """Walk `d` for files, descending into symlinked directories.
+
+    A linked project (see `shared-pipeline.md`) has `.claude/skills/<name>` as a symlink
+    to a real directory elsewhere, not a real directory itself. `Path.rglob` does not
+    descend into a symlinked subdirectory, which would silently drop every linked skill
+    from the audit in exactly the setup this tool exists to audit."""
+    paths: List[Path] = []
+    for dirpath, dirnames, filenames in os.walk(d, followlinks=True):
+        dirnames[:] = [dn for dn in dirnames if dn not in SKIP_DIRS]
+        for fn in filenames:
+            paths.append(Path(dirpath) / fn)
+    for p in sorted(paths):
         if any(part in SKIP_DIRS for part in p.parts):
             continue
         yield p

@@ -78,7 +78,11 @@ report_sha256}` (`scope` added when `--scope section:NAME` was used). **Committe
 provenance, like `pipeline_state.json`, not session mechanics like the dispatch log. Never
 rewritten or pruned; a refused `record-score` (bad component, missing report, wrong
 critic) writes nothing. Adopted from `garrytan/gstack`'s `gstack-review-log`, which binds
-a review to the working-tree content it reviewed the same way.
+a review to the working-tree content it reviewed the same way. `record-score` needs a
+declared manuscript (`manuscript:` in `CLAUDE.md`) resolvable at record time to compute
+the receipt's `manuscript_sha256` — already guaranteed in practice, since `pipeline.py
+state init` requires the same declared manuscript before `pipeline_state.json` can exist
+at all.
 
 ## Learning Loop
 

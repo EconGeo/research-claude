@@ -1,10 +1,14 @@
-import json, subprocess, sys, tempfile, unittest, pathlib
+import importlib.util, json, subprocess, sys, tempfile, unittest, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "context_bill.py"
 
 def run(*args, cwd=None):
     return subprocess.run([sys.executable, str(SCRIPT), *args], capture_output=True, text=True,
                           cwd=cwd or ROOT)
+
+_spec = importlib.util.spec_from_file_location("context_bill", SCRIPT)
+context_bill = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(context_bill)
 
 class TestContextBillCli(unittest.TestCase):
     """Mirrors scripts/audit_graph.py's own CLI test shape (tests/test_audit_graph.py) —
@@ -53,3 +57,26 @@ class TestContextBillCli(unittest.TestCase):
         r = run("--help")
         self.assertEqual(r.returncode, 0)
         self.assertIn("usage", r.stdout.lower())
+
+
+class TestSymlinkedSkillDirectories(unittest.TestCase):
+    """A linked project has `.claude/skills/<name>` as a symlink to a real directory
+    elsewhere (see `shared-pipeline.md`), not a real directory itself. `iter_files` must
+    descend into that symlink or the audit silently drops every linked skill."""
+
+    def test_files_inside_a_symlinked_skill_directory_are_counted(self):
+        with tempfile.TemporaryDirectory() as t:
+            t = pathlib.Path(t)
+            real_skill_source = t / "elsewhere" / "linked-skill"
+            real_skill_source.mkdir(parents=True)
+            (real_skill_source / "SKILL.md").write_text("---\ndescription: x\n---\nbody")
+
+            project = t / "project"
+            (project / ".claude" / "agents").mkdir(parents=True)
+            (project / ".claude" / "skills").mkdir(parents=True)
+            (project / ".claude" / "skills" / "linked-skill").symlink_to(
+                real_skill_source, target_is_directory=True)
+
+            report = context_bill.scan(project)
+            paths = [f["path"] for f in report["files"]]
+            self.assertIn("skills/linked-skill/SKILL.md", paths)

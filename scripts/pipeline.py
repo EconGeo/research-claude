@@ -612,14 +612,18 @@ def main() -> int:
             else:
                 entry["rounds"] = stt["components"].get(comp, {}).get("rounds", 0) + 1; stt["components"][comp] = entry
             # Bind this verdict to the exact bytes it scored — both the manuscript and the
-            # report file, at this instant, before the state write below (Task 2, receipts).
+            # report file, at this instant, so the receipt is tied to what was actually
+            # reviewed and not to whatever those files happen to contain later.
             ms = declared_manuscript(root)
             receipt = {"at": entry["at"], "agent": a.critic, "component": comp, "score": score,
                        "report": a.report, "manuscript": str(ms.relative_to(root)),
                        "manuscript_sha256": sha256_file(ms), "report_sha256": sha256_file(root / a.report)}
             if a.scope: receipt["scope"] = a.scope
+            # save_state first, append_receipt second: a receipt should never exist for a
+            # score that was never actually recorded, e.g. if save_state were to fail.
+            stt["overall"], _ = compute_overall(stt, reg); save_state(root, stt)
             append_receipt(root, receipt)
-            stt["overall"], _ = compute_overall(stt, reg); save_state(root, stt); print(f"recorded {comp}={score}"); return 0
+            print(f"recorded {comp}={score}"); return 0
         if a.op == "record-verify-claims":
             # `/submit final` (Phase 3.1) refuses without this: `ai-audit`'s own docs admit
             # "no hook, setting or commit gate reads the report" from /verify-claims — this is
