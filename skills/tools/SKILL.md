@@ -1,7 +1,7 @@
 ---
 name: tools
-description: Utility commands — commit (with blocking quality/number/structure gates), render, validate-bib, lint, journal, learn. Replaces individual utility skills.
-argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | learn] [args] [--yes]"
+description: Utility commands — commit (with blocking quality/number/structure gates), render, validate-bib, lint, journal, learn, context. Replaces individual utility skills.
+argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | learn | context] [args] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
@@ -185,6 +185,22 @@ Extract a reusable multi-step workflow from the current session and propose it a
 A **correction** to a pipeline skill, agent or rule is not handled here and is never applied
 silently. It follows `.claude/rules/meta-governance.md`: `/checkpoint` names it as an improvement
 candidate, it must hold across 3+ projects, and `/promote` is the only thing that lands it.
+
+### `/tools context` — Token/Context-Cost Audit
+Static audit of what the shipped `agents/`, `skills/`, `rules/`, `hooks/`, `references/`
+and `templates/` tree costs in context: which skill's frontmatter description is loaded
+into every session's skill listing before it is ever invoked, and which shipped file is
+heaviest if something reads it in full. Adopted from `garrytan/gstack`'s
+`gstack-context-bill`.
+
+```bash
+python3 .claude/scripts/context_bill.py
+```
+
+Add `--json <path>` for the full machine-readable report, `--top N` to change how many
+entries the ranked lists show (default 15). Advisory only — nothing here gates a commit or
+a pipeline stage; use it when a session feels heavier than it should, or before adding a
+new skill, to see what it will cost every session from then on.
 
 ---
 
