@@ -922,3 +922,50 @@ three new agents and one new rule; lock refresh committed in each paper repo) ·
 **Open:** the plan's "What this plan deliberately leaves open" — vendored P1 offenders
 upstream; P6 self-improvement rule needs its own decision; evals for the remaining skills one
 at a time; a same-day round-2 collision is now a naming rule, not a mechanism.
+
+## 2026-09-25 — Residue close-out: P5 tools row, overall round cap, a third eval
+
+**Scope.** "Run the remaining plans and clean up." Every plan under `docs/plans/` was already
+marked complete; the live residue was the option-gates plan's "deliberately leaves open" list.
+Of it, the pipeline-side items closed here; the rest is upstream or a decision.
+
+**`/tools validate-bib` → `scripts/validate_bib.py`** (`2dfbd8f`, shipped via `SHIPPED`,
+`tests/test_validate_bib.py`, 10 tests). The inline shell pipeline wrote to shared `/tmp`
+paths and could not be tested. The script reads the `.bib` name from the manuscript YAML,
+excludes Quarto cross-ref prefixes and e-mail addresses, exits 1 on MISSING/DUPLICATE, 2 when
+it cannot run. My first test asserted the fixture cited a missing key `@example`; reading the
+line showed it was `fixture@example.edu` — the test premise, not the script, was wrong.
+**`/tools journal` stays home** after re-audit: since `69e3e3f` it appends from `state show`
+and the dispatch-log tail — three short commands, no loop to route. Reason recorded in the
+plan's residue list.
+
+**`limits.rounds_overall` enforced; `verification_retries` deleted.** The overall cap was a
+sentence in `rules/agents.md` §3 and `permissions.md`, read by nothing. `state strike` now
+refuses (exit 1, nothing recorded) once strikes summed across creators reach it, and prints
+the running total. `verification_retries` had no consumer in scripts, hooks, skills or agents;
+deleted from the registry, the renderer and the two prose mentions rather than kept as a
+claim. `TestNoPhantomLimits` fails on any declared limit `pipeline.py` does not read.
+
+**Third eval — `tests/evals/tools-validate-bib.sh`** (`c286f44`). First with no MCP server.
+The first live run FAILed: the session wrote `SESSION_REPORT.md` after the check because
+`rules/logging.md` asks for one, and the checker's "nothing writes" was too broad. Narrowed
+to `.qmd`/`.bib` targets, unit-tested both ways, fresh run PASS (4 Bash calls, script ran,
+no inline re-implementation).
+
+**Docs.** 06-17 design doc marked superseded with its plan; 09-23 repair plan marked complete
+(Phase 5 is POGM4's own — 1.6 is committed there as `e6a99bc`). `CLAUDE.md` § Start here
+repointed.
+
+**Fleet.** `validate_bib.py` is a new shipped file → re-linked all six repos; each lock refreshed
+and committed (`pinned` mode kept, as the prior refresh recorded). `check_install --all`
+PASS ×6.
+
+**Results:** 326 tests OK · `check_fork` PASS · `check_install --all` PASS ×6 ·
+`run_fixture` (mechanical) PASS · `tools-validate-bib` eval PASS. `run_fixture --live` not
+re-run this session (the strike change adds a refusal at 5 total strikes; the live tier's two
+rounds stay well under it — `TestOverallRoundLimit` covers the boundary).
+
+**Still open, none of it in this repo's hands:** vendored P1 offenders (PRs to the
+`EconGeo/ZotPilot` / `EconGeo/ai-audit` forks); the P6 self-improvement rule (a decision
+against `meta-governance.md`'s 3+ project bar, then a plan); evals for the remaining 20
+skills, one per task.
