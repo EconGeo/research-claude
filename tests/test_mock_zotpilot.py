@@ -102,6 +102,52 @@ class TestMock(unittest.TestCase):
             self.assertIn("CALL get_index_stats", text)
             self.assertIn("WRITE create_note", text)
 
+    # ── tools added for the twenty remaining evals (plan 2026-09-25, Task 0) ──
+    def test_search_academic_databases_marks_the_local_duplicate(self):
+        r = tool(self.p, "search_academic_databases", query='"staggered difference-in-differences"')
+        rows = r["result"]["results"]
+        self.assertEqual(len(rows), 6)
+        self.assertEqual([x["existing_item_key"] for x in rows if x["local_duplicate"]], ["K2"])
+        self.assertTrue(any(x["doi"].startswith("10.1016/") for x in rows))
+
+    def test_ingest_is_a_write_and_returns_one_row_per_candidate(self):
+        cands = tool(self.p, "search_academic_databases", query="x")["result"]["results"][:2]
+        r = tool(self.p, "ingest_by_identifiers", candidates=cands)
+        self.assertEqual(len(r["result"]["results"]), 2)
+        self.assertEqual(r["result"]["action_required"], [])
+        self.p.stdin.close()
+        self.assertIn("WRITE ingest_by_identifiers", self.p.stderr.read())
+
+    def test_browse_library_overview_and_tags(self):
+        self.assertEqual(tool(self.p, "browse_library", view="overview")["result"]["papers"], 8)
+        tags = tool(self.p, "browse_library", view="tags")["result"]["tags"]
+        self.assertEqual({t["name"] for t in tags} & {"AI", "Artificial Intelligence", "LLM"}, {"AI", "Artificial Intelligence", "LLM"})
+
+    def test_get_paper_for_tutor_by_title_carries_persona_null_and_figure_bboxes(self):
+        r = tool(self.p, "get_paper_for_tutor", title_or_doc_id="Mortgage denial and neighborhood change")
+        self.assertEqual(r["result"]["doc_id"], "D1")
+        self.assertIsNone(r["result"]["persona"])
+        self.assertEqual(len(r["result"]["figures"]), 2)
+        self.assertEqual(len(r["result"]["figures"][0]["bbox"]), 4)
+        self.assertEqual(r["result"]["existing_annotations"], [])
+
+    def test_annotate_pdf_and_save_persona_are_writes(self):
+        tool(self.p, "save_reading_persona", persona_text="- 英文水平：入门")
+        tool(self.p, "annotate_pdf", doc_id="D1", specs_path="/tmp/x.json")
+        tool(self.p, "manage_collections", action="add", item_keys=["K1"], collection_key="Pilot")
+        tool(self.p, "index_library", item_keys=["K7"])
+        self.p.stdin.close()
+        err = self.p.stderr.read()
+        for w in ("save_reading_persona", "annotate_pdf", "manage_collections", "index_library"):
+            self.assertIn(f"WRITE {w}", err)
+
+    def test_profile_library_get_annotations_get_citations_read_only(self):
+        self.assertIn("themes", tool(self.p, "profile_library")["result"])
+        self.assertEqual(tool(self.p, "get_annotations", item_key="K1")["result"]["annotations"], [])
+        self.assertIn("citing", tool(self.p, "get_citations", doc_id="D1", direction="citing")["result"])
+        self.p.stdin.close()
+        self.assertNotIn("WRITE", self.p.stderr.read())
+
 
 if __name__ == "__main__":
     unittest.main()

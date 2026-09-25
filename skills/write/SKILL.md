@@ -134,6 +134,7 @@ templates live — not in `.claude/agents/writer.md`, which only points at them.
 
 ## Quarto Conventions
 
+- Read `.claude/references/quarto-authoring.md` first (gate item 4 checks)
 - `@key` for textual citations ("@smith2024 shows..."), `[@key]` parenthetical (INV-9)
 - `@tbl-label`, `@fig-label`, `@eq-label`, `@sec-label` — never a typed number
 - Notation protocol: `.claude/skills/write/references/notation-protocol.md`

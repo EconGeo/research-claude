@@ -70,5 +70,8 @@ skill. `pipeline.py post` reads it to prove the critic ran. **Gitignored** — s
 
 ## Learning Loop
 
-Owned by `.claude/rules/meta-governance.md`: `/pipeline` surfaces suggested learnings from the
-state file and dispatch log; the user approves; `/promote` lands them.
+Owned by `.claude/rules/meta-governance.md`. Two inputs: `/pipeline` surfaces suggested
+learnings from the state file and dispatch log (three-plus projects, user approves); `/checkpoint`
+writes every pipeline-improvement candidate to the shared ledger with
+`.claude/scripts/ledger.py add`, and `/promote` flags a target two projects named. `/promote`
+lands both.

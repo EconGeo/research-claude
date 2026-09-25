@@ -961,10 +961,11 @@ Same shape: assert `search_topic` and `advanced_search` calls precede any
   taxonomy gate and `profile_library` tool name, `ztp-tutor`'s annotation subagent, the
   `ztp-tutor` / `civilize` P1 splits, `ztp-setup`'s secrets location. All go to the
   `EconGeo/ZotPilot` and `EconGeo/ai-audit` forks as PRs, then `scripts/sync-*.sh`.
-- **P6 self-improvement rule.** The audit's design (one shared rule, a closing step per skill,
+- ~~**P6 self-improvement rule.** The audit's design (one shared rule, a closing step per skill,
   `/promote` as the landing mechanism) conflicts with `rules/meta-governance.md`'s 3+ project
   bar and was not carried into the 09-16 close-out's residue list. It needs its own decision
-  before a plan.
+  before a plan.~~ **Closed 2026-09-25** by
+  `docs/plans/2026-09-25-improvement-loop-and-quarto-render-gate.md`.
 - ~~**`/tools validate-bib` as a script and `/tools journal` in a subagent** (P5 tools row)~~
   **Re-audited and closed 2026-09-24 (later session).** `validate-bib` is now
   `scripts/validate_bib.py` (shipped, `tests/test_validate_bib.py`); the inline pipeline that
@@ -976,4 +977,7 @@ Same shape: assert `search_topic` and `advanced_search` calls precede any
 - **Evals for the other 21 skills** (audit §6). C1–C3 establish the harness; each further
   eval is one task with one mechanism assertion set, run alone. 2026-09-25: `/tools
   validate-bib` added (`tests/evals/tools-validate-bib.sh`, checker unit-tested red and green;
-  first eval with no MCP server, so the runner passes an empty `--strict-mcp-config`). 20 remain.
+  first eval with no MCP server, so the runner passes an empty `--strict-mcp-config`). The
+  remaining 20 closed on 2026-09-25 under `docs/plans/2026-09-25-remaining-skill-evals.md`
+  (one task per skill; its Progress Log has the runs and its Findings the five that came back
+  red on the skill).

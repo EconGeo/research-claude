@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """mock_zotpilot.py — a stdio MCP (JSON-RPC 2.0, newline-delimited) stand-in for the ZotPilot
 server, answering the ten tools the bridge skills and extraction agents call from
-tests/fixture-project/zotpilot_fixture.json.
+tests/fixture-project/zotpilot_fixture.json, plus the ten the remaining evals need (plan
+2026-09-25).
 
 Purpose: functionality evals that assert MECHANISM — which tool, in what order, with which
 flags — with no Zotero, no ChromaDB and no embedding provider (audit 2026-09-15 §3 P7;
@@ -41,6 +42,16 @@ TOOLS = [
     ("get_notes", "Notes on an item (item_key)."),
     ("create_note", "Create a note (item_key, title, content, idempotent?)."),
     ("manage_tags", "Add/remove tags (action, item_key, tags, allow_new?)."),
+    ("search_academic_databases", "External search (query, filters...) -> results with local_duplicate."),
+    ("ingest_by_identifiers", "Ingest search-result candidates (candidates=[...]) into INBOX."),
+    ("manage_collections", "Add/remove/create collections (action, item_keys, collection_key)."),
+    ("index_library", "Embed items (item_keys?, batch_size?)."),
+    ("profile_library", "Full-library theme/density/gap analysis."),
+    ("get_annotations", "Foreign PDF annotations on an item (item_key)."),
+    ("get_citations", "Citation graph walk (doc_id, direction)."),
+    ("get_paper_for_tutor", "Tutor surface for one paper (title_or_doc_id): page_texts, figures, persona."),
+    ("save_reading_persona", "Persist the reading persona (persona_text)."),
+    ("annotate_pdf", "Write annotations into the PDF (doc_id, specs_path | annotations+overview)."),
 ]
 
 
@@ -61,10 +72,43 @@ class Library:
         return {"indexed": n, "unindexed": len(self.d["papers"]) - n, "libraries": ["My Library"]}
 
     def browse_library(self, view="collections", collection=None, **_):
+        if view == "overview":
+            return {"papers": len(self.d["papers"]), "collections": len(self.d["collections"]),
+                    "tags": len(self.tag_vocab), "libraries": ["My Library"]}
+        if view == "tags":
+            counts = {}
+            for p in self.d["papers"]:
+                for t in p["tags"]: counts[t] = counts.get(t, 0) + 1
+            return {"tags": [{"name": t, "items": n} for t, n in sorted(counts.items())]}
         if view == "collections":
             return {"collections": [{"name": c, "items": len(ids)} for c, ids in self.d["collections"].items()]}
         ids = self.d["collections"].get(collection) if collection else list(self.by_id)
         return {"items": [self._meta(i) for i in ids]}
+
+    # ── reads added for the remaining evals ──
+    def search_academic_databases(self, query="", **_):
+        return {"results": copy.deepcopy(self.d["external"]), "next_cursor": None,
+                "total_count": len(self.d["external"]), "unresolved_filters": []}
+
+    def profile_library(self, **_):
+        return {"themes": [{"name": "housing", "papers": 5}, {"name": "methods", "papers": 3}],
+                "density": {"tagged": sum(1 for p in self.d["papers"] if p["tags"])}, "gaps": []}
+
+    def get_annotations(self, item_key, **_):
+        return {"item_key": item_key, "annotations": []}
+
+    def get_citations(self, doc_id, direction="citing", **_):
+        return {"doc_id": doc_id, "direction": direction, "citing": [], "cited": []}
+
+    def get_paper_for_tutor(self, title_or_doc_id, **_):
+        p = self.by_id.get(title_or_doc_id) or self.by_key.get(title_or_doc_id) or next(
+            (x for x in self.d["papers"] if x["title"].lower() == title_or_doc_id.lower()), None)
+        if p is None:
+            raise ValueError(f"no paper matches {title_or_doc_id!r}")
+        return {"doc_id": p["doc_id"], "title": p["title"], "persona": self.d.get("persona"),
+                "existing_annotations": [], "page_texts": p.get("page_texts", []),
+                "sectioned_text": {c["section"]: c["text"] for c in p.get("chunks", [])},
+                "figures": p.get("figures", []), "tables": p.get("tables", []), "tables_on_page": {}}
 
     def advanced_search(self, author=None, year=None, tag=None, collection=None, **_):
         ids = self.d["collections"].get(collection, []) if collection else list(self.by_id)
@@ -137,13 +181,43 @@ class Library:
             return {"removed": removed}
         raise ValueError(f"unknown action {action!r}")
 
+    # ── writes added for the remaining evals ──
+    def ingest_by_identifiers(self, candidates=None, identifiers=None, **_):
+        rows = []
+        for i, c in enumerate(candidates or []):
+            rows.append({"status": "duplicate" if c.get("local_duplicate") else "saved_with_pdf",
+                         "has_pdf": not c.get("local_duplicate"),
+                         "item_key": c.get("existing_item_key") or f"N{i + 1}", "title": c.get("title", "")})
+        for i, s in enumerate(identifiers or []):
+            rows.append({"status": "saved_with_pdf", "has_pdf": True, "item_key": f"M{i + 1}", "title": s})
+        return {"results": rows, "action_required": []}
+
+    def manage_collections(self, action, item_keys=None, collection_key=None, name=None, **_):
+        return {"action": action, "items": list(item_keys or []), "collection": collection_key or name}
+
+    def index_library(self, item_keys=None, batch_size=2, **_):
+        keys = list(item_keys or [k for k, p in self.by_key.items() if not p["indexed"]])
+        for k in keys: self.by_key[k]["indexed"] = True
+        return {"indexed": keys, "has_more": False}
+
+    def save_reading_persona(self, persona_text, **_):
+        self.d["persona"] = persona_text
+        return {"saved": True, "path": "/mock/.config/zotpilot/ZOTPILOT.md", "action": "created"}
+
+    def annotate_pdf(self, doc_id, specs_path=None, annotations=None, overview=None, **_):
+        return {"placed": [], "unplaced": [], "overview_placed": True,
+                "backup_path": f"/mock/storage/{doc_id}.pdf.ztpbak", "verified": True,
+                "coverage": {"figures": 0, "tables_region": 0, "tables_caption": 0, "tables_unanchorable": 0,
+                             "terms": 0, "long_sentences": 0, "equations": 0}, "summary": "mock"}
+
     def _meta(self, i):
         p = self.by_id[i]
         return {"doc_id": i, "key": p["key"], "title": p["title"], "year": p["year"],
                 "authors": p["authors"], "indexed": p["indexed"]}
 
 
-WRITES = {"create_note", "manage_tags"}
+WRITES = {"create_note", "manage_tags", "ingest_by_identifiers", "manage_collections", "index_library",
+          "save_reading_persona", "annotate_pdf"}
 
 
 def log(line: str):
