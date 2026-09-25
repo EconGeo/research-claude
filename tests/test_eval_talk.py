@@ -49,6 +49,12 @@ class TestTalkChecker(unittest.TestCase):
     def test_path_embed_fails(self):
         (self.p / "talks" / "lightning_talk.qmd").write_text("{{< embed ../manuscript_fixture.qmd#fig-trends >}}\n"); rc, out = go(CHECK, T, self.p); self.assertEqual(rc, 1); self.assertIn("bare filename", out)
 
+    def test_tbl_embed_in_backup_passes(self):
+        (self.p / "talks" / "lightning_talk.qmd").write_text(
+            "{{< embed manuscript_fixture.qmd#fig-trends >}}\n\n## Backup\n\n{{< embed manuscript_fixture.qmd#tbl-main >}}\n"
+        )
+        rc, out = go(CHECK, T, self.p); self.assertEqual(rc, 0, out)
+
 
 if __name__ == "__main__":
     unittest.main()

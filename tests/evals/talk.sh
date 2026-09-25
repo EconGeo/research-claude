@@ -11,6 +11,9 @@ seed_score() {
 eval_setup
 python3 "$RC/scripts/pipeline.py" --root "$E" state init >/dev/null
 seed_score manuscript 85 writer-critic
-git -C "$E" add -A && git -C "$E" -c user.name=fx -c user.email=fx@x commit -qm "seed manuscript score" >/dev/null
+# The fixture commits talks/manuscript_fixture.qmd as a relative symlink (e0c6c90, R-5); remove
+# it here so Step 1 of /talk create must create it, exercising the "symlink before render" step.
+rm -f "$E/talks/manuscript_fixture.qmd"
+git -C "$E" add -A && git -C "$E" -c user.name=fx -c user.email=fx@x commit -qm "seed manuscript score; remove pre-existing talks/ symlink" >/dev/null
 eval_run '/talk create lightning --yes' "$LOG" "Read" "Grep" "Glob" "Write" "Edit" "Bash" "Agent"
 eval_finish check_talk.py "$LOG" "$E"

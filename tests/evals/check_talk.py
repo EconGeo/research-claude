@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """check_talk.py — /talk create: the relative manuscript symlink is made before any render;
 storyteller then storyteller-critic; no record-score (advisory); embeds by bare filename; no
-tbl- embeds (tables go to backup slides as figures/images, per the storyteller's rules).
+tbl- embeds before the backup section (SKILL.md: tables go to backup slides).
 usage: check_talk.py <transcript.jsonl> <project-dir>"""
 import re, sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -22,8 +22,11 @@ if not link.is_symlink(): fails.append("talks/manuscript_fixture.qmd is not a sy
 talk = proj / "talks" / "lightning_talk.qmd"
 if not talk.exists(): fails.append("talks/lightning_talk.qmd was not written")
 else:
-    embeds = re.findall(r"\{\{<\s*embed\s+([^\s>]+)", talk.read_text())
+    text = talk.read_text()
+    embeds = re.findall(r"\{\{<\s*embed\s+([^\s>]+)", text)
     bad = [e for e in embeds if not e.startswith("manuscript_fixture.qmd#")]
     if bad: fails.append(f"embeds not by bare filename: {bad}")
-    if any("#tbl-" in e for e in embeds): fails.append("a tbl- chunk is embedded (tables belong in backup as figures)")
+    backup = re.search(r"^#.*\b(backup|appendix|q&a)\b", text, re.I | re.M)
+    main = text[:backup.start()] if backup else text
+    if re.search(r"#tbl-", main): fails.append("a tbl- chunk is embedded before the backup section (tables belong in backup)")
 evallib.finish("check_talk", fails, f"tool_use: {len(uses)} · symlink: {link.is_symlink()} · talk: {talk.exists()}")
