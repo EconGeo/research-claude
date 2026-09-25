@@ -626,8 +626,16 @@ def main() -> int:
             if n >= lim:
                 print(f"{cr}: already at strike {n} of {lim} — ESCALATE to "
                       f"{reg['agents'][cr]['escalation_target']} (not recorded)"); return 1
-            n += 1; stt["strikes"][cr] = n; save_state(root, stt)
-            print(f"{cr}: strike {n} of {lim}" + (f" — ESCALATE to {reg['agents'][cr]['escalation_target']}" if n >= lim else "")); return 0
+            # .claude/rules/agents.md §3: "5 rounds overall; never loop indefinitely". The per-pair cap
+            # alone lets a run burn 3 rounds on every creator in turn; the overall cap is the
+            # sum of strikes across all creators and is refused, not recorded, once reached.
+            lim_all = int(reg["limits"]["rounds_overall"]); total = sum(stt["strikes"].values())
+            if total >= lim_all:
+                print(f"{cr}: strikes total {total} of {lim_all} overall — the run is out of rounds; "
+                      f"stop and report (not recorded)"); return 1
+            n += 1; total += 1; stt["strikes"][cr] = n; save_state(root, stt)
+            print(f"{cr}: strike {n} of {lim} ({total} of {lim_all} overall)"
+                  + (f" — ESCALATE to {reg['agents'][cr]['escalation_target']}" if n >= lim else "")); return 0
         if a.op == "set-blocked": stt["blocked_by"] = " ".join(a.args); save_state(root, stt); return 0
         if a.op == "clear-blocked": stt["blocked_by"] = None; save_state(root, stt); return 0
     return 2

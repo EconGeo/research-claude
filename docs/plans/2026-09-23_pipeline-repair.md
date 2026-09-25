@@ -6,7 +6,12 @@ the stalled 09-16 closeout (43 defects), the six divergence GAPs, the connectivi
 and the audit defects not yet planned. Do not start it until Phases 2–5 below are done.
 **Blocks:** POGM4's JRER submission plan, which is paused until Phase 2 lands.
 
-**Status (2026-09-24): Phases 1–4 done.** Phase 1 (`ec8905e`…`3b1eb9f`) merged in `04375cb`.
+**Status: complete (2026-09-24).** Phases 1–4 are the pipeline's work and are done; Phase 5 is
+POGM4's own resumption and lives in that repo (1.6's edit is committed there as `e6a99bc`;
+`87840d8` re-linked it for the option-gates rule). The closeout handoff this plan deferred to is
+itself closed — see `CLAUDE.md` § Start here. Original status text follows.
+
+**Status (2026-09-24, earlier): Phases 1–4 done.** Phase 1 (`ec8905e`…`3b1eb9f`) merged in `04375cb`.
 Phase 2 (`7424e79`, `71aaaf3`, `ab41926`, `8d65c68`) merged to `main` in `19aaac0`. The upstream
 `EconGeo/ai-audit` rename that 2.4 was waiting on has landed and been synced (`c737ac6`):
 `/humanize`/`humanize-auditor` are now `/civilize`/`civilize-auditor` throughout `ai-audit/`, so

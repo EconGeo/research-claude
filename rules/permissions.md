@@ -5,7 +5,7 @@ maintainer-only tool, not shipped to projects). `check_fork.sh` fails if this fi
 differs from the render. The YAML is what `pipeline.py`, the gate and `/pipeline`
 read; this file exists so the registry is readable in a linked project.
 
-**Limits:** 3 rounds per pair, 5 overall, 2 verification retries.
+**Limits:** 3 rounds per pair, 5 overall (both enforced by `pipeline.py state strike`).
 
 ## Components
 

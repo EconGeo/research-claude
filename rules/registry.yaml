@@ -13,7 +13,6 @@ schema_version: 1
 limits:
   rounds_per_pair: 3
   rounds_overall: 5
-  verification_retries: 2
 
 # Quality components (.claude/rules/quality.md mirrors these weights; check_fork: weights-sum).
 components:

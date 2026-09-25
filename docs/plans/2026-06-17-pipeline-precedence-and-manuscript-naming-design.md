@@ -1,7 +1,11 @@
 # Design: Pipeline Precedence + Per-Project Manuscript Naming
 
 **Date:** 2026-06-17
-**Status:** Approved design (pre-implementation)
+**Status:** superseded (marked 2026-09-24), together with its plan
+(`2026-06-17-pipeline-precedence-and-manuscript-naming-plan.md`). The clo-author submodule this
+design reconciled against was removed on 2026-09-09; the manuscript is declared per project
+(`manuscript:` in `CLAUDE.md`) under `rules/quarto-empirical.md`, and `rules/pipeline-precedence.md`
+was never created. See `docs/decisions/2026-09-08_cut-the-orchestration-graph.md`.
 
 ## Problem
 

@@ -965,7 +965,13 @@ Same shape: assert `search_topic` and `advanced_search` calls precede any
   `/promote` as the landing mechanism) conflicts with `rules/meta-governance.md`'s 3+ project
   bar and was not carried into the 09-16 close-out's residue list. It needs its own decision
   before a plan.
-- **`/tools validate-bib` as a script and `/tools journal` in a subagent** (P5 tools row) —
-  both subcommands were rewritten on 2026-09-24 (`69e3e3f`); re-audit before routing.
+- ~~**`/tools validate-bib` as a script and `/tools journal` in a subagent** (P5 tools row)~~
+  **Re-audited and closed 2026-09-24 (later session).** `validate-bib` is now
+  `scripts/validate_bib.py` (shipped, `tests/test_validate_bib.py`); the inline pipeline that
+  wrote to shared `/tmp` paths is gone. `journal` stays in the main context: after `69e3e3f`
+  it no longer regenerates from git history — it reads `state show`, the dispatch-log tail and
+  the journal's headings (three short commands) and appends entries, so there is no
+  context-heavy loop left to route. Reason recorded here rather than a subagent built for
+  nothing.
 - **Evals for the other 21 skills** (audit §6). C1–C3 establish the harness; each further
   eval is one task with one mechanism assertion set, run alone.

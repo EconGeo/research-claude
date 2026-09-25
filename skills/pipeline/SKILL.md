@@ -67,7 +67,7 @@ loop over stages from start in REQUIRES order, stop after --until:
 after the loop: score; "Suggested Learnings" (strikes, escalations, first-pass ≥ 90) per
   .claude/rules/meta-governance.md — suggestions only, user approves, /promote lands
 ```
-Limits: 3 rounds per pair, 5 overall, 2 verification retries (`registry.yaml: limits`).
+Limits: 3 rounds per pair, 5 overall (`registry.yaml: limits`; `state strike` refuses past either).
 
 ## `resume`
 After `/compact` or a new session: `state show`, `score`, the last three lines of
