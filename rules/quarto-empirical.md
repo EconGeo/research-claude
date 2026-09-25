@@ -196,15 +196,25 @@ consistency. A hardcoded number is a gap in that proof.
 
 ---
 
-## The Write Gate (3 Items)
+## The Write Gate (4 Items)
 
 ```
 [ ] 1. Raw data is in place: every file referenced in cache.extra exists in data/raw/
 [ ] 2. quarto render manuscript_<project>.qmd exits 0 with no NA/NaN in inline expressions
 [ ] 3. python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd exits 0
+[ ] 4. python3 .claude/scripts/check_render.py <rendered .pdf> --expect "<each phrase the page must show>" exits 0
 ```
 
 No script inventory. No registry coverage audit. No timestamp check.
+
+**Item 4 reads the page, not the source.** Item 2 proves the render ran; it proves nothing
+about what the page shows, because Quarto's failures are silent: an unresolved `@ref` prints
+`?@name` at exit 0, a note wider than the text block clips words out of its own sentence, an
+overwide table drops a column, a declared `keywords:` never appears. Two projects corrected
+these by hand before this line existed (`docs/improvement-ledger.md`, L-001..L-003). Pass
+`--expect` for every phrase a journal or an invariant requires on the page, and `--columns`
+for every wide table. The check is `.claude/references/quarto-authoring.md`'s post-render
+checklist, executed.
 
 **Item 3 is not optional, and item 2 does not subsume it.** A clean render proves
 every *expression* agrees with the analysis. It proves nothing about a number that
@@ -325,6 +335,7 @@ Invoked when the reviewed artifact is `manuscript_<project>.qmd` and this rule i
 | `quarto-empirical.md` (this rule) | **Required** — pipeline architecture, caching, data integrity, single source of ground truth |
 | `quarto-pdf.md` | **Required** — `pdf:` format block + kableExtra/figure/citation mechanics for the canonical PDF output |
 | `quarto-word.md` | Optional — `docx:` format block + flextable/CSL mechanics, only if Word secondary output is needed |
+| `.claude/references/quarto-authoring.md` | **Required reading before any `.qmd` edit** — tool mechanics: what renders in which format, what drops silently; its post-render checklist is gate item 4 |
 
 `quarto-pdf.md` and `quarto-word.md` are **format-reference** docs for the two output
 formats of the single `manuscript_<project>.qmd` — they describe rendering mechanics and

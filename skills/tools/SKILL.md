@@ -95,10 +95,14 @@ For talks (not the declared manuscript):
 quarto render talks/[file]
 ```
 
-Pass: exit 0, output artifact newer than the source. Then grep the render log
-for `ERROR`/`WARNING` and the output for unresolved cross-references (`?@fig-`,
-`?@tbl-`). A clean render says nothing about hardcoded prose numbers — that is
-`prose_number_check.py` (INV-11). Do not invoke xelatex or pandoc by hand unless
+Pass: exit 0, output artifact newer than the source, and the rendered page checked:
+```bash
+python3 .claude/scripts/check_render.py "${MS%.qmd}.pdf" --expect "<mandated phrases>"
+```
+That is write-gate item 4 (`.claude/rules/quarto-empirical.md`): unresolved `?@` refs, literal
+`\commands`/`*markup*`/`<tags>`, doubled exhibit numbers, missing phrases, dropped columns
+(`--columns "Table N: a,b,c"`). A clean render says nothing about hardcoded prose numbers —
+that is `prose_number_check.py` (INV-11). Do not invoke xelatex or pandoc by hand unless
 debugging a render failure — `quarto render` is the only build step.
 
 ### `/tools validate-bib` — Bibliography Validation
@@ -183,8 +187,10 @@ existing entries. **Pass:** every `report` path in `pipeline_state.json` appears
 Extract a reusable multi-step workflow from the current session and propose it as a skill.
 
 A **correction** to a pipeline skill, agent or rule is not handled here and is never applied
-silently. It follows `.claude/rules/meta-governance.md`: `/checkpoint` names it as an improvement
-candidate, it must hold across 3+ projects, and `/promote` is the only thing that lands it.
+silently. It follows `.claude/rules/meta-governance.md` (User corrections): ask once at the
+moment of the correction and land on yes with `/promote`; `/checkpoint` records every
+candidate in the shared ledger (`.claude/scripts/ledger.py add`), and `/promote` flags a
+target two projects named.
 
 ---
 

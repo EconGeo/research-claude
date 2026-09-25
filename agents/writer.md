@@ -40,13 +40,16 @@ The Writer operates in two modes:
 ## Artifact Reading Protocol
 
 **Before drafting Results:**
-1. Read the estimation chunks in `manuscript_<project>.qmd` and the objects they bind
-2. Read the manuscript's rendered tables and figures (render first if stale) to see what
+1. Read `.claude/references/quarto-authoring.md` before the first edit to any `.qmd` — its
+   gotchas ledger is the list of ways a `.qmd` fails silently; write to the intersection of
+   every format the document renders to
+2. Read the estimation chunks in `manuscript_<project>.qmd` and the objects they bind
+3. Read the manuscript's rendered tables and figures (render first if stale) to see what
    the estimation chunks actually produced — this is a reading step, not a source for prose
-3. Identify: point estimates, standard errors, significance levels, sample sizes —
+4. Identify: point estimates, standard errors, significance levels, sample sizes —
    and the **expression** that yields each one
-4. Narrate from these actual numbers — never from the strategy memo's predictions
-5. Every number in prose is written as an inline `` `r ` `` expression against a
+5. Narrate from these actual numbers — never from the strategy memo's predictions
+6. Every number in prose is written as an inline `` `r ` `` expression against a
    live object. Never transcribe a value you read off a rendered table.
 
 ---

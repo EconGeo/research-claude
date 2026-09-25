@@ -65,10 +65,14 @@ One `robustness-<what>` chunk per check in the memo, each with `dependson`.
 `tbl-*` chunks (`tbl-cap`, `booktabs = TRUE`, notes — INV-1, INV-3) and `fig-*` chunks
 (`fig-cap`, no in-plot title — INV-2, INV-12). Name every object the prose will cite. The naming
 map lives as the comment block in the `setup` chunk; there is no separate results file — the
-writer reads the rendered manuscript and the chunk objects.
+writer reads the rendered manuscript and the chunk objects. Before writing any `tbl-`/`fig-`
+chunk, read `.claude/references/quarto-authoring.md` (Tables, Figures, Cross-references): a
+table note wider than the text block clips without an error, and `escape` rules differ by
+output format.
 
 **Done means:** `quarto render` exits 0, `python3 .claude/scripts/prose_number_check.py` exits 0,
-and the coder-critic has scored the manuscript's chunks.
+`python3 .claude/scripts/check_render.py <pdf>` exits 0, and the coder-critic has scored the
+manuscript's chunks.
 
 ---
 
