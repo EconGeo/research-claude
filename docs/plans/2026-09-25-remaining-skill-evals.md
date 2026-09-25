@@ -2715,7 +2715,7 @@ eval_finish check_analyze.py "$LOG" "$E" "$RRC" "$PRC"
 | 7 | ztp-research | PASS | pending | tool_use: 5 · mock calls: 4 |
 | 8 | ztp-profile | PASS | pending | tool_use: 18 · mock calls: 12 · views: ['collections', 'items', 'overview', 'tags'] |
 | 9 | ztp-tutor | PASS | pending | tool_use: 3 · mock calls: 1 |
-| 10 | promote | | | |
+| 10 | promote | PASS | pending | bash calls: 6 · clone HEAD moved: False |
 | 11 | civilize | | | |
 | 12 | verify-claims | | | |
 | 13 | revise | | | |
