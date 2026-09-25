@@ -63,6 +63,15 @@ class TestCheckRender(unittest.TestCase):
         r = run(CLEAN + "as reported in Table 2. Table 2 also shows the same pattern.\n")
         self.assertNotIn("DOUBLED", r.stdout)
 
+    def test_doubled_caught_after_a_page_break(self):
+        # pdftotext separates pages with a form feed; a table floated to a page top starts with it.
+        r = run(CLEAN + "\fTable 2: Table 2: Robustness\n")
+        self.assertIn("DOUBLED: Table 2 / 2", r.stdout)
+
+    def test_doubled_does_not_fire_on_line_wrapped_prose_with_differing_numbers(self):
+        r = run(CLEAN + "as reported in\nTable 2. Table 3 shows the rest.\nTable 3.\nTable 4: Extra\n")
+        self.assertNotIn("DOUBLED", r.stdout)
+
     def test_expect_phrase_missing_and_present_across_line_wrap(self):
         r = run(CLEAN, "--expect", "IS NOT MET", "--expect", "Keywords:")
         self.assertEqual(0, r.returncode, r.stdout)

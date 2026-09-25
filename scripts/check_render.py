@@ -27,12 +27,15 @@ from pathlib import Path
 
 LIG = {"\ufb00": "ff", "\ufb01": "fi", "\ufb02": "fl", "\ufb03": "ffi", "\ufb04": "ffl", "\u2019": "'"}
 QUOTES = {"\u201c": '"', "\u201d": '"'}
-DOUBLED = re.compile(r"^[ \t]*(Table|Figure)\s+([A-Z]?\d+[A-Za-z]?)\s*[:.]\s*\1\s+([A-Z]?\d+[A-Za-z]?)", re.M)
+# Anchored to a caption line. `\f` is pdftotext's page break, so a caption that opens a page
+# starts with it. Both numbers must be followed by a separator: a doubled caption reads
+# `Figure 1: Figure 3.`; prose (`Table 3 shows`) does not, so a line-wrapped sentence cannot fire.
+DOUBLED = re.compile(r"^[ \t\f]*(Table|Figure)\s+([A-Z]?\d+[A-Za-z]?)\s*[:.][ \t]*\1\s+([A-Z]?\d+[A-Za-z]?)\s*[:.]", re.M)
 CAPTION = re.compile(r"^\s*(Table|Figure)\s+[A-Z]?\d+[A-Za-z]?[:.]", re.M)
 
 
 def norm(s: str) -> str:
-    s = re.sub(r"-\n\s*", "", s)
+    s = re.sub(r"-\n\s*", "", s)  # joins a hyphenated line break; also fuses a compound word that broke at its hyphen
     for k, v in LIG.items():
         s = s.replace(k, v)
     for k, v in QUOTES.items():
