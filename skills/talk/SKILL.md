@@ -63,6 +63,10 @@ The Storyteller follows these design principles:
 
 Render with `quarto render`.
 
+Read `.claude/references/quarto-authoring.md` (Format matrix, Diagrams) first: RevealJS
+accepts raw HTML that Beamer and PDF drop, and a `{dot}`/`{mermaid}` cell without `fig-width`
+overflows the slide silently.
+
 Save to `talks/[format]_talk.qmd`.
 
 **Step 3: Dispatch Storyteller-Critic**
