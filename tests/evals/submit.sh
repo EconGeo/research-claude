@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # tests/evals/submit.sh — functionality eval for /submit final on a paper with code/manuscript/
 # strategy scored today and NO ai_use_log.md: the disclosure audit must stop the run. Run alone.
-# EVAL_TIMEOUT default 3600 (the verifier, and possibly a fresh comprehensive review, dispatch).
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=3600}"
 seed_score() {
   mkdir -p "$E/quality_reports/reviews"
   echo "# $3 — seeded fixture input ($(date +%F))" >"$E/quality_reports/reviews/$3_seed.md"

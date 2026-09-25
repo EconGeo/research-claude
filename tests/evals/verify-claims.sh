@@ -2,7 +2,6 @@
 # tests/evals/verify-claims.sh — functionality eval for /verify-claims (ai-audit, vendored).
 # draft.md carries five claims and a draft-only sentinel; source.md is the ground truth. Run alone.
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=1800}"
 eval_setup
 SENTINEL="ORCHID-LANTERN-42"
 cat >"$E/source.md" <<'MD'

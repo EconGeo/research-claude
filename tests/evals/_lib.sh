@@ -8,11 +8,12 @@
 #              porcelain status so eval_finish can refuse a run that wrote through a link.
 # eval_mock    registers tests/mock_zotpilot.py as the `zotpilot` MCP server for this run,
 #              logging to $ERR (the client does not forward a server's stderr).
-# eval_run     runs one `claude -p` under a perl alarm (no timeout(1) on macOS; alarm survives
-#              exec). stream-json so a killed run still leaves what it emitted.
+# eval_run     runs one `claude -p` to completion. NO TIMEOUT by default — a watchdog killed
+#              two correct /strategize runs mid-critic on 2026-09-25; EVAL_TIMEOUT=<s> opts in
+#              (perl alarm; 0 = none). stream-json so a killed run still leaves what it emitted.
 # eval_finish  checkout-drift check, then the checker. Its exit code is the eval's.
 #
-# Env: EVAL_TIMEOUT (s, default 1800) · KEEP=1 keeps $E on PASS (a FAIL always keeps it).
+# Env: EVAL_TIMEOUT (s, default 0 = no limit; opt-in only) · KEEP=1 keeps $E on PASS (a FAIL always keeps it).
 # The drift check only watches paths apply.sh actually links into a project (agents/ skills/
 # rules/ hooks/ templates/ references/ scripts/ zotpilot-skills/ ai-audit/); an untracked file
 # elsewhere in the checkout (a scratch doc, a sibling eval task in progress) is not a write
@@ -53,13 +54,13 @@ JSON
 eval_run() {  # eval_run <prompt> <logfile> <allowed-tool>...
   local prompt="$1" log="$2"; shift 2
   command -v claude >/dev/null 2>&1 || { echo "claude not on PATH"; exit 1; }
-  ( cd "$E" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "${EVAL_TIMEOUT:-1800}" \
+  ( cd "$E" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "${EVAL_TIMEOUT:-0}" \
       claude -p "$prompt" --permission-mode acceptEdits \
       --mcp-config "$MCP_CFG" --strict-mcp-config --allowedTools "$@" \
       --output-format stream-json --verbose ) >"$log" 2>"$log.stderr"
   local rc=$?
   echo "claude exit $rc · $(basename "$log"): $(wc -l <"$log" | tr -d ' ') lines · mock log $(grep -c '^CALL' "$ERR") calls, $(grep -c '^WRITE' "$ERR") writes"
-  [[ $rc -eq 142 ]] && echo "  (timed out after ${EVAL_TIMEOUT:-1800}s — raise EVAL_TIMEOUT)"
+  [[ $rc -eq 142 ]] && echo "  (killed by the opt-in EVAL_TIMEOUT=${EVAL_TIMEOUT:-0}s watchdog)"
   grep -qi 'Unknown command:' "$log" && { echo "claude did not recognise the command"; exit 1; }
   return 0
 }

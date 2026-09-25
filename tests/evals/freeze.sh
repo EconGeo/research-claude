@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # tests/evals/freeze.sh — functionality eval for /freeze: three `claude -p` runs in one project
 # (the guard persists on disk). careful is pre-seeded active so activation must read-modify-write.
-# Run alone. EVAL_TIMEOUT (s, default 600) bounds EACH run.
+# Run alone. No timeout (EVAL_TIMEOUT=<s> opts in).
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=600}"
 eval_setup
 mkdir -p "$E/.claude/state"
 cat >"$E/.claude/state/session-guards.json" <<'JSON'

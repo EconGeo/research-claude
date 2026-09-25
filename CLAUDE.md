@@ -61,6 +61,15 @@ that look wrong are deliberate, §2 lists permanent gate blind spots) and
 2026-09-10 session found the previous one only because the user named the file by hand. When
 a handoff is superseded, repoint this section at the new one rather than adding to a list.
 
+## Live evals and live runs: never put a time limit on them
+
+**Non-negotiable (user ruling, 2026-09-25).** Never add, raise, or pass a timeout to a live
+`claude -p` run — `tests/evals/*.sh`, `tests/run_fixture.sh --live`, or any agent/critic run
+driven by hand. The harness defaults are `EVAL_TIMEOUT=0` / `LIVE_TIMEOUT=0` (no watchdog);
+leave them there and do not set them. A watchdog killed two correct `/strategize` runs in
+the round-2 critic after 60–90 minutes of work each, and every raise ("3600 → 5400 → 9000")
+just moved the kill point. If a run is slow, let it finish, then diagnose what made it slow.
+
 ## Checkpoint / session-report location
 
 **`SESSION_REPORT.md` lives at `docs/SESSION_REPORT.md`, not the repo root.**

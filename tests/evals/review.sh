@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # tests/evals/review.sh — functionality eval for the comprehensive /review. code and strategy are
 # scored so the manuscript route is open; three critics dispatch in one turn. Run alone.
-# EVAL_TIMEOUT 3600.
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=3600}"
 seed_score() {
   mkdir -p "$E/quality_reports/reviews"
   echo "# $3 — seeded fixture input ($(date +%F))" >"$E/quality_reports/reviews/$3_seed.md"

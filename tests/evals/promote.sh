@@ -3,7 +3,6 @@
 # checkout, so the skill's `git -C $RC commit` can never land in the real repo. Plants the audit's
 # three inputs. The clone is kept with $E on FAIL. Run alone.
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=900}"
 C="$(mktemp -d)/research-claude"
 git clone -q "$RC" "$C" || { echo "clone failed"; exit 1; }
 ORIG="$(git -C "$C" rev-parse HEAD)"

@@ -8,7 +8,7 @@
 # empty config keeps the user's own servers out of the run. Run alone — never in parallel
 # with another eval (audit 2026-09-15 §3 P7 rule 4).
 #
-#   tests/evals/tools-validate-bib.sh      # EVAL_TIMEOUT (s, default 900) bounds the run
+#   tests/evals/tools-validate-bib.sh      # no timeout (EVAL_TIMEOUT=<s> opts in)
 set -u
 RC="$(cd "$(dirname "$0")/../.." && pwd)"
 E="$(mktemp -d)"
@@ -22,7 +22,7 @@ git -C "$E" init -q && git -C "$E" add -A && git -C "$E" -c user.name=fx -c user
 MCP_CFG="$E/empty-mcp.json"; echo '{"mcpServers": {}}' >"$MCP_CFG"
 LOG="$E/eval.stream.jsonl"; ERR="$E/unused.log"; : >"$ERR"
 command -v claude >/dev/null 2>&1 || { echo "claude not on PATH"; exit 1; }
-( cd "$E" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "${EVAL_TIMEOUT:-900}" \
+( cd "$E" && exec perl -e 'alarm shift @ARGV; exec @ARGV' "${EVAL_TIMEOUT:-0}" \
     claude -p '/tools validate-bib' --permission-mode acceptEdits \
     --mcp-config "$MCP_CFG" --strict-mcp-config \
     --allowedTools "Read" "Bash" "Skill" "Grep" "Glob" \
