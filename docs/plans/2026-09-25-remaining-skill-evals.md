@@ -2708,7 +2708,7 @@ eval_finish check_analyze.py "$LOG" "$E" "$RRC" "$PRC"
 | 0 | harness | | | |
 | 1 | careful | PASS | pending | run A tool_use: 5 · run B tool_use: 3 · attempts: rm=1 push=1 |
 | 2 | freeze | PASS | pending | A: 1 · B: 5 (manuscript edits 1, talks edits 1) · C: 1 |
-| 3 | checkpoint | | | |
+| 3 | checkpoint | PASS | pending | tool_use: 19 · report 163→2644 bytes |
 | 4 | new-project-ztp | | | |
 | 5 | seed-papers | | | |
 | 6 | ztp-review | | | |
