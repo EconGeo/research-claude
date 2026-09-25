@@ -2710,7 +2710,7 @@ eval_finish check_analyze.py "$LOG" "$E" "$RRC" "$PRC"
 | 2 | freeze | PASS | pending | A: 1 · B: 5 (manuscript edits 1, talks edits 1) · C: 1 |
 | 3 | checkpoint | PASS | pending | tool_use: 19 · report 163→2644 bytes |
 | 4 | new-project-ztp | PASS | pending | tool_use: 5 · mock calls: 1 |
-| 5 | seed-papers | | | |
+| 5 | seed-papers | PASS | pending | tool_use: 6 · mock calls: 2 · search_topic queries: 2 |
 | 6 | ztp-review | | | |
 | 7 | ztp-research | | | |
 | 8 | ztp-profile | | | |
