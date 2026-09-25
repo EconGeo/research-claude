@@ -103,25 +103,19 @@ debugging a render failure — `quarto render` is the only build step.
 
 ### `/tools validate-bib` — Bibliography Validation
 Cross-reference every citation key in the manuscript and `talks/*.qmd` against the project's
-`references.bib` (the name the manuscript YAML's `bibliography:` field declares — read that
-field rather than assuming).
+`.bib` (the file the manuscript YAML's `bibliography:` field declares — the script reads that
+field rather than assuming a name).
 
 ```bash
-MS=$(python3 .claude/scripts/pipeline.py manuscript)
-grep -ohE '(^|[^A-Za-z0-9_])-?@[A-Za-z][A-Za-z0-9_:-]*[A-Za-z0-9]' "$MS" talks/*.qmd 2>/dev/null \
-  | sed -E 's/^[^@]*@//' | grep -vE '^(fig|tbl|eq|sec|thm|lem|cor|def|lst|exm)-' | sort -u > /tmp/cited.txt
-grep -oE '^@[A-Za-z]+\{[^,]+' references.bib | sed -E 's/^@[A-Za-z]+\{//' | sort > /tmp/bib_all.txt
-sort -u /tmp/bib_all.txt > /tmp/bib.txt
-echo "MISSING (cited, not in .bib):";   comm -23 /tmp/cited.txt /tmp/bib.txt
-echo "UNUSED (in .bib, never cited):";  comm -13 /tmp/cited.txt /tmp/bib.txt
-echo "DUPLICATE keys in .bib:";          uniq -d /tmp/bib_all.txt
+python3 .claude/scripts/validate_bib.py
 ```
 
 Quarto cross-reference prefixes (`@fig-`, `@tbl-`, `@eq-`, `@sec-`, …) are excluded — they
-are not citations. **Output:** the three lists above, reported to the user. **Pass:** MISSING
-and DUPLICATE are both empty. UNUSED is informational, not a defect: Zotero is the source of truth for what has
-been read (`.claude/skills/lit-position/SKILL.md`), and `references.bib` is exported from it,
-so an entry the manuscript does not yet cite is normal mid-draft. Never delete entries here.
+are not citations. **Output:** MISSING, UNUSED and DUPLICATE lists, reported to the user.
+**Pass:** exit 0 — MISSING and DUPLICATE are both empty. UNUSED is informational, not a
+defect: Zotero is the source of truth for what has been read
+(`.claude/skills/lit-position/SKILL.md`), and the `.bib` is exported from it, so an entry the
+manuscript does not yet cite is normal mid-draft. Never delete entries here.
 
 ### `/tools lint [file|dir]` — Mechanical Code Linting
 Run grep-based checks on R/Python/Julia scripts against the coding standards' prohibited patterns. Catches mechanical violations before the coder-critic's judgment review.

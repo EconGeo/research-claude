@@ -33,8 +33,8 @@ def render(reg) -> str:
          "maintainer-only tool, not shipped to projects). `check_fork.sh` fails if this file",
          "differs from the render. The YAML is what `pipeline.py`, the gate and `/pipeline`",
          "read; this file exists so the registry is readable in a linked project.", "",
-         f"**Limits:** {reg['limits']['rounds_per_pair']} rounds per pair, {reg['limits']['rounds_overall']} overall, "
-         f"{reg['limits']['verification_retries']} verification retries.", "", "## Components", "",
+         f"**Limits:** {reg['limits']['rounds_per_pair']} rounds per pair, {reg['limits']['rounds_overall']} overall "
+         f"(both enforced by `pipeline.py state strike`).", "", "## Components", "",
          "| Component | Weight | Scored by | Conditional |", "|---|---|---|---|"]
     for c, s in reg["components"].items():
         L.append(f"| {c} | {s['weight']} | {s['scored_by']} | {'yes' if s.get('conditional') else 'no'} |")

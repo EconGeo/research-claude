@@ -631,3 +631,39 @@ class TestDeductions(FixtureCase):
 
 
 if __name__ == "__main__": unittest.main()
+
+
+class TestOverallRoundLimit(FixtureCase):
+    """`limits.rounds_overall` was declared in registry.yaml, printed in permissions.md and
+    stated as a rule in rules/agents.md §3 ("5 rounds overall; never loop indefinitely") and
+    read by nothing. `state strike` now refuses once the strikes summed over every creator
+    reach it, so the overall cap is a check rather than a sentence."""
+    def test_sixth_strike_across_pairs_is_refused_and_not_recorded(self):
+        run("state", "init", root=self.t)
+        for cr in ("coder", "coder", "coder", "writer", "writer"):
+            rc, out = run("state", "strike", cr, root=self.t); self.assertEqual(rc, 0, out)
+        rc, out = run("state", "strike", "explorer", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("5 of 5 overall", out)
+        st = json.loads((self.t / "quality_reports" / "pipeline_state.json").read_text())
+        self.assertNotIn("explorer", st["strikes"])
+        self.assertEqual(run("state", "validate", root=self.t)[0], 0)
+
+    def test_fifth_strike_names_the_overall_limit(self):
+        run("state", "init", root=self.t)
+        for cr in ("coder", "coder", "coder", "writer"):
+            run("state", "strike", cr, root=self.t)
+        rc, out = run("state", "strike", "writer", root=self.t)
+        self.assertEqual(rc, 0, out); self.assertIn("5 of 5 overall", out)
+
+
+class TestNoPhantomLimits(unittest.TestCase):
+    """A limit nothing reads is a claim nothing verifies. `verification_retries` had no
+    consumer anywhere (scripts, hooks, skills, agents) — deleted rather than kept as prose."""
+    def test_every_declared_limit_is_read_by_pipeline_py(self):
+        import re
+        reg = (ROOT / "rules" / "registry.yaml").read_text()
+        block = re.search(r"^limits:\n((?:[ \t]+\S.*\n)+)", reg, re.M).group(1)
+        keys = re.findall(r"^\s+(\w+):", block, re.M)
+        src = (ROOT / "scripts" / "pipeline.py").read_text()
+        for k in keys:
+            self.assertIn(f'"limits"]["{k}"]', src, f"limits.{k} is declared and read by nothing")
