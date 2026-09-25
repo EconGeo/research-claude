@@ -7,7 +7,7 @@ allowed-tools: ["Read", "Grep", "Glob", "Agent", "Write"]
 
 # /verify-claims — Chain-of-Verification on a Draft
 
-Fact-check a draft using the **Post-Flight Verification protocol** — Phases 0–4 below. They are the whole protocol; this package ships no separate rule file.
+Fact-check a draft using the **Post-Flight Verification protocol** — Phases 0–5 below. They are the whole protocol; this package ships no separate rule file.
 
 **Input:** `$ARGUMENTS` — path to a file containing the draft (markdown, .qmd, .tex, .md) or a shorthand pointer. Optional flags:
 
@@ -88,6 +88,16 @@ Verdict aggregation by tier across all extracted claims:
 `--no-fail-closed` downgrades the FAIL outcome on HIGH-WARN to a warning. Use sparingly — it's there for offline / hallucination-sensitive contexts where the user accepts the risk in writing.
 
 If the draft is writeable and the user asked for auto-correction, regenerate the affected sections using the verifier's evidence. Otherwise return the report and let the user decide.
+
+### Phase 5 — Save the report (always)
+
+Write the full report — outcome block, discrepancies, unverifiable claims, verified table — to
+`quality_reports/verify_claims_<draft-stem>_<YYYY-MM-DD>.md` (create `quality_reports/` if it is
+absent), then return it and give the path. This runs on every outcome: PASS, PARTIAL, FAIL and
+"no verifiable factual claims". A report that exists only in the conversation cannot be read by
+anything downstream — in research-claude, `/submit final` records this file with
+`pipeline.py state record-verify-claims --report <path>` and `/review` reads it. Never write the
+draft itself unless the user asked for auto-correction.
 
 ## Example
 

@@ -38,7 +38,9 @@ ZotPilot's skills for the same reason.
 ## Provenance / refresh
 
 - Source: `https://github.com/EconGeo/ai-audit.git`
-- Vendored from commit: `fd4632d` (PR #3: `/civilize` SKILL.md cut to steps, categories defined once in
+- Vendored from commit: `1c237da` (PR #4: `/verify-claims` Phase 5 always saves the report to
+  `quality_reports/verify_claims_<draft-stem>_<date>.md`, the file `/submit final` records).
+  Previously `fd4632d` (PR #3: `/civilize` SKILL.md cut to steps, categories defined once in
   `agents/civilize-auditor.md`, rationale in the README). Previously `a99c7a7` (PR #2: rename `/humanize`
   skill and `humanize-auditor` agent to `/civilize` and `civilize-auditor`, to avoid colliding
   with research-claude's own `/write humanize` mode)

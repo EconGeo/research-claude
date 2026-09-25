@@ -96,6 +96,8 @@ Output: a report at `quality_reports/civilize_<filename>_report.md` with locatio
 
 **Architecture:** The `claim-verifier` agent runs in a fresh (forked) context — it never sees the original draft. It receives only the extracted claims + source material, and answers verification questions independently. This architectural separation (context isolation) is the CoVe independence trick from Dhuliawala et al. 2023 (arXiv:2309.11495).
 
+Output: a report at `quality_reports/verify_claims_<filename>_<date>.md`, written on every outcome, with the per-claim verdicts and the overall PASS / PARTIAL / FAIL.
+
 **Severity tiers:**
 - `HIGH-WARN`: Fabricated citation / numerical contradiction / directional contradiction → outcome **FAIL** (the report says do not commit; nothing enforces it mechanically)
 - `MED-WARN`: Transient retrieval failure (source not accessible)
