@@ -14,10 +14,12 @@ if s is None: fails.append("strategist was never dispatched")
 if c is None: fails.append("strategist-critic was never dispatched")
 elif s is not None and c < s: fails.append("strategist-critic ran before strategist")
 if s is not None:
-    p = str(uses[s][1].get("prompt", ""))
-    if not re.search(r"design-checklists/(did|event-study)\.md", p): fails.append("the strategist's prompt names neither did.md nor event-study.md")
-    wrong = re.findall(r"design-checklists/(iv|rdd|structural|descriptive)\.md", p)
-    if wrong: fails.append(f"the strategist's prompt names other designs' checklists: {sorted(set(wrong))}")
+    # Every strategist dispatch, not just the first: Step 1's Pre-Strategy Report may be its own
+    # dispatch, before the Step 2 gate has picked a design, so it names no checklist.
+    ps = [str(a.get("prompt", "")) for n, a, _ in uses if n == "Agent" and a.get("subagent_type") == "strategist"]
+    if not any(re.search(r"design-checklists/(did|event-study)\.md", p) for p in ps): fails.append("no strategist prompt names did.md or event-study.md")
+    wrong = sorted({w for p in ps for w in re.findall(r"design-checklists/(iv|rdd|structural|descriptive)\.md", p)})
+    if wrong: fails.append(f"a strategist prompt names other designs' checklists: {wrong}")
 recs = [(i, a.get("command", "")) for i, (n, a, _) in enumerate(uses) if n == "Bash" and re.search(r"record-score\s+strategy\b", a.get("command", ""))]
 if not recs: fails.append("record-score strategy never ran")
 else:

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # tests/evals/strategize.sh — functionality eval for /strategize. Seeds positioning.md and
 # data_sources.md (the strategist's any_of requires) as run_fixture.sh seeds literature. Run alone.
-# EVAL_TIMEOUT 3600 (two 12-minute agents, plus a possible second round).
+# EVAL_TIMEOUT 5400: a 2026-09-25 run timed out at 3600 inside the first critic pass (Step 1 as
+# its own strategist dispatch, a 44-minute Step 3), before any revision round.
 source "$(dirname "$0")/_lib.sh"
-: "${EVAL_TIMEOUT:=3600}"
+: "${EVAL_TIMEOUT:=5400}"
 eval_setup
 eval_mock
 python3 "$RC/scripts/pipeline.py" --root "$E" state init >/dev/null

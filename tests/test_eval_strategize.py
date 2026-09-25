@@ -50,6 +50,10 @@ class TestStrategizeChecker(unittest.TestCase):
                   + use("u6", "Bash", command="python3 .claude/scripts/pipeline.py state record-score strategy 86 --critic strategist-critic --deductions 14 --report quality_reports/reviews/strategist-critic_y.md"))
         rc, out = go(CHECK, T.replace("strategy 84", "strategy 61") + second, self.p); self.assertEqual(rc, 0, out)
 
+    def test_separate_pre_strategy_dispatch_passes(self):
+        pre = use("u0", "Agent", subagent_type="strategist", prompt="Produce ONLY the Pre-Strategy Report")
+        rc, out = go(CHECK, pre + T, self.p); self.assertEqual(rc, 0, out)
+
     def test_critic_first_fails(self):
         lines = T.splitlines(keepends=True); rc, out = go(CHECK, lines[1] + lines[0] + lines[2], self.p); self.assertEqual(rc, 1); self.assertIn("before strategist", out)
 
