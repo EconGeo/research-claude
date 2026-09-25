@@ -66,7 +66,7 @@ def findings(text: str, expect: list[str], columns: list[str]) -> list[str]:
         out.append(f"LITERAL_MD: {m.group(0)}")
     for m in re.finditer(r"</?(span|div|br|b|i|em|strong|sup|sub)\b[^>]*>", text):
         out.append(f"LITERAL_HTML: {m.group(0)}")
-    for m in re.finditer(r"\b(Table|Figure)\s+(\d+[A-Za-z]?)\W{0,3}(Table|Figure)\s+\2\b", text):
+    for m in re.finditer(r"\b(Table|Figure)\s+(\d+[A-Za-z]?)\W{0,3}\1\s+\2\b", text):
         out.append(f"DOUBLED: {m.group(1)} {m.group(2)}")
     flat = norm(text)
     for e in expect:
@@ -78,7 +78,7 @@ def findings(text: str, expect: list[str], columns: list[str]) -> list[str]:
         head = head.strip()
         block = None
         for i, c in enumerate(caps):
-            if text[c.start():c.end()].strip().startswith(head):
+            if re.match(re.escape(head) + r"(?!\d)", text[c.start():c.end()].strip()):
                 end = caps[i + 1].start() if i + 1 < len(caps) else len(text)
                 block = norm(text[c.start():end]); break
         if block is None:

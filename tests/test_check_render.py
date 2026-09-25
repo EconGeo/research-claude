@@ -45,6 +45,13 @@ class TestCheckRender(unittest.TestCase):
         r = run(CLEAN + "Table 2: Table 2: Robustness\n")
         self.assertIn("DOUBLED: Table 2", r.stdout)
 
+    def test_doubled_does_not_fire_on_two_different_exhibits(self):
+        # Review finding (Task 7 fix report, item 2): the DOUBLED regex must require the
+        # same exhibit word (Table/Table or Figure/Figure) to repeat, not just any
+        # Table-then-Figure adjacency in ordinary prose.
+        r = run(CLEAN + "as shown in Table 1. Figure 1 plots the same.\n")
+        self.assertNotIn("DOUBLED", r.stdout)
+
     def test_expect_phrase_missing_and_present_across_line_wrap(self):
         r = run(CLEAN, "--expect", "IS NOT MET", "--expect", "Keywords:")
         self.assertEqual(0, r.returncode, r.stdout)
@@ -69,6 +76,18 @@ class TestCheckRender(unittest.TestCase):
         self.assertEqual(0, r.returncode, r.stdout)
         r = run(CLEAN.replace("Outcome  Estimate  SE  N", "Outcome  Estimate  SE"), "--columns", "Table 1: Outcome,Estimate,SE,N")
         self.assertIn("COLUMN: Table 1: N", r.stdout)
+
+    def test_columns_caption_prefix_does_not_bind_to_a_longer_number(self):
+        # Review finding (Task 7 fix report, item 1): "Table 1:" must not match a
+        # "Table 10:" caption via a bare .startswith(head) check. Table 10 is missing its
+        # "Beta" column; Table 1 has all of its columns. Column tokens are chosen so
+        # neither is a substring of unrelated fixture prose (a plain-substring gotcha
+        # distinct from the caption-binding bug under test).
+        text = CLEAN + "Table 10: Robustness\nAlpha  Gamma\n"
+        r = run(text, "--columns", "Table 1: Outcome,Estimate,SE,N")
+        self.assertEqual(0, r.returncode, r.stdout)
+        r = run(text, "--columns", "Table 10: Alpha,Beta")
+        self.assertIn("COLUMN: Table 10: Beta", r.stdout)
 
     def test_missing_input_exits_2(self):
         r = subprocess.run([sys.executable, str(SCRIPT), "/nonexistent.pdf"], capture_output=True, text=True)
