@@ -5,3 +5,4 @@ qmd_chunks.py
 quarto_structure_check.py
 validate_bib.py
 ledger.py
+check_render.py

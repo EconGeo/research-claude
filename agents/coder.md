@@ -71,7 +71,8 @@ table note wider than the text block clips without an error, and `escape` rules 
 output format.
 
 **Done means:** `quarto render` exits 0, `python3 .claude/scripts/prose_number_check.py` exits 0,
-and the coder-critic has scored the manuscript's chunks.
+`python3 .claude/scripts/check_render.py <pdf>` exits 0, and the coder-critic has scored the
+manuscript's chunks.
 
 ---
 

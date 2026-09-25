@@ -50,5 +50,22 @@ class TestBinding(unittest.TestCase):
         self.assertEqual([], missing)
 
 
+class TestGate(unittest.TestCase):
+    def test_write_gate_has_item_4_and_render_runs_it(self):
+        rule = (ROOT / "rules" / "quarto-empirical.md").read_text()
+        self.assertRegex(rule, r"\[ \] 4\. .*check_render\.py")
+        tools = (ROOT / "skills" / "tools" / "SKILL.md").read_text()
+        # NOTE (deviation from the task-7 brief, per Task 7's controller ruling): section()
+        # (see above) matches heading_re at line start and derives the section-boundary level
+        # from heading_re's OWN leading "#" markers. The brief calls
+        # section(tools, r"`/tools render") — no leading hashes — which does not match the
+        # actual line ("### `/tools render [file]` — Quarto Render") and would crash on
+        # `re.match(r"#+", heading_re).group(0)` (None has no .group). Passing the heading
+        # with its real "### " prefix keeps the same section located and the same assertion.
+        self.assertIn("check_render.py", section(tools, r"### `/tools render"))
+        coder = (ROOT / "agents" / "coder.md").read_text()
+        self.assertIn("check_render.py", section(coder, r"### Stage 3"))
+
+
 if __name__ == "__main__":
     unittest.main()
