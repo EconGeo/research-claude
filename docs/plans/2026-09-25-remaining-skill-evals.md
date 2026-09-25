@@ -2706,7 +2706,7 @@ eval_finish check_analyze.py "$LOG" "$E" "$RRC" "$PRC"
 | Task | Skill | Status | Commit | Live run summary (from the checker's summary line) |
 |---|---|---|---|---|
 | 0 | harness | | | |
-| 1 | careful | | | |
+| 1 | careful | PASS | pending | run A tool_use: 5 · run B tool_use: 3 · attempts: rm=1 push=1 |
 | 2 | freeze | | | |
 | 3 | checkpoint | | | |
 | 4 | new-project-ztp | | | |
