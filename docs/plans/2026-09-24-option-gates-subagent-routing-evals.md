@@ -977,4 +977,7 @@ Same shape: assert `search_topic` and `advanced_search` calls precede any
 - **Evals for the other 21 skills** (audit §6). C1–C3 establish the harness; each further
   eval is one task with one mechanism assertion set, run alone. 2026-09-25: `/tools
   validate-bib` added (`tests/evals/tools-validate-bib.sh`, checker unit-tested red and green;
-  first eval with no MCP server, so the runner passes an empty `--strict-mcp-config`). 20 remain.
+  first eval with no MCP server, so the runner passes an empty `--strict-mcp-config`). The
+  remaining 20 closed on 2026-09-25 under `docs/plans/2026-09-25-remaining-skill-evals.md`
+  (one task per skill; its Progress Log has the runs and its Findings the five that came back
+  red on the skill).

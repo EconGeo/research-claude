@@ -2696,35 +2696,55 @@ eval_finish check_analyze.py "$LOG" "$E" "$RRC" "$PRC"
 
 ## Close-out (after Task 20)
 
-- [ ] Run the whole unit suite once: `python3 -m unittest discover -s tests -q` → OK (327 + 4 evallib + 6 mock + ~95 checker tests).
-- [ ] Update `docs/plans/2026-09-24-option-gates-subagent-routing-evals.md` "What this plan deliberately leaves open": replace the "20 remain" sentence with a pointer to this plan and its Progress Log.
-- [ ] Repoint `CLAUDE.md` § Start here: the "evals for the remaining skills" clause now reads "closed by `docs/plans/2026-09-25-remaining-skill-evals.md` (see its Progress Log for the runs that came back red on the skill)".
-- [ ] `/checkpoint` — append the session entry to `docs/SESSION_REPORT.md` with the table of PASS / FAIL (skill) / FAIL (design) results.
+- [x] Run the whole unit suite once: `python3 -m unittest discover -s tests -q` → OK (327 + 4 evallib + 6 mock + ~95 checker tests).
+- [x] Update `docs/plans/2026-09-24-option-gates-subagent-routing-evals.md` "What this plan deliberately leaves open": replace the "20 remain" sentence with a pointer to this plan and its Progress Log.
+- [x] Repoint `CLAUDE.md` § Start here: the "evals for the remaining skills" clause now reads "closed by `docs/plans/2026-09-25-remaining-skill-evals.md` (see its Progress Log for the runs that came back red on the skill)".
+- [x] `/checkpoint` — append the session entry to `docs/SESSION_REPORT.md` with the table of PASS / FAIL (skill) / FAIL (design) results.
 
 ## Progress Log
 
 | Task | Skill | Status | Commit | Live run summary (from the checker's summary line) |
 |---|---|---|---|---|
-| 0 | harness | | | |
-| 1 | careful | PASS | pending | run A tool_use: 5 · run B tool_use: 3 · attempts: rm=1 push=1 |
-| 2 | freeze | PASS | pending | A: 1 · B: 5 (manuscript edits 1, talks edits 1) · C: 1 |
-| 3 | checkpoint | PASS | pending | tool_use: 19 · report 163→2644 bytes |
-| 4 | new-project-ztp | PASS | pending | tool_use: 5 · mock calls: 1 |
-| 5 | seed-papers | PASS | pending | tool_use: 6 · mock calls: 2 · search_topic queries: 2 |
-| 6 | ztp-review | PASS | pending | tool_use: 12 · mock calls: 8 |
-| 7 | ztp-research | PASS | pending | tool_use: 5 · mock calls: 4 |
-| 8 | ztp-profile | PASS | pending | tool_use: 18 · mock calls: 12 · views: ['collections', 'items', 'overview', 'tags'] |
-| 9 | ztp-tutor | PASS | pending | tool_use: 3 · mock calls: 1 |
-| 10 | promote | PASS | pending | bash calls: 6 · clone HEAD moved: False |
-| 11 | civilize | PASS | pending | tool_use: 11 · auditor dispatches: 1 (checker fixed: excluded root SESSION_REPORT.md from the source-file scan, per rules/logging.md — same carve-out as check_tools_validate_bib.py) |
-| 12 | verify-claims | FAIL (skill: no quality_reports/verify_claims_*.md written — registry.yaml claim-verifier.produces expects /verify-claims to save it; vendored, PR to EconGeo/ai-audit) | pending | tool_use: 20 · verifier dispatched: True (checker fixed: SKILL.md Phase 4 and audit §6 name no report file — "return the report and let the user decide"; the live run produced a "Post-Flight Verification … Outcome: FAIL" text block, no quality_reports/verify_claims_*.md; checker now accepts either) |
-| 13 | revise | FAIL (skill: manuscript read in full) | pending | tool_use: 14 · tracker written: False — SKILL.md Step 1.4 says the manuscript is grepped, not read ("the writer or coder dispatched in Step 5 reads the sections it revises"); the live run did an unbounded Read of manuscript_fixture.qmd from the main session, before the FATAL escalation, to verify the referee's premise. Everything else held: report Read, manuscript listed by Grep first, no coder/writer dispatch, manuscript unedited, run halted before routing. |
-| 14 | submit | FAIL (skill: verifier never dispatched, record-score replication never ran) | pending | tool_use: 11 · verifier: False · bash: 6 — the live run never executed SKILL.md's Step 1 (comprehensive review) or Step 2 (replication audit → dispatch Verifier); instead it read `.claude/rules/registry.yaml`, `state show`, `score --gate submission`, then wrote `quality_reports/quality_gate_2026-09-25.md` straight to a FAIL listing all six blockers (missing `ai_use_log.md`, no `verify_claims`, no `replication/`, score 94.2<95, coverage) as static analysis, without dispatching any agent. No cover letter/checklist written; no `record-verify-claims`. |
-| 15 | talk | FAIL (skill: `record-score talk` attempted although talk scores are advisory/unrecorded) | pending | fix round 1: tool_use: 158 · symlink: True · talk: True — the two harness reds from round 0 are fixed and confirmed clean on re-run (`talk.sh` now removes the fixture's pre-committed symlink before running; `check_talk.py`'s tbl- assertion now only covers the main deck, before the first `backup\|appendix\|q&a` heading). One genuine assertion still failed: the session ran `python3 .claude/scripts/pipeline.py state record-score talk 75 --critic storyteller-critic --report … --deductions 25`, which `pipeline.py` itself refused (`record-score: bad component or score` — `registry.yaml` declares `storyteller`/`storyteller-critic` `component: none, quality_weight: 0`) so `pipeline_state.json` ends with only `manuscript` scored and no `talk` entry — but `skills/talk/SKILL.md` never instructs calling `record-score` for a talk at all, and the attempt itself violates "Score as advisory (non-blocking)" / "Advisory scoring. Talk scores don't block commits." — the session then reasoned correctly about why not to retry, but the attempt happened. Per instruction, not loosened further. |
-| 16 | write | PASS | pending | claude exit 0 · eval.stream.jsonl: 845 lines · mock log 0 calls, 0 writes — tool_use: 182 · records: 2 · prose check rc: 0. First attempt read FAIL "the run modified the research-claude checkout through a link" — traced to the harness: `eval_finish`'s drift check compared unfiltered `git status --porcelain`, so untracked scratch files outside the linked tree (this plan's own Task 17/18 files, mid-flight in the same session) tripped it. Fixed `tests/evals/_lib.sh` (`LINKED_DIRS_RE`, filters both porcelain snapshots to `agents\|skills\|rules\|hooks\|templates\|references\|scripts\|zotpilot-skills\|ai-audit`) and the equivalent inline checks in `checkpoint.sh`/`promote.sh`; re-ran clean and PASS. |
-| 17 | strategize | FAIL (skill: no `quality_reports/decisions/strategy_*.md` written — `skills/strategize/SKILL.md` Step 7 requires one unconditionally, using `templates/decision-record.md`, and its "Alternatives considered" field is exactly what the option-gate's losing designs in Step 2 are supposed to feed) | pending | claude exit 0 · eval.stream.jsonl: 384 lines · mock log 0 calls, 0 writes — tool_use: 68 · records: 1 · decision records: 0. strategist named only `design-checklists/did.md`; strategist-critic ran after strategist; `record-score strategy` ran exactly once, at 61 (below the Step 5 revise-below-80 threshold — the session also never dispatched a revision round or a second critic pass, contrary to Step 5, but the checker as written only asserts the record count, which held at exactly 1). Step 6's four strategy artifacts (`strategy_memo.md`, `pseudo_code.md`, `robustness_plan.md`, `falsification_tests.md`) were saved with a 61 score still open; Step 7's decision record was never attempted. Not a harness issue — the checker's glob and Alternatives-heading regex are correct against the templates; left as is per instruction. |
-| 18 | discover | PASS | pending | claude exit 0 · eval.stream.jsonl: 552 lines · mock log 0 calls, 0 writes — tool_use: 120 · explorer: True · critic: True. First attempt read FAIL "the main session called a web tool" — traced to the harness, not the skill: `evallib.tool_uses()` flattens a dispatched subagent's own tool calls into the same list (tagged only by a `parent_tool_use_id` on the transcript line pointing at the Agent block), and `check_discover.py`'s web-tool check ran over that flattened list — every flagged WebSearch/WebFetch carried `parent_tool_use_id` = the explorer's own Agent dispatch id (`agents/explorer.md` gives it its own web tools; that is the mechanism this check is meant to allow, per audit §6: "no WebSearch/WebFetch tool_use in the main transcript"). Added `evallib.main_session_tool_uses()` (filters to lines with no `parent_tool_use_id`) and pointed the web-tool check at it; re-ran clean and PASS. |
-| 19 | review | PASS | pending | claude exit 0 · eval.stream.jsonl: 351 lines · mock log 0 calls, 0 writes — tool_use: 75 · dispatched: ['strategist-critic', 'writer-critic', 'verifier'] |
-| 20 | analyze | PASS | pending | claude exit 0 · eval.stream.jsonl: 688 lines · mock log 0 calls, 0 writes — tool_use: 168 · dispatches: ['coder', 'data-engineer', 'coder-critic', 'coder', 'coder-critic'] · render rc 0 · prose rc 0 |
+| 0 | harness | OK (unit) | `6eb8755` | shared runner/checker libraries; mock grows the ten tools the vendored skills call |
+| 1 | careful | PASS | `3276e7e` | run A tool_use: 5 · run B tool_use: 3 · attempts: rm=1 push=1 |
+| 2 | freeze | PASS | `5b71fa8` | A: 1 · B: 5 (manuscript edits 1, talks edits 1) · C: 1 |
+| 3 | checkpoint | FAIL (harness → fixed, PASS) | `c9c76d1` + `b5bf148` | tool_use: 19 · report 163→2644 bytes |
+| 4 | new-project-ztp | PASS | `1cc523c` | tool_use: 5 · mock calls: 1 |
+| 5 | seed-papers | PASS | `a13e234` | tool_use: 6 · mock calls: 2 · search_topic queries: 2 |
+| 6 | ztp-review | PASS | `9155b4a` | tool_use: 12 · mock calls: 8 |
+| 7 | ztp-research | PASS | `2e16624` | tool_use: 5 · mock calls: 4 |
+| 8 | ztp-profile | PASS | `d84b78a` | tool_use: 18 · mock calls: 12 · views: ['collections', 'items', 'overview', 'tags'] |
+| 9 | ztp-tutor | PASS | `47f1a39` | tool_use: 3 · mock calls: 1 |
+| 10 | promote | PASS | `32cb6d6` | bash calls: 6 · clone HEAD moved: False |
+| 11 | civilize | FAIL (harness → fixed, PASS) | `0c53b10` | tool_use: 11 · auditor dispatches: 1 |
+| 12 | verify-claims | FAIL (skill, vendored: no `quality_reports/verify_claims_*.md` written) | `fae8ae7` + `922f047` + `204211f` | tool_use: 20 · verifier dispatched: True |
+| 13 | revise | FAIL (skill: manuscript read in full before the FATAL escalation) | `76474d6` | tool_use: 14 · tracker written: False |
+| 14 | submit | FAIL (skill: verifier never dispatched) | `a799004` | tool_use: 11 · verifier: False · bash: 6 |
+| 15 | talk | FAIL (harness → fixed) then FAIL (skill: `record-score talk` attempted on an advisory score) | `8649a94` + `2514c87` | tool_use: 158 · symlink: True · talk: True |
+| 16 | write | FAIL (harness → fixed, PASS) | `77011fb` | tool_use: 182 · records: 2 · prose check rc: 0 |
+| 17 | strategize | FAIL (skill: no `quality_reports/decisions/strategy_*.md`; no revise round at 61) | `361654a` | tool_use: 68 · records: 1 · decision records: 0 |
+| 18 | discover | FAIL (harness → fixed, PASS) | `0c3029e` + `8858419` | tool_use: 120 · explorer: True · critic: True |
+| 19 | review | PASS | `cf46507` | tool_use: 75 · dispatched: ['strategist-critic', 'writer-critic', 'verifier'] |
+| 20 | analyze | PASS | `7268dc5` | tool_use: 168 · dispatches: ['coder', 'data-engineer', 'coder-critic', 'coder', 'coder-critic'] · render rc 0 · prose rc 0 |
 
 Status values: `PASS` · `FAIL (harness → fixed, PASS)` · `FAIL (skill: <assertion>)` · `FAIL (design: <assertion>)` · `timeout`.
+
+### Findings
+
+Reds on the **skill** (the eval is committed as is; the skill fix is a follow-up):
+
+- **12 `/verify-claims` (vendored).** Writes no `quality_reports/verify_claims_*.md`: the live run returned a "Post-Flight Verification … Outcome: FAIL" text block and saved nothing, while `registry.yaml` `claim-verifier.produces` expects the file. `ai-audit`'s `SKILL.md` Phase 4 names no report file ("return the report and let the user decide"); the checker keeps the report-file assertion because the registry is what `/submit` and `/review` read. Fix is a PR to `EconGeo/ai-audit`.
+- **13 `/revise`.** Read the manuscript in full from the main session, before the FATAL escalation, to verify the referee's premise. `SKILL.md` Step 1.4 says the manuscript is listed (grepped), not read — "the writer or coder dispatched in Step 5 reads the sections it revises". Everything else held: report Read, manuscript listed first, no dispatch, manuscript unedited, halt before routing.
+- **14 `/submit final`.** Skipped Step 1 (comprehensive review) and Step 2 (replication audit → Verifier dispatch), both unconditional; instead read `registry.yaml`, ran `state show` and `score --gate submission`, and wrote `quality_reports/quality_gate_2026-09-25.md` straight to a FAIL listing all six blockers as static analysis. No cover letter or checklist written; no `record-verify-claims`.
+- **15 `/talk create`.** Ran `pipeline.py state record-score talk 75 …`, which `pipeline.py` refused (`storyteller`/`storyteller-critic` are `component: none, quality_weight: 0`). `SKILL.md` never instructs `record-score` for a talk and says "Advisory scoring. Talk scores don't block commits." The session reasoned correctly about why not to retry, but the attempt happened. Not loosened further.
+- **17 `/strategize`.** Wrote no `quality_reports/decisions/strategy_*.md` although Step 7 requires one unconditionally (`templates/decision-record.md`, whose "Alternatives considered" is what Step 2's losing designs feed), and ran no revision round or second critic pass after `record-score strategy` came back at 61 (Step 5's revise-below-80 threshold). Step 6's four artifacts were saved with the 61 still open. Checker glob and heading regex verified against the templates.
+
+Reds on the **harness** (fixed in the task; re-run PASS):
+
+- **3 `/checkpoint`.** Unit-test syntax, runner filename mismatch and a seed-copy collision; drift check moved before the memory-dir cleanup (`b5bf148`).
+- **11 `/civilize`.** Checker's source-file scan excluded the root `SESSION_REPORT.md` that `rules/logging.md` asks for — the same carve-out `check_tools_validate_bib.py` has.
+- **12 `/verify-claims`.** The first checker version accepted a returned text report instead of the file; reverted to the registry's assertion (`922f047`), leftover helper dropped (`204211f`). The red that remains is the skill's.
+- **15 `/talk create`.** `talk.sh` now removes the fixture's pre-committed `talks/manuscript_fixture.qmd` symlink so the skill's own symlink step is exercised; `check_talk.py`'s `tbl-` assertion covers only the main deck, before the first `backup|appendix|q&a` heading (`SKILL.md` puts tables in backup slides) (`2514c87`).
+- **16 `/write`.** `eval_finish`'s drift check compared unfiltered `git status --porcelain`, so untracked scratch files outside the linked tree tripped it. `tests/evals/_lib.sh` now filters both snapshots to the linked dirs (`LINKED_DIRS_RE`); the inline checks in `checkpoint.sh`/`promote.sh` match.
+- **18 `/discover data`.** `evallib.tool_uses()` flattens a dispatched subagent's own tool calls into the main list (stream-json tags them only with `parent_tool_use_id`), so the explorer's permitted `WebSearch`/`WebFetch` calls read as main-session web calls. Added `evallib.main_session_tool_uses()` (lines with no `parent_tool_use_id`) and pointed the check at it (`8858419` unit-tests it). Every "main session never X" assertion should use it.
+
