@@ -11,7 +11,7 @@ names the first component stage that is ready, treating a scored stage with no l
 completion as adopted work (see next_report).
 """
 from __future__ import annotations
-import argparse, datetime as dt, fnmatch, glob, json, re, subprocess, sys
+import argparse, datetime as dt, fnmatch, glob, hashlib, json, re, subprocess, sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -19,6 +19,7 @@ import registry_lib as rl
 
 STATE_REL = Path("quality_reports") / "pipeline_state.json"
 LOG_REL = Path("quality_reports") / "agent_dispatch.jsonl"
+RECEIPTS_REL = Path("quality_reports") / "receipts.jsonl"
 GATES = {"commit": (80, None), "pr": (90, None), "submission": (95, 80)}
 
 def now() -> str:
@@ -76,6 +77,22 @@ def load_state(root: Path) -> Dict[str, Any]:
 def save_state(root: Path, st: Dict[str, Any]) -> None:
     st["updated"] = now(); state_path(root).parent.mkdir(parents=True, exist_ok=True)
     state_path(root).write_text(json.dumps(st, indent=2) + "\n")
+
+def sha256_file(p: Path) -> str:
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+def append_receipt(root: Path, entry: Dict[str, Any]) -> None:
+    """One JSON line per recorded score, binding the verdict to the exact bytes it scored.
+
+    COMMITTED, like pipeline_state.json (`.claude/rules/logging.md`: "replication
+    provenance") — unlike agent_dispatch.jsonl, this is not session mechanics, it is the
+    audit trail a later reader needs to know a recorded PASS was about the manuscript as it
+    stood at record time, not as it stands now. Append-only: never rewritten, never pruned.
+    """
+    p = root / RECEIPTS_REL
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a") as f:
+        f.write(json.dumps(entry) + "\n")
 
 def validate_state(st: Dict[str, Any], reg: Dict[str, Any]) -> List[str]:
     p: List[str] = []
@@ -594,7 +611,19 @@ def main() -> int:
                 stt["sections"][a.scope.split(":", 1)[1]] = entry
             else:
                 entry["rounds"] = stt["components"].get(comp, {}).get("rounds", 0) + 1; stt["components"][comp] = entry
-            stt["overall"], _ = compute_overall(stt, reg); save_state(root, stt); print(f"recorded {comp}={score}"); return 0
+            # Bind this verdict to the exact bytes it scored — both the manuscript and the
+            # report file, at this instant, so the receipt is tied to what was actually
+            # reviewed and not to whatever those files happen to contain later.
+            ms = declared_manuscript(root)
+            receipt = {"at": entry["at"], "agent": a.critic, "component": comp, "score": score,
+                       "report": a.report, "manuscript": str(ms.relative_to(root)),
+                       "manuscript_sha256": sha256_file(ms), "report_sha256": sha256_file(root / a.report)}
+            if a.scope: receipt["scope"] = a.scope
+            # save_state first, append_receipt second: a receipt should never exist for a
+            # score that was never actually recorded, e.g. if save_state were to fail.
+            stt["overall"], _ = compute_overall(stt, reg); save_state(root, stt)
+            append_receipt(root, receipt)
+            print(f"recorded {comp}={score}"); return 0
         if a.op == "record-verify-claims":
             # `/submit final` (Phase 3.1) refuses without this: `ai-audit`'s own docs admit
             # "no hook, setting or commit gate reads the report" from /verify-claims — this is

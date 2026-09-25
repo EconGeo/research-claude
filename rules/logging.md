@@ -68,6 +68,22 @@ replication provenance. The research journal entry is derived from it, never the
 `.claude/hooks/dispatch-log.py` (SubagentStop) or by `pipeline.py log <agent>` from a standalone
 skill. `pipeline.py post` reads it to prove the critic ran. **Gitignored** — session mechanics.
 
+## Receipts
+
+`quality_reports/receipts.jsonl` — one JSON line per `pipeline.py state record-score`
+call, written by `record-score` itself (`.claude/scripts/pipeline.py`'s `append_receipt`), binding
+the recorded verdict to a sha256 of the manuscript and the report file at the instant of
+recording: `{at, agent, component, score, report, manuscript, manuscript_sha256,
+report_sha256}` (`scope` added when `--scope section:NAME` was used). **Committed** —
+provenance, like `pipeline_state.json`, not session mechanics like the dispatch log. Never
+rewritten or pruned; a refused `record-score` (bad component, missing report, wrong
+critic) writes nothing. Adopted from `garrytan/gstack`'s `gstack-review-log`, which binds
+a review to the working-tree content it reviewed the same way. `record-score` needs a
+declared manuscript (`manuscript:` in `CLAUDE.md`) resolvable at record time to compute
+the receipt's `manuscript_sha256` — already guaranteed in practice, since `pipeline.py
+state init` requires the same declared manuscript before `pipeline_state.json` can exist
+at all.
+
 ## Learning Loop
 
 Owned by `.claude/rules/meta-governance.md`. Two inputs: `/pipeline` surfaces suggested

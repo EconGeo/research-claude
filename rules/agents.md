@@ -120,3 +120,10 @@ table is stale. Read `permissions.md` before relying on a pairing.
 A skill that offers the user a ranked choice before dispatching does so as an **Option gate**
 under `.claude/rules/option-gates.md` — one mechanism, `--yes` takes rank 1, the pick lands
 in the artifact the step already writes.
+
+## 5. Mechanical failures are not quality rounds
+
+A render error, a script traceback, or a chunk that will not run is not a strike (§3) —
+it happens before a critic ever sees the work. `.claude/rules/systematic-debugging.md`
+governs it: capture the exact error, one hypothesis at a time, stop and report after two
+falsified hypotheses rather than guessing a third time.

@@ -93,6 +93,12 @@ Follow the same standards that the coder-critic checks:
 | Spatial | `sf`, `ggplot2::geom_sf()` |
 | Dates | `lubridate` |
 
+## When a Script Fails
+
+Follow `.claude/rules/systematic-debugging.md` — capture the exact error, one falsifiable
+hypothesis at a time, stop and report after two falsified hypotheses rather than a third
+blind fix.
+
 ## What You Do NOT Do
 
 - Do not run regressions or estimate models (that's the Coder's job)

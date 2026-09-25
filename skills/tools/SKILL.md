@@ -1,7 +1,7 @@
 ---
 name: tools
-description: Utility commands — commit (with blocking quality/number/structure gates), render, validate-bib, lint, journal, learn. Replaces individual utility skills.
-argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | learn] [args] [--yes]"
+description: Utility commands — commit (with blocking quality/number/structure gates), render, validate-bib, lint, journal, learn, context-bill. Replaces individual utility skills.
+argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | learn | context-bill] [args] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
@@ -191,6 +191,29 @@ silently. It follows `.claude/rules/meta-governance.md` (User corrections): ask 
 moment of the correction and land on yes with `/promote`; `/checkpoint` records every
 candidate in the shared ledger (`.claude/scripts/ledger.py add`), and `/promote` flags a
 target two projects named.
+
+### `/tools context-bill` — Token/Context-Cost Audit
+Static audit of what the shipped `agents/`, `skills/`, `rules/`, `hooks/`, `references/`
+and `templates/` tree costs in context: which skill's frontmatter description is loaded
+into every session's skill listing before it is ever invoked, and which shipped file is
+heaviest if something reads it in full. Adopted from `garrytan/gstack`'s
+`gstack-context-bill`. Distinct from the retired `/tools context` subcommand (deleted
+2026-09-24): this is a static token-cost audit, not a live context-percentage report —
+that is what Claude Code's built-in `/context` already covers.
+
+```bash
+python3 .claude/scripts/context_bill.py .
+```
+
+The trailing `.` is required: `context_bill.py` is reached through `.claude/scripts/`,
+itself a symlink into the shared checkout, and its own default root resolves through that
+symlink back to the checkout rather than the calling project. Passing `.` explicitly audits
+the project you're actually in.
+
+Add `--json <path>` for the full machine-readable report, `--top N` to change how many
+entries the ranked lists show (default 15). Advisory only — nothing here gates a commit or
+a pipeline stage; use it when a session feels heavier than it should, or before adding a
+new skill, to see what it will cost every session from then on.
 
 ---
 

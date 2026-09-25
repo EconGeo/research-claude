@@ -275,6 +275,7 @@ AP_TOKEN = re.compile(r"(?<![A-Za-z0-9_./-])quality_reports/(?:[A-Za-z0-9_.*/-]|
 AP_ALLOW = {
     "quality_reports/pipeline_state.json":        "the state file itself (rules/logging.md)",
     "quality_reports/agent_dispatch.jsonl":       "the dispatch log (rules/logging.md)",
+    "quality_reports/receipts.jsonl":             "recorded score receipts — audit trail of verdicts (rules/logging.md)",
     "quality_reports/research_journal.md":        "narrative log written from the state (rules/logging.md)",
     "quality_reports/prose_number_allowlist.csv": "prose_number_check.py's per-project allowlist",
     "quality_reports/plans/*":                    "plans — records, not gated",

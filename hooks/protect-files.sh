@@ -39,6 +39,7 @@ fi
 PROTECTED_PATTERNS=(
   "settings.json"
   "pipeline_state.json"
+  "receipts.jsonl"
   "*-critic_*.md"
   "civilize_*_report.md"
   "verify_claims_*.md"

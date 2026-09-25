@@ -37,6 +37,11 @@ class TestProtectFiles(unittest.TestCase):
         self.assertBlocked("/tmp/proj/.claude/settings.json")
         self.assertBlocked("/tmp/proj/quality_reports/pipeline_state.json")
 
+    def test_receipts_jsonl_blocked(self):
+        """The receipt log is an append-only audit trail; nothing should be able to
+        rewrite it via Edit/Write, same as pipeline_state.json."""
+        self.assertBlocked("/tmp/proj/quality_reports/receipts.jsonl")
+
     def test_wildcard_critic_report_blocked(self):
         """The glob-quoting bug meant this never matched before the fix."""
         self.assertBlocked("/tmp/proj/quality_reports/reviews/writer-critic_1.md")

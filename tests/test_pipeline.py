@@ -111,6 +111,59 @@ class TestState(FixtureCase):
                           and json.loads((self.t / "quality_reports" / "pipeline_state.json").read_text())
                           .get("components", {}).get("code"),
                           "a refused record-score must not have recorded a score")
+class TestReceipts(FixtureCase):
+    """record-score must bind its verdict to the exact bytes it scored — a receipt line
+    naming the manuscript's and report's sha256 at the moment of recording, so a later
+    claim "verifier passed" can't silently apply to a since-edited file."""
+    def test_record_score_writes_a_receipt(self):
+        run("state", "init", root=self.t)
+        rc, out = run("state", "record-score", "code", "85", "--critic", "coder-critic",
+                       "--report", "r.md", root=self.t)
+        self.assertEqual(rc, 0, out)
+        receipts_path = self.t / "quality_reports" / "receipts.jsonl"
+        self.assertTrue(receipts_path.exists())
+        lines = receipts_path.read_text().strip().splitlines()
+        self.assertEqual(len(lines), 1)
+        receipt = json.loads(lines[0])
+        self.assertEqual(receipt["agent"], "coder-critic")
+        self.assertEqual(receipt["component"], "code")
+        self.assertEqual(receipt["score"], 85.0)
+        self.assertEqual(receipt["report"], "r.md")
+        self.assertEqual(receipt["manuscript"], "manuscript_fixture.qmd")
+        import hashlib
+        expected_ms_hash = hashlib.sha256((self.t / "manuscript_fixture.qmd").read_bytes()).hexdigest()
+        expected_report_hash = hashlib.sha256((self.t / "r.md").read_bytes()).hexdigest()
+        self.assertEqual(receipt["manuscript_sha256"], expected_ms_hash)
+        self.assertEqual(receipt["report_sha256"], expected_report_hash)
+        self.assertIn("at", receipt)
+
+    def test_a_refused_record_score_writes_no_receipt(self):
+        """The report-must-exist refusal (Phase 2.3) must not leave a receipt behind —
+        a receipt for a score that was never recorded would be a lie."""
+        run("state", "init", root=self.t)
+        rc, _ = run("state", "record-score", "code", "85", "--critic", "coder-critic",
+                     "--report", "nonexistent-report.md", root=self.t)
+        self.assertEqual(rc, 1)
+        self.assertFalse((self.t / "quality_reports" / "receipts.jsonl").exists())
+
+    def test_second_record_score_appends_a_second_line(self):
+        run("state", "init", root=self.t)
+        run("state", "record-score", "code", "70", "--critic", "coder-critic", "--report", "r.md", root=self.t)
+        run("state", "record-score", "code", "85", "--critic", "coder-critic", "--report", "r.md", root=self.t)
+        lines = (self.t / "quality_reports" / "receipts.jsonl").read_text().strip().splitlines()
+        self.assertEqual(len(lines), 2)
+
+    def test_manuscript_content_changing_between_scores_produces_different_hashes(self):
+        """The whole point of a receipt: if the manuscript changes after a PASS, the next
+        receipt's hash differs, so the two PASSes are visibly not about the same content."""
+        run("state", "init", root=self.t)
+        run("state", "record-score", "code", "85", "--critic", "coder-critic", "--report", "r.md", root=self.t)
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text() + "\n% edited\n")
+        run("state", "record-score", "code", "90", "--critic", "coder-critic", "--report", "r.md", root=self.t)
+        lines = (self.t / "quality_reports" / "receipts.jsonl").read_text().strip().splitlines()
+        r1, r2 = json.loads(lines[0]), json.loads(lines[1])
+        self.assertNotEqual(r1["manuscript_sha256"], r2["manuscript_sha256"])
 
 class TestStateStrike(FixtureCase):
     """`state strike` (Phase 3.3): a 4th strike must not be accepted silently, and an unknown
