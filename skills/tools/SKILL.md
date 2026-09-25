@@ -183,8 +183,10 @@ existing entries. **Pass:** every `report` path in `pipeline_state.json` appears
 Extract a reusable multi-step workflow from the current session and propose it as a skill.
 
 A **correction** to a pipeline skill, agent or rule is not handled here and is never applied
-silently. It follows `.claude/rules/meta-governance.md`: `/checkpoint` names it as an improvement
-candidate, it must hold across 3+ projects, and `/promote` is the only thing that lands it.
+silently. It follows `.claude/rules/meta-governance.md` (User corrections): ask once at the
+moment of the correction and land on yes with `/promote`; `/checkpoint` records every
+candidate in the shared ledger (`.claude/scripts/ledger.py add`), and `/promote` flags a
+target two projects named.
 
 ---
 
