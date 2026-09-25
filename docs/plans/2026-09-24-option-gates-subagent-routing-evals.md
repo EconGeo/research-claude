@@ -974,4 +974,6 @@ Same shape: assert `search_topic` and `advanced_search` calls precede any
   context-heavy loop left to route. Reason recorded here rather than a subagent built for
   nothing.
 - **Evals for the other 21 skills** (audit §6). C1–C3 establish the harness; each further
-  eval is one task with one mechanism assertion set, run alone.
+  eval is one task with one mechanism assertion set, run alone. 2026-09-25: `/tools
+  validate-bib` added (`tests/evals/tools-validate-bib.sh`, checker unit-tested red and green;
+  first eval with no MCP server, so the runner passes an empty `--strict-mcp-config`). 20 remain.
