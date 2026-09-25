@@ -2716,7 +2716,7 @@ eval_finish check_analyze.py "$LOG" "$E" "$RRC" "$PRC"
 | 8 | ztp-profile | PASS | pending | tool_use: 18 · mock calls: 12 · views: ['collections', 'items', 'overview', 'tags'] |
 | 9 | ztp-tutor | PASS | pending | tool_use: 3 · mock calls: 1 |
 | 10 | promote | PASS | pending | bash calls: 6 · clone HEAD moved: False |
-| 11 | civilize | | | |
+| 11 | civilize | PASS | pending | tool_use: 11 · auditor dispatches: 1 (checker fixed: excluded root SESSION_REPORT.md from the source-file scan, per rules/logging.md — same carve-out as check_tools_validate_bib.py) |
 | 12 | verify-claims | | | |
 | 13 | revise | | | |
 | 14 | submit | | | |
