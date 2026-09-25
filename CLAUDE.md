@@ -32,8 +32,14 @@ open.** Of the audit residue the 09-16 plan left open, the `allowed-tools` sweep
 and the `KNOWN_UNBOUND` ratchet (`7365613`) closed on 2026-09-24, and P4 option gates, P5
 subagent routing and P7 evals closed the same day under
 `docs/plans/2026-09-24-option-gates-subagent-routing-evals.md` (complete; its "What this plan
-deliberately leaves open" is the current residue: vendored P1 offenders upstream, the P6
-self-improvement rule pending its own decision, evals for the other skills one at a time).
+deliberately leaves open" is the current residue). On 2026-09-25 that residue's P5 tools row
+closed (`scripts/validate_bib.py` shipped; `/tools journal` re-audited, stays home), the
+`rounds_overall` limit gained its enforcer and `verification_retries` was deleted as unread, and
+a third eval (`tests/evals/tools-validate-bib.sh`) joined the harness — see the 2026-09-25
+entry in `docs/SESSION_REPORT.md`. **What is still open, all outside this repo or awaiting a
+decision:** the vendored P1 offenders (PRs to the `EconGeo/ZotPilot` and `EconGeo/ai-audit`
+forks), the P6 self-improvement rule (needs its own decision against
+`rules/meta-governance.md`'s 3+ project bar), and evals for the remaining skills, one at a time.
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 

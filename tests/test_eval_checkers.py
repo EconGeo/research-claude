@@ -74,3 +74,33 @@ class TestLitPositionChecker(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+CHECK_VB = ROOT / "tests" / "evals" / "check_tools_validate_bib.py"
+VB_GOOD = ('{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"python3 .claude/scripts/validate_bib.py"}}]}}\n')
+
+
+class TestToolsValidateBibChecker(unittest.TestCase):
+    def test_the_script_running_passes(self):
+        rc, out = run(VB_GOOD, "", CHECK_VB); self.assertEqual(rc, 0, out)
+
+    def test_no_script_call_fails(self):
+        t = '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"grep -c @ manuscript_fixture.qmd"}}]}}\n'
+        rc, out = run(t, "", CHECK_VB); self.assertEqual(rc, 1); self.assertIn("no Bash call ran", out)
+
+    def test_inline_reimplementation_fails_even_beside_the_script(self):
+        t = VB_GOOD + '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"sort -u /tmp/cited.txt | comm -23 - /tmp/bib.txt"}}]}}\n'
+        rc, out = run(t, "", CHECK_VB); self.assertEqual(rc, 1); self.assertIn("inline re-implementation", out)
+
+    def test_an_edit_to_the_bib_fails(self):
+        t = VB_GOOD + '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Edit","input":{"file_path":"references.bib"}}]}}\n'
+        rc, out = run(t, "", CHECK_VB); self.assertEqual(rc, 1); self.assertIn("source file", out)
+
+    def test_a_write_to_the_session_report_passes(self):
+        # rules/logging.md asks the session to log itself; that write is not validate-bib's.
+        t = VB_GOOD + '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"/x/SESSION_REPORT.md","content":"..."}}]}}\n'
+        rc, out = run(t, "", CHECK_VB); self.assertEqual(rc, 0, out)
+
+    def test_a_redirect_into_the_bib_fails(self):
+        t = VB_GOOD + '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"echo x >> references.bib"}}]}}\n'
+        rc, out = run(t, "", CHECK_VB); self.assertEqual(rc, 1); self.assertIn("redirected", out)
