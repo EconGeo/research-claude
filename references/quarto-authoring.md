@@ -17,7 +17,7 @@ before authoring, not after.
 
 | Layer | Owns | Lives in |
 |---|---|---|
-| **This file** | Quarto authoring mechanics: what syntax renders in which format, and what drops silently | `.claude/references/quarto-authoring.md` in every linked project (source: research-claude's `.claude/references/quarto-authoring.md`); `~/.claude/references/quarto-authoring.md` is a symlink to it for `~/Courses/` |
+| **This file** | Quarto authoring mechanics: what syntax renders in which format, and what drops silently | `.claude/references/quarto-authoring.md` in every linked project (source: the `references/` directory of the research-claude repo); `~/.claude/references/quarto-authoring.md` is a symlink to it for `~/Courses/` |
 | **Research pipeline** | Document architecture: single-source `.qmd`, caching, `cache.extra`, `dependson`, the write gate, claim-source discipline | each project's `.claude/rules/quarto-empirical.md`, `quarto-pdf.md`, `quarto-word.md` |
 | **Courses pipeline** | Slide design, Beamer theme, deck naming, build manifest, five-bullet rule | `~/Courses/CLAUDE.md` (Slide Pipeline) + `~/Courses/slide_pipeline/README.md` |
 

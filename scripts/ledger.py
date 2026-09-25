@@ -55,11 +55,16 @@ def rows(path: Path):
 
 
 def cmd_add(a) -> int:
+    if "|" in a.project or "|" in a.target:
+        print("ledger: '|' is not allowed in project or target", file=sys.stderr)
+        return 2
     path = a.ledger
     existing = rows(path)
     n = max((int(r["id"][2:]) for r in existing), default=0) + 1
     rid = f"L-{n:03d}"
     date = a.date or dt.date.today().isoformat()
+    target = re.sub(r"^(\./)?(\.claude/)?", "", a.target.strip())
+    a.target = target
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(HEADER)

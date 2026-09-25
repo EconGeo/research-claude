@@ -213,7 +213,8 @@ about what the page shows, because Quarto's failures are silent: an unresolved `
 overwide table drops a column, a declared `keywords:` never appears. Two projects corrected
 these by hand before this line existed (`docs/improvement-ledger.md`, L-001..L-003). Pass
 `--expect` for every phrase a journal or an invariant requires on the page, and `--columns`
-for every wide table. The check is `.claude/references/quarto-authoring.md`'s post-render
+for every wide table — `--columns` reads the block below the caption, so the caption must sit
+above its table. The check is `.claude/references/quarto-authoring.md`'s post-render
 checklist, executed.
 
 **Item 3 is not optional, and item 2 does not subsume it.** A clean render proves

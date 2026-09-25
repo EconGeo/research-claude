@@ -33,7 +33,13 @@ class TestPointers(unittest.TestCase):
             t = (ROOT / rel).read_text()
             self.assertIn("meta-governance.md", t, rel)
             self.assertIn("ledger.py", t, rel)
-            self.assertNotIn("3+ projects", t, f"{rel} still carries the 3+ bar onto corrections")
+            # Scoped (final-review Minor 9b): the 3+ bar is fine elsewhere in these files
+            # (it still governs log-inferred learnings); it must not land back on a sentence
+            # about corrections, which is what carrying it onto corrections looked like.
+            for sentence in t.split("."):
+                if "correction" in sentence.lower():
+                    self.assertNotIn("3+", sentence,
+                                      f"{rel}: a sentence about corrections still carries the 3+ bar: {sentence!r}")
 
     def test_promote_reads_the_ledger(self):
         t = (ROOT / "skills" / "promote" / "SKILL.md").read_text()
