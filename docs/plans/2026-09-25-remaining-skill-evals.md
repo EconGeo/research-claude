@@ -2739,6 +2739,11 @@ Reds on the **skill** (the eval is committed as is; the skill fix is a follow-up
 - **15 `/talk create`.** Ran `pipeline.py state record-score talk 75 …`, which `pipeline.py` refused (`storyteller`/`storyteller-critic` are `component: none, quality_weight: 0`). `SKILL.md` never instructs `record-score` for a talk and says "Advisory scoring. Talk scores don't block commits." The session reasoned correctly about why not to retry, but the attempt happened. Not loosened further.
 - **17 `/strategize`.** Wrote no `quality_reports/decisions/strategy_*.md` although Step 7 requires one unconditionally (`templates/decision-record.md`, whose "Alternatives considered" is what Step 2's losing designs feed), and ran no revision round or second critic pass after `record-score strategy` came back at 61 (Step 5's revise-below-80 threshold). Step 6's four artifacts were saved with the 61 still open. Checker glob and heading regex verified against the templates. **Decision on Task 17 Step 5's "exactly one record" assertion** (the audit's wording, which would have gone red on a *correct* sub-80 run): replaced at close-out by the Step 5 rule itself — one record at >= 80, or a second strategist dispatch and a second record after a first score below 80 — so the missing revision round is now the checker's assertion, not a side observation; the live run's red stands under both readings.
 
+**All five closed 2026-09-25** (live re-runs PASS; see the "Five skill reds closed" entry in
+`docs/SESSION_REPORT.md`): 12 via `EconGeo/ai-audit#4` (Phase 5 always saves the report) plus a
+checker fix (Phase 0 by directory listing); 13, 14, 15 by `SKILL.md` edits (`3e3037b`); 17 by
+`3e3037b` + `cd8d613` and the foreground-dispatch rule in `rules/agents.md` §4 (`e08a1ff`).
+
 Reds on the **harness** (fixed in the task; re-run PASS):
 
 - **3 `/checkpoint`.** Unit-test syntax, runner filename mismatch and a seed-copy collision; drift check moved before the memory-dir cleanup (`b5bf148`).

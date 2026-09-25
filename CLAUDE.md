@@ -47,8 +47,10 @@ and lock refresh that plan's merge deferred landed the same day, all six paper r
 `1b11285` with `check_install --all` PASS. The evals for the remaining skills closed the same day
 under `docs/plans/2026-09-25-remaining-skill-evals.md` (one task per skill; `tests/evals/`); five
 live runs came back red on the skill, not the harness — `/verify-claims` (vendored), `/revise`,
-`/submit`, `/talk`, `/strategize` — see that plan's Findings. Those five skill fixes are the open
-work.
+`/submit`, `/talk`, `/strategize` — see that plan's Findings. All five were fixed and re-run
+green on 2026-09-25 (`EconGeo/ai-audit#4`, `ai-audit/` re-vendored at `1c237da`; foreground
+dispatch rule in `rules/agents.md` §4) — see the 2026-09-25 "Five skill reds closed" entry in
+`docs/SESSION_REPORT.md`. **Nothing is open in this repo.**
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 
