@@ -11,10 +11,6 @@ def result(uid, text, err=False):
     return json.dumps({"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": uid, "content": [{"type": "text", "text": text}], "is_error": err}]}}) + "\n"
 
 
-def assistant_text(text):
-    return json.dumps({"type": "assistant", "message": {"content": [{"type": "text", "text": text}]}}) + "\n"
-
-
 def go(check, transcript, *args):
     with tempfile.TemporaryDirectory() as d:
         t = pathlib.Path(d, "t.jsonl"); t.write_text(transcript)
