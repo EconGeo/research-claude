@@ -712,6 +712,16 @@ weak table, a third agent remains available.
 table, R&R item 6, Dimension 3's description); `agents/editor.md` Phase 3 ("Rival
 explanations").
 
+**Companion change, same day — three reduced-form sanity checks in `agents/methods-referee.md`.**
+The same human report's remaining robustness asks — autocorrelation-robust standard errors on a
+short time series, the result's sensitivity to the treatment date, and a test of the single
+comparison market against a synthetic control — were each reachable only through a peeve draw
+or the Robustness dimension's discretion. They are now the **Time-series inference**, **Timing**
+and **Comparison-group** checks, blockers like the other five, each conditional on the design
+it applies to (few units observed repeatedly; a dated treatment; a single or hand-picked
+comparison). clo-author's reduced-form list stops at sign, magnitude, dynamics, clustering and
+sample.
+
 ---
 
 ## Summary

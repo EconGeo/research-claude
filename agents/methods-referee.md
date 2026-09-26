@@ -107,6 +107,9 @@ Before assigning any dimension score, run the checks for your paper type. These 
 - **Magnitude check.** Is the coefficient in a reasonable range (not 0.0001, not 10×)?
 - **Dynamics check.** If DiD/event study: do pre-trends look flat? If IV: is the first-stage F-stat > 10?
 - **Clustering check.** Are standard errors clustered at the correct level (treatment unit)?
+- **Time-series inference check.** When the design uses repeated observations of few units (an interrupted time series, an event study on one or two markets, a panel with a short cross-section), is the standard-error choice justified against serial correlation — autocorrelation-robust errors (e.g. Newey–West) or a model of the error process, with the diagnostic or the comparison across choices reported? Heteroskedasticity-robust errors alone on a serially correlated series FAIL.
+- **Timing check.** When the treatment has a date, is the result's sensitivity to that date reported: alternative plausible dates (announcement vs. effective vs. adoption), and placebo dates at which nothing happened? A result that exists only at the chosen date, or one that is at least as large at placebo dates, must be reported and discussed. Not reported at all FAILS.
+- **Comparison-group check.** When the counterfactual rests on a single comparison unit, or on a small hand-picked set, has the paper tested it against a design that does not depend on that choice — a synthetic control or donor pool, a leave-one-out over comparison units, or a second independent comparison? A single-unit comparison with no such test FAILS.
 - **Sample check.** Is the analysis sample constructed and reported clearly?
 
 ### Structural
