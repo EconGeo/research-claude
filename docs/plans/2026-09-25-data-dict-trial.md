@@ -2,6 +2,10 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to work through this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. This is an **evaluation**, not a build: it ends in a go / no-go ruling, and nothing in the shipped tree changes unless Task 5 rules "go".
 
+**Status: complete (2026-09-25) — ruled DEFER.** Findings, re-test trigger and unfiled upstream
+issue drafts are in `docs/audits/2026-09-25_data-dict-trial-findings.md`. The checkboxes below were
+not ticked during execution; they are not open work.
+
 **Goal:** Find out, on one real paper's raw data, whether `data-dict` (tidyverse) is good enough to replace the free-form codebook that `data-engineer` writes, and to add a checked "data matches its dictionary" step to the pipeline.
 
 **Architecture:** Install the CLI on this machine only. Point it at a **scratch copy** of one project's `data/raw/`, draft a dictionary, tighten it by hand, then run the three validation levels and `translate --to R`. Record what worked, what broke and what it caught in a findings file. Rule on adoption only after that.

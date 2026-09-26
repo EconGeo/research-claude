@@ -2,6 +2,10 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status: complete (2026-09-25).** All twenty evals shipped; the five skill reds were fixed and re-run
+green the same day (see Findings). Per-task checkboxes were tracked in the Progress Log, not ticked
+below; they are not open work.
+
 **Goal:** One functionality eval per remaining skill — twenty evals, each a runner + a checker + a red/green unit test — so every shipped skill has a mechanism gate the way `/ztp-data-tag`, `/lit-position` and `/tools validate-bib` already do.
 
 **Architecture:** Each eval copies `tests/fixture-project` to a temp dir, links this checkout into it, seeds the input state the skill needs, runs the skill once through `claude -p … --output-format stream-json`, and runs a Python checker over the transcript (plus the ZotPilot mock's call log or the project dir). Checkers assert **mechanism** — which tool, in what order, with which flags, what was never touched — never LLM output quality (audit 2026-09-15 §3 P7 rule 3). Task 0 factors the runner boilerplate the three existing evals repeat into `tests/evals/_lib.sh` and `tests/evals/evallib.py`, and extends the mock with the tools the vendored skills call; Tasks 1–20 each add one eval.
@@ -2752,4 +2756,15 @@ Reds on the **harness** (fixed in the task; re-run PASS):
 - **15 `/talk create`.** `talk.sh` now removes the fixture's pre-committed `talks/manuscript_fixture.qmd` symlink so the skill's own symlink step is exercised; `check_talk.py`'s `tbl-` assertion covers only the main deck, before the first `backup|appendix|q&a` heading (`SKILL.md` puts tables in backup slides) (`2514c87`).
 - **16 `/write`.** `eval_finish`'s drift check compared unfiltered `git status --porcelain`, so untracked scratch files outside the linked tree tripped it. `tests/evals/_lib.sh` now filters both snapshots to the linked dirs (`LINKED_DIRS_RE`); the inline checks in `checkpoint.sh`/`promote.sh` match.
 - **18 `/discover data`.** `evallib.tool_uses()` flattens a dispatched subagent's own tool calls into the main list (stream-json tags them only with `parent_tool_use_id`), so the explorer's permitted `WebSearch`/`WebFetch` calls read as main-session web calls. Added `evallib.main_session_tool_uses()` (lines with no `parent_tool_use_id`) and pointed the check at it (`8858419` unit-tests it). Every "main session never X" assertion should use it.
+
+Minor review findings **deferred** (promoted from the gitignored SDD ledger at close-out; none affects a
+current verdict):
+
+- **Task 2 `check_freeze.py`.** The manuscript and talk predicates both match
+  `talks/manuscript_fixture.qmd` (a symlink in the fixture). Latent only: the prompt names
+  `talks/seminar_talk.qmd`.
+- **Task 3 `check_checkpoint.py`.** The journal-redirect regex also matches `*_research_journal.md`
+  suffixes. Cosmetic.
+- **Task 10 `check_promote.py`.** The regexes use `[^\n]*`, so a line-continued git command evades
+  them. Plan-mandated wording; left as written.
 

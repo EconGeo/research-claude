@@ -2,6 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status: complete (2026-09-25).** Merged to `main` as `ccea599` (commits `51cf860`, `3fa5b0b`,
+`e8a5cd8`, `982d640`, `78ecfe9`); fleet re-linked the same day — see the 2026-09-25 "Pipeline-fix
+residue cleanup" entry in `docs/SESSION_REPORT.md`. The checkboxes below were not ticked during
+execution; they are not open work.
+
 **Goal:** Port three features identified from `garrytan/gstack` (the software-engineering
 toolkit `clo-author` — this pipeline's ancestor — is itself derived from) that have a real
 gap here: a root-cause-before-retry debugging discipline, receipts binding a recorded score

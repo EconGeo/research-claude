@@ -1,7 +1,10 @@
 # Plan: new-project scaffolding (references fix + skill)
 
 Date: 2026-06-17
-Status: in progress
+Status: complete; §4 superseded. The `apply.sh` mechanism (§1–3, §5) landed: `--link-references`,
+`seeds/gitignore`, the `explorations/` skeleton. The §4 `new-project` skill was removed on 2026-09-08
+(`1875b42`), superseded by `rules/quarto-empirical.md` and `skills/new-project-ztp/` — see
+`docs/decisions/2026-09-08_cut-the-orchestration-graph.md`.
 Branch: `feat/new-project-scaffolding`
 
 ## Problem
