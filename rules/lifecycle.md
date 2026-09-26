@@ -80,7 +80,7 @@ each with what is missing and the skill that produces it).
 | Type | Passes when |
 |---|---|
 | `path` | the glob (relative to the project root) matches at least `min` files (default 1) |
-| `section` | a Markdown heading with that text exists in the file (`file: manuscript` = the declared manuscript) |
+| `section` | a Markdown heading naming that section exists in the file (`file: manuscript` = the declared manuscript). A `#` line inside fenced code (a chunk, a pseudo-code block) is not a heading. A leading number (`1.`, `2.3`, `Section 1:`), trailing parenthetical qualifiers and case are ignored; the rest must equal the name, so `## 1. Estimand (ITT)` is the Estimand section and `## Key Assumptions and Threats` is neither. `select: newest` checks only the matching file whose name sorts last |
 | `score` | the latest score for the component in `quality_reports/pipeline_state.json` is ≥ `min`; `component: overall` uses the weighted aggregate |
 | `score-if-scored` | the component has **not** been scored yet, **or** its latest score is ≥ `min`. A missing state file fails (absent is not "unscored"). `component: overall` is rejected — the aggregate is derived, so "has been scored" is undefined for it |
 | `fresh` | the rendered output is newer than the manuscript and every file under `data/raw/` |

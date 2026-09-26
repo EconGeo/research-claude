@@ -217,8 +217,39 @@ def source_calls(ms: Path) -> List[int]:
     lines = qmd_chunks.extract(ms.read_text().split("\n"))
     return [i + 1 for i, l in enumerate(lines) if not l.lstrip().startswith("#") and SOURCE_CALL_RE.search(l)]
 
+HEADING_RE = re.compile(r"^#{1,6}\s+(.+?)\s*(?:\{[^}]*\})?\s*$")
+FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+
 def headings(path: Path) -> List[str]:
-    return [h.strip() for h in re.findall(r"^#{1,6}\s+(.+?)\s*(?:\{[^}]*\})?\s*$", path.read_text(), re.M)]
+    """ATX headings outside fenced code. A `#` comment in a memo's pseudo-code or a manuscript's
+    R chunk is code, not a section, and must not satisfy a `section` predicate. Fences follow
+    CommonMark: a fence closes only on a run of the same character at least as long, with
+    nothing after it — so ```` survives a nested ```r block and ``` is not closed by ~~~."""
+    out: List[str] = []; fence: Optional[str] = None
+    for ln in path.read_text().splitlines():
+        m = FENCE_RE.match(ln)
+        if fence is None:
+            if m and not (m.group(1)[0] == "`" and "`" in m.group(2)): fence = m.group(1); continue
+            h = HEADING_RE.match(ln)
+            if h: out.append(h.group(1).strip())
+        elif m and m.group(1)[0] == fence[0] and len(m.group(1)) >= len(fence) and not m.group(2).strip():
+            fence = None
+    return out
+
+SECTION_NUMBER_RE = re.compile(r"^(?:section\s+)?\d+(?:\.\d+)*[.:)]?\s+", re.I)
+TRAILING_QUALIFIER_RE = re.compile(r"\s*\([^()]*\)\s*$")
+
+def section_key(heading: str) -> str:
+    """A heading reduced to the section NAME it declares, for the `section` predicate.
+
+    Exact text comparison failed every real strategy memo (verified 2026-09-25 on four
+    projects): the shipped template itself writes `## 1. Estimand`, and authors add
+    `Section 2:` prefixes, trailing qualifiers like `(C1)` or `(short)`, and change case. Those
+    are typography. What remains must EQUAL the name — `Key Assumptions and Threats` is not
+    the Threats section — so the tolerance cannot turn into substring matching."""
+    h = SECTION_NUMBER_RE.sub("", heading.strip())
+    while TRAILING_QUALIFIER_RE.search(h): h = TRAILING_QUALIFIER_RE.sub("", h)
+    return " ".join(h.split()).casefold()
 
 def is_fresh(root: Path, ms: Path) -> Tuple[bool, str]:
     """Every rendered output must be at least as new as every input.
@@ -286,7 +317,8 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
             # earlier round mask a newer one missing a required section. The newest is the one
             # whose name sorts last — see registry_lib._check_pred on names versus mtimes.
             files = [max(files, key=lambda f: f.name)]; where = str(files[0].relative_to(root))
-        ok = any(pred["heading"] in headings(f) for f in files if f.exists())
+        want = section_key(pred["heading"])
+        ok = any(want in map(section_key, headings(f)) for f in files if f.exists())
         return ok, f"heading '{pred['heading']}' in {where}"
     if t == "score":
         st = json.loads(state_path(root).read_text()) if state_path(root).exists() else {"components": {}}

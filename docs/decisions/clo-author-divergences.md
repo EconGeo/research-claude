@@ -186,7 +186,9 @@ memo mask a newer one missing a required section. `artifact-paths` lets a regist
 admit a prose placeholder. The hook pattern becomes `strategy_memo_[0-9]*.md`, which restores the
 clo-author intent: a memo is created once and never rewritten. `tested:` `tests/test_pipeline.py`
 (newest-only; undated and review files are not memos), `tests/test_check_refs.py`,
-`tests/test_registry_lib.py`.
+`tests/test_registry_lib.py`. Those tests' fixtures wrote unnumbered headings; the template writes
+`## 1. Estimand`, and exact matching failed every real memo. Fixed the same day:
+`docs/decisions/2026-09-25_section-heading-match.md`.
 
 ---
 

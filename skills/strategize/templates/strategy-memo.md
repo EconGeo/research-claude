@@ -1,12 +1,12 @@
 # Strategy Memo Template
 
-**Purpose:** The primary output of the strategist. Contains the full identification strategy specification. Must include all five required sections: Estimand, Specification, Assumptions, Robustness Plan, Threats.
+**Purpose:** The primary output of the strategist. Contains the full identification strategy specification. Must include all five required sections: Estimand, Specification, Assumptions, Robustness Plan, Threats. `pipeline.py post strategist` checks each by heading: keep the number if you like and put any qualifier in parentheses (`## 4. Robustness Plan (short)`), but do not merge or rename sections (`## Assumptions and Threats` satisfies neither).
 
 ---
 
 ## Template
 
-```markdown
+````markdown
 # Strategy Memo: [Project Name]
 
 **Date:** [YYYY-MM-DD]
@@ -120,4 +120,4 @@ Ordered from most threatening to least threatening:
 ### Mechanism / Channel
 - [Mechanism test 1]: [what it shows]
 - [Mechanism test 2]: [what it shows]
-```
+````

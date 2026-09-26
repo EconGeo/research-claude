@@ -314,6 +314,67 @@ class TestPredicates(FixtureCase):
         rc, out = run("post", "strategist", root=self.t)
         self.assertEqual(rc, 1, out); self.assertIn("(0 found, need 1)", out)
         self.assertIn("MISSING heading 'Estimand'", out)
+    def test_the_shipped_template_satisfies_its_own_gate(self):
+        """The template writes `## 1. Estimand` … `## 5. Threats`; the gate compared heading text
+        exactly, so every real memo failed all five checks (verified 2026-09-25 on four
+        projects). A memo that IS the template's memo body, verbatim, must pass every section
+        predicate. The body sits in a four-backtick fence so its nested ```r pseudo-code block
+        does not close it — with three, Markdown ends the outer fence at ```r."""
+        import re
+        d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)
+        tpl = (ROOT / "skills" / "strategize" / "templates" / "strategy-memo.md").read_text()
+        body = re.search(r"^````markdown\n(.*)^````\s*$", tpl, re.M | re.S)
+        self.assertIsNotNone(body, "template memo body must sit in a ````markdown fence")
+        (d / "strategy_memo_2026-09-25_1430.md").write_text(body.group(1))
+        rc, out = run("post", "strategist", root=self.t)
+        self.assertNotIn("MISSING heading", out)
+    def test_a_heading_inside_a_code_fence_is_not_a_heading(self):
+        """A `#` comment in a pseudo-code block is code, not a section — it must not satisfy the
+        predicate. Both fence characters, and an info string, as CommonMark allows."""
+        d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)
+        (d / "strategy_memo_2026-09-25_1430.md").write_text(
+            "# Memo\n## 1. Estimand\n## 2. Specification\n```r\n# Assumptions\nx <- 1\n```\n"
+            "## 4. Robustness Plan\n~~~\n# Threats\n~~~\n")
+        rc, out = run("post", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("MISSING heading 'Assumptions'", out); self.assertIn("MISSING heading 'Threats'", out)
+        self.assertNotIn("MISSING heading 'Robustness Plan'", out)   # headings after a closed fence count
+    def test_a_fence_closes_only_on_its_own_character_and_length(self):
+        """CommonMark: a ```` fence is not closed by ``` inside it, and ``` is not closed by ~~~.
+        A naive toggle would read the lines after the inner marker as prose."""
+        if str(ROOT / "scripts") not in sys.path: sys.path.insert(0, str(ROOT / "scripts"))
+        import pipeline as _p
+        f = self.t / "m.md"
+        f.write_text("````markdown\n## Inside\n```r\n# comment\n```\n## Still inside\n````\n## Outside\n"
+                     "```\n~~~\n# Not closed by tildes\n```\n## After\n")
+        self.assertEqual(_p.headings(f), ["Outside", "After"])
+    def test_section_numbers_qualifiers_case_and_depth_are_tolerated(self):
+        """Shapes observed in real memos: a `Section N:` prefix, a level-3 heading, lower-case
+        `plan`, and a trailing parenthetical qualifier."""
+        d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)
+        (d / "strategy_memo_2026-09-25_1430.md").write_text(
+            "# Memo\n### 1. Estimand\n## Section 2: Specification\n## 3 Assumptions\n"
+            "### 4. Robustness plan (short; detail in `robustness_plan.md`)\n## 5. Threats (C1)\n")
+        rc, out = run("post", "strategist", root=self.t)
+        self.assertNotIn("MISSING heading", out)
+    def test_numbered_memo_missing_a_section_still_fails(self):
+        d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)
+        (d / "strategy_memo_2026-09-25_1430.md").write_text(
+            "# Memo\n## 1. Estimand\n## 2. Specification\n## 3. Assumptions\n## 4. Robustness Plan\n")
+        rc, out = run("post", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("MISSING heading 'Threats'", out)
+        self.assertNotIn("MISSING heading 'Estimand'", out)
+    def test_a_heading_that_only_contains_the_name_does_not_count(self):
+        """Tolerance is typographic, not semantic: the words after the number must BE the
+        section name. `Key Assumptions and Threats` (a real memo's shape) is neither section, and
+        a subsection that merely mentions a name is not that section."""
+        d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)
+        (d / "strategy_memo_2026-09-25_1430.md").write_text(
+            "# Memo\n## 1. Estimand\n## 2. Specification\n## Section 3: Key Assumptions and Threats\n"
+            "## 4. Robustness Plan\n### 4.1 Threats to validity\n")
+        rc, out = run("post", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("MISSING heading 'Assumptions'", out); self.assertIn("MISSING heading 'Threats'", out)
     def test_fresh_stale_after_data_touch(self):
         subprocess.run(["quarto", "render", "manuscript_fixture.qmd"], cwd=self.t, capture_output=True)
         self.assertEqual(run("fresh", root=self.t)[0], 0)
