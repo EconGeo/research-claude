@@ -50,11 +50,23 @@ class TestArtifactPaths(unittest.TestCase):
         """The R-111 shape: the memo saved flat instead of under strategy/<project>/."""
         self.assertEqual(self._run("Save to `quality_reports/strategy_memo_[topic].md`\n"), 1)
 
+    def test_undated_strategy_memo_flagged(self):
+        """Memos are timestamped since 2026-09-25; the registry glob requires a digit after
+        `strategy_memo_`, so the pre-timestamp fixed name no longer matches it."""
+        self.assertEqual(self._run("Save to `quality_reports/strategy/<project>/strategy_memo.md`\n"), 1)
+
+    def test_character_class_in_a_registry_glob_accepts_a_placeholder(self):
+        """`strategy_memo_[0-9]*.md` must accept the prose placeholder `<YYYY-MM-DD_HHMM>`, which
+        expands to a literal `*` that `[0-9]` alone would reject — but not a non-placeholder
+        literal that the class excludes."""
+        self.assertEqual(self._run("`quality_reports/strategy/<project>/strategy_memo_2026-09-25_1430.md`\n"), 0)
+        self.assertEqual(self._run("`quality_reports/strategy/<project>/strategy_memo_review.md`\n"), 1)
+
     def test_theory_review_template_shape_flagged(self):
         self.assertEqual(self._run("Save to `quality_reports/[FILENAME]_theory_review.md`:\n"), 1)
 
     def test_placeholder_form_of_a_registry_glob_passes(self):
-        self.assertEqual(self._run("Save to `quality_reports/strategy/<project>/strategy_memo.md`\n"), 0)
+        self.assertEqual(self._run("Save to `quality_reports/strategy/<project>/strategy_memo_<YYYY-MM-DD_HHMM>.md`\n"), 0)
         self.assertEqual(self._run("`quality_reports/reviews/claim_evidence_<project>_<date>.md`\n"), 0)
 
     def test_directory_prefix_of_a_registry_glob_passes(self):

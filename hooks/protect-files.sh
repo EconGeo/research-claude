@@ -44,7 +44,7 @@ PROTECTED_PATTERNS=(
   "civilize_*_report.md"
   "verify_claims_*.md"
   "verification_report.md"
-  "strategy_memo.md"
+  "strategy_memo_[0-9]*.md"
   "desk_review.md"
   "referee_domain.md"
   "referee_methods.md"

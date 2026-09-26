@@ -56,14 +56,19 @@ KNOWN_UNBOUND: set[str] = set()
 # session; measured size 8,464.
 # 2026-09-24 (option gates, Task A6): review 12,500 -> 12,700. Two gate lines in --peer
 # (journal candidates when none is given; alternative venues on desk reject); measured 12,521.
+# 2026-09-25 (timestamped strategy memos): strategize 8,500 -> 8,700. Step 4 names the memo the
+# critic scored in its report; Step 5's revision writes a new memo; Step 6's filename is
+# timestamped and never overwritten (the full rule lives in agents/strategist.md); measured 8,662.
 BUDGET = {
     "review": 12700,
-    "strategize": 8500,
+    "strategize": 8700,
     # 2026-09-24 (option gates, Task A9): write 7,600 -> 8,100. The GATE 1 / abstract hook
     # gate and the ambiguous-paper-type confirmation; measured 8,033.
     # 2026-09-24 (routing, Task B6): write 8,100 -> 8,200. Step 1 lists the manuscript
     # instead of reading it in full — a longer sentence for a much smaller context; measured 8,123.
-    "write": 8200,
+    # 2026-09-25 (timestamped strategy memos): write 8,200 -> 8,250. Step 3 reads the newest
+    # timestamped memo, not a fixed name; measured 8,217.
+    "write": 8250,
     # 2026-09-24 (option gates, Task A3): discover 6,200 -> 7,300. Four gates (question
     # framings, journal tiers, data shortlist, ideas), each a wait instruction; measured 7,195.
     # 2026-09-24 (routing, Task B5): discover 7,300 -> 7,500. Ideate's novelty check now

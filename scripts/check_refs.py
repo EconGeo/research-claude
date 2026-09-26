@@ -330,7 +330,12 @@ def crit_artifact_paths(root):
                         ok = any(p.startswith(t) or fnmatch.fnmatchcase(p[:len(t)], t)
                                  for p in files | dirs | allow)
                     else:
-                        ok = any(fnmatch.fnmatchcase(t, p) for p in files | allow)
+                        # A placeholder (`<YYYY-MM-DD_HHMM>`) expands to a literal `*`, which a
+                        # registry character class (`strategy_memo_[0-9]*.md`) rejects; so each
+                        # non-negated class also admits `*`. A concrete name the class excludes
+                        # (`strategy_memo_review.md`) still fails.
+                        ok = any(fnmatch.fnmatchcase(t, re.sub(r"\[(?!!)([^\]]*)\]", r"[\1*]", p))
+                                 for p in files | allow)
                     if not ok:
                         hits.append(f"{f.relative_to(root)}:{n}: {m.group(0).rstrip('.,;:)')} matches no registry glob")
     return report("artifact-paths", hits)

@@ -12,7 +12,7 @@ import registry_lib as rl
 def pred(p) -> str:
     t = p["type"]
     if t == "path":    s = f"`{p['glob']}`" + (f" (≥{p['min']})" if p.get("min", 1) != 1 else "")
-    elif t == "section": s = f"heading **{p['heading']}** in `{p['file']}`"
+    elif t == "section": s = f"heading **{p['heading']}** in `{p['file']}`" + (" (newest by name)" if p.get("select") == "newest" else "")
     elif t == "score":   s = f"{p['component']} score ≥ {p['min']}"
     elif t == "score-if-scored": s = f"{p['component']} score ≥ {p['min']} if the component has been scored"
     elif t == "fresh":   s = "rendered output fresh"

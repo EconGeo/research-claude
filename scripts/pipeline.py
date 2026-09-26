@@ -280,8 +280,14 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         return n >= need, f"path {pred['glob']} ({n} found, need {need})"
     if t == "section":
         files = [ctx.ms] if pred["file"] == "manuscript" else [Path(p) for p in glob.glob(str(root / pred["file"]))]
+        where = pred["file"]
+        if pred.get("select") == "newest" and files:
+            # One file per round, never overwritten (strategy memos): `any` would let a complete
+            # earlier round mask a newer one missing a required section. The newest is the one
+            # whose name sorts last — see registry_lib._check_pred on names versus mtimes.
+            files = [max(files, key=lambda f: f.name)]; where = str(files[0].relative_to(root))
         ok = any(pred["heading"] in headings(f) for f in files if f.exists())
-        return ok, f"heading '{pred['heading']}' in {pred['file']}"
+        return ok, f"heading '{pred['heading']}' in {where}"
     if t == "score":
         st = json.loads(state_path(root).read_text()) if state_path(root).exists() else {"components": {}}
         if pred["component"] == "overall":

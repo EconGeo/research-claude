@@ -148,6 +148,14 @@ def _check_pred(p, where, problems):
     if t == "score-if-scored" and p.get("component") == "overall":
         problems.append(f"{where}: score-if-scored cannot use component 'overall' — the aggregate is "
                         "derived, so 'has been scored' is undefined for it; name a real component")
+    if "select" in p:
+        # Only `newest` exists: among the files a `section` glob matches, check the one whose NAME
+        # sorts last. Names, not mtimes — a checkout or a copy resets mtime, a timestamped name
+        # (strategy_memo_YYYY-MM-DD_HHMM.md) does not. The manuscript is one file; there is
+        # nothing to select among.
+        if t != "section": problems.append(f"{where}: select applies to section predicates only")
+        elif p.get("file") == "manuscript": problems.append(f"{where}: select is meaningless on the manuscript")
+        if p["select"] != "newest": problems.append(f"{where}: select must be 'newest' (got {p['select']!r})")
     if t == "any_of":
         for j, q in enumerate(p.get("of") or []): _check_pred(q, f"{where}.of[{j}]", problems)
     if "producer" in p and not str(p["producer"]).startswith("/"):

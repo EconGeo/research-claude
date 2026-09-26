@@ -287,8 +287,33 @@ class TestPredicates(FixtureCase):
         self.assertIn("`sections`", out); self.assertIn("does not close the writer stage", out)
     def test_post_strategist_sections(self):
         d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)
-        (d / "strategy_memo.md").write_text("# Memo\n## Estimand\n## Specification\n## Assumptions\n")
+        (d / "strategy_memo_2026-09-25_1430.md").write_text("# Memo\n## Estimand\n## Specification\n## Assumptions\n")
         rc, out = run("post", "strategist", root=self.t); self.assertEqual(rc, 1); self.assertIn("MISSING heading 'Robustness Plan'", out)
+    MEMO_FULL = "# Memo\n## Estimand\n## Specification\n## Assumptions\n## Robustness Plan\n## Threats\n"
+    def test_post_strategist_reads_only_the_newest_memo(self):
+        """Memos are timestamped, one file per round, never overwritten. `section` used to pass
+        if ANY matching file carried the heading, so a complete earlier memo would have masked a
+        newer one missing a required section. `select: newest` checks the newest name only."""
+        d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)
+        (d / "strategy_memo_2026-09-25_0900.md").write_text(self.MEMO_FULL)
+        (d / "strategy_memo_2026-09-25_1430.md").write_text("# Memo\n## Estimand\n")
+        rc, out = run("post", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("MISSING heading 'Threats'", out)
+        self.assertIn("strategy_memo_2026-09-25_1430.md", out)
+        # A newer complete memo supersedes the incomplete one.
+        (d / "strategy_memo_2026-09-25_1615.md").write_text(self.MEMO_FULL)
+        rc, out = run("post", "strategist", root=self.t)
+        self.assertNotIn("MISSING heading", out)
+    def test_undated_memo_and_review_files_are_not_memos(self):
+        """The pre-timestamp name, and clo-author-era `strategy_memo_review*.md` files that sit
+        in real projects' strategy directories, must match neither the path nor the section
+        glob — a review file sorts after every digit and would otherwise read as 'newest'."""
+        d = self.t / "quality_reports" / "strategy" / "fixture"; d.mkdir(parents=True)
+        for n in ("strategy_memo.md", "strategy_memo_review.md", "strategy_memo_review_round2.md"):
+            (d / n).write_text(self.MEMO_FULL)
+        rc, out = run("post", "strategist", root=self.t)
+        self.assertEqual(rc, 1, out); self.assertIn("(0 found, need 1)", out)
+        self.assertIn("MISSING heading 'Estimand'", out)
     def test_fresh_stale_after_data_touch(self):
         subprocess.run(["quarto", "render", "manuscript_fixture.qmd"], cwd=self.t, capture_output=True)
         self.assertEqual(run("fresh", root=self.t)[0], 0)
