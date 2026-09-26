@@ -653,6 +653,9 @@ capability is real and still wanted) and not an open GAP (the false enforcement 
 look reachable is already corrected). `editor.md:124` no longer overclaims; `/review --variance`
 remains a documented future capability, not a broken promise.
 
+**Update 2026-09-25:** the "third named, specialized referee" interest was resolved without a
+third agent — see D-20. N-way variance sampling stays unwired, as ruled above.
+
 **Related port artifacts** — same shape, **fixed 2026-09-23 (Phase 2.5)**, since each was a
 reconciliation bug rather than a divergence in intent:
 `skills/analyze/templates/paper-to-code-map.md:36`'s naming rule now names `treated` (matching
@@ -667,6 +670,47 @@ every row, and which the actually-dispatched agent files (`storyteller.md`,
 `storyteller-critic.md`) never read in the first place — are deleted in favour of the one
 canonical file each, closing the same class of drift for good rather than resyncing two copies
 that will drift again.
+
+---
+
+## H. Review design
+
+### D-20 — Rival explanations: a required domain-referee check, not a third referee
+
+**clo-author:** two referees, `domain-referee` and `methods-referee`. Alternative explanations
+appear only inside two disposition blurbs — SKEPTIC ("What's the strongest alternative
+explanation?") and STRUCTURAL ("Are alternative mechanisms ruled out?") — so whether a review
+names a paper's rivals depends on which two dispositions the editor draws from the journal's
+pool weights.
+
+**research-claude:** `agents/domain-referee.md` § "Rival explanations (REQUIRED, before
+scoring)". Every domain report, whatever its disposition, names 2–3 rival explanations from
+the abstract and introduction *before* evaluating the paper, states each one's distinguishing
+prediction, and grades it RULED OUT / PARTIAL / NOT ADDRESSED against the manuscript. An open
+plausible rival is a MAJOR concern under Dimension 3. `agents/editor.md` Phase 3 classifies
+open rivals as ADDRESSABLE by default and surfaces a methods-referee report that contradicts
+one. Formal-theory papers are exempt.
+
+**Class:** DELIBERATE DIVERGENCE.
+
+**Does the problem still exist under Quarto?** Yes — it is a review-design problem, independent
+of format. The motivating case is a human referee at a real-estate journal who asked for data
+ruling out location-specific demand and supply confounders in both the treated and comparison
+markets: a rival-explanation ask no required check in either referee would have forced.
+
+**Reason (user-ruled, 2026-09-25):** three alternatives were weighed. A separate third referee
+agent generates rivals most adversarially but needs a third dispatch and a third report slot in
+the editor's synthesis — the same unresolved agent-identity question that stalled D-19.
+Guaranteeing one SKEPTIC draw overrides the journal pool weights that calibrate the review, and
+a SKEPTIC only emphasises rivals rather than enumerating them. Putting the check on the methods
+referee places it wrong: the methods referee asks whether the design removes a threat, the
+rival-explanation question is what the result means. Ordering the check *before* evaluation
+buys most of a separate reviewer's independence at no extra dispatch; if live runs show a
+weak table, a third agent remains available.
+
+**Recorded on disk:** this entry; `agents/domain-referee.md` (the section, the report-format
+table, R&R item 6, Dimension 3's description); `agents/editor.md` Phase 3 ("Rival
+explanations").
 
 ---
 
