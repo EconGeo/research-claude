@@ -170,6 +170,24 @@ mechanism that closed D-2 above.
 in `scripts/check_install.sh`'s `hooks-wired` comment block, which carried the same "R-7, opt-in"
 claim into the checker itself and has been corrected alongside.
 
+**Amended 2026-09-25 — strategy memos are timestamped, one file per round.** The Phase 4.1
+repoint mapped clo-author's `strategy-memo-*.md` (per-round copies, never rewritten) onto the
+fixed name `strategy_memo.md` that R-111 had chosen. Neither clo-author path was dated (its skill
+wrote `strategy_memo_[topic].md`, its agent `strategy_memo.md`), and R-111 was a consistency fix
+that never weighed dated against fixed. Protecting a file the strategist must rewrite every
+strategist→critic round then blocked the revision loop in a live project, and a critic report
+cited a memo that the next round would overwrite. **Ruled by the user:** the memo is
+`quality_reports/strategy/<project>/strategy_memo_<YYYY-MM-DD_HHMM>.md` (local date and 24-hour
+time; several rounds can fall on one day), a new file every round, the newest name current. The
+registry glob is `strategy_memo_[0-9]*.md` — the digit class keeps clo-author-era
+`strategy_memo_review*.md` files, still present in projects, from matching and from sorting as
+"newest". `section` predicates gained `select: newest`, because `any` would let a complete earlier
+memo mask a newer one missing a required section. `artifact-paths` lets a registry character class
+admit a prose placeholder. The hook pattern becomes `strategy_memo_[0-9]*.md`, which restores the
+clo-author intent: a memo is created once and never rewritten. `tested:` `tests/test_pipeline.py`
+(newest-only; undated and review files are not memos), `tests/test_check_refs.py`,
+`tests/test_registry_lib.py`.
+
 ---
 
 ## B. Numbers, traceability, and the registry

@@ -20,7 +20,7 @@ score itself: `state record-score strategy <score> --critic strategist-critic --
 quality_reports/reviews/strategist-critic_<date>.md`.
 
 ## Approval-gate summary
-`quality_reports/strategy/<project>/strategy_memo.md` (all 5 required sections: Estimand,
+the newest `quality_reports/strategy/<project>/strategy_memo_<YYYY-MM-DD_HHMM>.md` (all 5 required sections: Estimand,
 Specification, Assumptions, Robustness Plan, Threats), `pseudo_code.md`,
 `robustness_plan.md`, `falsification_tests.md`, the decision record, and the score.
 

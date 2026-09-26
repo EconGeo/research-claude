@@ -56,6 +56,15 @@ class TestProtectFiles(unittest.TestCase):
         self.assertBlocked("/tmp/proj/quality_reports/peer_review_1/referee_domain.md")
         self.assertBlocked("/tmp/proj/quality_reports/peer_review_1/referee_methods.md")
 
+    def test_timestamped_strategy_memo_protected_undated_name_not(self):
+        """2026-09-25: memos are `strategy_memo_<YYYY-MM-DD_HHMM>.md`, one per round, created once
+        and never rewritten — so the timestamped name is protected. The old fixed name was
+        rewritten every strategist→critic round and protecting it blocked the revision loop;
+        the digit class also keeps `strategy_memo_review*.md` out of the pattern."""
+        self.assertBlocked("/tmp/proj/quality_reports/strategy/proj/strategy_memo_2026-09-25_1430.md")
+        self.assertAllowed("Edit", "/tmp/proj/quality_reports/strategy/proj/strategy_memo.md")
+        self.assertAllowed("Edit", "/tmp/proj/quality_reports/strategy/proj/strategy_memo_review.md")
+
     def test_ordinary_manuscript_edit_allowed(self):
         self.assertAllowed("Edit", "/tmp/proj/manuscript_foo.qmd")
 

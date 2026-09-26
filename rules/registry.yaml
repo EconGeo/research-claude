@@ -147,22 +147,27 @@ agents:
         producer: /discover data
     produces:
       - type: path
-        glob: quality_reports/strategy/*/strategy_memo.md
+        glob: quality_reports/strategy/*/strategy_memo_[0-9]*.md
       - type: section
-        file: quality_reports/strategy/*/strategy_memo.md
+        file: quality_reports/strategy/*/strategy_memo_[0-9]*.md
         heading: Estimand
+        select: newest
       - type: section
-        file: quality_reports/strategy/*/strategy_memo.md
+        file: quality_reports/strategy/*/strategy_memo_[0-9]*.md
         heading: Specification
+        select: newest
       - type: section
-        file: quality_reports/strategy/*/strategy_memo.md
+        file: quality_reports/strategy/*/strategy_memo_[0-9]*.md
         heading: Assumptions
+        select: newest
       - type: section
-        file: quality_reports/strategy/*/strategy_memo.md
+        file: quality_reports/strategy/*/strategy_memo_[0-9]*.md
         heading: Robustness Plan
+        select: newest
       - type: section
-        file: quality_reports/strategy/*/strategy_memo.md
+        file: quality_reports/strategy/*/strategy_memo_[0-9]*.md
         heading: Threats
+        select: newest
     critic: strategist-critic
     escalation_target: user
     component: strategy
@@ -177,7 +182,7 @@ agents:
     parallel_group: strategy
     requires:
       - type: path
-        glob: quality_reports/strategy/*/strategy_memo.md
+        glob: quality_reports/strategy/*/strategy_memo_[0-9]*.md
         producer: /strategize
     produces:
       - type: path

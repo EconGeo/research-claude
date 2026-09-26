@@ -86,12 +86,12 @@ read; this file exists so the registry is readable in a linked project.
   - literature score ≥ 80 if the component has been scored — produced by `/lit-position`
   - data score ≥ 80 if the component has been scored — produced by `/discover data`
 - **PRODUCES:**
-  - `quality_reports/strategy/*/strategy_memo.md`
-  - heading **Estimand** in `quality_reports/strategy/*/strategy_memo.md`
-  - heading **Specification** in `quality_reports/strategy/*/strategy_memo.md`
-  - heading **Assumptions** in `quality_reports/strategy/*/strategy_memo.md`
-  - heading **Robustness Plan** in `quality_reports/strategy/*/strategy_memo.md`
-  - heading **Threats** in `quality_reports/strategy/*/strategy_memo.md`
+  - `quality_reports/strategy/*/strategy_memo_[0-9]*.md`
+  - heading **Estimand** in `quality_reports/strategy/*/strategy_memo_[0-9]*.md` (newest by name)
+  - heading **Specification** in `quality_reports/strategy/*/strategy_memo_[0-9]*.md` (newest by name)
+  - heading **Assumptions** in `quality_reports/strategy/*/strategy_memo_[0-9]*.md` (newest by name)
+  - heading **Robustness Plan** in `quality_reports/strategy/*/strategy_memo_[0-9]*.md` (newest by name)
+  - heading **Threats** in `quality_reports/strategy/*/strategy_memo_[0-9]*.md` (newest by name)
   - paired critic completed after the creator, **and** the creator's component carries a score recorded after that completion (no component: log only) — *appended by `post`, not declared*
 - **CRITIC:** strategist-critic
 - **ESCALATION_TARGET:** user
@@ -103,7 +103,7 @@ read; this file exists so the registry is readable in a linked project.
 
 - **ROLE:** critic (agent) · **PARALLEL_GROUP:** strategy
 - **REQUIRES:** 
-  - `quality_reports/strategy/*/strategy_memo.md` — produced by `/strategize`
+  - `quality_reports/strategy/*/strategy_memo_[0-9]*.md` — produced by `/strategize`
 - **PRODUCES:**
   - `quality_reports/reviews/strategist-critic_*.md`
 - **CRITIC:** none

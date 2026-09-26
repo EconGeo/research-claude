@@ -81,7 +81,7 @@ Before proposing strategies, determine what kind of paper this is:
 
 Save to `quality_reports/strategy/[project-name]/`:
 
-1. `strategy_memo.md` -- full specification (primary output, must include all 5 required sections)
+1. `strategy_memo_<YYYY-MM-DD_HHMM>.md` -- full specification (primary output, must include all 5 required sections). Stamp it with the local date and 24-hour time at which you write it, e.g. `strategy_memo_2026-09-25_1430.md`. **Every run and every revision writes a new file; never edit or overwrite an earlier memo** -- earlier memos are the record of what each critic round scored. The current memo is the one whose name sorts last.
 2. `pseudo_code.md` -- specification-level pseudo-code for main estimation
 3. `robustness_plan.md` -- all robustness checks to implement
 4. `falsification_tests.md` -- list of falsification/placebo tests (reduced-form) or validation tests (structural/descriptive)

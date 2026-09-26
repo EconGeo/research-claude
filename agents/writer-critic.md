@@ -17,7 +17,7 @@ You receive ONLY the artifact, this file and the templates it names, and the con
 
 Review the declared manuscript (`python3 .claude/scripts/pipeline.py manuscript`) or the section named in your dispatch. Eight categories. Scored report. **Do NOT edit any file.**
 
-**First:** identify the paper type (reduced-form, structural, theory+empirics, descriptive) from `quality_reports/strategy/<project>/strategy_memo.md` or the manuscript.
+**First:** identify the paper type (reduced-form, structural, theory+empirics, descriptive) from the newest `quality_reports/strategy/<project>/strategy_memo_<YYYY-MM-DD_HHMM>.md` or the manuscript.
 
 ## Resources
 - Categories: `.claude/skills/review/templates/manuscript-review-8-categories.md`

@@ -36,7 +36,7 @@ stop where the work stops:
 |---|---|---|---|
 | `literature` | `quality_reports/literature/<project>/positioning.md` (+ bibliography, frontier map) | dispatch lit-critic as `/lit-position` Step 7 does | `literature` |
 | `data` | `quality_reports/data-assessment/<project>/data_sources.md` | dispatch explorer-critic as `/discover data` Step 6 does | `data` |
-| `strategy` | `quality_reports/strategy/<project>/strategy_memo.md` — or, absent a memo, the manuscript's own design section | `/review --methods` | `strategy` |
+| `strategy` | the newest `quality_reports/strategy/<project>/strategy_memo_<YYYY-MM-DD_HHMM>.md` — or, absent a memo, the manuscript's own design section | `/review --methods` | `strategy` |
 | `theory` | a `# Theory` heading in the manuscript | `/review --theory` | `theory` (opt-in; conditional) |
 | `code` | `tbl-*` chunks in the declared manuscript | `/review --code <declared manuscript>` | `code` |
 | `manuscript` | the declared manuscript renders | `/review` on the declared manuscript (comprehensive) | `manuscript`, plus `strategy` and `replication` |

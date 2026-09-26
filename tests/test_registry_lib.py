@@ -66,6 +66,15 @@ class TestRegistry(unittest.TestCase):
         rl._check_pred({"type": "score-if-scored"}, "x", probs)
         self.assertTrue(any("missing 'component'" in p for p in probs), probs)
         self.assertTrue(any("missing 'min'" in p for p in probs), probs)
+    def test_select_accepts_newest_only_and_only_on_file_predicates(self):
+        probs = []
+        rl._check_pred({"type": "section", "file": "x/*.md", "heading": "H", "select": "newest"}, "ok", probs)
+        self.assertEqual(probs, [])
+        rl._check_pred({"type": "section", "file": "x/*.md", "heading": "H", "select": "oldest"}, "bad", probs)
+        self.assertTrue(any("select" in p and "bad" in p for p in probs), probs)
+        probs = []
+        rl._check_pred({"type": "section", "file": "manuscript", "heading": "H", "select": "newest"}, "ms", probs)
+        self.assertTrue(any("manuscript" in p for p in probs), probs)
     def test_score_if_scored_rejects_overall(self):
         probs = []
         rl._check_pred({"type": "score-if-scored", "component": "overall", "min": 80}, "x", probs)

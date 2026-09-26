@@ -28,7 +28,7 @@ Workflow:
 Before drafting, read all available context:
 1. `python3 .claude/scripts/pipeline.py manuscript` — resolve the declared manuscript, then **list** it, not read it: the YAML keys, the `setup` chunk's naming map, every `#| label:` line and every `#` heading (a grep). The writer reads the sections it drafts against.
 2. Read `master_supporting_docs/` for notes, outlines, research specs
-3. Read `quality_reports/strategy/<project>/strategy_memo.md` and `quality_reports/literature/<project>/positioning.md`
+3. Read the newest `quality_reports/strategy/<project>/strategy_memo_<stamp>.md` and `quality_reports/literature/<project>/positioning.md`
 4. Read `.claude/references/domain-profile.md` for field conventions
 5. Read `references.bib` — every `@key` you write must exist there
 6. List the `tbl-` and `fig-` chunks and the objects the estimation chunks define — those are what prose may cite
