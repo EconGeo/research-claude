@@ -69,6 +69,10 @@ apply.sh links the pipeline into a project (one symlink per item):
 
 Copied as project-owned SEEDS (never overwritten if present), from seeds/:
   .claude/references/*.md         voice / domain / journal / coding-standard templates
+  .claude/references/personal-style-guide.md
+                                  -> \$RESEARCH_VOICE_PROFILE, default
+                                     ~/Research/.claude/references/personal-style-guide.md
+                                     (template kept if that file is absent)
   .claude/state/*.example         opt-in integration config examples
   data/raw/data_manifest.md       raw-data provenance manifest seed
   .gitignore                      keeps *.qmd + *.bib; ignores render artifacts and the linked dirs
@@ -199,6 +203,25 @@ echo "→ Installing project-owned seeds"
 if [[ -d "$SCRIPT_DIR/references" ]]; then
   link_items "$SCRIPT_DIR/references" "$PROJECT_DIR/.claude/references"
   prune_dead_links "$PROJECT_DIR/.claude/references"
+fi
+
+# The author's voice profile. references/personal-style-guide.md here is only the
+# unfilled template, so linking it gave every project a blank voice and the writer
+# fell back to the generic academic voice. The real profile, extracted from the
+# published corpus by /write style-guide, lives outside this repo because it is
+# personal. Point at it when it exists; a coauthor's machine without it keeps the
+# template. Override the location with RESEARCH_VOICE_PROFILE.
+VOICE_PROFILE="${RESEARCH_VOICE_PROFILE:-$HOME/Research/.claude/references/personal-style-guide.md}"
+VOICE_DEST="$PROJECT_DIR/.claude/references/personal-style-guide.md"
+if [[ -f "$VOICE_PROFILE" ]]; then
+  if [[ -e "$VOICE_DEST" && ! -L "$VOICE_DEST" ]]; then
+    echo "    ⤷ personal-style-guide.md is a real file here — project override, left alone"
+  else
+    ln -sfn "$VOICE_PROFILE" "$VOICE_DEST"
+    echo "  voice profile -> $VOICE_PROFILE"
+  fi
+else
+  echo "    ⚠️  no voice profile at $VOICE_PROFILE — personal-style-guide.md is the blank template"
 fi
 if [[ -d "$SCRIPT_DIR/state" ]]; then
   for ex in "$SCRIPT_DIR/state"/*.example; do
