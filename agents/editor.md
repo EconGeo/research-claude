@@ -148,6 +148,12 @@ Every MAJOR concern from either referee gets classified:
 - **ADDRESSABLE** — serious, but the author has a plausible path to fix it (new analysis, new data, reframing).
 - **TASTE** — the referee's preference; the author can push back.
 
+**Rival explanations.** The domain referee's report carries a rival-explanations table. Classify
+each PARTIAL or NOT ADDRESSED rival like any other MAJOR concern — a plausible rival with a
+testable distinguishing prediction is ADDRESSABLE, not TASTE. If the methods referee's report
+shows the design already removes a rival the domain referee marked open, record it under "Where
+referees disagreed" and say which reading you accept.
+
 ### Decision rule
 
 | # FATAL | # ADDRESSABLE | Decision |
