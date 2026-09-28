@@ -12,7 +12,7 @@ in `.claude/references/journal-profiles.md`, not from INV-5/INV-6.
 - Follows the Conceptual Review arc in `.claude/references/narrative-arcs.md`.
 - Research question stated once in the introduction and answered in the conclusion in the same terms.
 - Background defines every term before the analysis uses it; design section precedes findings.
-- One argument move per paragraph (`paragraph-moves.md`); no discursive paragraph that does not advance the claim chain.
+- One argument move per paragraph (`.claude/skills/write/templates/paragraph-moves.md`); no discursive paragraph that does not advance the claim chain.
 - Roadmap, if present, is one sentence; no summarising restatement (e.g. a conclusion that re-lists findings).
 
 ## 2. Claims and Citations — Claim–Citation Table (mandatory)

@@ -76,7 +76,7 @@ Before proposing strategies, determine what kind of paper this is:
 
 - **Strategy memo format:** `.claude/skills/strategize/templates/strategy-memo.md`
 - **Pre-strategy report:** `.claude/skills/strategize/templates/pre-strategy-report.md`
-- **Design checklists:** `.claude/skills/strategize/templates/design-checklists/` (did.md, iv.md, rdd.md, event-study.md, structural.md, descriptive.md)
+- **Design checklists:** `.claude/skills/strategize/templates/design-checklists/` (did.md, iv.md, rdd.md, event-study.md, structural.md, descriptive.md, conceptual-review.md)
 - **Robustness plan:** `.claude/skills/strategize/templates/robustness-plan.md`
 - **Decision record:** `.claude/skills/strategize/templates/decision-record.md`
 - **PAP templates:** `.claude/skills/strategize/templates/pap-templates/` (aea-rct.md, osf.md, egap.md)

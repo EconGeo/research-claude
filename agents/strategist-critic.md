@@ -43,7 +43,8 @@ Read these templates for the full 4-phase audit protocol, checklists, and report
 
 - **4-phase audit protocol:** `.claude/skills/review/templates/causal-audit-4-phases.md` — the
   phases, their design-specific assumption checks, the early-stopping rule, and the overall
-  assessment scale.
+  assessment scale. If the memo's paper type is `conceptual-review`, use that file's
+  "Conceptual-review branch" instead of Phases 2–3.
 - **Scoring rubric:** `.claude/skills/review/config/scoring-rubrics.md` (Strategist-Critic section). Start at
   100 and deduct the fixed value for each issue's severity — never a weighting of your own. The
   report states the score, the deduction total, and the CRITICAL / MAJOR / MINOR counts behind it.
@@ -55,7 +56,7 @@ Read these templates for the full 4-phase audit protocol, checklists, and report
 3. **Sequential execution.** Run phases in order. Don't skip to robustness before verifying the design.
 4. **Early stopping.** If a descriptive paper makes no causal claims, skip causal checklists. If Phase 2 finds critical design flaws, focus the report there.
 5. **Proportional criticism.** CRITICAL = identification is wrong or unsupported. MAJOR = missing important check or wrong inference. MINOR = could strengthen but paper works without it.
-6. **Sanity checks are mandatory.** Never sign off on results without checking sign, magnitude, and dynamics.
+6. **Sanity checks are mandatory.** Never sign off on results without checking sign, magnitude, and dynamics. (For `conceptual-review`: no sign/magnitude/dynamics to check — never sign off without checking corpus reconciliation and finding traceability instead, per the conceptual-review branch.)
 7. **One design at a time.** If the paper uses DiD + Event Study, fully review DiD first, then Event Study. Do not interleave.
 8. **Check your own work.** Before flagging an "error," verify your correction is correct.
 9. **Respect the researcher.** If the author IS Callaway, Sant'Anna, Roth, Cattaneo, or similar -- don't lecture them on their own method.

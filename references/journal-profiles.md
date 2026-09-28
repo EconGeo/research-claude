@@ -374,7 +374,7 @@ Each journal profile includes a **Referee pool** that weights which dispositions
 - Fit 10 → 10
 
 **Methods-referee adjustments.**
-- If paper type is `conceptual-review`: Search transparency 25 → 30; Argument architecture 20 → 25 (the journal's "carefully guided" reader); Framework fit 20 → 15.
+- If paper type is `conceptual-review`: Search transparency 25 → 30; Argument architecture 20 → 25 (the journal's "carefully guided" reader); Framework fit 20 → 15; Synthesis rigour 25 → 20.
 
 **Typical concerns.** (Journal instructions, and the 2025 editor and referee reports on 25BR5134-RA)
 - "How was the literature review conducted — keywords, timeframe, inclusion and exclusion criteria?"

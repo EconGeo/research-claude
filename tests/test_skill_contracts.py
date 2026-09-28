@@ -59,9 +59,12 @@ KNOWN_UNBOUND: set[str] = set()
 # 2026-09-25 (timestamped strategy memos): strategize 8,500 -> 8,700. Step 4 names the memo the
 # critic scored in its report; Step 5's revision writes a new memo; Step 6's filename is
 # timestamped and never overwritten (the full rule lives in agents/strategist.md); measured 8,662.
+# 2026-09-27 (conceptual-review paper type, Task 8 fix round 1): strategize 8,700 -> 8,800. The
+# design-checklist list gained `conceptual-review` and the option gate gained a one-line
+# conceptual-review variant (no variation/estimand columns); measured 8,790.
 BUDGET = {
     "review": 12700,
-    "strategize": 8700,
+    "strategize": 8800,
     # 2026-09-24 (option gates, Task A9): write 7,600 -> 8,100. The GATE 1 / abstract hook
     # gate and the ambiguous-paper-type confirmation; measured 8,033.
     # 2026-09-24 (routing, Task B6): write 8,100 -> 8,200. Step 1 lists the manuscript

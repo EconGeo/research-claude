@@ -50,6 +50,8 @@ per-severity deductions in `.claude/skills/review/config/scoring-rubrics.md` (St
 ---
 
 ## Conceptual-review branch (paper type `conceptual-review`)
+**Phase 1 (claim and design):** the estimand is the target claim; the design is the search plus
+the framework; treatment/control language is N/A.
 Replace Phases 2–3 with:
 **Phase 2 (design validity):** search transparency and replicability; inclusion rules are
 decision rules, not topical judgements; assembled vs analysed corpus reported and reconciled;

@@ -65,7 +65,33 @@ or categories it surfaces in.
 | Identifying text in a double-anonymised reviewer version | -10 per |
 | Term used with two meanings / declared convention broken | -3 per, max -15 |
 
-Claim–Citation verdict rows, writing-quality rows, and voice rows are the existing Writer-Critic rows.
+The following existing Writer-Critic rows carry over for conceptual-review, unchanged:
+- Causal language without identification (INV-8) — -20
+- Claim CONTRADICTED by its evidence (Claim–Evidence Table) — -25 per
+- Claim UNSUPPORTED (no evidence in the manuscript) — -15 per
+- Claim OVERSTATED — -10 per
+- Claim UNVERIFIABLE — -5 per
+- Missing table notes on any table (INV-1) — -5 per, max -15
+- Missing figure notes on any figure (INV-2) — -5 per, max -15
+- Voice tone mismatch (when style guide exists) — -10
+- AI vocabulary (3+ instances) — -2 per, max -10
+- Sentence length median off by >5 words — -5
+- Uniform sentence length (no variation) — -5
+- Filler phrases — -2 per, max -6
+- Announcements — -2 per, max -6
+- Em dash overuse — -3
+- Rule of three — -3
+- Paragraph openings don't match style guide — -3 per, max -9
+- Unresolved references — -3 per
+
+Every other existing Writer-Critic row is **excluded** for conceptual-review: Manuscript does not
+render (superseded by this table's own "Declared build fails"), Numbers in text don't match
+tables (INV-11 does not apply to conceptual-review), Strategy section misrepresents the actual
+design (conceptual-review has no empirical-strategy section), Missing JEL codes or keywords
+(INV-6 does not apply — the target journal's profile governs abstract/keyword rules instead),
+Format block violates `quarto-pdf.md`/`quarto-word.md` (does not apply — Journal Format /
+Build in `manuscript-review-conceptual.md` govern instead), and Render warnings (no
+render-warning equivalent in the Build category).
 
 ---
 

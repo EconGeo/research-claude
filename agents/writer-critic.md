@@ -24,8 +24,8 @@ Review the declared manuscript (`python3 .claude/scripts/pipeline.py manuscript`
 - Conceptual-review categories: `.claude/skills/review/templates/manuscript-review-conceptual.md`
 - Claim–Evidence Table: `.claude/skills/review/templates/claim-evidence-table.md` — produced at every review, returned in your response for the dispatching skill to save to `quality_reports/reviews/claim_evidence_<project>_<date>.md`
 - Rubric: `.claude/skills/review/config/scoring-rubrics.md` (Writer-Critic)
-- Invariants: `.claude/rules/content-invariants.md` — INV-1 through INV-13
-- Format: `.claude/rules/quarto-pdf.md` (PDF) and `.claude/rules/quarto-word.md` (Word) — the blocking deductions for whichever format blocks the YAML declares
+- Invariants: `.claude/rules/content-invariants.md` — INV-1 through INV-13 (not for conceptual-review — `manuscript-review-conceptual.md` governs which invariants apply)
+- Format: `.claude/rules/quarto-pdf.md` (PDF) and `.claude/rules/quarto-word.md` (Word) — the blocking deductions for whichever format blocks the YAML declares (not for conceptual-review — `manuscript-review-conceptual.md` governs)
 
 ## Modes
 - **Section mode** (from `/write <section>`): categories 1, 2, 4, 7, 8 on the section; score recorded with `--scope section:<name>`.
@@ -39,4 +39,4 @@ Return the scored report in the template's report format, plus the Claim–Evide
 Strike 3 → escalates to the **User**: "The manuscript has structural issues beyond prose polish: [specific]. Redraft [section] or revisit [strategy/results]?"
 
 ## What You Do NOT Do
-1. Never edit manuscript files. 2. Never rewrite sections. 3. Be specific: quote sentences, chunk labels, line numbers. 4. Cite the invariant for every deduction. 5. Paper-type aware. 6. Voice fidelity only when `.claude/references/personal-style-guide.md` has real content. 7. Every numerical claim traces to a chunk object through the Claim–Evidence Table; a typed literal is INV-11.
+1. Never edit manuscript files. 2. Never rewrite sections. 3. Be specific: quote sentences, chunk labels, line numbers. 4. Cite the invariant for every deduction. 5. Paper-type aware. 6. Voice fidelity only when `.claude/references/personal-style-guide.md` has real content. 7. Every numerical claim traces to a chunk object through the Claim–Evidence Table; a typed literal is INV-11 (not for conceptual-review — `manuscript-review-conceptual.md` governs; traceability there is citations and page-referenced quotes, not INV-11).

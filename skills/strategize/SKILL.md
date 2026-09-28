@@ -31,6 +31,8 @@ Workflow:
    *variation exploited*, *estimand*, *key assumption*, *main threat*, *data fit* — ranked,
    rank 1 marked, and wait (rank / `edit` / `none`; `--yes` takes rank 1). The pick and the
    losing designs land in Step 7's decision record under *Alternatives considered*.
+   For `conceptual-review`: candidate designs = search/corpus scope + framework; no
+   variation/estimand.
 3. Dispatch Strategist to produce:
    - Strategy memo: design choice, estimand, assumptions, comparison group
    - Pseudo-code: implementation sketch
@@ -40,7 +42,7 @@ Workflow:
 
    Pass the strategist **only the chosen design's** checklist —
    `.claude/skills/strategize/templates/design-checklists/<design>.md`, one of `did`,
-   `event-study`, `iv`, `rdd`, `structural`, `descriptive`.
+   `event-study`, `iv`, `rdd`, `structural`, `descriptive`, `conceptual-review`.
 4. Dispatch strategist-critic (4-phase audit,
    `.claude/skills/review/templates/causal-audit-4-phases.md`) on the new memo, by filename.
    Returns text; **session saves** to `quality_reports/reviews/strategist-critic_<date>.md`,
