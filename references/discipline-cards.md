@@ -78,7 +78,7 @@ Short reference cards naming each discipline's dominant paper-type frequencies, 
 | Theory + empirics | ~10% | Theoretical model of land use / zoning / sorting with empirical test. |
 | Formal theory | ~5% | Pure theory (land use, housing markets, search). More common in JUE. |
 
-**Dominant journals (shipped in `journal-profiles.md`).** REE (flagship), JREFE (finance-oriented), JUE (urban), JFQA (top finance), JRER (applied), JREPM (portfolio/investment). Overlap journals: JPubE (land use, local public finance), JF/RFS/JFE (REIT finance, MBS), JHousE (housing policy).
+**Dominant journals (shipped in `journal-profiles.md`).** REE (flagship), JREFE (finance-oriented), JUE (urban), JFQA (top finance), JRER (applied), JREPM (portfolio/investment). Overlap journals: BRI (built environment, buildings), JPubE (land use, local public finance), JF/RFS/JFE (REIT finance, MBS), JHousE (housing policy).
 
 **Preregistration norms.**
 - **Field experiments / RCTs:** rare in real estate; AEA RCT Registry if relevant.
@@ -92,7 +92,7 @@ Short reference cards naming each discipline's dominant paper-type frequencies, 
 - Code: Stata dominant in applied real estate; R rising; Python for text-as-data and ML hedonic; Julia rare.
 - Data sources: CoStar, CoStar/CBRE, MSCI/IPD (commercial); CoreLogic, Zillow, DataQuick (residential); NCREIF, NAREIT, CRSP (investment); HMDA (mortgage); Census ACS/PUMS (household).
 
-**Cross-references.** `methods-referee.md` paper types: reduced-form, structural, theory+empirics, descriptive (all standard econ types apply). `journal-profiles.md`: REE, JREFE, JUE, JFQA, JRER, JREPM.
+**Cross-references.** `methods-referee.md` paper types: reduced-form, structural, theory+empirics, descriptive (all standard econ types apply). `journal-profiles.md`: REE, JREFE, JUE, JFQA, JRER, JREPM, BRI.
 
 ---
 
