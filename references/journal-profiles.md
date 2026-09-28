@@ -356,6 +356,43 @@ Each journal profile includes a **Referee pool** that weights which dispositions
 
 ## Real Estate
 
+### Building Research & Information (BRI)
+
+**Short name:** `BRI`
+
+*Source: tandfonline.com BRI Aims & Scope and Instructions for Authors (updated Aug 2026), read 2026-09-27. Weights and adjustments below are calibration judgements, not journal statements.*
+
+**Focus.** The whole life cycle of buildings — inception, design, engineering and making, use, disassembly and recovery — with a holistic, interdisciplinary approach to a sustainable built environment centred on the building and its context. Scope spans People, Performance, Policy, Product (explicitly including "regenerative and restorative building design and development") and Process. Accepts Research Articles (4,000–8,000 words incl. abstract, tables, captions; references and appendices excluded; unstructured 200-word abstract; 4–6 keywords), Data Notes, Methods, Registered Reports and Software Tool Articles; commentaries and book reviews are commissioned.
+
+**Bar.** About 10% acceptance; initial appraisal by the Editor-in-Chief, then double-anonymised review by independent experts. Papers must be succinct and easy to follow — "discursive treatments of the subject matter are discouraged" and "the reader should be carefully guided through the paper". Impersonal voice (no "we"/"our"), British English.
+
+**Domain-referee adjustments.**
+- Contribution 30 → 25 (BRI weighs usefulness across people, performance, policy, product and process alongside novelty)
+- Lit positioning 25 → 30 (currency of sources and coverage of books and recent work are standing editor concerns)
+- Substance 20 → 20
+- External validity 15 → 15 (international readership)
+- Fit 10 → 10
+
+**Methods-referee adjustments.**
+- If paper type is `conceptual-review`: Search transparency 25 → 30; Argument architecture 20 → 25 (the journal's "carefully guided" reader); Framework fit 20 → 15.
+
+**Typical concerns.** (Journal instructions, and the 2025 editor and referee reports on 25BR5134-RA)
+- "How was the literature review conducted — keywords, timeframe, inclusion and exclusion criteria?"
+- "How was the analysis conducted? At the moment it reads like a commentary."
+- "What is the aim or research question, and where is it stated?"
+- "Is this discursive? Is the reader carefully guided through the paper?"
+- "What are the limitations, and the implications for practitioners, policy makers and researchers?"
+
+**Referee-pool weights.** (judgement)
+- STRUCTURAL: 0.10
+- CREDIBILITY: 0.10
+- MEASUREMENT: 0.20
+- POLICY: 0.25
+- THEORY: 0.20
+- SKEPTIC: 0.15
+
+**Table format override.** None specific. Tables must be interpretable without the text; unnumbered headings; format-free submission at first round, editable file at revision.
+
 ### Real Estate Economics (REE)
 
 **Short name:** `REE`
