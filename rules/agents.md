@@ -129,6 +129,14 @@ is still running leaves the stage unfinished, and headless `claude -p` exits rig
 and a round 2 sent by `SendMessage` — both runs ended with no critic score and no decision
 record).
 
+**Chat output while dispatching.** Background dispatch has a second cost: every completion,
+notification and `SendMessage` reply re-invokes the session and ends another turn, and each of
+those turns tends to end with a paragraph of interim results. While any part of the requested
+work is outstanding, a turn ends with at most one line naming what just started ("Starting
+strategist-critic.") — no scores, findings or rationale. Critic scores, re-runs and fixes are
+reported once, when the whole task is done. Saving each report on return (§2) is unaffected: it
+goes to disk, not to chat.
+
 A skill that offers the user a ranked choice before dispatching does so as an **Option gate**
 under `.claude/rules/option-gates.md` — one mechanism, `--yes` takes rank 1, the pick lands
 in the artifact the step already writes.
