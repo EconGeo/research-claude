@@ -29,8 +29,9 @@ Before scoring, identify which paper type this is:
 - **Descriptive** — measurement, data construction, pattern documentation. No causal claim.
 - **Formal-theory** — pure theory paper (game-theoretic model, mechanism design, formal political theory, etc.). The contribution *is* the model and its comparative statics; there is no empirical test in this paper. Common in political-science theory tracks (APSR theory, *JoP* formal sections), micro theory, IO theory.
 - **Survey-experiment** — randomized survey experiments (vignette, conjoint, list experiment, factorial). Common in political science (AJPS, JOP) and experimental psychology. The unit of randomization is typically the respondent; primary concerns are design, balance, manipulation checks, and attrition asymmetry — not identification (which is mechanical via randomization).
+- **Conceptual-review** — a structured literature review with framework-based synthesis; it dies on search opacity or on a finding the lens manufactured.
 
-If unclear, ask yourself: "what would kill this paper?" A reduced-form paper dies on identification; a structural paper dies on parameter ID; a theory+empirics paper dies on prediction sharpness; a descriptive paper dies on construct validity; a formal-theory paper dies on assumption tractability and comparative-static sharpness; a survey-experiment paper dies on manipulation-check failure or differential attrition.
+If unclear, ask yourself: "what would kill this paper?" A reduced-form paper dies on identification; a structural paper dies on parameter ID; a theory+empirics paper dies on prediction sharpness; a descriptive paper dies on construct validity; a formal-theory paper dies on assumption tractability and comparative-static sharpness; a survey-experiment paper dies on manipulation-check failure or differential attrition; a conceptual-review paper dies on search opacity or on a finding the lens manufactured.
 
 **Non-econ fields:** if your field uses different categories (e.g., biology: observational/experimental/computational/review), extend this list in this file. Keep the econ types for econ users. Sociology / psychology forks may want to add their own (e.g., qualitative-case-study, ethnographic, mixed-methods).
 
@@ -96,6 +97,16 @@ If unclear, ask yourself: "what would kill this paper?" A reduced-form paper die
 | 4 | Attrition + balance | 20% |
 | 5 | Replication / preregistration adherence | 10% |
 
+### Conceptual-review
+
+| # | Dimension | Weight |
+|---|---|---|
+| 1 | Search transparency | 25% |
+| 2 | Synthesis rigour | 25% |
+| 3 | Framework fit | 20% |
+| 4 | Argument architecture | 20% |
+| 5 | Replicability | 10% |
+
 The journal profile's `Methods-referee adjustments` may override specific weights. Apply those before scoring.
 
 ## Mandatory pre-scoring sanity checks
@@ -142,6 +153,13 @@ Before assigning any dimension score, run the checks for your paper type. These 
 - **Sampling-frame validity.** If MTurk / Lucid / Prolific: is the platform appropriate for the population the study claims to speak about? Quality screens (e.g., attention checks) reported?
 - **Preregistration adherence (if PAP exists).** Are the analyses in the paper the analyses pre-registered? Deviations explicitly noted?
 
+### Conceptual-review
+- **Search transparency.** Search string and dates reported.
+- **Inclusion rules operational.** Inclusion/exclusion rules are decision rules, not topical judgements.
+- **Corpus reconciliation.** Corpus counts (assembled vs analysed) reconcile.
+- **Finding traceability.** Each finding is traceable to coded literature or labelled as the paper's own proposition.
+- **Lens limitations.** Limitations name the lens (framework blind spots, the "artifact of the lens" risk).
+
 ## "What would change my mind" (REQUIRED)
 
 Every MAJOR concern must include:
@@ -159,7 +177,7 @@ Return this as your final response. Do NOT write any files yourself — the disp
 
 **Calibrated to:** [Journal Full Name] ([SHORT])
 **Disposition:** [YOUR_DISPOSITION]
-**Paper type:** [Reduced-form / Structural / Theory+empirics / Descriptive / Formal-theory / Survey-experiment]
+**Paper type:** [Reduced-form / Structural / Theory+empirics / Descriptive / Formal-theory / Survey-experiment / Conceptual-review]
 **Critical peeve:** [peeve]
 **Constructive peeve:** [peeve]
 **Date:** YYYY-MM-DD

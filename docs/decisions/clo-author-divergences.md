@@ -744,6 +744,34 @@ sample.
 
 ---
 
+### D-21 — conceptual-review paper type (net-new)
+
+**clo-author:** at `d36c408` has four paper types (reduced-form, structural, theory+empirics,
+descriptive) plus a formal-theory mode, and nothing for a structured literature review /
+framework-based synthesis paper with no primary data, no estimation, and no formal model.
+
+**research-claude:** adds `conceptual-review` as a paper type across the pipeline: a strategist
+checklist (`skills/strategize/templates/design-checklists/conceptual-review.md`), a
+strategist-critic branch (`skills/review/templates/causal-audit-4-phases.md`), a writer-critic
+rubric (`skills/review/templates/manuscript-review-conceptual.md` and its scoring rows in
+`skills/review/config/scoring-rubrics.md`), a methods-referee rubric (weights and sanity checks
+in `agents/methods-referee.md`), domain-referee rivals (`agents/domain-referee.md`), writer
+templates (`agents/writer.md`, `skills/write/templates/section-templates.md`), and a narrative
+arc (`references/narrative-arcs.md`).
+
+**Class:** DELIBERATE DIVERGENCE.
+
+**Does the problem still exist under Quarto?** N/A — this is a net-new paper type, not a port of
+an existing clo-author mechanism; there is no prior mechanism to check for survival.
+
+**Reason:** neither clo-author nor research-claude had a type for this paper, so the arc round
+and the peer review were judging a paper type that does not exist. The gap was found live,
+against a paper that actually is a conceptual review.
+
+**Recorded on disk:** the files in this task (listed above), and this entry.
+
+---
+
 ## Summary
 
 **Updated 2026-09-24 (Phase 4 of `docs/plans/2026-09-23_pipeline-repair.md`).** D-2, D-3, D-18 and

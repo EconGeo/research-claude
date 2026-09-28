@@ -14,6 +14,7 @@ Identify the type from the strategy memo before drafting. Most papers are **redu
 | **Structural** | Model estimation, counterfactual simulations | Model + Estimation |
 | **Theory + empirics** | Propositions tested with data | Model + Empirical Tests |
 | **Descriptive / measurement** | New data, new measure, stylized facts | Measurement / Data Construction |
+| **Conceptual review** | Structured literature review + framework synthesis | Methodology (search, selection, coding) + Analytical Framework |
 
 ---
 
@@ -47,6 +48,12 @@ Identify the type from the strategy memo before drafting. Most papers are **redu
 5. **Key fact** -- The main finding is [fact with magnitude] (1--2 sentences)
 6. **Why it matters** -- This fact implies [revision to existing understanding] (1--2 sentences)
 7. **Literature positioning** -- What this changes about the empirical landscape
+
+**Conceptual review:**
+4. **Design preview** -- Structured review of [corpus] read through [framework] (2--3 sentences)
+5. **Key finding** -- The cross-framework pattern (1--2 sentences)
+6. **Why it matters** -- What practitioners/policy can now do (1--2 sentences)
+7. **Literature positioning**
 
 **All types end with:**
 - **Roadmap** -- Optional, one sentence maximum

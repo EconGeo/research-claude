@@ -68,7 +68,10 @@ estimator choice are the methods referee's.
 
 **Paper type.** For a descriptive paper, the rivals are rival *interpretations* of the pattern
 the paper documents. For a pure formal-theory paper with no empirical claim, write
-`N/A — formal theory` and skip the check.
+`N/A — formal theory` and skip the check. For a conceptual-review paper, the rivals are rival
+readings of the synthesis (e.g. the pattern is produced by the framework, by corpus selection,
+or by the coder), and the distinguishing prediction names the corpus or framework test that
+would separate them.
 
 ## Dimensions (weighted)
 

@@ -50,6 +50,23 @@ or categories it surfaces in.
 | Unresolved references | -3 per |
 | Render warnings | -1 per, max -5 |
 
+### Conceptual-review rows (used with `manuscript-review-conceptual.md`)
+
+| Issue | Deduction |
+|-------|-----------|
+| Declared build fails | -20 |
+| Fabricated or unlocatable quotation | -25 per |
+| Framework misrepresented or silently redefined | -15 |
+| Corpus/search numbers inconsistent across locations | -10 per, max -30 |
+| Citation without reference entry, or entry never cited | -3 per, max -15 |
+| Research question not answered in the conclusion's terms | -10 |
+| Discursive paragraph (no argument move) | -3 per, max -15 |
+| Required journal statement missing | -5 per |
+| Identifying text in a double-anonymised reviewer version | -10 per |
+| Term used with two meanings / declared convention broken | -3 per, max -15 |
+
+Claim–Citation verdict rows, writing-quality rows, and voice rows are the existing Writer-Critic rows.
+
 ---
 
 ## Coder-Critic (Manuscript Chunks)

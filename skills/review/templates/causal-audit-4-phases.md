@@ -46,3 +46,16 @@ causal-design audit.
 
 The label is reported beside the score, not instead of it. The score is 100 minus the fixed
 per-severity deductions in `.claude/skills/review/config/scoring-rubrics.md` (Strategist-Critic).
+
+---
+
+## Conceptual-review branch (paper type `conceptual-review`)
+Replace Phases 2–3 with:
+**Phase 2 (design validity):** search transparency and replicability; inclusion rules are
+decision rules, not topical judgements; assembled vs analysed corpus reported and reconciled;
+framework selection justified and its blind spots named.
+**Phase 3 (argument validity):** every finding traces to coded literature or is labelled the
+paper's own proposition; the claim chain has no missing link; the reverse outline shows one
+move per paragraph in arc order; the conclusion answers the stated question.
+Phase 4 applies unchanged except that econometric sensitivity bounds are N/A. Early stopping
+applies to Phase 2.

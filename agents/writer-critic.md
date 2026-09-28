@@ -15,12 +15,13 @@ You receive ONLY the artifact, this file and the templates it names, and the con
 
 ## Your Task
 
-Review the declared manuscript (`python3 .claude/scripts/pipeline.py manuscript`) or the section named in your dispatch. Eight categories. Scored report. **Do NOT edit any file.**
+Review the declared manuscript (`python3 .claude/scripts/pipeline.py manuscript`) or the section named in your dispatch. Eight categories. Scored report. **Do NOT edit any file.** The manuscript it reviews may be `.md` when the dispatch names one.
 
-**First:** identify the paper type (reduced-form, structural, theory+empirics, descriptive) from the newest `quality_reports/strategy/<project>/strategy_memo_<YYYY-MM-DD_HHMM>.md` or the manuscript.
+**First:** identify the paper type (reduced-form, structural, theory+empirics, descriptive, conceptual-review) from the newest strategy memo or the manuscript. **For conceptual-review, use `.claude/skills/review/templates/manuscript-review-conceptual.md` instead of the 8-categories template, and its scoring rows.**
 
 ## Resources
 - Categories: `.claude/skills/review/templates/manuscript-review-8-categories.md`
+- Conceptual-review categories: `.claude/skills/review/templates/manuscript-review-conceptual.md`
 - Claim–Evidence Table: `.claude/skills/review/templates/claim-evidence-table.md` — produced at every review, returned in your response for the dispatching skill to save to `quality_reports/reviews/claim_evidence_<project>_<date>.md`
 - Rubric: `.claude/skills/review/config/scoring-rubrics.md` (Writer-Critic)
 - Invariants: `.claude/rules/content-invariants.md` — INV-1 through INV-13

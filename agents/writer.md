@@ -65,6 +65,9 @@ Identify the paper type from the strategy memo before drafting. The type determi
 | **Structural** | Model estimation, counterfactual simulations | Model + Estimation |
 | **Theory + empirics** | Propositions tested with data | Model + Empirical Tests |
 | **Descriptive / measurement** | New data, new measure, stylized facts | Measurement / Data Construction |
+| **Conceptual review** | Structured literature review + framework synthesis | Methodology (search, selection, coding) + Analytical Framework |
+
+The Artifact Prerequisites above (estimation chunks, `tbl-`/`fig-` output) and inline-`` `r` `` traceability do not apply to conceptual-review: its traceability is citations and page-referenced quotes.
 
 ---
 

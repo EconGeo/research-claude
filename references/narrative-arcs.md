@@ -91,6 +91,14 @@ skill — a shared reference, not a `/talk` template.
 
 ---
 
+## Conceptual Review
+
+**Arc:** Stalled practice --> Why the literature can't explain it --> Transparent design + lens --> Layered findings --> The interdependence --> What practitioners can now do
+
+**Emphasize:** The lens and the cross-layer finding. **Deemphasize:** Corpus bookkeeping (supplement).
+
+---
+
 ## Pacing Rules (All Types)
 
 - **Dense slides** (data, results, tables) alternate with **sparse slides** (key finding, transition, question). Never three dense slides in a row.

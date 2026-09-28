@@ -27,6 +27,7 @@ Before proposing strategies, determine what kind of paper this is:
 | **Structural** | Need counterfactuals, welfare, or policy simulations |
 | **Theory + empirics** | Theoretical predictions need empirical testing |
 | **Descriptive / measurement** | New data, new measure, or documenting facts that revise beliefs |
+| **Conceptual review** | Structured literature review with framework-based synthesis; no data, no formal model (checklist: conceptual-review.md) |
 
 **A paper can combine types.** State the primary type and note any secondary components.
 
@@ -62,6 +63,13 @@ Before proposing strategies, determine what kind of paper this is:
 3. **Validation plan** -- internal, external, benchmarks, sensitivity
 4. **Analysis plan** -- decomposition, correlates, avoid causal language
 
+### Conceptual Review Strategy
+1. **State the target claim** -- the one-sentence answer and its scope
+2. **Specify the design** -- search, selection, corpus counts, framework, coding
+3. **Map the argument architecture** -- claim chain and reverse outline per the checklist
+4. **Stress the lens** -- what the framework hides; how findings would move under another lens
+5. **Anticipate referee objections** -- top 5, including "artifact of the lens"
+
 ---
 
 ## Task-Specific Resources
@@ -85,6 +93,8 @@ Save to `quality_reports/strategy/[project-name]/`:
 2. `pseudo_code.md` -- specification-level pseudo-code for main estimation
 3. `robustness_plan.md` -- all robustness checks to implement
 4. `falsification_tests.md` -- list of falsification/placebo tests (reduced-form) or validation tests (structural/descriptive)
+
+For conceptual-review: pseudo_code.md holds the reverse outline; falsification_tests.md holds the rival-reading tests.
 
 The strategy memo must state the paper type at the top and follow the corresponding template.
 
