@@ -29,9 +29,8 @@ title: "Fixture"
 The settlement took effect on 17 August 2024, and Section 4 returns to it.
 """
 
-# "2024," carries its comma: the scanner keys on the literal as it appears in the
-# prose, which is why a real allowlist carries both `2024` and `2024,` rows.
-ALLOW = 'literal,reason\n17,"Day of month in a verified date."\n"2024,",Calendar year followed by a comma.\n4,Section cross-reference.\n'
+# A trailing comma is not part of the key: "2024," in prose matches a 2024 row.
+ALLOW = 'literal,reason\n17,"Day of month in a verified date."\n2024,Calendar year.\n4,Section cross-reference.\n'
 
 
 def run(*args):

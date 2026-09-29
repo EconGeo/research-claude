@@ -145,9 +145,14 @@ def load_prose(qmd):
     return load_manuscript(qmd)[0]
 
 
-INLINE = re.compile(r"`r [^`]*`")
+# `r expr` (knitr) and `{r} expr` (Quarto's native form). Matching only the first
+# made the modern syntax a false positive: `{r} round(b, 3)` reported '3'.
+INLINE = re.compile(r"`(?:r|\{r\})\s[^`]*`")
 MATH = re.compile(r"\$\$.*?\$\$|\$[^$\n]*\$", re.S)
-NUM = re.compile(r"(?<![\w`])(\d[\d,]*(?:\.\d+)?)")
+# A literal ends on a digit, so "Table 4," and "Table 4." key as '4'. The old
+# \d[\d,]* swallowed a trailing comma, so an allowlist needed a twin row ("4" and
+# "4,") for every literal that ever preceded a comma.
+NUM = re.compile(r"(?<![\w`])(\d(?:[\d,]*\d)?(?:\.\d+)?)")
 
 # Spelled-out cardinals, but only when they count the structure of an exhibit.
 # The noun list is the scope limiter -- see SPELLED-OUT COUNTS above.

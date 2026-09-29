@@ -54,5 +54,20 @@ class TestFences(Case):
         self.assertEqual(rc, 0, out)
 
 
+class TestTokenisation(Case):
+    def test_quarto_inline_syntax_is_recognised(self):
+        rc, out = self.check("The coefficient is `{r} round(b, 3)` here.\n")
+        self.assertEqual(rc, 0, out)
+
+    def test_trailing_comma_is_not_part_of_the_key(self):
+        rc, out = self.check("In 2024, prices fell.\n", allow="literal,reason\n2024,Calendar year.\n")
+        self.assertEqual(rc, 0, out)
+
+    def test_thousands_separator_is_kept(self):
+        rc, out = self.check("We observe 1,234 sales.\n")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("'1,234'", out)
+
+
 if __name__ == "__main__":
     unittest.main()
