@@ -105,6 +105,11 @@ class TestSignGlue(Case):
         rc, out = self.check("It is +`r b`.\n", allow="literal,reason\n+,Sign.\n")
         self.assertEqual(rc, 1, out)
 
+    def test_hint_covers_an_exponent(self):
+        rc, out = self.check("A factor of 10^{-`r k`}.\n")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("`r -k`", out)
+
     def test_range_idioms_and_compounds_pass(self):
         for body in ("From `r a`--`r b`.\n", "From `r a`-`r b`.\n", "The pre-`r y` era.\n"):
             with self.subTest(body=body):
@@ -286,6 +291,28 @@ class TestDeclarationTokens(Case):
         rc, out = self.check("No numbers.\n", claude=claude)
         self.assertEqual(rc, 0, out)
         self.assertNotIn("extra nouns", out)
+
+
+class TestOutputOrder(Case):
+    """The verdict comes first; a reader who stops at line one must not be misled."""
+    def test_pass_headline_precedes_the_verdict_count(self):
+        rc, out = self.check("It is significant at `r p`.\n")
+        self.assertEqual(rc, 0, out)
+        self.assertLess(out.index("Prose number check PASSED"),
+                        out.index("verdict words beside live values"), out)
+
+    def test_fail_headline_is_first_and_single(self):
+        rc, out = self.check("Share is 0.25 and +`r b`.\n")
+        self.assertEqual(rc, 1, out)
+        self.assertTrue(out.lstrip().startswith("PROSE NUMBER CHECK FAILED"), out)
+        self.assertEqual(out.count("PROSE NUMBER CHECK FAILED"), 1, out)
+        self.assertLess(out.index("manuscript:"), out.index("SIGN TYPED BESIDE A LIVE VALUE"))
+        self.assertLess(out.index("SIGN TYPED BESIDE A LIVE VALUE"), out.index("'0.25'"))
+
+    def test_sign_glue_alone_still_gets_the_headline(self):
+        rc, out = self.check("It is +`r b`.\n")
+        self.assertEqual(rc, 1, out)
+        self.assertTrue(out.lstrip().startswith("PROSE NUMBER CHECK FAILED"), out)
 
 
 if __name__ == "__main__":

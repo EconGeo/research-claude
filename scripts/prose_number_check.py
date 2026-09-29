@@ -51,15 +51,18 @@ string starts with `{`): a fence-line `fig.cap=`/`tbl.cap=` option, a `#|
 fig-cap:`/`tbl-cap:`/`*-subcap:` option line (not one computed with `!expr`), and
 -- in an R chunk only -- a `caption=`/`title=` string literal. A display fence
 (bare ``` , ```r, ````markdown, or Quarto's unexecuted ```{{r}}) is not
-executable and yields no captions. A
-multi-line YAML caption (`#| fig-cap: |`) is a known limit: not read.
+executable and yields no captions. Known limits, not read: a multi-line YAML
+caption (`#| fig-cap: |`); a YAML list-form `#| fig-subcap:`, whose items sit on
+the `#|   - "..."` lines below it; and a table note passed as `notes =` (as
+modelsummary takes it), which renders under the table but is not a caption.
 
 SIGN GLUE. A `+`, `-` or minus sign typed immediately before an inline expression
 is not a literal to explain, it is a bug: the value already carries its own sign,
 so a typed "+" ahead of a negative estimate prints "+-0.634". Exit 1, and not
-allowlistable -- there is no reason that makes a doubled sign right. The range
-idioms `` `r a`--`r b` `` and `` `r a`-`r b` ``, and a compound like `pre-`r y``,
-are spared.
+allowlistable -- there is no reason that makes a doubled sign right. An exponent
+is the same case: 10^{-`r k`} is written 10^{`r -k`}. The range idioms
+`` `r a`--`r b` `` and `` `r a`-`r b` ``, and a compound like `pre-`r y``, are
+spared.
 
 VERDICT WORDS. A typed word describing a result -- "significant", "outperforms",
 "rises" -- can go stale exactly like a typed number when the value beside it is
@@ -146,11 +149,13 @@ class CommentError(Unclosed):
 # or title= (flextable, modelsummary, gt, labs). Only those string literals are
 # admitted -- scanning every R string would re-import the code noise that
 # excluding chunks exists to avoid.
-# Known limit: a multi-line YAML caption (#| fig-cap: |) is not read.
+# Known limits, not read: a multi-line YAML caption (#| fig-cap: |), a YAML
+# list-form #| fig-subcap: (items on the lines below), and a table note passed
+# as notes = (modelsummary).
 #
 # SCOPE (controller ruling): captions are read only inside an EXECUTABLE chunk
 # -- the opener's info string starts with `{` (`{r}`, `{python}`, ...), never a
-# display fence (bare ```, ```r, ````markdown). Within an executable chunk,
+# display fence (bare ```, ```r, ````markdown, ```{{r}}). Within an executable chunk,
 # FENCE_CAP (the opener option) and OPT_CAP (a #| option line) apply for any
 # engine; R_CAP (a caption= or title= R string) applies only when the engine is
 # r, since that is R-specific call syntax, not something a python/bash chunk's
@@ -501,39 +506,70 @@ def main(argv):
     stale = [k for k in allow if k not in hits]
 
     failed = bool(glued) or bool(unexplained) or over
+    mode = f"ceiling {ceiling}" if ceiling is not None else \
+        "advisory; declare prose-verdict-ceiling: N in CLAUDE.md to enforce"
 
-    if failed:
-        print(f"  manuscript: {qmd}")
+    def verdict_count():
+        print(f"  verdict words beside live values: {len(verdicts)}  ({mode})")
+        if ceiling is not None and len(verdicts) < ceiling:
+            print(f"  note: lower prose-verdict-ceiling to {len(verdicts)}")
+
+    if not failed:
+        # The headline first: a reader who stops at line one must get the verdict.
+        print(f"Prose number check PASSED: {len(hits)} distinct literals, all allowlisted "
+              f"with a reason; {sum(len(v) for v in hits.values())} occurrences.")
+        # Name the file that was read. A green from an allowlist resolved somewhere
+        # unexpected is the same defect as a red from one that was never found.
         print(f"  allowlist:  {allow_path}")
         if note:
             print(note)
-        if unexplained and not os.path.exists(allow_path):
-            # Distinguishing the two is the whole point. One project's 54
-            # "unexplained literals" were all adjudicated, with written reasons,
-            # in a file this scanner never opened because it was named something
-            # else. Reporting a missing allowlist as a wall of unexplained
-            # literals states a property that was never tested.
-            print("  NOTE: that file does not exist. Every literal below is "
-                  "unexplained because there is\n        nothing to explain it "
-                  "in -- not because an allowlist was consulted and came up "
-                  "short.\n        Create it with the header row "
-                  "`literal,reason`.")
-        print()
+        if stale:
+            print("  note: allowlist entries no longer present in the prose:",
+                  ", ".join(sorted(stale)))
+        verdict_count()
+        return 0
+
+    why = []
+    if unexplained:
+        why.append(f"{len(unexplained)} unexplained literals")
+    if glued:
+        why.append(f"{len(glued)} signs typed beside a live value")
+    if over:
+        why.append(f"{len(verdicts)} verdict words over a ceiling of {ceiling}")
+    print("PROSE NUMBER CHECK FAILED —", "; ".join(why))
+    print(f"  manuscript: {qmd}")
+    print(f"  allowlist:  {allow_path}")
+    if note:
+        print(note)
+    if unexplained and not os.path.exists(allow_path):
+        # Distinguishing the two is the whole point. One project's 54
+        # "unexplained literals" were all adjudicated, with written reasons,
+        # in a file this scanner never opened because it was named something
+        # else. Reporting a missing allowlist as a wall of unexplained
+        # literals states a property that was never tested.
+        print("  NOTE: that file does not exist. Every literal below is "
+              "unexplained because there is\n        nothing to explain it "
+              "in -- not because an allowlist was consulted and came up "
+              "short.\n        Create it with the header row "
+              "`literal,reason`.")
+    print()
 
     if glued:
         print("SIGN TYPED BESIDE A LIVE VALUE —", len(glued), "sites (not allowlistable)")
         print("  The value carries its own sign; put any forced sign inside the "
-              "expression, e.g. sprintf('%+.3f', x).\n")
+              "expression, e.g. sprintf('%+.3f', x).\n"
+              "  An exponent is the same case: write 10^{`r -k`}, not 10^{-`r k`}.\n")
         for lineno, ctx in glued:
             print(f"  line {lineno}: ...{ctx}...")
         print()
 
     if unexplained:
-        print("PROSE NUMBER CHECK FAILED —", len(unexplained), "unexplained literals")
+        print("UNEXPLAINED LITERALS —", len(unexplained))
         print("  Make each an inline `r` expression, or add it to the allowlist "
               "with a reason.\n")
         for lit, occ in unexplained.items():
             print(f"  {lit!r}  ({len(occ)}x)  first at line {occ[0][0]}: ...{occ[0][1]}...")
+        print()
 
     if over:
         print("VERDICT WORDS ABOVE CEILING —", len(verdicts), ">", ceiling)
@@ -541,26 +577,8 @@ def main(argv):
             print(f"  line {lineno}: {word} — {sentence}")
         print()
 
-    mode = f"ceiling {ceiling}" if ceiling is not None else \
-        "advisory; declare prose-verdict-ceiling: N in CLAUDE.md to enforce"
-    print(f"  verdict words beside live values: {len(verdicts)}  ({mode})")
-    if ceiling is not None and len(verdicts) < ceiling:
-        print(f"  note: lower prose-verdict-ceiling to {len(verdicts)}")
-
-    if failed:
-        return 1
-
-    print(f"Prose number check PASSED: {len(hits)} distinct literals, all allowlisted "
-          f"with a reason; {sum(len(v) for v in hits.values())} occurrences.")
-    # Name the file that was read. A green from an allowlist resolved somewhere
-    # unexpected is the same defect as a red from one that was never found.
-    print(f"  allowlist:  {allow_path}")
-    if note:
-        print(note)
-    if stale:
-        print("  note: allowlist entries no longer present in the prose:",
-              ", ".join(sorted(stale)))
-    return 0
+    verdict_count()
+    return 1
 
 
 if __name__ == "__main__":
