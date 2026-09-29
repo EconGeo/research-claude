@@ -36,11 +36,13 @@ environment overrides the declaration for a one-off run. Whatever is in effect i
 printed with the result, because a gate scanning a narrower set than its reader
 assumes is silently weaker than it looks.
 
-FENCES. A code fence follows CommonMark, not "any line of triple backticks": it
+FENCES. A backtick fence follows CommonMark's rule, not "any line of triple
+backticks": opener and closer may be indented up to three spaces, and a fence
 closes only on a line with at least as many backticks and no info string. The old
 toggle-on-any-``` let a nested display block, or a ```{r} closer, desynchronise the
-scan. An unclosed fence is exit 2 -- nothing after that line was scanned, so
-printing a verdict would state a property that was never tested.
+scan. Tilde (~~~) fences are not handled. An unclosed fence, or an unclosed HTML
+comment, is exit 2 -- nothing after that line was scanned, so printing a verdict
+would state a property that was never tested.
 
 CAPTIONS. A caption renders on the page exactly like prose, so a hardcoded number
 in one is the same defect as a typed literal in a paragraph. Only three
@@ -48,7 +50,8 @@ constructs are read, and only inside an executable chunk (an opener whose info
 string starts with `{`): a fence-line `fig.cap=`/`tbl.cap=` option, a `#|
 fig-cap:`/`tbl-cap:`/`*-subcap:` option line (not one computed with `!expr`), and
 -- in an R chunk only -- a `caption=`/`title=` string literal. A display fence
-(bare ``` , ```r, ````markdown) is not executable and yields no captions. A
+(bare ``` , ```r, ````markdown, or Quarto's unexecuted ```{{r}}) is not
+executable and yields no captions. A
 multi-line YAML caption (`#| fig-cap: |`) is a known limit: not read.
 
 SIGN GLUE. A `+`, `-` or minus sign typed immediately before an inline expression
@@ -84,8 +87,10 @@ The allowlist defaults to quality_reports/prose_number_allowlist.csv at the
 PROJECT root -- the nearest directory at or above the manuscript that carries a
 .claude directory -- falling back to the manuscript's own directory outside a
 project. Exit codes: 0 clean, 1 unexplained literals (also a glued sign, or a
-verdict-word count over a declared ceiling), 2 usage error, an unclosed fence, or
-a bad prose-verdict-ceiling/-words/-nouns declaration.
+verdict-word count over a declared ceiling), 2 usage error, an unclosed fence or
+HTML comment, or a bad declaration: an invalid prose-verdict-words or
+prose-number-nouns pattern, or a prose-verdict-ceiling that is not a
+non-negative integer or is declared more than once.
 """
 import re, csv, sys, os, collections
 
@@ -115,11 +120,24 @@ def project_root(qmd):
         d = parent
 
 
-FENCE = re.compile(r"^(`{3,})(.*?)\s*$")
+# Up to three spaces of indent, as CommonMark allows on an opener and a closer
+# (and knitr on a chunk's end). Four or more is an indented code line, not a fence.
+FENCE = re.compile(r"^ {0,3}(`{3,})(.*?)\s*$")
 
 
-class FenceError(Exception):
+class Unclosed(Exception):
+    """A block opened at line args[0] and never closed: nothing after it was scanned."""
+    what = "block"
+
+
+class FenceError(Unclosed):
     """A code fence was opened and never closed; args[0] is its line number."""
+    what = "code fence"
+
+
+class CommentError(Unclosed):
+    """An HTML comment was opened and never closed; args[0] is its line number."""
+    what = "HTML comment"
 
 
 # Caption text is prose the reader sees, by the same logic that excludes HTML
@@ -151,10 +169,11 @@ def fence_engine(info):
     `is_executable` is whether the (left-stripped) info string starts with
     `{`. `is_r` narrows that to the r engine specifically -- `{r}`, `{r
     fig-top, ...}`, `{r,...}` -- so a `{python}`/`{bash}`/... chunk is
-    executable but not r.
+    executable but not r. A double brace (`{{r}}`) is Quarto's syntax for a
+    chunk DISPLAYED unexecuted, so its option lines never become captions.
     """
     info = info.lstrip()
-    if not info.startswith("{"):
+    if not info.startswith("{") or info.startswith("{{"):
         return False, False
     return True, bool(ENGINE_R.match(info))
 
@@ -188,18 +207,22 @@ def load_manuscript(qmd):
     `title=`. All of that text renders on the page exactly like prose does, so
     a hardcoded number in it is the same defect as one typed in a paragraph.
 
-    Fences follow CommonMark: a fence closes only on a line of at least as many
-    backticks with no info string. The old toggle-on-any-``` let a ```{r} line
-    close a chunk and let a nested display block desynchronise the scan.
+    Backtick fences follow CommonMark's closing rule: indented 0-3 spaces, a
+    fence closes only on a line of at least as many backticks with no info
+    string. The old toggle-on-any-``` let a ```{r} line close a chunk and let a
+    nested display block desynchronise the scan. Tilde (~~~) fences are not
+    handled.
 
-    An unclosed fence raises FenceError. Before, one stray fence silenced the rest
-    of the file while the gate still exited on whatever came before it -- a
-    partial scan that read as a complete one.
+    An unclosed fence raises FenceError, and an unclosed HTML comment
+    CommentError. Before, one stray opener silenced the rest of the file while
+    the gate still exited on whatever came before it -- a partial scan that
+    read as a complete one.
     """
     prose, captions = [], []
     fence, opened = None, 0
     fence_exec = fence_r = False
     in_yaml = in_comment = False
+    comment_at = 0
     for i, line in enumerate(open(qmd, encoding="utf-8"), 1):
         if fence is not None:
             m = FENCE.match(line)
@@ -215,7 +238,7 @@ def load_manuscript(qmd):
         s = line.strip()
         if s.startswith("<!--"):
             if "-->" not in line:
-                in_comment = True
+                in_comment, comment_at = True, i
             continue
         if i == 1 and s == "---":
             in_yaml = True
@@ -234,6 +257,8 @@ def load_manuscript(qmd):
         prose.append((i, line))
     if fence is not None:
         raise FenceError(opened)
+    if in_comment:
+        raise CommentError(comment_at)
     return prose, captions
 
 
@@ -410,12 +435,21 @@ def main(argv):
     except re.error as e:
         print(f"error: prose-verdict-words in CLAUDE.md is not a valid pattern: {e}")
         return 2
-    ceiling_s = "|".join(declared(root, "prose-verdict-ceiling"))
-    try:
-        ceiling = int(ceiling_s) if ceiling_s else None
-    except ValueError:
-        print(f"error: prose-verdict-ceiling must be an integer, got {ceiling_s!r}")
+    ceilings = declared(root, "prose-verdict-ceiling")
+    if len(ceilings) > 1:
+        print("error: prose-verdict-ceiling is declared more than once in CLAUDE.md "
+              f"({', '.join(ceilings)}); keep one line.")
         return 2
+    ceiling = None
+    if ceilings:
+        try:
+            ceiling = int(ceilings[0])
+        except ValueError:
+            ceiling = -1
+        if ceiling < 0:
+            print("error: prose-verdict-ceiling must be a non-negative integer, "
+                  f"got {ceilings[0]!r}")
+            return 2
 
     # A key keeps no trailing comma: NUM ends a literal on a digit, so "1999,"
     # could never match, and its bare twin made it look stale. Normalise it and
@@ -436,8 +470,8 @@ def main(argv):
 
     try:
         prose, captions = load_manuscript(qmd)
-    except FenceError as e:
-        print(f"error: the code fence opened at line {e.args[0]} of {qmd} is never closed.")
+    except Unclosed as e:
+        print(f"error: the {e.what} opened at line {e.args[0]} of {qmd} is never closed.")
         print("       Nothing after that line could be scanned, so no verdict is given.")
         return 2
 

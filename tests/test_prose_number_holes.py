@@ -53,6 +53,26 @@ class TestFences(Case):
         rc, out = self.check("```{r}\nx <- 1.5\n```\n\nNo numbers.\n")
         self.assertEqual(rc, 0, out)
 
+    def test_indented_closer_closes(self):
+        rc, out = self.check("```{r}\nx <- 1\n  ```\n\nShare is 0.25.\n")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("'0.25'", out)
+
+    def test_indented_opener_opens(self):
+        rc, out = self.check("   ```\nx = 0.5\n   ```\n\nNo numbers.\n")
+        self.assertEqual(rc, 0, out)
+
+    def test_unclosed_html_comment_is_a_structural_error(self):
+        rc, out = self.check("Intro.\n\n<!-- a note\n\nThe elasticity is 0.634.\n")
+        self.assertEqual(rc, 2, out)
+        self.assertIn("HTML comment", out)
+        self.assertIn("never closed", out)
+        self.assertIn("line 7", out)
+
+    def test_closed_html_comment_still_hides_its_numbers(self):
+        rc, out = self.check("<!-- a note\nabout 0.634\n-->\n\nNo numbers.\n")
+        self.assertEqual(rc, 0, out)
+
 
 class TestTokenisation(Case):
     def test_quarto_inline_syntax_is_recognised(self):
@@ -150,6 +170,12 @@ class TestCaptions(Case):
         rc, out = self.check(body)
         self.assertEqual(rc, 0, out)
 
+    def test_double_brace_display_chunk_is_not_read(self):
+        """```{{r}} is Quarto's unexecuted, displayed chunk: its options never render."""
+        body = '```{{r}}\n#| fig-cap: "Top 60"\nplot(1)\n```\n'
+        rc, out = self.check(body)
+        self.assertEqual(rc, 0, out)
+
 
 class TestVerdictWords(Case):
     BODY = ("The estimate is significant at `r p`. It is positive (`r round(b, 2)`).\n\n"
@@ -179,6 +205,18 @@ class TestVerdictWords(Case):
     def test_bad_ceiling_is_a_usage_error(self):
         rc, out = self.check(self.BODY, claude="prose-verdict-ceiling: many\n")
         self.assertEqual(rc, 2, out)
+
+    def test_negative_ceiling_is_a_usage_error(self):
+        rc, out = self.check(self.BODY, claude="prose-verdict-ceiling: -1\n")
+        self.assertEqual(rc, 2, out)
+        self.assertIn("prose-verdict-ceiling", out)
+
+    def test_ceiling_declared_twice_is_a_usage_error(self):
+        claude = "prose-verdict-ceiling: 5\nprose-verdict-ceiling: 3\n"
+        rc, out = self.check(self.BODY, claude=claude)
+        self.assertEqual(rc, 2, out)
+        self.assertIn("declared more than once", out)
+        self.assertNotIn("5|3", out)
 
     def test_declared_words_extend_the_lexicon(self):
         rc, out = self.check("Returns lag at `r x`.\n", claude="prose-verdict-words: lag\n")
