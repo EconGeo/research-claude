@@ -62,8 +62,12 @@ KNOWN_UNBOUND: set[str] = set()
 # 2026-09-27 (conceptual-review paper type, Task 8 fix round 1): strategize 8,700 -> 8,800. The
 # design-checklist list gained `conceptual-review` and the option gate gained a one-line
 # conceptual-review variant (no variation/estimand columns); measured 8,790.
+# 2026-09-29 (L-005, writer-critic render inputs): review 12,700 -> 13,100. One paragraph under
+# `## Mode Details` and a clause in Comprehensive item 2: every route that dispatches
+# writer-critic runs `pipeline.py critic-inputs` first and names the log (the critic has no
+# Bash); measured 13,054.
 BUDGET = {
-    "review": 12700,
+    "review": 13100,
     "strategize": 8800,
     # 2026-09-24 (option gates, Task A9): write 7,600 -> 8,100. The GATE 1 / abstract hook
     # gate and the ambiguous-paper-type confirmation; measured 8,033.
@@ -71,7 +75,10 @@ BUDGET = {
     # instead of reading it in full — a longer sentence for a much smaller context; measured 8,123.
     # 2026-09-25 (timestamped strategy memos): write 8,200 -> 8,250. Step 3 reads the newest
     # timestamped memo, not a fixed name; measured 8,217.
-    "write": 8250,
+    # 2026-09-29 (L-005, writer-critic render inputs): write 8,250 -> 8,850. Step 5 gains the
+    # `critic-inputs` run and its log path in the dispatch, and the humanize route does the same;
+    # a dispatch instruction at each of the two writer-critic sites; measured 8,828.
+    "write": 8850,
     # 2026-09-24 (option gates, Task A3): discover 6,200 -> 7,300. Four gates (question
     # framings, journal tiers, data shortlist, ideas), each a wait instruction; measured 7,195.
     # 2026-09-24 (routing, Task B5): discover 7,300 -> 7,500. Ideate's novelty check now
