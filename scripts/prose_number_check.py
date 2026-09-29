@@ -83,38 +83,66 @@ def project_root(qmd):
         d = parent
 
 
-def load_prose(qmd):
-    """Prose = outside fenced chunks, YAML front matter, and HTML comments.
+FENCE = re.compile(r"^(`{3,})(.*?)\s*$")
 
-    HTML comments are excluded because they do not appear in the rendered
-    document: a number inside one cannot make a false claim to a reader, and
-    scanning them buries the real hits under build notes (one project documents its
-    QCEW field codes -- own_code=5, agglvl=73 -- that way).
+
+class FenceError(Exception):
+    """A code fence was opened and never closed; args[0] is its line number."""
+
+
+def load_manuscript(qmd):
+    """Split the manuscript into prose lines and caption strings, in one pass.
+
+    Prose = outside fenced chunks, YAML front matter and HTML comments. HTML
+    comments are excluded because they do not appear in the rendered document:
+    a number inside one cannot make a false claim to a reader.
+
+    Fences follow CommonMark: a fence closes only on a line of at least as many
+    backticks with no info string. The old toggle-on-any-``` let a ```{r} line
+    close a chunk and let a nested display block desynchronise the scan.
+
+    An unclosed fence raises FenceError. Before, one stray fence silenced the rest
+    of the file while the gate still exited on whatever came before it -- a
+    partial scan that read as a complete one.
     """
-    lines, in_chunk, in_yaml, in_comment = [], False, False, False
+    prose, captions = [], []
+    fence, opened = None, 0
+    in_yaml = in_comment = False
     for i, line in enumerate(open(qmd, encoding="utf-8"), 1):
+        if fence is not None:
+            m = FENCE.match(line)
+            if m and len(m.group(1)) >= len(fence) and not m.group(2):
+                fence = None
+            continue
         if in_comment:
             if "-->" in line:
                 in_comment = False
             continue
-        stripped_line = line.strip()
-        if stripped_line.startswith("<!--"):
+        s = line.strip()
+        if s.startswith("<!--"):
             if "-->" not in line:
                 in_comment = True
             continue
-        if i == 1 and line.strip() == "---":
+        if i == 1 and s == "---":
             in_yaml = True
             continue
         if in_yaml:
-            if line.strip() == "---":
+            if s == "---":
                 in_yaml = False
             continue
-        if line.startswith("```"):
-            in_chunk = not in_chunk
+        m = FENCE.match(line)
+        if m:
+            fence, opened = m.group(1), i
             continue
-        if not in_chunk:
-            lines.append((i, line))
-    return lines
+        prose.append((i, line))
+    if fence is not None:
+        raise FenceError(opened)
+    return prose, captions
+
+
+def load_prose(qmd):
+    """Prose lines only."""
+    return load_manuscript(qmd)[0]
 
 
 INLINE = re.compile(r"`r [^`]*`")
@@ -202,8 +230,15 @@ def main(argv):
         for r in csv.DictReader(open(allow_path, encoding="utf-8")):
             allow.setdefault(r["literal"], r["reason"])
 
+    try:
+        prose, captions = load_manuscript(qmd)
+    except FenceError as e:
+        print(f"error: the code fence opened at line {e.args[0]} of {qmd} is never closed.")
+        print("       Nothing after that line could be scanned, so no verdict is given.")
+        return 2
+
     hits = collections.OrderedDict()
-    for lineno, line in load_prose(qmd):
+    for lineno, line in prose:
         clean = MATH.sub(" ", INLINE.sub(" ", line))
         for m in NUM.finditer(clean):
             ctx = clean[max(0, m.start() - 55):m.end() + 55].strip().replace("\n", " ")
