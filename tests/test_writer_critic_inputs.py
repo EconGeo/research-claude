@@ -42,5 +42,19 @@ class TestRenderIsScoredFromTheLog(unittest.TestCase):
         self.assertIn("critic-inputs", s)
 
 
+class TestEveryDispatchSiteRunsCriticInputs(unittest.TestCase):
+    SITES = {"skills/write/SKILL.md": 2, "skills/review/SKILL.md": 1, "skills/revise/SKILL.md": 1}
+
+    def test_each_known_site(self):
+        for rel, n in self.SITES.items():
+            self.assertGreaterEqual(read(rel).count("pipeline.py critic-inputs"), n, rel)
+
+    def test_no_unlisted_skill_dispatches_writer_critic(self):
+        for f in sorted((ROOT / "skills").rglob("SKILL.md")):
+            rel = str(f.relative_to(ROOT))
+            if re.search(r"[Dd]ispatch\w*\W{0,4}(\*\*)?writer-critic", f.read_text()):
+                self.assertIn(rel, self.SITES, f"{rel} dispatches writer-critic without being a known critic-inputs site")
+
+
 if __name__ == "__main__":
     unittest.main()

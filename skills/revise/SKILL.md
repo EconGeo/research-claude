@@ -68,8 +68,8 @@ Fill `.claude/skills/revise/templates/response-tracker.md` and save it to
 - Action items by priority (HIGH: new analysis, MEDIUM: clarification, FLAGGED: disagreements, LOW: minor)
 
 ### Step 5: Dispatch Agents
-- CLARIFICATION/REWRITE → dispatch writer, then writer-critic; record the score
-- NEW ANALYSIS → after user approval dispatch coder, then coder-critic; record the score. Then dispatch writer and writer-critic for the affected section; record the score.
+- CLARIFICATION/REWRITE → dispatch writer; run `python3 .claude/scripts/pipeline.py critic-inputs`; dispatch writer-critic naming the log path it prints (it has no Bash and scores Render from that log — `.claude/rules/agents.md` §2); record the score
+- NEW ANALYSIS → after user approval dispatch coder, then coder-critic; record the score. Then dispatch writer, run `critic-inputs`, and dispatch writer-critic with its log path for the affected section; record the score.
   - `code`: `python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report <path>`
   - `manuscript`: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<name>`
 - DISAGREE → draft diplomatic response, flag prominently for user
