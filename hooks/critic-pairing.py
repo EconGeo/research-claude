@@ -16,6 +16,9 @@ standalone path that every stage skill's non-orchestrated step uses) does NOT â€
 foreign: treat it as belonging to every session rather than dropping it, or this hook goes
 blind to exactly the creators dispatched outside the orchestrated loop, which is the group
 most likely to skip a critic. (R-113)
+
+The converse: an unattributed creator entry is paired against critic entries from ALL sessions
+that come after it, since the critic may have run from a later, stamped session.
 """
 from __future__ import annotations
 import hashlib, json, os, sys
@@ -59,18 +62,25 @@ def _run() -> int:
     if not log_p.exists():
         return 0
     sid = inp.get("session_id", "")
-    entries = []
+    entries, all_entries = [], []
     for ln in log_p.read_text().splitlines():
         try: e = json.loads(ln)
         except json.JSONDecodeError: continue
         if not isinstance(e, dict): continue  # same non-object case, one log line at a time
+        all_entries.append(e)
         if not sid or (e.get("session") or "") in ("", sid): entries.append(e)
     unpaired = []
     for creator in rl.creators(reg):
         crit = rl.critic_of(reg, creator)
         if not crit: continue
-        last_c = max((e["at"] for e in entries if e.get("agent") == creator), default=None)
-        last_k = max((e["at"] for e in entries if e.get("agent") == crit), default=None)
+        last_c, c_stamped = max(((e["at"], bool(e.get("session"))) for e in entries if e.get("agent") == creator),
+                                default=(None, True))
+        # An unattributed creator (pipeline.py log) belongs to no session, so the critic that
+        # pairs it may have been dispatched from any later one and stamped with that session's
+        # id â€” which the session filter above would have dropped. A stamped creator keeps the
+        # strict per-session pairing. (2026-09-28/29 lit-position -> lit-critic)
+        pool = entries if c_stamped else all_entries
+        last_k = max((e["at"] for e in pool if e.get("agent") == crit), default=None)
         if last_c and (last_k is None or last_k < last_c):
             unpaired.append((creator, crit))
     if not unpaired:

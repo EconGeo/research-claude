@@ -108,6 +108,42 @@ class TestEmptySessionId(FixtureCase):
         found = list(sessions.rglob("critic-pairing-blocked.json")) if sessions.exists() else []
         self.assertEqual(found, [])
 
+class TestCrossSessionPairing(FixtureCase):
+    """2026-09-28/29 regression: `pipeline.py log lit-position` writes an UNSTAMPED entry (no
+    "session" key); the critic then ran in a later session and was stamped by dispatch-log.py.
+    The session filter dropped that critic entry, so the creator looked unpaired and the Stop
+    hook blocked a session that had nothing to do with it."""
+    def _log(self, *entries):
+        (self.t / "quality_reports" / "agent_dispatch.jsonl").write_text(
+            "".join(json.dumps(e) + "\n" for e in entries))
+    def _stop(self, sid="sA"):
+        return self.run_hook(json.dumps({"session_id": sid, "cwd": str(self.t)}))
+
+    def test_unstamped_creator_paired_by_later_critic_from_other_session(self):
+        self._log({"at": "2026-09-28T10:00:00.000+00:00", "agent": "lit-position", "source": "pipeline.py"},
+                  {"at": "2026-09-29T09:00:00.000+00:00", "agent": "lit-critic", "session": "sB", "source": "hook"})
+        rc, out = self._stop("sA")
+        self.assertEqual(rc, 0); self.assertEqual(out, "")
+
+    def test_unstamped_creator_not_paired_by_earlier_critic_from_other_session(self):
+        self._log({"at": "2026-09-27T09:00:00.000+00:00", "agent": "lit-critic", "session": "sB", "source": "hook"},
+                  {"at": "2026-09-28T10:00:00.000+00:00", "agent": "lit-position", "source": "pipeline.py"})
+        rc, out = self._stop("sA")
+        self.assertEqual(rc, 0); self.assertIn("lit-position", out)
+
+    def test_unstamped_creator_with_no_critic_anywhere_still_flagged(self):
+        self._log({"at": "2026-09-28T10:00:00.000+00:00", "agent": "lit-position", "source": "pipeline.py"})
+        rc, out = self._stop("sA")
+        self.assertEqual(rc, 0); self.assertIn('"decision": "block"', out)
+
+    def test_stamped_creator_is_not_paired_by_other_sessions_critic(self):
+        """The widening is only for unattributed creators; a creator this session dispatched
+        must still be paired by a critic this session (or unattributed) dispatched."""
+        self._log({"at": "2026-09-28T10:00:00.000+00:00", "agent": "lit-position", "session": "sA", "source": "hook"},
+                  {"at": "2026-09-29T09:00:00.000+00:00", "agent": "lit-critic", "session": "sB", "source": "hook"})
+        rc, out = self._stop("sA")
+        self.assertEqual(rc, 0); self.assertIn("lit-position", out)
+
 class TestOuterBackstopEndToEnd(FixtureCase):
     """Fix round 2 (R-115): hooks/critic-pairing.py's own `if __name__ == "__main__":`
     block now carries the house fail-open idiom (see hooks/log-reminder.py and four other

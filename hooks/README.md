@@ -13,6 +13,18 @@ overwrites, so editing it is safe and an existing file is left alone.
 see below. Turning six hooks on across six repos at once is a behavior change
 that should be a decision, not a side effect.
 
+## Hooks run through `.claude/run-hook.sh` (fresh git worktrees)
+
+`.claude/hooks/` is untracked symlinks; `.claude/settings.json` is tracked. A git worktree
+(the desktop app makes one per session) therefore gets settings naming hooks that do not
+exist, and a failing PreToolUse hook blocks every tool call — including the repair.
+Every seeded hook command is `"$CLAUDE_PROJECT_DIR"/.claude/run-hook.sh <hook-file>`. That
+launcher (seeds, run-hook.sh) is a real, tracked file: it runs the hook from the project, else
+from the main checkout, else warns and exits 0. `apply.sh` refreshes it and rewrites existing
+`settings.json` commands once (idempotent). To give a worktree the
+full pipeline (agents, skills, rules), run `apply.sh --project-dir <worktree> --link`.
+Tests: test_run_hook.py.
+
 ## A hook that is installed but unwired is not a dormant feature
 
 It is a **broken promise**, because the skill that depends on it still says it

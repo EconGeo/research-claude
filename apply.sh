@@ -78,6 +78,10 @@ Copied as project-owned SEEDS (never overwritten if present), from seeds/:
   .gitignore                      keeps *.qmd + *.bib; ignores render artifacts and the linked dirs
   templates/quarto-preamble.tex   PDF preamble the manuscript YAML requires
 
+Refreshed on every run (real, tracked file — survives a fresh git worktree):
+  .claude/run-hook.sh        launches hooks from here or the main checkout; fails open
+  (and settings.json hook commands are rewritten once to go through it)
+
 Written when the pipeline commit changes (left untouched otherwise):
   .claude/pipeline.lock      repo URL + SHA — replication provenance and coauthor bootstrap
 
@@ -247,6 +251,22 @@ if [[ -f "$SCRIPT_DIR/seeds/bootstrap-pipeline.sh" ]]; then
   # every project. copy_seed never overwrites, so an existing file is safe.
   copy_seed "$SCRIPT_DIR/seeds/settings.json" "$PROJECT_DIR/.claude/settings.json"
   chmod +x "$PROJECT_DIR/bootstrap-pipeline.sh" 2>/dev/null || true
+fi
+
+# ── hook launcher ────────────────────────────────────────────────────────────
+# .claude/hooks/ is untracked links; .claude/settings.json is tracked. A fresh git worktree
+# therefore has settings naming hooks that do not exist, and a PreToolUse hook that cannot
+# start fails every tool call. .claude/run-hook.sh is a REAL, tracked file that finds the hook
+# (here, else the main checkout) and fails open. It is pipeline-owned, so refreshed every run;
+# settings.json commands are pointed at it by a text-level rewrite (idempotent, touches nothing
+# else). See seeds/run-hook.sh.
+if [[ -f "$SCRIPT_DIR/seeds/run-hook.sh" ]]; then
+  cp "$SCRIPT_DIR/seeds/run-hook.sh" "$PROJECT_DIR/.claude/run-hook.sh"
+  chmod +x "$PROJECT_DIR/.claude/run-hook.sh"
+  if [[ -f "$PROJECT_DIR/.claude/settings.json" ]]; then
+    wrapped="$(python3 "$SCRIPT_DIR/scripts/wrap_hooks.py" "$PROJECT_DIR/.claude/settings.json")"
+    [[ "$wrapped" -gt 0 ]] && echo "  settings.json: $wrapped hook command(s) routed through .claude/run-hook.sh"
+  fi
 fi
 
 # ── optional: link references to a shared directory ──────────────────────────
