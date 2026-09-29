@@ -769,6 +769,53 @@ class TestDeductions(FixtureCase):
         self.assertEqual(rc, 1, out); self.assertIn("deductions", out)
 
 
+class TestCriticInputs(FixtureCase):
+    """`critic-inputs` (ledger L-005): writer-critic has no Bash (.claude/rules/agents.md §2), so
+    the dispatching skill runs the mechanical checks its Render category scores and hands it the
+    log. The log must exist even when the render fails — a failed render is the finding."""
+    def setUp(self):
+        super().setUp()
+        os.symlink(ROOT / "scripts" / "check_render.py", self.t / ".claude" / "scripts" / "check_render.py")
+    def _log(self, out):
+        last = out.strip().splitlines()[-1]
+        self.assertTrue(last.startswith("critic-inputs: quality_reports/critic_inputs/writer-critic_"), out)
+        p = self.t / last.split(": ", 1)[1]; self.assertTrue(p.is_file(), out); return p.read_text()
+
+    def test_clean_fixture_logs_all_three_sections(self):
+        rc, out = run("critic-inputs", root=self.t); self.assertEqual(rc, 0, out)
+        log = self._log(out)
+        self.assertIn("## quarto render manuscript_fixture.qmd — exit 0", log)
+        self.assertIn("## prose_number_check.py manuscript_fixture.qmd — exit 0", log)
+        self.assertIn("## check_render.py", log)
+
+    def test_renders_even_when_the_output_is_fresh(self):
+        """`render` the predicate skips a fresh manuscript; the critic counts WARNINGs, so this
+        must not — a skipped render leaves nothing to count."""
+        subprocess.run(["quarto", "render", "manuscript_fixture.qmd"], cwd=self.t, capture_output=True)
+        self.assertEqual(run("fresh", root=self.t)[0], 0)
+        rc, out = run("critic-inputs", root=self.t); self.assertEqual(rc, 0, out)
+        self.assertIn("Output created", self._log(out))
+
+    def test_a_failed_render_still_writes_the_log_and_skips_the_page_check(self):
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text() + '\n```{r}\n#| label: boom\nstop("critic-inputs test")\n```\n')
+        rc, out = run("critic-inputs", root=self.t); self.assertEqual(rc, 0, out)
+        log = self._log(out)
+        self.assertRegex(log, r"## quarto render manuscript_fixture\.qmd — exit [1-9]")
+        self.assertIn("skipped: render failed", log)
+
+    def test_a_typed_prose_number_is_in_the_log(self):
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text() + "\n\nThe effect is 0.42 points.\n")
+        rc, out = run("critic-inputs", root=self.t); self.assertEqual(rc, 0, out)
+        self.assertRegex(self._log(out), r"## prose_number_check\.py manuscript_fixture\.qmd — exit [1-9]")
+
+    def test_two_runs_never_share_a_log(self):
+        rc1, out1 = run("critic-inputs", root=self.t); rc2, out2 = run("critic-inputs", root=self.t)
+        self.assertEqual((rc1, rc2), (0, 0))
+        self.assertNotEqual(out1.strip().splitlines()[-1], out2.strip().splitlines()[-1])
+        self.assertEqual(len(list((self.t / "quality_reports" / "critic_inputs").glob("*.log"))), 2)
+
 if __name__ == "__main__": unittest.main()
 
 

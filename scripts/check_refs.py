@@ -291,6 +291,7 @@ AP_ALLOW = {
     "quality_reports/reviews/replication_*_*.md": "/review --replicate report — records no score (R-106)",
     "quality_reports/claim_source_map_*.md":      "named only as retired INV-22's former artifact",
     "quality_reports/deposit_manifest_*.md":      "/submit deposit output — not gated (Phase 3.5)",
+    "quality_reports/critic_inputs/*.log":        "pipeline.py critic-inputs log handed to writer-critic — gitignored session mechanics, not gated (L-005)",
 }
 
 def _ap_expand(tok):

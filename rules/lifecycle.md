@@ -75,6 +75,12 @@ manuscript and a stage after the one about to be suggested has no claim on that 
 when a stage is suggested or every stage is closed; exit 1 when nothing is ready (**BLOCKED**,
 each with what is missing and the skill that produces it).
 
+## Critic inputs — `pipeline.py critic-inputs`
+
+Renders the declared manuscript, runs `prose_number_check.py` and `check_render.py`, and writes
+`quality_reports/critic_inputs/writer-critic_<stamp>.log` for the writer-critic dispatch (always
+renders; exit 0 once the log is written).
+
 ## Predicate types
 
 | Type | Passes when |
