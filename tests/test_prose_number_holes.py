@@ -69,5 +69,28 @@ class TestTokenisation(Case):
         self.assertIn("'1,234'", out)
 
 
+class TestSignGlue(Case):
+    def test_plus_before_inline_fails(self):
+        rc, out = self.check("The coefficient = +`r b` points.\n")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("SIGN TYPED BESIDE A LIVE VALUE", out)
+
+    def test_minus_and_unicode_minus_and_quarto_form_fail(self):
+        for body in ("It is -`r b`.\n", "It is −`r b`.\n", "It is (-`{r} b`).\n"):
+            with self.subTest(body=body):
+                rc, out = self.check(body)
+                self.assertEqual(rc, 1, out)
+
+    def test_allowlist_cannot_silence_it(self):
+        rc, out = self.check("It is +`r b`.\n", allow="literal,reason\n+,Sign.\n")
+        self.assertEqual(rc, 1, out)
+
+    def test_range_idioms_and_compounds_pass(self):
+        for body in ("From `r a`--`r b`.\n", "From `r a`-`r b`.\n", "The pre-`r y` era.\n"):
+            with self.subTest(body=body):
+                rc, out = self.check(body)
+                self.assertEqual(rc, 0, out)
+
+
 if __name__ == "__main__":
     unittest.main()

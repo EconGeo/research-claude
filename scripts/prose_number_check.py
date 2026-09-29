@@ -172,6 +172,14 @@ _NOUN = ("rows?|tests?|classes|class|columns?|cells?|designs?|exhibits?|"
 
 DECLARATION = re.compile(r"^prose-number-nouns:\s*(.+?)\s*$", re.M)
 
+# A sign typed against an inline value. The value carries its own sign, so a
+# typed "+" before a negative estimate prints "+-0.634", and the typed sign is
+# outside the literal alphabet in both directions. Not allowlistable: there is
+# no reason that makes it right. Keep the sign in the expression
+# (sprintf("%+.3f", x)). The lookbehind spares the range idioms `r a`--`r b` and
+# `r a`-`r b` and compounds like pre-`r y`.
+SIGN_GLUE = re.compile(r"(?<![-\w`])[+−-](?=`(?:r|\{r\})\s)")
+
 
 def extra_nouns(root):
     """The project's own countable nouns, and where they came from.
@@ -243,7 +251,10 @@ def main(argv):
         return 2
 
     hits = collections.OrderedDict()
+    glued = []
     for lineno, line in prose:
+        for m in SIGN_GLUE.finditer(line):
+            glued.append((lineno, line[max(0, m.start() - 55):m.end() + 55].strip()))
         clean = MATH.sub(" ", INLINE.sub(" ", line))
         for m in NUM.finditer(clean):
             ctx = clean[max(0, m.start() - 55):m.end() + 55].strip().replace("\n", " ")
@@ -255,13 +266,14 @@ def main(argv):
     unexplained = {k: v for k, v in hits.items() if k not in allow}
     stale = [k for k in allow if k not in hits]
 
-    if unexplained:
-        print("PROSE NUMBER CHECK FAILED —", len(unexplained), "unexplained literals")
+    failed = bool(glued) or bool(unexplained)
+
+    if failed:
         print(f"  manuscript: {qmd}")
         print(f"  allowlist:  {allow_path}")
         if note:
             print(note)
-        if not os.path.exists(allow_path):
+        if unexplained and not os.path.exists(allow_path):
             # Distinguishing the two is the whole point. One project's 54
             # "unexplained literals" were all adjudicated, with written reasons,
             # in a file this scanner never opened because it was named something
@@ -272,10 +284,24 @@ def main(argv):
                   "in -- not because an allowlist was consulted and came up "
                   "short.\n        Create it with the header row "
                   "`literal,reason`.")
+        print()
+
+    if glued:
+        print("SIGN TYPED BESIDE A LIVE VALUE —", len(glued), "sites (not allowlistable)")
+        print("  The value carries its own sign; put any forced sign inside the "
+              "expression, e.g. sprintf('%+.3f', x).\n")
+        for lineno, ctx in glued:
+            print(f"  line {lineno}: ...{ctx}...")
+        print()
+
+    if unexplained:
+        print("PROSE NUMBER CHECK FAILED —", len(unexplained), "unexplained literals")
         print("  Make each an inline `r` expression, or add it to the allowlist "
               "with a reason.\n")
         for lit, occ in unexplained.items():
             print(f"  {lit!r}  ({len(occ)}x)  first at line {occ[0][0]}: ...{occ[0][1]}...")
+
+    if failed:
         return 1
 
     print(f"Prose number check PASSED: {len(hits)} distinct literals, all allowlisted "
