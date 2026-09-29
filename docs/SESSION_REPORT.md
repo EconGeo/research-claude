@@ -1232,3 +1232,61 @@ of claiming nothing is open; `docs/plans/2026-09-23_pipeline-repair.md` Phase 5 
 "either Phase 1 above or genuinely project-local" claim about the number-gate holes was wrong,
 Phase 1 has no such item and the holes were research-wide; `docs/improvement-ledger.md` gained
 `L-007` (POGM4, this audit; `landed 6bc7b05` after the merge). `check_fork.sh` PASS.
+
+## 2026-09-29 — writer-critic render inputs (L-005)
+
+**Scope.** `docs/plans/2026-09-29-writer-critic-render-inputs.md`, ledger row L-005: writer-critic
+scored a Render category (category 6) that its rubric told it to *run* (`quarto render`,
+`prose_number_check.py`) with only `Read, Grep, Glob`. It now scores Render from a log the
+dispatching skill produces (`pipeline.py critic-inputs`) and names in the dispatch, and reports
+`NOT SCORED` when there is none. Executed inline in a worktree on branch `writer-critic-inputs`
+(off local `main` at `ef0e1c8`), merged `--no-ff` as `6fc61f0`. Decisions fixed up front by the
+author: render on every review (never skipped as fresh), `.md` manuscripts stay unscored,
+`*.log` stays gitignored and is never committed.
+
+**Rejected: granting writer-critic `Bash`.** L-005 offered it as the first option.
+`rules/agents.md` §2 removed that `Bash` on purpose — a reviewer with a shell can write any file
+through it, which is what withholding `Write` exists to prevent. The rule now says so in a new
+paragraph ("Mechanical inputs come from the dispatching skill, not from a tool grant"), and a test
+pins `tools: Read, Grep, Glob`.
+
+**Commits (oldest first):**
+- `edd979d` — `pipeline.py critic-inputs`: always renders, runs `prose_number_check.py` and, on a
+  fresh PDF, `check_render.py`; one timestamped log under `quality_reports/critic_inputs/`; exit 0
+  whenever the log is written. Shared `run_render`/`run_script` helpers; `prose-check` predicate
+  now goes through `run_script`. `rules/lifecycle.md` documents it.
+- `c3806a2` — rubric §6 (8-categories and conceptual templates) reads the log, deducts nothing
+  and reports `NOT SCORED` without one; `agents/writer-critic.md` Resources; `rules/agents.md` §2.
+- `c43b075` — `/write` (step 5 and the humanize route), `/review` (all writer-critic routes) and
+  `/revise` (step 5) run `critic-inputs` before dispatching and pass the log path.
+- `0db1054` — `check_write.py` / `check_review.py` assert `critic-inputs` ran before the
+  dispatch and its log path is in the prompt.
+- `00b67c4` — two edits the plan did not anticipate, below.
+
+**Two plan gaps found and fixed.** (1) `check_fork.sh` `[artifact-paths]` failed on the new path
+named in `rules/lifecycle.md`; added an `AP_ALLOW` row `quality_reports/critic_inputs/*.log` in
+`scripts/check_refs.py` (gitignored session mechanics, not gated). (2)
+`tests/test_skill_contracts.py` SKILL.md size budget went red; raised `review` 12,700 → 13,100
+(measured 13,054) and `write` 8,250 → 8,850 (measured 8,828), each with a dated note per that
+file's convention. The alternative was trimming the new dispatch text.
+
+**Test status.** Baseline 562 passed → 579 passed on `main` after the merge (+17: 5 in
+`test_pipeline.py`, 8 in `test_writer_critic_inputs.py`, 4 checker tests), 14 subtests, exit 0.
+`check_fork.sh` PASS; `check_install.sh --all` PASS.
+
+**Live evals (no timeout).** `tests/evals/write.sh` PASS; `tests/evals/review.sh` PASS. In both
+kept runs the saved writer-critic report's `## … Render:` line was `PASS`, scored from the log —
+not `NOT SCORED`.
+
+**Out of scope, still open.** (a) A pandoc build for Markdown manuscripts: `declared_manuscript()`
+accepts only `.qmd`, so a conceptual-review `.md` manuscript's Build is `NOT SCORED` and the report
+says so. (b) L-004 (configurable exhibit-label glob). The hard gate is unchanged: `pipeline.py
+post writer` already runs `render` and `prose-check` itself.
+
+**Also recorded.** `ef0e1c8` (hooks run through `run-hook.sh` so they survive fresh worktrees;
+critic-pairing pairs unattributed creators across sessions) landed 2026-09-29 without an entry.
+Per the plan, the fleet is at that lock with `run-hook.sh` tracked in all six repos (checked
+2026-09-29).
+
+**Not done.** Nothing pushed; local `main` is ahead of `origin` by the `ef0e1c8`, the five branch
+commits and the merge, plus the docs commit that follows.

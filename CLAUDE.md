@@ -54,7 +54,10 @@ dispatch rule in `rules/agents.md` §4) — see the 2026-09-25 "Five skill reds 
 (merge `6bc7b05`): six holes in `scripts/prose_number_check.py` closed. The author merged knowing
 three paper manuscripts (POGM4, affordable_housing_2026, zoning2026) now fail the stricter gate
 on real findings they will fix on their own schedule — see the 2026-09-28 entry in
-`docs/SESSION_REPORT.md`. **Open in this repo:** rows L-004 and L-005 in
+`docs/SESSION_REPORT.md`. On 2026-09-29 `docs/plans/2026-09-29-writer-critic-render-inputs.md`
+landed (merge `6fc61f0`, ledger L-005): writer-critic scores Render from a `pipeline.py
+critic-inputs` log the dispatching skill hands it, and reports NOT SCORED without one — see the
+2026-09-29 entry in `docs/SESSION_REPORT.md`. **Open in this repo:** row L-004 in
 `docs/improvement-ledger.md`.
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
