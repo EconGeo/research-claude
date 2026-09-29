@@ -245,6 +245,12 @@ a cited paper — belong there with a written reason. The standard is not that
 literals are forbidden; it is that each surviving one is a decision someone made on
 purpose and can defend.
 
+The project's CLAUDE.md (where `manuscript:` is declared) also carries two declarations item 3
+reads: `prose-verdict-words:` extends the lexicon of result-describing words (e.g.
+"significant", "outperforms") the checker looks for beside a live value, and
+`prose-verdict-ceiling: N` turns a count over N into a failure — omitted, the count is
+advisory and printed with the result.
+
 If any chunk fails or any inline expression evaluates to NA, quarto render exits
 non-zero and identifies the exact chunk and line. There are no silent wrong values.
 
