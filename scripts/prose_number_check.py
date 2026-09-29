@@ -36,6 +36,36 @@ environment overrides the declaration for a one-off run. Whatever is in effect i
 printed with the result, because a gate scanning a narrower set than its reader
 assumes is silently weaker than it looks.
 
+FENCES. A code fence follows CommonMark, not "any line of triple backticks": it
+closes only on a line with at least as many backticks and no info string. The old
+toggle-on-any-``` let a nested display block, or a ```{r} closer, desynchronise the
+scan. An unclosed fence is exit 2 -- nothing after that line was scanned, so
+printing a verdict would state a property that was never tested.
+
+CAPTIONS. A caption renders on the page exactly like prose, so a hardcoded number
+in one is the same defect as a typed literal in a paragraph. Only three
+constructs are read, and only inside an executable chunk (an opener whose info
+string starts with `{`): a fence-line `fig.cap=`/`tbl.cap=` option, a `#|
+fig-cap:`/`tbl-cap:`/`*-subcap:` option line (not one computed with `!expr`), and
+-- in an R chunk only -- a `caption=`/`title=` string literal. A display fence
+(bare ``` , ```r, ````markdown) is not executable and yields no captions. A
+multi-line YAML caption (`#| fig-cap: |`) is a known limit: not read.
+
+SIGN GLUE. A `+`, `-` or minus sign typed immediately before an inline expression
+is not a literal to explain, it is a bug: the value already carries its own sign,
+so a typed "+" ahead of a negative estimate prints "+-0.634". Exit 1, and not
+allowlistable -- there is no reason that makes a doubled sign right. The range
+idioms `` `r a`--`r b` `` and `` `r a`-`r b` ``, and a compound like `pre-`r y``,
+are spared.
+
+VERDICT WORDS. A typed word describing a result -- "significant", "outperforms",
+"rises" -- can go stale exactly like a typed number when the value beside it is
+`r`-live and the word is not. Counted per sentence and advisory by default, so a
+manuscript already carrying dozens is not red on day one; `prose-verdict-ceiling:
+N` in the project's CLAUDE.md makes a count above N fail, and
+`prose-verdict-words:` extends the lexicon the same way `prose-number-nouns:`
+extends the noun list.
+
 PROVENANCE. Written for one project in 2026-09 and promoted here unchanged in
 logic, with the manuscript and allowlist paths parameterized so any project can
 use it.
@@ -53,7 +83,9 @@ Usage
 The allowlist defaults to quality_reports/prose_number_allowlist.csv at the
 PROJECT root -- the nearest directory at or above the manuscript that carries a
 .claude directory -- falling back to the manuscript's own directory outside a
-project. Exit codes: 0 clean, 1 unexplained literals, 2 usage error.
+project. Exit codes: 0 clean, 1 unexplained literals (also a glued sign, or a
+verdict-word count over a declared ceiling), 2 usage error, an unclosed fence, or
+a bad prose-verdict-ceiling/-words/-nouns declaration.
 """
 import re, csv, sys, os, collections
 

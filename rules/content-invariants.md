@@ -122,7 +122,7 @@ kept rather than reused so older reports and reviews still resolve.
 
 | Invariant | Enforced by |
 |---|---|
-| INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required; verifier check 4b |
+| INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required; verifier check 4b; also fails on a sign typed beside an inline value (not allowlistable) and on an unclosed fence (exit 2); scans captions in chunk options and R caption= or title= strings; counts verdict words beside live values, enforced when prose-verdict-ceiling: is declared |
 | INV-14, INV-16, INV-19a (`setwd()`/`rm(list=ls())`/`install.packages()`/`attach()`) | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) — advisory only (always exit 0), tested to actually fire on each of these + `coder-critic` (chunk-level: `set.seed()`, cache setup) + verifier check 4c (mandatory FAIL) |
 | INV-15 (packages loaded in the setup chunk) | **The lint hook does not check this**, despite being named for it: its one relevant rule is "`library()` call after line 30", which is noise on any real manuscript (the setup chunk itself can run past line 30) rather than a check for "outside the setup chunk". `reviewer-judgment` only: `coder-critic`; verifier check 4c (mandatory FAIL) |
 | INV-19b (`source()` inside a chunk) | `pipeline.py`'s `no-source` predicate on `coder.produces` — blocking, fails `post coder`; also flagged advisory by the lint hook; `coder-critic` |
