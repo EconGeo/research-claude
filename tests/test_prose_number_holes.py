@@ -151,5 +151,43 @@ class TestCaptions(Case):
         self.assertEqual(rc, 0, out)
 
 
+class TestVerdictWords(Case):
+    BODY = ("The estimate is significant at `r p`. It is positive (`r round(b, 2)`).\n\n"
+            "Prices were significant in general.\n")
+
+    def test_advisory_by_default(self):
+        rc, out = self.check(self.BODY)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("verdict words beside live values: 2", out)
+
+    def test_word_outside_a_live_sentence_is_not_counted(self):
+        rc, out = self.check("Prices were significant in general.\n")
+        self.assertIn("verdict words beside live values: 0", out)
+
+    def test_ceiling_exceeded_fails(self):
+        rc, out = self.check(self.BODY, claude="prose-verdict-ceiling: 1\n")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("significant", out)
+
+    def test_ceiling_met_passes_and_lower_ceiling_is_suggested(self):
+        rc, out = self.check(self.BODY, claude="prose-verdict-ceiling: 2\n")
+        self.assertEqual(rc, 0, out)
+        rc, out = self.check(self.BODY, claude="prose-verdict-ceiling: 5\n")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("lower", out)
+
+    def test_bad_ceiling_is_a_usage_error(self):
+        rc, out = self.check(self.BODY, claude="prose-verdict-ceiling: many\n")
+        self.assertEqual(rc, 2, out)
+
+    def test_declared_words_extend_the_lexicon(self):
+        rc, out = self.check("Returns lag at `r x`.\n", claude="prose-verdict-words: lag\n")
+        self.assertIn("verdict words beside live values: 1", out)
+
+    def test_period_inside_an_inline_expression_does_not_split_the_sentence(self):
+        rc, out = self.check('It is `r fmt(b, sep = ". ")` and significant.\n')
+        self.assertIn("verdict words beside live values: 1", out)
+
+
 if __name__ == "__main__":
     unittest.main()

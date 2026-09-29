@@ -245,6 +245,63 @@ DECLARATION = re.compile(r"^prose-number-nouns:\s*(.+?)\s*$", re.M)
 # `r a`-`r b` and compounds like pre-`r y`.
 SIGN_GLUE = re.compile(r"(?<![-\w`])[+−-](?=`(?:r|\{r\})\s)")
 
+# Typed verdicts beside a live number. A number can update while the word beside
+# it cannot: "outperform (coefficient = -0.634)" is the shipped form of this bug.
+# Counted, not failed, unless the project declares a ceiling, because existing
+# manuscripts carry dozens and a gate that is red on day one gets waived. A
+# ceiling that must not rise is enforceable. The fix is a helper that derives
+# the word from the value.
+_VERDICT = (r"significant|significantly|insignificant|"
+            r"outperform(?:s|ed|ing)?|underperform(?:s|ed|ing)?|"
+            r"positive|negative|rises|rose|falls|fell|"
+            r"monotonic(?:ally)?|stronger|weaker|null")
+LIVE = "\x00"
+SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+
+
+def declared(root, key):
+    """A `key: value` line in the project's CLAUDE.md, or ""."""
+    claude = os.path.join(root, "CLAUDE.md")
+    if not os.path.exists(claude):
+        return ""
+    rx = re.compile(rf"^{re.escape(key)}:\s*(.+?)\s*$", re.M)
+    return "|".join(rx.findall(open(claude, encoding="utf-8").read()))
+
+
+def verdict_rx(extra):
+    words = _VERDICT + ("|" + "|".join(re.split(r"[|,\s]+", extra)) if extra else "")
+    return re.compile(rf"\b(?:{words})\b", re.I)
+
+
+def paragraphs(prose):
+    """Consecutive prose lines joined into paragraphs, with the first line number."""
+    para, start, prev = [], 0, None
+    for lineno, line in prose:
+        s = line.strip()
+        broken = prev is not None and lineno != prev + 1
+        prev = lineno
+        if broken or not s or s.startswith(("#", ":::")):
+            if para:
+                yield start, " ".join(para)
+            para = []
+            if not s or s.startswith(("#", ":::")):
+                continue
+        if not para:
+            start = lineno
+        para.append(s)
+    if para:
+        yield start, " ".join(para)
+
+
+def verdict_hits(prose, rx):
+    out = []
+    for start, text in paragraphs(prose):
+        for sentence in SENTENCE_END.split(INLINE.sub(LIVE, text)):
+            if LIVE in sentence:
+                shown = sentence.replace(LIVE, "`r …`")[:160]
+                out.extend((start, m.group(0).lower(), shown) for m in rx.finditer(sentence))
+    return out
+
 
 def extra_nouns(root):
     """The project's own countable nouns, and where they came from.
@@ -303,6 +360,19 @@ def main(argv):
         return 2
     note = f"  extra nouns: {extra}  (from {source})" if extra else ""
 
+    root = project_root(qmd)
+    try:
+        v_rx = verdict_rx(declared(root, "prose-verdict-words"))
+    except re.error as e:
+        print(f"error: prose-verdict-words in CLAUDE.md is not a valid pattern: {e}")
+        return 2
+    ceiling_s = declared(root, "prose-verdict-ceiling")
+    try:
+        ceiling = int(ceiling_s) if ceiling_s else None
+    except ValueError:
+        print(f"error: prose-verdict-ceiling must be an integer, got {ceiling_s!r}")
+        return 2
+
     allow = {}
     if os.path.exists(allow_path):
         for r in csv.DictReader(open(allow_path, encoding="utf-8")):
@@ -334,10 +404,13 @@ def main(argv):
     for lineno, text in captions:
         scan(lineno, text, "caption: ")
 
+    verdicts = verdict_hits(prose, v_rx)
+    over = ceiling is not None and len(verdicts) > ceiling
+
     unexplained = {k: v for k, v in hits.items() if k not in allow}
     stale = [k for k in allow if k not in hits]
 
-    failed = bool(glued) or bool(unexplained)
+    failed = bool(glued) or bool(unexplained) or over
 
     if failed:
         print(f"  manuscript: {qmd}")
@@ -371,6 +444,18 @@ def main(argv):
               "with a reason.\n")
         for lit, occ in unexplained.items():
             print(f"  {lit!r}  ({len(occ)}x)  first at line {occ[0][0]}: ...{occ[0][1]}...")
+
+    if over:
+        print("VERDICT WORDS ABOVE CEILING —", len(verdicts), ">", ceiling)
+        for lineno, word, sentence in verdicts:
+            print(f"  line {lineno}: {word} — {sentence}")
+        print()
+
+    mode = f"ceiling {ceiling}" if ceiling is not None else \
+        "advisory; declare prose-verdict-ceiling: N in CLAUDE.md to enforce"
+    print(f"  verdict words beside live values: {len(verdicts)}  ({mode})")
+    if ceiling is not None and len(verdicts) < ceiling:
+        print(f"  note: lower prose-verdict-ceiling to {len(verdicts)}")
 
     if failed:
         return 1
