@@ -50,13 +50,12 @@ live runs came back red on the skill, not the harness — `/verify-claims` (vend
 `/submit`, `/talk`, `/strategize` — see that plan's Findings. All five were fixed and re-run
 green on 2026-09-25 (`EconGeo/ai-audit#4`, `ai-audit/` re-vendored at `1c237da`; foreground
 dispatch rule in `rules/agents.md` §4) — see the 2026-09-25 "Five skill reds closed" entry in
-`docs/SESSION_REPORT.md`. **Open in this repo:** `docs/plans/2026-09-28-prose-gate-holes.md` is
-code complete on branch `prose-gate-holes` (head `39fc61a`) — six holes in
-`scripts/prose_number_check.py` closed — but the merge is held for the author's decision: the
-plan's fleet gate found three of five paper manuscripts (POGM4, affordable_housing_2026,
-zoning2026) go from exit 0 to exit 1 on the stricter gate; see the 2026-09-28 entry in
-`docs/SESSION_REPORT.md`. In `docs/improvement-ledger.md`, rows L-004, L-005 and L-007 are
-`open`.
+`docs/SESSION_REPORT.md`. On 2026-09-28 `docs/plans/2026-09-28-prose-gate-holes.md` landed
+(merge `6bc7b05`): six holes in `scripts/prose_number_check.py` closed. The author merged knowing
+three paper manuscripts (POGM4, affordable_housing_2026, zoning2026) now fail the stricter gate
+on real findings they will fix on their own schedule — see the 2026-09-28 entry in
+`docs/SESSION_REPORT.md`. **Open in this repo:** rows L-004 and L-005 in
+`docs/improvement-ledger.md`.
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 

@@ -1223,11 +1223,12 @@ The fixes are project-side:
 **Decision.** Per the plan's rule (all five projects must stay at exit 0 to merge automatically),
 the merge is **held** for the author: either merge `prose-gate-holes` to `main` now and let the
 three projects absorb the new findings on their own schedule, or fix the three projects' prose
-first and merge once they are clean. Branch `prose-gate-holes` (head `39fc61a`) is left in place,
-nothing pushed.
+first and merge once they are clean. **Resolved the same day:** the author chose to merge now.
+Merged `--no-ff` as `6bc7b05`; on `main` after the merge `check_fork` PASS, `check_install --all`
+PASS, 551 tests passed; pushed. The three projects absorb their findings on their own schedule.
 
 **Close-out (Task 8).** `CLAUDE.md` § Start here now names this plan and its held merge instead
 of claiming nothing is open; `docs/plans/2026-09-23_pipeline-repair.md` Phase 5 corrected — its
 "either Phase 1 above or genuinely project-local" claim about the number-gate holes was wrong,
 Phase 1 has no such item and the holes were research-wide; `docs/improvement-ledger.md` gained
-`L-007` (`open`, POGM4, this audit). `check_fork.sh` PASS.
+`L-007` (POGM4, this audit; `landed 6bc7b05` after the merge). `check_fork.sh` PASS.
