@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """check_review.py — /review <manuscript>: strategist-critic, writer-critic and verifier dispatched;
 porcelain before and after the verifier; each component's report Written before its record-score;
+critic-inputs runs before writer-critic and its log path is in the dispatch prompt;
 disposition-pool.md never read in the main context. usage: check_review.py <transcript.jsonl> <project-dir>"""
 import re, sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -10,6 +11,11 @@ fails = []
 d = {a: evallib.agent(uses, a) for a in ("strategist-critic", "writer-critic", "verifier")}
 for a, i in d.items():
     if i is None: fails.append(f"{a} was never dispatched")
+c = d["writer-critic"]
+ci = evallib.first(uses, lambda n, a: n == "Bash" and re.search(r"pipeline\.py\s+critic-inputs\b", a.get("command", "")))
+if ci is None: fails.append("`pipeline.py critic-inputs` never ran")
+elif c is not None and ci > c: fails.append("critic-inputs ran after writer-critic was dispatched")
+if c is not None and "critic_inputs/" not in str(uses[c][1].get("prompt", "")): fails.append("the writer-critic dispatch does not name a critic_inputs/ log")
 v = d["verifier"]
 if v is not None:
     porc = [i for i, (n, a, _) in enumerate(uses) if n == "Bash" and re.search(r"git\s+status\s+--porcelain", a.get("command", ""))]

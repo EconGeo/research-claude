@@ -26,8 +26,11 @@ def go(check, transcript, *args):
 
 CHECK = ROOT / "tests" / "evals" / "check_review.py"
 def rec(comp, critic, rep): return use("r" + comp, "Bash", command=f"python3 .claude/scripts/pipeline.py state record-score {comp} 90 --critic {critic} --report {rep}")
-T = (use("u1", "Bash", command="git status --porcelain")
-     + use("u2", "Agent", subagent_type="strategist-critic", prompt="x") + use("u3", "Agent", subagent_type="writer-critic", prompt="x") + use("u4", "Agent", subagent_type="verifier", prompt="x")
+LOGP = "quality_reports/critic_inputs/writer-critic_2026-09-29_120000.log"
+WC = use("u3", "Agent", subagent_type="writer-critic", prompt=f"render inputs: {LOGP}")
+CI = use("c1", "Bash", command="python3 .claude/scripts/pipeline.py critic-inputs")
+T = (CI + use("u1", "Bash", command="git status --porcelain")
+     + use("u2", "Agent", subagent_type="strategist-critic", prompt="x") + WC + use("u4", "Agent", subagent_type="verifier", prompt="x")
      + use("u5", "Bash", command="git status --porcelain")
      + use("w1", "Write", file_path="/p/quality_reports/reviews/strategist-critic_d.md", content="r") + rec("strategy", "strategist-critic", "quality_reports/reviews/strategist-critic_d.md")
      + use("w2", "Write", file_path="/p/quality_reports/reviews/writer-critic_d.md", content="r") + rec("manuscript", "writer-critic", "quality_reports/reviews/writer-critic_d.md")
@@ -42,10 +45,16 @@ class TestReviewChecker(unittest.TestCase):
         rc, out = go(CHECK, T.replace(use("u5", "Bash", command="git status --porcelain"), ""), "/p"); self.assertEqual(rc, 1); self.assertIn("after the verifier", out)
 
     def test_missing_critic_fails(self):
-        rc, out = go(CHECK, T.replace(use("u3", "Agent", subagent_type="writer-critic", prompt="x"), ""), "/p"); self.assertEqual(rc, 1); self.assertIn("writer-critic was never dispatched", out)
+        rc, out = go(CHECK, T.replace(WC, ""), "/p"); self.assertEqual(rc, 1); self.assertIn("writer-critic was never dispatched", out)
 
     def test_score_before_report_fails(self):
         rc, out = go(CHECK, T.replace(use("w2", "Write", file_path="/p/quality_reports/reviews/writer-critic_d.md", content="r"), ""), "/p"); self.assertEqual(rc, 1); self.assertIn("manuscript report was not Written", out)
+
+    def test_no_critic_inputs_fails(self):
+        rc, out = go(CHECK, T.replace(CI, ""), "/p"); self.assertEqual(rc, 1); self.assertIn("critic-inputs` never ran", out)
+
+    def test_dispatch_without_the_log_path_fails(self):
+        rc, out = go(CHECK, T.replace(f"render inputs: {LOGP}", "x"), "/p"); self.assertEqual(rc, 1); self.assertIn("does not name a critic_inputs/ log", out)
 
     def test_pool_read_fails(self):
         rc, out = go(CHECK, T + use("u9", "Read", file_path="/p/.claude/skills/review/templates/disposition-pool.md"), "/p"); self.assertEqual(rc, 1); self.assertIn("disposition-pool.md", out)
