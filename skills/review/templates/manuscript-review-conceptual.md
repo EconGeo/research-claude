@@ -44,9 +44,16 @@ Unchanged from `manuscript-review-8-categories.md` § 4 (24-pattern check).
 - Tables have notes (INV-1); figures have captions and source/permission lines (INV-2).
 
 ## 6. Build (replaces Render)
-- The declared build exits 0 (`pandoc <md> -f markdown-implicit_figures -o <docx>` for a Markdown
-  manuscript; `quarto render` for a `.qmd`); every figure resolves.
-- The profile's word definition is met, counted by the project's word-count gate if one exists.
+Scored only from the build log named in your dispatch — for a `.qmd` manuscript, the
+`pipeline.py critic-inputs` log (`manuscript-review-8-categories.md` § 6 says how to read it). You
+run nothing.
+- The declared build exits 0; every figure resolves.
+- The profile's word definition is met, counted by the project's word-count gate if one exists
+  (its output comes in the dispatch too, or the count is NOT SCORED).
+
+No log named → `## Build: NOT SCORED — no build log in the dispatch`, no deduction, first line
+under Score Breakdown. `critic-inputs` builds only the declared `.qmd`; a Markdown manuscript's
+pandoc build is not wired, so its Build is NOT SCORED until it is.
 
 ## 7. Voice Fidelity
 Unchanged, except that the journal profile's voice rule overrides the personal style guide

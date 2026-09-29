@@ -278,6 +278,11 @@ def is_fresh(root: Path, ms: Path) -> Tuple[bool, str]:
 
 RENDER_WARNING_RE = re.compile(r"WARNING.*?(?:crossref|cross-reference)", re.I)
 
+def run_render(root: Path, target: Path) -> Tuple[int, str]:
+    """`quarto render <target>` from the project root: (exit code, stdout + stderr)."""
+    p = subprocess.run(["quarto", "render", str(target.relative_to(root))], cwd=root, capture_output=True, text=True)
+    return p.returncode, p.stdout + p.stderr
+
 def do_render(root: Path, target: Path) -> Tuple[bool, str]:
     """`returncode == 0` is not "the render is clean": tested on Quarto 1.9.37, a dangling
     `@tbl-`/`@fig-` produces `WARNING … Unable to resolve crossref @tbl-x` and still exits 0.
@@ -286,15 +291,58 @@ def do_render(root: Path, target: Path) -> Tuple[bool, str]:
     `chunk` predicate already wires in (Phase 1.2). This function closes the half the exit code
     silently passed: an unresolved cross-reference that DOES surface, in the log, as a warning
     quarto itself chose not to fail on (Phase 1.3)."""
-    p = subprocess.run(["quarto", "render", str(target.relative_to(root))], cwd=root, capture_output=True, text=True)
-    out = p.stdout + p.stderr
+    rc, out = run_render(root, target)
     lines = out.strip().splitlines()
-    if p.returncode != 0:
+    if rc != 0:
         return False, lines[-1] if lines else ""
     warn = RENDER_WARNING_RE.search(out)
     if warn:
         return False, f"exit 0 but {warn.group(0).strip()}"
     return True, ""
+
+def run_script(root: Path, name: str, *args: str) -> Tuple[Optional[int], str]:
+    """A linked `.claude/scripts/<name>` run from the project root: (exit code, stdout + stderr),
+    or (None, why) when the project does not link it."""
+    script = root / ".claude" / "scripts" / name
+    if not script.exists(): return None, f".claude/scripts/{name} not linked"
+    p = subprocess.run([sys.executable, str(script), *args], cwd=root, capture_output=True, text=True)
+    return p.returncode, p.stdout + p.stderr
+
+CRITIC_INPUTS_REL = Path("quality_reports") / "critic_inputs"
+
+def critic_inputs(root: Path) -> int:
+    """The mechanical half of writer-critic's Render category (ledger L-005). The critic has no
+    Bash — `.claude/rules/agents.md` §2 removed it on purpose — so the dispatching skill runs
+    this and names the log in the dispatch. Always renders: the category counts WARNINGs, and a
+    render skipped as fresh leaves nothing to count. Exit 0 whenever the log is written: a
+    failing render or a typed number is a finding for the critic to score, not a reason to
+    withhold the log. `*.log` is gitignored by the seeded .gitignore — session mechanics."""
+    ms = declared_manuscript(root); rel = str(ms.relative_to(root))
+    d = root / CRITIC_INPUTS_REL; d.mkdir(parents=True, exist_ok=True)
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d_%H%M%S")
+    log = d / f"writer-critic_{stamp}.log"; n = 2
+    while log.exists(): log = d / f"writer-critic_{stamp}_{n}.log"; n += 1
+    parts = [f"# critic-inputs: {rel} at {now()}"]; summary = []
+    rrc, out = run_render(root, ms)
+    parts.append(f"## quarto render {rel} — exit {rrc}\n{out.rstrip()}"); summary.append(f"render exit {rrc}")
+    prc, out = run_script(root, "prose_number_check.py", rel)
+    parts.append(f"## prose_number_check.py {rel} — " + (f"skipped: {out}" if prc is None else f"exit {prc}\n{out.rstrip()}"))
+    summary.append("prose-check " + ("skipped" if prc is None else f"exit {prc}"))
+    pdf = ms.with_suffix(".pdf")
+    if rrc != 0:
+        why = "render failed — any PDF on disk predates this run"
+    elif not pdf.exists():
+        why = f"no {pdf.name} (not a PDF render)"
+    else:
+        why = None
+    if why:
+        parts.append(f"## check_render.py — skipped: {why}"); summary.append("check_render skipped")
+    else:
+        crc, out = run_script(root, "check_render.py", str(pdf.relative_to(root)))
+        parts.append(f"## check_render.py {pdf.name} — " + (f"skipped: {out}" if crc is None else f"exit {crc}\n{out.rstrip()}"))
+        summary.append("check_render " + ("skipped" if crc is None else f"exit {crc}"))
+    log.write_text("\n\n".join(parts) + "\n")
+    print(" · ".join(summary)); print(f"critic-inputs: {log.relative_to(root)}"); return 0
 
 def producer_hint(pred: Dict[str, Any], ok: bool) -> str:
     """The `— run `/skill`` tail on a failing predicate. Shared by run_preds() and the
@@ -387,10 +435,9 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
             return False, ran + f", but its recorded report {report} no longer exists on disk"
         return True, ran + f", {comp} scored at {at} (creator {a}, critic {c})"
     if t == "prose-check":
-        script = root / ".claude" / "scripts" / "prose_number_check.py"
-        if not script.exists(): return False, "prose-check: .claude/scripts/prose_number_check.py not linked"
-        p = subprocess.run([sys.executable, str(script), str(ctx.ms.relative_to(root))], cwd=root, capture_output=True, text=True)
-        return p.returncode == 0, "prose_number_check.py exit " + str(p.returncode)
+        rc, out = run_script(root, "prose_number_check.py", str(ctx.ms.relative_to(root)))
+        if rc is None: return False, "prose-check: " + out
+        return rc == 0, "prose_number_check.py exit " + str(rc)
     if t == "chunk":
         n = sum(1 for l in chunk_labels(ctx.ms) if fnmatch.fnmatch(l, pred["label_glob"]))
         ok = n >= int(pred["min"])
@@ -554,7 +601,7 @@ def registry_check(root: Path) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default=".")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("manuscript"); sub.add_parser("fresh"); sub.add_parser("next")
+    sub.add_parser("manuscript"); sub.add_parser("fresh"); sub.add_parser("next"); sub.add_parser("critic-inputs")
     for k in ("pre", "post"): sub.add_parser(k).add_argument("agent")
     sc = sub.add_parser("score"); sc.add_argument("--gate", choices=sorted(GATES))
     st = sub.add_parser("state"); st.add_argument("op", choices=["init", "validate", "show", "record-score", "record-verify-claims", "record-deposit", "strike", "set-blocked", "clear-blocked"])
@@ -572,6 +619,7 @@ def main() -> int:
     if a.cmd == "manuscript": print(declared_manuscript(root).relative_to(root)); return 0
     if a.cmd == "fresh":
         ok, why = is_fresh(root, declared_manuscript(root)); print(("fresh: " if ok else "STALE: ") + why); return 0 if ok else 1
+    if a.cmd == "critic-inputs": return critic_inputs(root)
     if a.cmd in ("pre", "post"): return run_preds(a.cmd, a.agent, root, reg)
     if a.cmd == "next": return next_report(root, reg)
     if a.cmd == "log": append_log(root, a.agent, a.source); return 0

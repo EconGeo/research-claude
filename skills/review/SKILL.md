@@ -36,10 +36,16 @@ Unified review command that routes to the appropriate critic agents based on the
 
 ## Mode Details
 
+**Every route that dispatches writer-critic** (Comprehensive, `--proofread`, `--all`) first runs
+`python3 .claude/scripts/pipeline.py critic-inputs` and names the log path it prints in the
+writer-critic dispatch prompt. writer-critic has no Bash; it scores Render (category 6) from that
+log only (`.claude/rules/agents.md` §2). In Comprehensive mode run it before the first
+`git status --porcelain`, so its render can never read as a verifier tree change.
+
 ### Comprehensive Review (default for the declared manuscript)
 Dispatch in parallel:
 1. **strategist-critic** — causal design audit (4 phases). Session saves to `quality_reports/reviews/strategist-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score strategy <score> --critic strategist-critic --deductions <total> --report <path>`.
-2. **writer-critic** — manuscript polish (6 categories). Session saves to `quality_reports/reviews/writer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path>`.
+2. **writer-critic** — manuscript polish (6 categories), with the critic-inputs log path in its prompt. Session saves to `quality_reports/reviews/writer-critic_<date>.md`. Record: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path>`.
 3. **verifier** — standard checks 1–4c (`.claude/agents/verifier.md`). Session saves to `quality_reports/verification_report.md`. Record: `python3 .claude/scripts/pipeline.py state record-score replication <score> --critic verifier --report <path>`.
 Compute weighted aggregate score from the recorded component scores.
 

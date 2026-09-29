@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """check_write.py — /write <section>: `pipeline.py manuscript` before any dispatch; writer then
-writer-critic; the manuscript score is recorded section-scoped with a --report that was written
+writer-critic; critic-inputs runs before writer-critic and its log path is in the dispatch prompt; the manuscript score is recorded section-scoped with a --report that was written
 first; the prose-number check passes afterwards (runner-supplied exit code).
 usage: check_write.py <transcript.jsonl> <project-dir> <prose-check-exit-code>"""
 import re, sys, pathlib
@@ -16,6 +16,10 @@ w, c = evallib.agent(uses, "writer"), evallib.agent(uses, "writer-critic")
 if w is None: fails.append("writer was never dispatched")
 if c is None: fails.append("writer-critic was never dispatched")
 elif w is not None and c < w: fails.append("writer-critic ran before writer")
+ci = evallib.first(uses, lambda n, a: n == "Bash" and re.search(r"pipeline\.py\s+critic-inputs\b", a.get("command", "")))
+if ci is None: fails.append("`pipeline.py critic-inputs` never ran")
+elif c is not None and ci > c: fails.append("critic-inputs ran after writer-critic was dispatched")
+if c is not None and "critic_inputs/" not in str(uses[c][1].get("prompt", "")): fails.append("the writer-critic dispatch does not name a critic_inputs/ log")
 recs = [(i, a.get("command", "")) for i, (n, a, _) in enumerate(uses) if n == "Bash" and re.search(r"record-score\s+manuscript\b", a.get("command", ""))]
 if not recs: fails.append("record-score manuscript never ran")
 for i, cmd in recs:

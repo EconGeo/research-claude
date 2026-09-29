@@ -44,6 +44,13 @@ anything but self-saving the report, so that tool is now removed. The model is
 `ai-audit/agents/civilize-auditor.md`'s `## Output` section: *"Structured report — return as your
 final response. Do NOT write any files yourself — the skill orchestrates report-saving."*
 
+**Mechanical inputs come from the dispatching skill, not from a tool grant.** Where a critic's
+rubric scores something only a command can establish — writer-critic's Render category — the
+skill runs `python3 .claude/scripts/pipeline.py critic-inputs` immediately before the dispatch
+and names the log path in the prompt; with no log the critic reports the category NOT SCORED
+rather than guessing. Giving the critic `Bash` to run the build itself is ruled out: a reviewer
+with a shell can write any file through it, which is what withholding `Write` exists to prevent.
+
 **Every returned report is saved the instant it comes back — never batched until a workflow, a
 parallel dispatch, or a multi-phase flow finishes.** An agent without `Write` has no other way
 onto disk; its report exists only in the conversation until the dispatching skill writes it. A

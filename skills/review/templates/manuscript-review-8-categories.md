@@ -125,16 +125,25 @@ manifest coverage) belong to the **coder-critic** via
 
 ## 6. Render
 
-Verifier-lite checks:
+**You run nothing.** You have no Bash (`.claude/rules/agents.md` §2). The dispatching skill runs
+`python3 .claude/scripts/pipeline.py critic-inputs` immediately before dispatching you and names
+the log it wrote — `quality_reports/critic_inputs/writer-critic_<stamp>.log` — in your prompt.
+Read that log in full. It has three sections: `quarto render`, `prose_number_check.py` and
+`check_render.py` (the page check on the rendered PDF; skipped for a non-PDF or failed render).
 
-- Does `quarto render manuscript_<project>.qmd` exit 0? If not: -20
-- Any `ERROR` or `WARNING` in the render log? -3 per
-- All `@fig-` / `@tbl-` / `@sec-` / `@eq-` cross-references resolved (no `?@` in
-  the output)? -3 per unresolved
-- All `@key` citations present in the `.bib`? -3 per missing
-- Every prose number an inline `` `r ` `` expression? Run
-  `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — a clean render proves the expressions
-  *evaluated*, never that a typed literal is right (INV-11). -10 per hardcoded value
+- Render section exit ≠ 0: -20
+- Each `WARNING` line in the render section that is not a cross-reference warning: -3
+- Each unresolved cross-reference: -3. Count from check_render's `UNRESOLVED:` lines when that
+  section ran, otherwise from the render section's "Unable to resolve crossref" warnings — never
+  both for the same reference.
+- Each `@key` cited in the manuscript but absent from `references.bib` (Grep the source): -3
+- Each hardcoded value `prose_number_check.py` lists: -10 (INV-11). A clean render proves the
+  inline expressions *evaluated*, never that a typed literal is right.
+
+**No log named in your prompt, or the named file does not exist:** report
+`## Render: NOT SCORED — no critic-inputs log in the dispatch`, deduct nothing in this category,
+and make that the first line under Score Breakdown so the dispatching session sees it. Never infer
+a render result from the source, and never ask for Bash.
 
 ## 7. Voice Fidelity
 
@@ -188,7 +197,7 @@ When invoked via `/review --all` or `/review --peer`, run all 8 categories.
 ## Identification Fidelity: [FAITHFUL/OVERCLAIMED/MISREPRESENTED]
 ## Writing Quality: [CLEAN/AI PATTERNS FOUND/NEEDS REWRITE]
 ## Format: [COMPLIANT/ISSUES/NON-COMPLIANT]
-## Render: [PASS/WARNINGS/FAIL]
+## Render: [PASS/WARNINGS/FAIL/NOT SCORED]
 ## Voice Fidelity: [MATCH/DRIFT/NOT SCORED]
 ## Notation Consistency: [CONSISTENT/INCONSISTENCIES]
 
