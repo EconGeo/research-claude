@@ -189,5 +189,66 @@ class TestVerdictWords(Case):
         self.assertIn("verdict words beside live values: 1", out)
 
 
+class TestCommaKeys(Case):
+    """A key written with its trailing comma ("1999,") predates the NUM change.
+
+    NUM no longer swallows the comma, so such a key could never match, and its
+    bare twin made it look stale. It is normalised on load and named.
+    """
+    def test_comma_key_alone_matches_the_bare_literal_and_is_named(self):
+        rc, out = self.check("In 1999, x.\n", allow='literal,reason\n"1999,",Year.\n')
+        self.assertEqual(rc, 0, out)
+        self.assertIn("trailing comma", out)
+        self.assertIn("'1999,'", out)
+
+    def test_comma_twin_is_named_and_not_reported_stale(self):
+        allow = 'literal,reason\n1999,Year.\n"1999,",Year again.\n'
+        rc, out = self.check("In 1999, x.\n", allow=allow)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("'1999,'", out)
+        stale = [l for l in out.splitlines() if "no longer present" in l]
+        self.assertFalse(any("1999" in l for l in stale), out)
+
+    def test_comma_key_is_named_on_the_fail_path_too(self):
+        rc, out = self.check("In 1999, x is 0.5.\n", allow='literal,reason\n"1999,",Year.\n')
+        self.assertEqual(rc, 1, out)
+        self.assertIn("'1999,'", out)
+        self.assertNotIn("'1999'  (", out)     # matched, so not unexplained
+
+
+class TestDeclarationTokens(Case):
+    """An empty token is an empty regex alternative, which matches everywhere."""
+    def test_trailing_separator_in_verdict_words(self):
+        for decl in ("lag,", "lag |", "lag, "):
+            with self.subTest(decl=decl):
+                rc, out = self.check("Returns lag at `r x`.\n",
+                                     claude=f"prose-verdict-words: {decl}\n")
+                self.assertEqual(rc, 0, out)
+                self.assertIn("verdict words beside live values: 1", out)
+
+    def test_trailing_separator_in_number_nouns(self):
+        for decl in ("states,", "states? |"):
+            with self.subTest(decl=decl):
+                claude = f"prose-number-nouns: {decl}\n"
+                rc, out = self.check("The two markets moved.\n", claude=claude)
+                self.assertEqual(rc, 0, out)
+                rc, out = self.check("We use nine states.\n", claude=claude)
+                self.assertEqual(rc, 1, out)
+                self.assertIn("'nine states'", out)
+
+    def test_empty_ceiling_does_not_swallow_the_next_line(self):
+        claude = "prose-verdict-ceiling:\nprose-verdict-words: lag\n"
+        rc, out = self.check("Returns lag at `r x`.\n", claude=claude)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("verdict words beside live values: 1", out)
+        self.assertIn("advisory", out)
+
+    def test_empty_nouns_declaration_is_absent(self):
+        claude = "prose-number-nouns:\nmanuscript: manuscript_fixture.qmd\n"
+        rc, out = self.check("No numbers.\n", claude=claude)
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn("extra nouns", out)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -267,8 +267,6 @@ _CARD = ("one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|"
 _NOUN = ("rows?|tests?|classes|class|columns?|cells?|designs?|exhibits?|"
          "tables?|figures?")
 
-DECLARATION = re.compile(r"^prose-number-nouns:\s*(.+?)\s*$", re.M)
-
 # A sign typed against an inline value. The value carries its own sign, so a
 # typed "+" before a negative estimate prints "+-0.634", and the typed sign is
 # outside the literal alphabet in both directions. Not allowlistable: there is
@@ -292,16 +290,32 @@ SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 
 
 def declared(root, key):
-    """A `key: value` line in the project's CLAUDE.md, or ""."""
+    """The values of every `key: value` line in the project's CLAUDE.md, as a list.
+
+    The one CLAUDE.md reader. `[ \\t]*`, not `\\s*`, after the colon: `\\s` crosses
+    a newline, so an empty `prose-verdict-ceiling:` line used to take the NEXT
+    line as its value. An empty value is treated as absent.
+    """
     claude = os.path.join(root, "CLAUDE.md")
     if not os.path.exists(claude):
-        return ""
-    rx = re.compile(rf"^{re.escape(key)}:\s*(.+?)\s*$", re.M)
-    return "|".join(rx.findall(open(claude, encoding="utf-8").read()))
+        return []
+    rx = re.compile(rf"^{re.escape(key)}:[ \t]*(.*)$", re.M)
+    values = (v.strip() for v in rx.findall(open(claude, encoding="utf-8").read()))
+    return [v for v in values if v]
+
+
+def tokens(extra):
+    """Split a declaration on whitespace, commas or `|`, dropping empty tokens.
+
+    An empty token would become an empty regex alternative, which matches at
+    every word boundary: `lag,` made every live sentence count, and `states,`
+    made "the two markets" a count.
+    """
+    return [t for t in re.split(r"[|,\s]+", extra) if t]
 
 
 def verdict_rx(extra):
-    words = _VERDICT + ("|" + "|".join(re.split(r"[|,\s]+", extra)) if extra else "")
+    words = "|".join([_VERDICT, *tokens(extra)])
     return re.compile(rf"\b(?:{words})\b", re.I)
 
 
@@ -347,11 +361,9 @@ def extra_nouns(root):
     env = os.environ.get("PROSE_NUMBER_NOUNS", "").strip()
     if env:
         return env, "PROSE_NUMBER_NOUNS"
-    claude = os.path.join(root, "CLAUDE.md")
-    if os.path.exists(claude):
-        hits = DECLARATION.findall(open(claude, encoding="utf-8").read())
-        if hits:
-            return "|".join(hits), "CLAUDE.md"
+    hits = declared(root, "prose-number-nouns")
+    if hits:
+        return "|".join(hits), "CLAUDE.md"
     return "", ""
 
 
@@ -363,7 +375,7 @@ def wordnum(extra):
     declared that method name would otherwise fire six times in one manuscript
     and train the reader to skip the output.
     """
-    nouns = _NOUN + ("|" + "|".join(re.split(r"[|,\s]+", extra)) if extra else "")
+    nouns = "|".join([_NOUN, *tokens(extra)])
     return re.compile(rf"(?<![-\w])({_CARD})[\s-]+({nouns})\b", re.I)
 
 
@@ -376,14 +388,15 @@ def main(argv):
         print(f"error: manuscript not found: {qmd}")
         return 2
     named = len(argv) == 3
+    root = project_root(qmd)
     allow_path = argv[2] if named else os.path.join(
-        project_root(qmd), "quality_reports", "prose_number_allowlist.csv")
+        root, "quality_reports", "prose_number_allowlist.csv")
     if named and not os.path.exists(allow_path):
         # A path someone typed is a typo, not an empty allowlist.
         print(f"error: allowlist not found: {allow_path}")
         return 2
 
-    extra, source = extra_nouns(project_root(qmd))
+    extra, source = extra_nouns(root)
     try:
         wordnum_rx = wordnum(extra)
     except re.error as e:
@@ -392,23 +405,34 @@ def main(argv):
         return 2
     note = f"  extra nouns: {extra}  (from {source})" if extra else ""
 
-    root = project_root(qmd)
     try:
-        v_rx = verdict_rx(declared(root, "prose-verdict-words"))
+        v_rx = verdict_rx("|".join(declared(root, "prose-verdict-words")))
     except re.error as e:
         print(f"error: prose-verdict-words in CLAUDE.md is not a valid pattern: {e}")
         return 2
-    ceiling_s = declared(root, "prose-verdict-ceiling")
+    ceiling_s = "|".join(declared(root, "prose-verdict-ceiling"))
     try:
         ceiling = int(ceiling_s) if ceiling_s else None
     except ValueError:
         print(f"error: prose-verdict-ceiling must be an integer, got {ceiling_s!r}")
         return 2
 
-    allow = {}
+    # A key keeps no trailing comma: NUM ends a literal on a digit, so "1999,"
+    # could never match, and its bare twin made it look stale. Normalise it and
+    # say so, so the file gets cleaned rather than silently reinterpreted.
+    allow, comma_keys = {}, []
     if os.path.exists(allow_path):
         for r in csv.DictReader(open(allow_path, encoding="utf-8")):
-            allow.setdefault(r["literal"], r["reason"])
+            key = r["literal"]
+            if key.endswith(","):
+                comma_keys.append(key)
+            allow.setdefault(key.rstrip(","), r["reason"])
+    if comma_keys:
+        note += ("\n" if note else "") + (
+            "  note: allowlist keys with a trailing comma: "
+            + ", ".join(repr(k) for k in comma_keys)
+            + "\n        A key now matches the bare literal; rename each to the "
+              "bare literal or delete the twin.")
 
     try:
         prose, captions = load_manuscript(qmd)
