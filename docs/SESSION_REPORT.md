@@ -1175,7 +1175,7 @@ so no re-link; paper locks record `ccea599` (WARN only).
 a worktree on branch `prose-gate-holes` (off `main` `3ee3a5a`), one task per hole, each with its
 own reviewed commit; **not merged**.
 
-**Branch contents (commits oldest first, head `494282a`):**
+**Branch contents (commits oldest first, head `39fc61a`):**
 - `afbfe19` — CommonMark fence matching fixed; an unclosed fence is now exit 2, not a silent
   partial scan.
 - `fca2af7` — `{r}` inline syntax recognised; a trailing comma is no longer treated as part of a
@@ -1188,34 +1188,42 @@ own reviewed commit; **not merged**.
 - `40d3ce7` — verdict words next to live (non-literal) values are counted, against an optional
   declared ceiling.
 - `494282a` — docs: INV-11 and the write gate updated to state the gate's new coverage.
+- `ef181b6`/`285adb5`/`39fc61a` — final whole-branch review fixes: comma-carrying allowlist keys
+  normalised (and named in a note); empty declaration tokens dropped; fences indented 0–3 spaces;
+  an unclosed HTML comment is exit 2; `{{r}}` display chunks yield no captions; negative or
+  duplicate ceilings are usage errors; headline printed first. Deferred: verdict-pass hit lines,
+  list items and "e.g." splitting; unifying the fence parser with `quarto_structure_check.py`;
+  `notes =` table notes (a documented limit).
 
-**Test status.** `python3 -m pytest tests/ -q` → 533 passed, 9 subtests passed (151.53s), exit 0,
-on the branch head. Baseline on `main` before this work: 505 passed.
+**Test status.** `python3 -m pytest tests/ -q` → 551 passed, 14 subtests passed, exit 0, on the branch
+head. Baseline on `main` before this work: 505 passed.
 
 **Fleet gate (Task 7).** Ran the branch's stricter gate against all five linked paper
 manuscripts and compared to their `main` result. Two stayed clean; three went from exit 0 to
-exit 1 — every new red is a finding the old gate could not see:
+exit 1 — every new red is a finding the old gate could not see (table re-measured at `39fc61a`).
+One is borderline: zoning2026's "one specification" is the existing spelled-out-count rule
+(declared noun `specifications?`) reaching a caption, where "one" means "a single":
 
 | Project | main | branch | Sign glue | New caption literals | Comma-key changes | Unclosed fence | Verdict words (advisory) |
 |---|---|---|---|---|---|---|---|
 | ESG | 0 | 0 | 0 | 0 | 0 | no | 0 |
-| NAR_settlement | 0 | 0 | 0 | 0 | 0 failing; 6 `N,` rows now stale (`10,` `2022,` `2023,` `2024,` `2025,` `5,`) | no | 23 |
-| POGM4 | 0 | **1** | **4** (l. 5846 ×3, l. 6007 — the shipped `+-0.634`) | `1.20` (figure caption, l. 5365) | `1999` (allowlist has only `"1999,"`) | no | 64 |
+| NAR_settlement | 0 | 0 | 0 | 0 | none failing; 6 `N,` rows named for cleanup | no | 23 |
+| POGM4 | 0 | **1** | **4** (l. 5846 ×3, l. 6007 — the shipped `+-0.634`) | `1.20` (figure caption, l. 5365) | none failing after the comma-key fix; 14 `N,` rows named for cleanup | no | 64 |
 | affordable_housing_2026 | 0 | **1** | 0 | `95`, `0` ×2, `1` ×2 (one figure caption, l. 588: "95% CIs", "e = 0", "e = -1"); no allowlist file exists | 0 | no | 0 |
-| zoning2026 | 0 | **1** | **3** (l. 2601, 3107, 3171 — `$+`r sprintf(...)`$` inside math) | `2010` ("Saiz (2010)", l. 2187), `one specification` (l. 3632) | 0 | no | 32 |
+| zoning2026 | 0 | **1** | **3** (l. 2601, 3107, 3171 — `$+`r sprintf(...)`$` inside math) | `2010` ("Saiz (2010)", l. 2187), `one specification` (l. 3632) | none failing; 3 `N,` rows named for cleanup | no | 32 |
 
 The fixes are project-side:
 - **Sign glue (7 sites, 2 projects):** put the sign in the expression, e.g. `sprintf("%+.3f", x)`.
   Not allowlistable by design.
 - **Caption literals (POGM4 1, affordable_housing 3, zoning 2):** make each inline, or add an
   allowlist row with a reason (affordable_housing needs the file created first).
-- **POGM4 `1999`:** add a bare `1999` row (the `"1999,"` twin is now dead weight); NAR can delete
-  its six stale comma rows.
+- **Comma twins (NAR, POGM4, zoning):** keys like `"1999,"` still match after the fix, but the gate
+  now names them; rename each to the bare literal or delete the twin.
 
 **Decision.** Per the plan's rule (all five projects must stay at exit 0 to merge automatically),
 the merge is **held** for the author: either merge `prose-gate-holes` to `main` now and let the
 three projects absorb the new findings on their own schedule, or fix the three projects' prose
-first and merge once they are clean. Branch `prose-gate-holes` (head `494282a`) is left in place,
+first and merge once they are clean. Branch `prose-gate-holes` (head `39fc61a`) is left in place,
 nothing pushed.
 
 **Close-out (Task 8).** `CLAUDE.md` § Start here now names this plan and its held merge instead

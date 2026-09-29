@@ -51,7 +51,7 @@ live runs came back red on the skill, not the harness — `/verify-claims` (vend
 green on 2026-09-25 (`EconGeo/ai-audit#4`, `ai-audit/` re-vendored at `1c237da`; foreground
 dispatch rule in `rules/agents.md` §4) — see the 2026-09-25 "Five skill reds closed" entry in
 `docs/SESSION_REPORT.md`. **Open in this repo:** `docs/plans/2026-09-28-prose-gate-holes.md` is
-code complete on branch `prose-gate-holes` (head `494282a`) — six holes in
+code complete on branch `prose-gate-holes` (head `39fc61a`) — six holes in
 `scripts/prose_number_check.py` closed — but the merge is held for the author's decision: the
 plan's fleet gate found three of five paper manuscripts (POGM4, affordable_housing_2026,
 zoning2026) go from exit 0 to exit 1 on the stricter gate; see the 2026-09-28 entry in
