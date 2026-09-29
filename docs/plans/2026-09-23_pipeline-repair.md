@@ -348,6 +348,10 @@ Resume at POGM4 Task B (native Quarto migration) once Phase 2 lands, because Tas
 depends on gates that are currently wrong, and its first review round depends on critics that can
 write their reports.
 
+**Correction (2026-09-28).** "The number-gate holes … either Phase 1 above or genuinely
+project-local" was wrong: Phase 1 has no such item and the holes are research-wide. They were
+carried by no plan until docs/plans/2026-09-28-prose-gate-holes.md.
+
 ---
 
 ## What this plan does not do

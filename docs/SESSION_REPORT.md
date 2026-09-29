@@ -1166,3 +1166,60 @@ so no re-link; paper locks record `ccea599` (WARN only).
 `43ff095`), docs only.
 
 **Still open:** nothing in this repo.
+
+## 2026-09-28 — prose-gate-holes: six number-gate holes closed; merge held on the fleet gate
+
+**Scope.** `docs/plans/2026-09-28-prose-gate-holes.md`, off a project audit
+(`~/Research/POGM4/quality_reports/2026-09-23_pipeline_gate_audit.md`, §A–§D) that found
+`scripts/prose_number_check.py` (INV-11's enforcer) passing manuscripts it should fail. Built in
+a worktree on branch `prose-gate-holes` (off `main` `3ee3a5a`), one task per hole, each with its
+own reviewed commit; **not merged**.
+
+**Branch contents (commits oldest first, head `494282a`):**
+- `afbfe19` — CommonMark fence matching fixed; an unclosed fence is now exit 2, not a silent
+  partial scan.
+- `fca2af7` — `{r}` inline syntax recognised; a trailing comma is no longer treated as part of a
+  literal.
+- `a0c3341` — a sign typed beside an inline value (e.g. a literal `+`/`-` glued to a number) now
+  fails, and by design cannot be allowlisted.
+- `818cd4e`/`90a0290` — caption strings inside executable chunks are scanned (chunk-option
+  captions for any executable engine; R `caption=`/`title=` string arguments only when the engine
+  is `r`; display fences and non-executable chunks yield no captions).
+- `40d3ce7` — verdict words next to live (non-literal) values are counted, against an optional
+  declared ceiling.
+- `494282a` — docs: INV-11 and the write gate updated to state the gate's new coverage.
+
+**Test status.** `python3 -m pytest tests/ -q` → 533 passed, 9 subtests passed (151.53s), exit 0,
+on the branch head. Baseline on `main` before this work: 505 passed.
+
+**Fleet gate (Task 7).** Ran the branch's stricter gate against all five linked paper
+manuscripts and compared to their `main` result. Two stayed clean; three went from exit 0 to
+exit 1 — every new red is a finding the old gate could not see:
+
+| Project | main | branch | Sign glue | New caption literals | Comma-key changes | Unclosed fence | Verdict words (advisory) |
+|---|---|---|---|---|---|---|---|
+| ESG | 0 | 0 | 0 | 0 | 0 | no | 0 |
+| NAR_settlement | 0 | 0 | 0 | 0 | 0 failing; 6 `N,` rows now stale (`10,` `2022,` `2023,` `2024,` `2025,` `5,`) | no | 23 |
+| POGM4 | 0 | **1** | **4** (l. 5846 ×3, l. 6007 — the shipped `+-0.634`) | `1.20` (figure caption, l. 5365) | `1999` (allowlist has only `"1999,"`) | no | 64 |
+| affordable_housing_2026 | 0 | **1** | 0 | `95`, `0` ×2, `1` ×2 (one figure caption, l. 588: "95% CIs", "e = 0", "e = -1"); no allowlist file exists | 0 | no | 0 |
+| zoning2026 | 0 | **1** | **3** (l. 2601, 3107, 3171 — `$+`r sprintf(...)`$` inside math) | `2010` ("Saiz (2010)", l. 2187), `one specification` (l. 3632) | 0 | no | 32 |
+
+The fixes are project-side:
+- **Sign glue (7 sites, 2 projects):** put the sign in the expression, e.g. `sprintf("%+.3f", x)`.
+  Not allowlistable by design.
+- **Caption literals (POGM4 1, affordable_housing 3, zoning 2):** make each inline, or add an
+  allowlist row with a reason (affordable_housing needs the file created first).
+- **POGM4 `1999`:** add a bare `1999` row (the `"1999,"` twin is now dead weight); NAR can delete
+  its six stale comma rows.
+
+**Decision.** Per the plan's rule (all five projects must stay at exit 0 to merge automatically),
+the merge is **held** for the author: either merge `prose-gate-holes` to `main` now and let the
+three projects absorb the new findings on their own schedule, or fix the three projects' prose
+first and merge once they are clean. Branch `prose-gate-holes` (head `494282a`) is left in place,
+nothing pushed.
+
+**Close-out (Task 8).** `CLAUDE.md` § Start here now names this plan and its held merge instead
+of claiming nothing is open; `docs/plans/2026-09-23_pipeline-repair.md` Phase 5 corrected — its
+"either Phase 1 above or genuinely project-local" claim about the number-gate holes was wrong,
+Phase 1 has no such item and the holes were research-wide; `docs/improvement-ledger.md` gained
+`L-007` (`open`, POGM4, this audit). `check_fork.sh` PASS.
