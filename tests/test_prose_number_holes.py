@@ -124,6 +124,32 @@ class TestCaptions(Case):
         rc, out = self.check(body, allow="literal,reason\n1983,Panel start year.\n")
         self.assertEqual(rc, 0, out)
 
+    def test_fence_line_caption_with_escaped_quote_is_scanned(self):
+        body = '```{r fig-q, fig.cap="A \\"quoted\\" term at 60 sites"}\nplot(1)\n```\n'
+        rc, out = self.check(body)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("'60'", out)
+
+    def test_r_caption_syntax_is_not_read_in_a_python_chunk(self):
+        body = '```{python}\nplt.title = "Top 60"\nax.set(title="Top 60")\n```\n'
+        rc, out = self.check(body)
+        self.assertEqual(rc, 0, out)
+
+    def test_option_caption_is_read_in_a_python_chunk(self):
+        body = '```{python}\n#| fig-cap: "Rents across 117 markets"\nplt.plot(1)\n```\n'
+        rc, out = self.check(body)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("'117'", out)
+
+    def test_r_caption_syntax_is_not_read_in_a_display_fence(self):
+        rc, out = self.check('```r\nmake_ft(d, caption = "Table 4: Returns")\n```\n')
+        self.assertEqual(rc, 0, out)
+
+    def test_executable_chunk_nested_in_a_display_fence_is_not_read(self):
+        body = '````markdown\n```{r}\n#| fig-cap: "Top 60"\n```\n````\n'
+        rc, out = self.check(body)
+        self.assertEqual(rc, 0, out)
+
 
 if __name__ == "__main__":
     unittest.main()

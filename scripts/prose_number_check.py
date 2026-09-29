@@ -97,13 +97,38 @@ class FenceError(Exception):
 # admitted -- scanning every R string would re-import the code noise that
 # excluding chunks exists to avoid.
 # Known limit: a multi-line YAML caption (#| fig-cap: |) is not read.
-FENCE_CAP = re.compile(r"""\b(?:fig|tbl)[.-]cap\s*=\s*(["'])(.*?)\1""")
+#
+# SCOPE (controller ruling): captions are read only inside an EXECUTABLE chunk
+# -- the opener's info string starts with `{` (`{r}`, `{python}`, ...), never a
+# display fence (bare ```, ```r, ````markdown). Within an executable chunk,
+# FENCE_CAP (the opener option) and OPT_CAP (a #| option line) apply for any
+# engine; R_CAP (a caption= or title= R string) applies only when the engine is
+# r, since that is R-specific call syntax, not something a python/bash chunk's
+# own strings should be read as. A chunk that only *looks* executable because
+# it is nested inside a display fence is not: its lines belong to the outer
+# fence, which never opened as executable.
+FENCE_CAP = re.compile(r"""\b(?:fig|tbl)[.-]cap\s*=\s*(["'])(.*?)(?<!\\)\1""")
 OPT_CAP = re.compile(r"^#\|\s*(?:fig|tbl)-(?:cap|subcap)\s*:\s*(.+?)\s*$")
 R_CAP = re.compile(r"""\b(?:caption|title)\s*=\s*(["'])(.*?)(?<!\\)\1""")
+ENGINE_R = re.compile(r"^\{r[\s,}]")
 
 
-def chunk_captions(lineno, line):
-    """Reader-visible caption text on one line inside a chunk."""
+def fence_engine(info):
+    """(is_executable, is_r) for a fence's info string.
+
+    `is_executable` is whether the (left-stripped) info string starts with
+    `{`. `is_r` narrows that to the r engine specifically -- `{r}`, `{r
+    fig-top, ...}`, `{r,...}` -- so a `{python}`/`{bash}`/... chunk is
+    executable but not r.
+    """
+    info = info.lstrip()
+    if not info.startswith("{"):
+        return False, False
+    return True, bool(ENGINE_R.match(info))
+
+
+def chunk_captions(lineno, line, r_engine):
+    """Reader-visible caption text on one line inside an executable chunk."""
     s = line.strip()
     m = OPT_CAP.match(s)
     if m:
@@ -113,6 +138,8 @@ def chunk_captions(lineno, line):
         return [(lineno, value.strip("\"'"))]
     if s.startswith("#"):
         return []          # an R comment, or a chunk option that is not a caption
+    if not r_engine:
+        return []          # caption= and title= are R call syntax, not read in other engines
     return [(lineno, c.group(2)) for c in R_CAP.finditer(line)]
 
 
@@ -139,14 +166,15 @@ def load_manuscript(qmd):
     """
     prose, captions = [], []
     fence, opened = None, 0
+    fence_exec = fence_r = False
     in_yaml = in_comment = False
     for i, line in enumerate(open(qmd, encoding="utf-8"), 1):
         if fence is not None:
             m = FENCE.match(line)
             if m and len(m.group(1)) >= len(fence) and not m.group(2):
                 fence = None
-            else:
-                captions.extend(chunk_captions(i, line))
+            elif fence_exec:
+                captions.extend(chunk_captions(i, line, fence_r))
             continue
         if in_comment:
             if "-->" in line:
@@ -167,7 +195,9 @@ def load_manuscript(qmd):
         m = FENCE.match(line)
         if m:
             fence, opened = m.group(1), i
-            captions.extend((i, c.group(2)) for c in FENCE_CAP.finditer(m.group(2)))
+            fence_exec, fence_r = fence_engine(m.group(2))
+            if fence_exec:
+                captions.extend((i, c.group(2)) for c in FENCE_CAP.finditer(m.group(2)))
             continue
         prose.append((i, line))
     if fence is not None:
