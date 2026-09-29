@@ -92,5 +92,38 @@ class TestSignGlue(Case):
                 self.assertEqual(rc, 0, out)
 
 
+class TestCaptions(Case):
+    def test_hash_pipe_caption_is_scanned(self):
+        body = '```{r}\n#| label: fig-rents\n#| fig-cap: "Rents across 117 markets"\nplot(1)\n```\n'
+        rc, out = self.check(body)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("'117'", out)
+        self.assertIn("caption:", out)
+
+    def test_fence_line_caption_is_scanned(self):
+        rc, out = self.check('```{r fig-top, fig.cap="Top 60 shown"}\nplot(1)\n```\n')
+        self.assertEqual(rc, 1, out)
+        self.assertIn("'60'", out)
+
+    def test_r_caption_and_title_strings_are_scanned(self):
+        body = ('```{r}\nmake_ft(d, caption = "Table 4: Returns")\n'
+                "modelsummary(m, title = 'Table 5: Panel')\n```\n")
+        rc, out = self.check(body)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("'4'", out)
+        self.assertIn("'5'", out)
+
+    def test_code_comments_and_expr_captions_are_not(self):
+        body = ('```{r}\n#| fig-cap: !expr paste("N =", n)\n'
+                '# caption = "Table 9"\nx <- 1.20\n```\n')
+        rc, out = self.check(body)
+        self.assertEqual(rc, 0, out)
+
+    def test_allowlisted_caption_literal_passes(self):
+        body = '```{r}\n#| fig-cap: "Rents, 1983 onward"\nplot(1)\n```\n'
+        rc, out = self.check(body, allow="literal,reason\n1983,Panel start year.\n")
+        self.assertEqual(rc, 0, out)
+
+
 if __name__ == "__main__":
     unittest.main()

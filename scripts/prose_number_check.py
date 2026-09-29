@@ -90,12 +90,44 @@ class FenceError(Exception):
     """A code fence was opened and never closed; args[0] is its line number."""
 
 
+# Caption text is prose the reader sees, by the same logic that excludes HTML
+# comments: the test is whether it reaches the rendered page. Three places carry
+# it: a fence-line option, a #| option line, and an R string passed as caption=
+# or title= (flextable, modelsummary, gt, labs). Only those string literals are
+# admitted -- scanning every R string would re-import the code noise that
+# excluding chunks exists to avoid.
+# Known limit: a multi-line YAML caption (#| fig-cap: |) is not read.
+FENCE_CAP = re.compile(r"""\b(?:fig|tbl)[.-]cap\s*=\s*(["'])(.*?)\1""")
+OPT_CAP = re.compile(r"^#\|\s*(?:fig|tbl)-(?:cap|subcap)\s*:\s*(.+?)\s*$")
+R_CAP = re.compile(r"""\b(?:caption|title)\s*=\s*(["'])(.*?)(?<!\\)\1""")
+
+
+def chunk_captions(lineno, line):
+    """Reader-visible caption text on one line inside a chunk."""
+    s = line.strip()
+    m = OPT_CAP.match(s)
+    if m:
+        value = m.group(1)
+        if value.startswith("!expr"):
+            return []      # computed in R: no typed literal to find
+        return [(lineno, value.strip("\"'"))]
+    if s.startswith("#"):
+        return []          # an R comment, or a chunk option that is not a caption
+    return [(lineno, c.group(2)) for c in R_CAP.finditer(line)]
+
+
 def load_manuscript(qmd):
     """Split the manuscript into prose lines and caption strings, in one pass.
 
     Prose = outside fenced chunks, YAML front matter and HTML comments. HTML
     comments are excluded because they do not appear in the rendered document:
     a number inside one cannot make a false claim to a reader.
+
+    Captions are the reader-visible exception carved back out of the chunks
+    prose otherwise skips: a fence-line `fig.cap=`/`tbl.cap=` option, a `#|`
+    chunk-option caption line, and an R string passed as `caption=` or
+    `title=`. All of that text renders on the page exactly like prose does, so
+    a hardcoded number in it is the same defect as one typed in a paragraph.
 
     Fences follow CommonMark: a fence closes only on a line of at least as many
     backticks with no info string. The old toggle-on-any-``` let a ```{r} line
@@ -113,6 +145,8 @@ def load_manuscript(qmd):
             m = FENCE.match(line)
             if m and len(m.group(1)) >= len(fence) and not m.group(2):
                 fence = None
+            else:
+                captions.extend(chunk_captions(i, line))
             continue
         if in_comment:
             if "-->" in line:
@@ -133,6 +167,7 @@ def load_manuscript(qmd):
         m = FENCE.match(line)
         if m:
             fence, opened = m.group(1), i
+            captions.extend((i, c.group(2)) for c in FENCE_CAP.finditer(m.group(2)))
             continue
         prose.append((i, line))
     if fence is not None:
@@ -251,17 +286,23 @@ def main(argv):
         return 2
 
     hits = collections.OrderedDict()
+
+    def scan(lineno, text, label):
+        clean = MATH.sub(" ", INLINE.sub(" ", text))
+        for m in NUM.finditer(clean):
+            ctx = label + clean[max(0, m.start() - 55):m.end() + 55].strip().replace("\n", " ")
+            hits.setdefault(m.group(1), []).append((lineno, ctx))
+        for m in wordnum_rx.finditer(clean):
+            ctx = label + clean[max(0, m.start() - 55):m.end() + 55].strip().replace("\n", " ")
+            hits.setdefault(m.group(0).lower(), []).append((lineno, ctx))
+
     glued = []
     for lineno, line in prose:
         for m in SIGN_GLUE.finditer(line):
             glued.append((lineno, line[max(0, m.start() - 55):m.end() + 55].strip()))
-        clean = MATH.sub(" ", INLINE.sub(" ", line))
-        for m in NUM.finditer(clean):
-            ctx = clean[max(0, m.start() - 55):m.end() + 55].strip().replace("\n", " ")
-            hits.setdefault(m.group(1), []).append((lineno, ctx))
-        for m in wordnum_rx.finditer(clean):
-            ctx = clean[max(0, m.start() - 55):m.end() + 55].strip().replace("\n", " ")
-            hits.setdefault(m.group(0).lower(), []).append((lineno, ctx))
+        scan(lineno, line, "")
+    for lineno, text in captions:
+        scan(lineno, text, "caption: ")
 
     unexplained = {k: v for k, v in hits.items() if k not in allow}
     stale = [k for k in allow if k not in hits]
