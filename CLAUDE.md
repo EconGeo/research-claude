@@ -63,7 +63,10 @@ went live (merge `86db57c`): 13 rules are kept out of startup by `claudeMdExclud
 `~/.claude/settings.json` and read at the step that needs them (`tests/test_rule_reads.py`);
 audit and verification in `docs/audits/2026-09-29_rule-consumer-audit.md`. **A `--tip` project
 loads no shared rule until external imports are approved for it** (README, "Coauthors and
-archival reproduction"). **Nothing is open in this repo.**
+archival reproduction"). Also on 2026-09-29, `docs/plans/2026-09-29-zotpilot-skills-single-source.md`
+landed (`EconGeo/ZotPilot#8`, `deploy_skills false`, the `personal-shadow` gate): ZotPilot skills
+now load only from `zotpilot-skills/`; see its 2026-09-29 entry in `docs/SESSION_REPORT.md`. Its
+open items are user decisions outside this repo. **Nothing is open in this repo.**
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 
@@ -124,7 +127,10 @@ to the repo root — this overrides the checkpoint skill's default root path. A 
   describing a retired dual LaTeX+Quarto placement), so that copy was reconciled away —
   `rules/ai-disclosure.md` at repo root is the one true copy.
 - `zotpilot-skills/` is **vendored verbatim** from the **`EconGeo/ZotPilot` fork** and is
-  never edited in place. Changes go into a bridge skill under `skills/` (see `lit-position`,
+  never edited in place. It is the only ZotPilot skill copy any session may load: user-level
+  deployment is off (`deploy_skills false`), and `check_install` fails on a shadowing
+  `~/.claude/skills` entry — see `zotpilot-skills/VENDORED.md` "Only this copy may load".
+  Changes go into a bridge skill under `skills/` (see `lit-position`,
   `new-project-ztp`, `ztp-data-tag`, `ztp-ollama`).
   **The fork is the only source — never re-vendor from upstream `xunhe730/ZotPilot`, and
   never install ZotPilot from PyPI.** The server we run *is* the fork: `zotpilot` reports

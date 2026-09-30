@@ -1,14 +1,14 @@
 import json, pathlib, subprocess, sys, tempfile, unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import eval_fixture
+
+SKILL = "ztp-tutor"
 
 
-def run(check, transcript, mock_log):
-    with tempfile.TemporaryDirectory() as d:
-        pt, pe = pathlib.Path(d, "t.jsonl"), pathlib.Path(d, "e.log")
-        pt.write_text(transcript); pe.write_text(mock_log)
-        r = subprocess.run([sys.executable, str(check), str(pt), str(pe)], capture_output=True, text=True)
-        return r.returncode, r.stdout
+def run(check, transcript, mock_log, load="project"):
+    return eval_fixture.run(check, transcript, mock_log, SKILL, load)
 
 
 def use(uid, name, **inp):
@@ -31,6 +31,12 @@ class TestZtpTutorChecker(unittest.TestCase):
 
     def test_persona_saved_without_answer_fails(self):
         rc, out = run(CHECK, "", E + 'WRITE save_reading_persona {"persona_text": "x"} -> {"saved": true}\n'); self.assertEqual(rc, 1); self.assertIn("save_reading_persona", out)
+
+    def test_no_skill_load_fails(self):
+        rc, out = run(CHECK, "", E, load=None); self.assertEqual(rc, 1); self.assertIn("no ZotPilot skill load recorded", out)
+
+    def test_personal_skill_load_fails(self):
+        rc, out = run(CHECK, "", E, load="personal"); self.assertEqual(rc, 1); self.assertIn("outside the project", out)
 
 
 if __name__ == "__main__":

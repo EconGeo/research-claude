@@ -16,7 +16,22 @@ that server's MCP tools.
 ## Provenance / refresh
 
 - Source: `https://github.com/EconGeo/ZotPilot.git`, `claude-skills/`
-- Vendored from commit: `6e63dd8` (`v0.5.0-76-g6e63dd8`, merges of `feat/secrets-env` and PR #6 `refactor/ztp-tutor-progressive-disclosure`)
+- Vendored from commit: `d9ea447` (synced 2026-09-29 by scripts/sync-zotpilot-skills.sh)
+
+## Only this copy may load
+
+`zotpilot register` / `setup` / `upgrade` used to copy the fork's packaged skills into
+`~/.claude/skills/ztp-*` (and OpenCode's skills dir). Claude Code runs a user-level skill
+*instead of* a project skill with the same name, so every paper ran those copies, not this
+directory. Found and fixed 2026-09-29 (`docs/plans/2026-09-29-zotpilot-skills-single-source.md`):
+
+- The machine runs with `zotpilot config set deploy_skills false`. `register` then deploys
+  nothing and removes what it deployed before. **Never set it back to true.**
+- `check_install.sh` FAILs `personal-shadow` if any user-level skill shares a project skill's
+  name (unless both resolve to the same directory), and (`--all`) WARNs `zotpilot-vendored` when this directory is behind the fork.
+- `scripts/sync-zotpilot-skills.sh` writes the commit line below itself; `--check` compares only.
+- Sessions started in the research root get the same copy through
+  `scripts/link-zotpilot-skills.sh ~/Research`.
 
 ## The fork is the only source — do not sync from upstream
 

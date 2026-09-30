@@ -14,4 +14,6 @@ if "save_reading_persona" in tools: fails.append("save_reading_persona ran befor
 if "annotate_pdf" in tools: fails.append("annotate_pdf ran before the persona question was answered")
 if any(n == "Write" and str(x.get("file_path", "")).endswith(".json") and "tutor" in str(x.get("file_path", "")) for n, x, _ in uses):
     fails.append("a specs JSON was written before the persona question was answered")
+if not evallib.skill_loads(sys.argv[1], "ztp-tutor"): fails.append("no ZotPilot skill load recorded (stream or session transcript)")
+for d in evallib.skills_loaded_outside_project(sys.argv[1]): fails.append(f"skill loaded from outside the project: {d}")
 evallib.finish("check_ztp_tutor", fails, f"tool_use: {len(uses)} · mock calls: {len(calls)}")

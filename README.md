@@ -331,6 +331,10 @@ micromamba activate zotpilot
 # includes multi-library indexing, token-aware chunking, bge-large, BBT 7+ compat.
 pip install git+https://github.com/EconGeo/ZotPilot.git
 
+# Do not let ZotPilot copy its skills into ~/.claude/skills: the project links them from
+# zotpilot-skills/, and a user-level copy would override the project's.
+zotpilot config set deploy_skills false
+
 # Find the zotpilot binary path (you'll need this for .mcp.json)
 which zotpilot
 # → /Users/YOUR_USERNAME/micromamba/envs/zotpilot/bin/zotpilot
@@ -378,6 +382,8 @@ micromamba activate zotpilot
 pip install --upgrade --force-reinstall git+https://github.com/EconGeo/ZotPilot.git
 zotpilot --version   # confirm the new build
 ```
+
+An existing install keeps any skill copies an earlier `register` deployed to `~/.claude/skills/`; remove them with `zotpilot config set deploy_skills false && zotpilot register`.
 
 **Switching to the `bge-large` embedding model (optional but recommended).** Existing
 indexes were built with `nomic-embed-text` (768-dim) in the default ChromaDB collection

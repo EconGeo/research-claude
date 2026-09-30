@@ -188,6 +188,27 @@ check_project() {
     bad link-target "${#stray[@]} link(s) point outside $RC"; printf '    %s\n' "${stray[@]}"
   else ok link-target "all links point into the resolved checkout"; fi
 
+  # ── 4b. No personal skill shadows a project skill ─────────────────────────
+  # Claude Code runs ~/.claude/skills/<name> INSTEAD of .claude/skills/<name> when both
+  # exist ("personal over project", code.claude.com/docs/en/skills). `zotpilot register`
+  # deployed exactly that for every ztp-* skill until deploy_skills=false (2026-09-29):
+  # every paper silently ran the fork's user-level copies, not zotpilot-skills/.
+  # A personal entry resolving to the same directory loads once and is not a shadow.
+  local HOME_SKILLS="${CLAUDE_PERSONAL_SKILLS_DIR:-$HOME/.claude/skills}" shadow=() n
+  if [[ -d "$P/.claude/skills" && -d "$HOME_SKILLS" ]]; then
+    for l in "$P/.claude/skills"/*; do
+      [[ -e "$l" || -L "$l" ]] || continue
+      n="$(basename "$l")"
+      [[ -e "$HOME_SKILLS/$n" || -L "$HOME_SKILLS/$n" ]] || continue
+      [[ "$(cd "$HOME_SKILLS/$n" 2>/dev/null && pwd -P)" == "$(cd "$l" 2>/dev/null && pwd -P)" ]] && continue
+      shadow+=("$n")
+    done
+  fi
+  if [[ ${#shadow[@]} -gt 0 ]]; then
+    bad personal-shadow "${#shadow[@]} skill(s) in $HOME_SKILLS run instead of this project's: ${shadow[*]}"
+    echo "    (ZotPilot: zotpilot config set deploy_skills false && zotpilot register)"
+  else ok personal-shadow "no personal skill overrides a project skill"; fi
+
   # ── 5. Real overrides survive a clone ─────────────────────────────────────
   # A real file inside a gitignored directory needs an explicit !negation, and
   # the `/*` form to negate into at all. Without it the override is in nobody's
@@ -339,6 +360,18 @@ if [[ "$ALL" == true ]]; then
     [[ -d "$p/.claude" && -f "$p/bootstrap-pipeline.sh" ]] || continue
     check_project "$p"; echo
   done
+
+  # Vendored ZotPilot skills vs the fork. Network, so WARN-only; exit 1 = differs.
+  # Resolve through a symlinked invocation to the real scripts/ dir. No set -e here, but
+  # the rc is captured explicitly anyway.
+  sync_dir="$(cd "$(dirname "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$0")")" && pwd -P)"
+  zp_rc=0; zp_out="$("$sync_dir/sync-zotpilot-skills.sh" --check 2>&1)" || zp_rc=$?
+  case $zp_rc in
+    0) ok zotpilot-vendored "zotpilot-skills/ matches the fork" ;;
+    1) warn zotpilot-vendored "zotpilot-skills/ is behind the fork — run scripts/sync-zotpilot-skills.sh"
+       printf '%s\n' "$zp_out" | sed -n '2,6p' ;;
+    *) warn zotpilot-vendored "could not reach the fork (offline?) — freshness not checked" ;;
+  esac
 else
   check_project "$PROJECT_DIR"
 fi
