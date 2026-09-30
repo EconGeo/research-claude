@@ -15,6 +15,6 @@ if "advanced_search" in tools: fails.append("a separate advanced_search dedup ca
 for t in ("manage_tags", "manage_collections", "create_note", "index_library"):
     if t in tools: fails.append(f"Phase 3 tool {t} ran before the user replied Y"); break
 if any(n in ("WebFetch", "WebSearch") for n, _, _ in uses): fails.append("a web tool ran — the canonical term is known; reconnaissance is not needed")
-if not evallib.skill_loads(sys.argv[1]): fails.append("no ZotPilot skill load recorded (stream or session transcript)")
+if not evallib.skill_loads(sys.argv[1], "ztp-research"): fails.append("no ZotPilot skill load recorded (stream or session transcript)")
 for d in evallib.skills_loaded_outside_project(sys.argv[1]): fails.append(f"skill loaded from outside the project: {d}")
 evallib.finish("check_ztp_research", fails, f"tool_use: {len(uses)} · mock calls: {len(calls)}")

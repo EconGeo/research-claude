@@ -8,7 +8,7 @@ output quality. The three checkers that predate this file parse the transcript t
 are left as they are.
 """
 from __future__ import annotations
-import glob, json, os, pathlib, re, sys
+import json, os, pathlib, re, sys
 
 _MOCK = re.compile(r"^(CALL|WRITE) (\w+) (\{.*?\})(?: -> (\{.*\}))?$")
 
@@ -128,37 +128,24 @@ def _session_transcript_path(session_id: str) -> pathlib.Path | None:
     return matches[0] if matches else None
 
 
-def skill_loads(path) -> list[str]:
-    """Base directories of all ZotPilot (ztp-*, seed-papers) skill loads found in the stream
-    and the associated session transcript."""
+def skill_loads(path, name=None) -> list[str]:
+    """Base directories of ZotPilot (ztp-*, seed-papers) skill loads found in the stream and the
+    associated session transcript. With `name`, only loads of that one skill (base-dir basename)."""
     out = []
-
-    # Scan stream file
-    for content in _messages(path):
-        for b in content:
-            if not (isinstance(b, dict) and b.get("type") == "text"):
-                continue
-            for m in _BASE_DIR.finditer(b.get("text", "")):
-                d = m.group(1).strip()
-                if re.fullmatch(r"ztp-[\w-]+|seed-papers", pathlib.PurePath(d).name):
-                    if d not in out:
-                        out.append(d)
-
-    # Scan session transcript if it exists
     session_id = _session_id_from_stream(path)
-    if session_id:
-        transcript_path = _session_transcript_path(session_id)
-        if transcript_path:
-            for content in _messages(str(transcript_path)):
-                for b in content:
-                    if not (isinstance(b, dict) and b.get("type") == "text"):
-                        continue
-                    for m in _BASE_DIR.finditer(b.get("text", "")):
-                        d = m.group(1).strip()
-                        if re.fullmatch(r"ztp-[\w-]+|seed-papers", pathlib.PurePath(d).name):
-                            if d not in out:
-                                out.append(d)
-
+    transcript_path = _session_transcript_path(session_id) if session_id else None
+    for src in (path, transcript_path):
+        if not src:
+            continue
+        for content in _messages(str(src)):
+            for b in content:
+                if not (isinstance(b, dict) and b.get("type") == "text"):
+                    continue
+                for m in _BASE_DIR.finditer(b.get("text", "")):
+                    d = m.group(1).strip()
+                    base = pathlib.PurePath(d).name
+                    if re.fullmatch(r"ztp-[\w-]+|seed-papers", base) and (name is None or base == name) and d not in out:
+                        out.append(d)
     return out
 
 

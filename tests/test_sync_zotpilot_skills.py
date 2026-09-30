@@ -36,6 +36,6 @@ class TestSync(unittest.TestCase):
 
     def test_unreachable_fork_is_not_exit_1(self):
         self.env["ZOTPILOT_FORK_URL"] = f"file://{self.rc}/no-such-repo"
-        self.assertNotIn(self.sync("--check").returncode, (0, 1))
+        self.assertEqual(self.sync("--check").returncode, 3)
 
 if __name__ == "__main__": unittest.main()

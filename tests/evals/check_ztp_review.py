@@ -14,6 +14,6 @@ elif idx("search_papers") is not None and idx("search_papers") < idx("search_top
 if "get_notes" not in tools: fails.append("get_notes was never called (Step 5: note integration)")
 if "search_academic_databases" in tools: fails.append("search_academic_databases was called — the review must stay local")
 if any(k == "WRITE" for k, _, _, _ in calls): fails.append("a write reached the mock")
-if not evallib.skill_loads(sys.argv[1]): fails.append("no ZotPilot skill load recorded (stream or session transcript)")
+if not evallib.skill_loads(sys.argv[1], "ztp-review"): fails.append("no ZotPilot skill load recorded (stream or session transcript)")
 for d in evallib.skills_loaded_outside_project(sys.argv[1]): fails.append(f"skill loaded from outside the project: {d}")
 evallib.finish("check_ztp_review", fails, f"tool_use: {len(uses)} · mock calls: {len(calls)}")

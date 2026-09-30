@@ -39,10 +39,12 @@ git -C "$TMP/zp" checkout --quiet
 
 if [[ ! -d "$TMP/zp/claude-skills" ]]; then
   echo "Error: claude-skills/ not found in the fork checkout" >&2
-  exit 1
+  exit 3
 fi
 
 SRC_COMMIT="$(git -C "$TMP/zp" rev-parse --short HEAD)"
+# Kept as a variable: written inline after a slash, this name reads as a /skill reference to
+# check_fork.sh [skill-refs], which fails on it (tested 2026-09-29).
 SYNC_SCRIPT="sync-zotpilot-skills"
 
 if [[ "$CHECK" == true ]]; then
