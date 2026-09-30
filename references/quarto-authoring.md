@@ -5,7 +5,7 @@
 anything.
 
 **Why it exists.** Almost every Quarto failure is **silent**. A wrong chunk label does not error —
-it prints a second number. A dropped `keywords:` does not error — the field just never appears. An
+it prints a second number when a caption also types one. A dropped `keywords:` does not error — the field just never appears. An
 over-wide table does not error — LaTeX discards a column. A stale plain-text "Section 5.4" does not
 error — it points at the wrong section forever. Nothing in a render log tells you, so the same
 mistakes recur across sessions and get fixed one at a time, months later, by a reviewer. Read this
@@ -21,10 +21,9 @@ before authoring, not after.
 | **Research pipeline** | Document architecture: single-source `.qmd`, caching, `cache.extra`, `dependson`, the write gate, claim-source discipline | each project's `.claude/rules/quarto-empirical.md`, `quarto-pdf.md`, `quarto-word.md` |
 | **Courses pipeline** | Slide design, Beamer theme, deck naming, build manifest, five-bullet rule | `~/Courses/CLAUDE.md` (Slide Pipeline) + `~/Courses/slide_pipeline/README.md` |
 
-**Precedence: the domain layer wins on anything it addresses.** If a project rule says "chunk labels
-must not start with `fig-`", that beats the general advice here — and §"Cross-references" explains
-why a project would say that. This file never redefines the pipeline; it explains the tool the
-pipeline is built on.
+**Precedence: the domain layer wins on anything it addresses.** If a project rule fixes a figure
+width or a cache policy, that beats the general advice here. This file never redefines the
+pipeline; it explains the tool the pipeline is built on.
 
 ---
 
@@ -269,13 +268,13 @@ document with two unresolved references rendered successfully), so nothing stops
 The check is therefore yours: `grep '?@'` the rendered text before you ship. Visible-but-non-fatal
 is still enormously better than a plain-text "Section 5.4", which leaves no trace at all.
 
-**The known exception, and why it exists.** A project that numbers exhibits manually — because a
-frozen registry id *is* the printed number (`Table B1`, `Figure G3`) — must **not** use `fig-`/`tbl-`
-chunk labels, because Quarto would add a second, conflicting number beside the manual one. Such a
-project uses a different chunk prefix (e.g. `exhibit-`) and builds captions as markdown paragraphs.
-That is a deliberate trade: it buys registry-controlled numbering and it gives up automatic
-cross-reference checking, so those projects need their own audit that every registry exhibit is
-captioned exactly once. **Know which regime you are in before you write a chunk label.**
+**There is one regime: Quarto-native.** Every table chunk is labelled `tbl-` and every figure chunk
+`fig-`, each with its `tbl-cap` / `fig-cap`; the renderer assigns the number and `@tbl-x` /
+`@fig-x` print it. Exhibits are never numbered by hand: no `exhibit-`/`tab-`/`table-` label
+prefix, no caption built as a markdown paragraph, and no typed "Table 3." at the start of a caption
+(Quarto prepends its own number, so the page shows two). Appendix exhibits that need their own
+numbering series use a custom crossref float (`apptbl-`, INV-25), not typed ids. A number a reader
+needs to see in a caption or in prose comes from `@ref`, never from a string.
 
 ### Citations
 
@@ -331,7 +330,7 @@ Each of these was found in a real document, after it had rendered cleanly for we
 | # | Symptom | Cause | Fix |
 |---|---|---|---|
 | 1 | A field declared in YAML never appears | `keywords:` is not rendered by the default PDF template | Put it in the body, or use a custom template. Grep the render. |
-| 2 | Two numbers beside one exhibit | Chunk label starts with `fig-`/`tbl-` in a manually-numbered document | Use a neutral prefix; see the exception above |
+| 2 | Two numbers beside one exhibit | The caption text types its own "Table N"/"Figure N" beside a `tbl-`/`fig-` label | Delete the typed number from `tbl-cap` / `fig-cap`; the renderer supplies it |
 | 3 | `Missing $ inserted` from a table note | `kableExtra::footnote(escape = FALSE)` strips backslashes | `escape = TRUE` on body *and* footnote |
 | 4 | Asterisks print literally in a table note | `escape = TRUE` means no markdown in notes | Carry emphasis in the wording |
 | 5 | A table column is missing from the PDF | LaTeX silently drops an overwide column | Set widths from the data; rotate; **look at the page** |
@@ -354,8 +353,8 @@ Each of these was found in a real document, after it had rendered cleanly for we
 ## Pre-render checklist
 
 1. What formats does this render to? Is every format-specific construct guarded?
-2. Does every figure chunk have **both** a `fig-`-prefixed label and a `fig-cap`? Tables likewise —
-   *unless* this project numbers manually, in which case neither prefix is allowed.
+2. Does every figure chunk have **both** a `fig-`-prefixed label and a `fig-cap`? Tables likewise
+   (`tbl-` and `tbl-cap`). Does any caption start with a typed "Table N" / "Figure N"?
 3. Is every cross-reference an `@ref`, not a typed number or section name?
 4. Is every number in prose an inline expression?
 5. Do any chunks that read external state have `cache: false`?

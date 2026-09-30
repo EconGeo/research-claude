@@ -3,8 +3,8 @@
 
 Why it exists. Quarto fails silently: an unresolved `@ref` prints `?@name` and exits 0; a
 table note wider than the text block clips words out of a sentence; an overwide table drops
-a column; a declared `keywords:` never reaches the page; a `fig-` label in a manually-numbered
-document prints a second number. `quarto_structure_check.py` reads the SOURCE. This reads the
+a column; a declared `keywords:` never reaches the page; a caption that types its own
+"Table N" beside a `tbl-` label prints a second number. `quarto_structure_check.py` reads the SOURCE. This reads the
 PAGE, through `pdftotext`, and does what the authoring reference's post-render checklist asks
 a human to do by eye — which two projects showed nobody does.
 
