@@ -68,7 +68,8 @@ map lives as the comment block in the `setup` chunk; there is no separate result
 writer reads the rendered manuscript and the chunk objects. Before writing any `tbl-`/`fig-`
 chunk, read `.claude/references/quarto-authoring.md` (Tables, Figures, Cross-references): a
 table note wider than the text block clips without an error, and `escape` rules differ by
-output format.
+output format. Also read the format rule for each block the YAML declares — the table and figure
+mechanics of each output: read `.claude/rules/quarto-pdf.md` for `pdf:`, `.claude/rules/quarto-word.md` for `docx:`.
 
 **Done means:** `quarto render` exits 0, `python3 .claude/scripts/prose_number_check.py` exits 0,
 `python3 .claude/scripts/check_render.py <pdf>` exits 0, and the coder-critic has scored the

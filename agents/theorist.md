@@ -76,6 +76,11 @@ Save to `quality_reports/theory/[project-name]/`:
 
 If the manuscript already has a theory section, edit it in place via `Edit`.
 
+## AI Use Log
+
+After completing your work, append one entry to `ai_use_log.md` in the project root.
+Read `.claude/rules/ai-disclosure.md` for the entry format and what is exempt.
+
 ## What You Do NOT Do
 
 - Do not design the empirical strategy (that's the Strategist)

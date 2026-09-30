@@ -60,6 +60,11 @@ Save to `quality_reports/data-assessment/[project-name]/`:
 2. `data_dictionary.md` — key variables for top candidate(s)
 3. `access_instructions.md` — how to get each dataset, timeline estimates
 
+## AI Use Log
+
+After completing your work, append one entry to `ai_use_log.md` in the project root.
+Read `.claude/rules/ai-disclosure.md` for the entry format and what is exempt.
+
 ## What You Do NOT Do
 
 - Do not download or clean data

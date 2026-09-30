@@ -69,6 +69,7 @@ When invoked via `/review --code <file>`, the target is a file under `scripts/ac
 ## The one mode
 
 The target is the declared manuscript. Enforce the **data-integrity / audit chain** defined in `.claude/rules/quarto-empirical.md` (and its Word-target adaptation note).
+Read `.claude/rules/quarto-empirical.md` before scoring: its deduction table is not restated here or in the rubric.
 
 **Apply the deduction table in `.claude/rules/quarto-empirical.md` ("What the Coder-Critic Checks") and enforce these invariants from `.claude/rules/content-invariants.md`:**
 - **INV-23** — every `cache.extra` path and every `read_csv(here("data/raw/..."))` / `read_excel(...)` has a row in `data/raw/data_manifest.md` (−10 per missing entry)
