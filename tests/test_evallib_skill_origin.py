@@ -90,4 +90,11 @@ class T(unittest.TestCase):
                 else:
                     os.environ.pop("CLAUDE_CONFIG_DIR", None)
 
+    def test_skill_loads_name_filter(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = transcript(d, f"{d}/.claude/skills/ztp-setup")
+            self.assertEqual(evallib.skill_loads(p, name="ztp-research"), [])
+            self.assertNotEqual(evallib.skill_loads(p), [])
+            self.assertEqual(evallib.skill_loads(p, name="ztp-setup"), [f"{d}/.claude/skills/ztp-setup"])
+
 if __name__ == "__main__": unittest.main()

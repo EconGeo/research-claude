@@ -200,6 +200,8 @@ check_project() {
       [[ -e "$l" || -L "$l" ]] || continue
       n="$(basename "$l")"
       [[ -e "$HOME_SKILLS/$n" || -L "$HOME_SKILLS/$n" ]] || continue
+      # A regular file is not a loadable skill; a (possibly broken) symlink still counts.
+      [[ -f "$HOME_SKILLS/$n" && ! -L "$HOME_SKILLS/$n" ]] && continue
       [[ "$(cd "$HOME_SKILLS/$n" 2>/dev/null && pwd -P)" == "$(cd "$l" 2>/dev/null && pwd -P)" ]] && continue
       shadow+=("$n")
     done
@@ -370,7 +372,8 @@ if [[ "$ALL" == true ]]; then
     0) ok zotpilot-vendored "zotpilot-skills/ matches the fork" ;;
     1) warn zotpilot-vendored "zotpilot-skills/ is behind the fork — run scripts/sync-zotpilot-skills.sh"
        printf '%s\n' "$zp_out" | sed -n '2,6p' ;;
-    *) warn zotpilot-vendored "could not reach the fork (offline?) — freshness not checked" ;;
+    *) warn zotpilot-vendored "could not reach the fork (offline?) — freshness not checked"
+       printf '%s\n' "$zp_out" | sed -n '1,2p' ;;
   esac
 else
   check_project "$PROJECT_DIR"

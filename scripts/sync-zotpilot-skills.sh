@@ -32,8 +32,12 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 echo "→ Fetching claude-skills/ from $FORK_URL (sparse, blobless — no connector)..."
-git clone --quiet --filter=blob:none --no-checkout --depth 1 \
-  ${REF:+--branch "$REF"} "$FORK_URL" "$TMP/zp" 2>/dev/null || { echo "Error: could not fetch $FORK_URL" >&2; exit 3; }
+if ! git clone --quiet --filter=blob:none --no-checkout --depth 1 \
+  ${REF:+--branch "$REF"} "$FORK_URL" "$TMP/zp" 2>"$TMP/clone.err"; then
+  echo "Error: could not fetch $FORK_URL" >&2
+  sed 's/^/    git: /' "$TMP/clone.err" >&2
+  exit 3
+fi
 git -C "$TMP/zp" sparse-checkout set --no-cone claude-skills >/dev/null
 git -C "$TMP/zp" checkout --quiet
 
@@ -48,11 +52,14 @@ SRC_COMMIT="$(git -C "$TMP/zp" rev-parse --short HEAD)"
 SYNC_SCRIPT="sync-zotpilot-skills"
 
 if [[ "$CHECK" == true ]]; then
+  if [[ ! -d "$DEST" ]]; then
+    echo "✗ zotpilot-skills/ missing — run scripts/${SYNC_SCRIPT}.sh" >&2; exit 1
+  fi
   if diff -rq --exclude=VENDORED.md "$TMP/zp/claude-skills" "$DEST" >/dev/null 2>&1; then
     echo "✓ zotpilot-skills/ matches EconGeo/ZotPilot@${SRC_COMMIT}"; exit 0
   fi
   echo "✗ zotpilot-skills/ differs from EconGeo/ZotPilot@${SRC_COMMIT} — run scripts/sync-zotpilot-skills.sh:"
-  diff -rq --exclude=VENDORED.md "$TMP/zp/claude-skills" "$DEST" | sed 's/^/    /'
+  diff -rq --exclude=VENDORED.md "$TMP/zp/claude-skills" "$DEST" | sed 's/^/    /' || true
   exit 1
 fi
 

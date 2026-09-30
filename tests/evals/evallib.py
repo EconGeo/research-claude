@@ -124,7 +124,7 @@ def _session_transcript_path(session_id: str) -> pathlib.Path | None:
         search_base = pathlib.Path.home() / ".claude" / "projects"
 
     # glob to find the file across all subdirs
-    matches = list(search_base.glob(f"*/{session_id}.jsonl"))
+    matches = sorted(search_base.glob(f"*/{session_id}.jsonl"))
     return matches[0] if matches else None
 
 

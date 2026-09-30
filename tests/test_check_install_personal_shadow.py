@@ -32,6 +32,14 @@ class TestPersonalShadow(unittest.TestCase):
         os.symlink(self.rc / "skills" / "ztp-x", self.home / "ztp-x")
         self.assertTrue(self.line("personal-shadow").startswith("PASS"), self.line("personal-shadow"))
 
+    def test_regular_file_is_not_a_shadow(self):
+        (self.home / "ztp-x").write_text("stray file\n")
+        self.assertTrue(self.line("personal-shadow").startswith("PASS"), self.line("personal-shadow"))
+
+    def test_broken_symlink_is_a_shadow(self):
+        os.symlink(self.home / "nowhere", self.home / "ztp-x")
+        self.assertTrue(self.line("personal-shadow").startswith("FAIL"), self.line("personal-shadow"))
+
 class TestForkFreshness(unittest.TestCase):
     def test_fork_unreachable_warns(self):
         with tempfile.TemporaryDirectory() as d:
