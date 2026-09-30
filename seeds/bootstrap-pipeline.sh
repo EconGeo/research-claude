@@ -42,4 +42,11 @@ fi
 
 APPLY_ARGS=(--project-dir "$PROJECT_DIR" --link)
 [[ "$TIP" == true ]] && APPLY_ARGS+=(--tip)
+if [[ "$TIP" == true ]]; then
+  # The shared checkout is outside this project, so Claude Code loads its linked rules only
+  # after external imports are approved here, and nothing prompts for it. See the
+  # research-claude README, "Coauthors and archival reproduction".
+  echo "⚠️  --tip: rules load only once external imports are approved for this project —"
+  echo "    see $RC/README.md (Coauthors and archival reproduction); check with /context."
+fi
 exec "$RC/apply.sh" "${APPLY_ARGS[@]}"

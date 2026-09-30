@@ -185,6 +185,32 @@ manuscript was written with pipeline SHA abc123.*
 The two modes deliberately use **different checkouts**. Pinning the shared checkout
 would silently pin every project on your machine to one paper's locked commit.
 
+> **`--tip` projects need a one-time approval, or no rule ever loads.** Claude Code treats a
+> `.claude/rules/` symlink whose target is outside the project like an external `@` import:
+> it loads only after external imports are approved for that project, and the approval
+> dialog appears for `@` imports, never for symlinks alone
+> ([docs](https://code.claude.com/docs/en/memory), "Share rules across projects with
+> symlinks"). A `--tip` project links into the shared checkout outside it, so without the
+> approval its sessions start with **no** shared rule — nothing warns you. Pinned mode is
+> unaffected: `.pipeline/research-claude` is inside the project. Tested 2026-09-29: three
+> unapproved paper repos loaded 0 of 18 rules; after approval, all 18; a pinned clone, 18.
+>
+> Approve once per `--tip` project, from the project root, with every Claude session in that
+> project closed (Claude Code rewrites `~/.claude.json` on exit):
+>
+> ```bash
+> python3 - "$PWD" <<'EOF'
+> import json, os, sys
+> p = os.path.expanduser("~/.claude.json"); d = json.load(open(p))
+> e = d.setdefault("projects", {}).setdefault(sys.argv[1], {})
+> e["hasClaudeMdExternalIncludesApproved"] = True
+> e["hasClaudeMdExternalIncludesWarningShown"] = True
+> json.dump(d, open(p, "w"), indent=2)
+> EOF
+> ```
+>
+> Check it: start a session and run `/context` — **Memory files** lists the rules.
+
 > **A lock pinned at or before commit `5d9fa0f`** (the last commit before `ai-audit` was
 > vendored) will silently install with `/civilize` and `/verify-claims` missing. At that
 > commit, `submodules/ai-audit` is still a submodule gitlink; a fresh, non-recursive
