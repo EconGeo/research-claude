@@ -99,6 +99,31 @@ def agent(uses, subagent_type) -> int | None:
     return first(uses, lambda n, a: n == "Agent" and a.get("subagent_type") == subagent_type)
 
 
+_BASE_DIR = re.compile(r"Base directory for this skill: (.+?)(?:\n|$)")
+
+
+def skills_loaded_outside_project(path) -> list[str]:
+    """Base dirs of ZotPilot skill loads (ztp-*, seed-papers) NOT from this eval project's
+    .claude/skills/. Claude Code runs a same-named ~/.claude/skills copy instead of the project's
+    ("personal over project"), which is how every paper once ran the fork's user-level copies.
+    The eval project is the transcript's directory; compared both as given and resolved, since
+    mktemp's /var is /private/var on macOS. Base dirs are link paths, so never resolve those."""
+    p = pathlib.Path(path)
+    roots = {str(p.parent.absolute()), str(p.parent.resolve())}
+    out = []
+    for content in _messages(path):
+        for b in content:
+            if not (isinstance(b, dict) and b.get("type") == "text"):
+                continue
+            for m in _BASE_DIR.finditer(b.get("text", "")):
+                d = m.group(1).strip()
+                if not re.fullmatch(r"ztp-[\w-]+|seed-papers", pathlib.PurePath(d).name):
+                    continue
+                if not any(d.startswith(r + "/.claude/skills/") for r in roots):
+                    out.append(d)
+    return out
+
+
 def finish(name: str, fails: list[str], summary: str):
     print(summary)
     for f in fails:

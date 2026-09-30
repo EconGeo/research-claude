@@ -17,4 +17,5 @@ for n, x, _ in uses:
         fails.append(f"{n} wrote {fp} before the user replied"); break
 if any(("bibliography_base.bib" in c or "zotero_seed.md" in c) and (">" in c or "tee" in c) for c in evallib.bash(uses)):
     fails.append("a Bash redirect wrote the seed files before the user replied")
+for d in evallib.skills_loaded_outside_project(sys.argv[1]): fails.append(f"skill loaded from outside the project: {d}")
 evallib.finish("check_seed_papers", fails, f"tool_use: {len(uses)} · mock calls: {len(calls)} · search_topic queries: {len(queries)}")
