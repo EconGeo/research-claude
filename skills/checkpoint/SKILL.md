@@ -105,7 +105,8 @@ If the project has one, regenerate from `.claude/templates/handoff.md` — never
 
 ### Step 5: Confirm
 
-Run the three verifications the rules require. Each yields a **report line**, never a question:
+Run the three verifications the rules require. Each yields a **report line**, never a question.
+Read `.claude/rules/session-handoff.md` first: R1's checklist and R3's dry-run command are not restated here.
 
 - **Plan staleness sweep** — `.claude/rules/session-handoff.md` R1, mandatory every checkpoint.
   Re-read the active plan's status section against Step 1's state and **fix the plan in place**;

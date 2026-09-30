@@ -31,7 +31,7 @@ is clear).
 
 After interview (5-8 exchanges), produce three outputs.
 
-**Option gate** (`.claude/rules/option-gates.md`): before writing the spec, show 5–8
+**Option gate** (read `.claude/rules/option-gates.md` first): before writing the spec, show 5–8
 framings of the research question — columns *question*, *contribution*, *closest paper*,
 *data needed*, *feasibility* — ranked, and wait (`--yes` takes rank 1). The pick becomes the
 spec's research question; the rest are Output 3's alternatives.
@@ -73,7 +73,7 @@ Workflow:
    - International (World Bank, OECD, Eurostat)
    - Novel/alternative (satellite imagery, web scraping, proprietary)
 5. For each dataset found, report — then, before Step 6, **Option gate**
-   (`.claude/rules/option-gates.md`): the ranked shortlist (5–8 datasets, or every feasible one
+   (read `.claude/rules/option-gates.md` first): the ranked shortlist (5–8 datasets, or every feasible one
    if fewer; columns *name*, *access*, *coverage*, *grade*), wait, `--yes` takes rank 1; the
    pick heads `data_sources.md`, the rest stay in it as alternatives:
    - Name, provider, access level (public/restricted)
@@ -120,7 +120,7 @@ strategy, data requirements and expected contribution. Novelty is checked agains
 Zotero index first (`.claude/rules/literature-search-order.md`): dispatch **lit-scout**
 (`.claude/agents/lit-scout.md`) with each candidate question and treat a proximity-5 hit as
 "already asked". Rank by feasibility and novelty, and offer
-them as an **Option gate** (`.claude/rules/option-gates.md`; columns *question*, *hypothesis*,
+them as an **Option gate** (read `.claude/rules/option-gates.md` first; columns *question*, *hypothesis*,
 *identification*, *data*, *contribution*; `--yes` takes rank 1). The pick is written first with
 the rest below it. Save to
 `quality_reports/research_ideas_[topic].md`, written with

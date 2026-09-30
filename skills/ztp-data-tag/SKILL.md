@@ -56,7 +56,7 @@ parser or Obsidian hub can treat every backfilled paper uniformly.
 
 Do NOT process the whole library on the first run. List collections with
 `mcp__zotpilot__browse_library(view="collections")`, then **Option gate**
-(`.claude/rules/option-gates.md`): rank 5–8 collections — columns *name*, *items*,
+(read `.claude/rules/option-gates.md` first): rank 5–8 collections — columns *name*, *items*,
 *indexed share*, *why a good pilot* (small, mostly indexed, empirical) — and wait; `--yes`
 takes rank 1. The pilot processes that one collection (~N papers), shows the results, and
 only then offers the rest of the library.

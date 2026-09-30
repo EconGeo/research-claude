@@ -46,7 +46,7 @@ comment answered with prose is how papers get rejected on the second round.
 
 Show the classification table and **wait** for the user to confirm or re-class rows before
 routing — a mis-classed FATAL is the expensive mistake. For every FATAL, **Option gate**
-(`.claude/rules/option-gates.md`): at least 5 paths — *re-estimate*, *narrow the claim*,
+(read `.claude/rules/option-gates.md` first): at least 5 paths — *re-estimate*, *narrow the claim*,
 *add the robustness check the referee implies*, *concede in limitations*, *change venue* —
 each with what it costs and what it saves; `--yes` takes rank 1. The pick lands in the
 tracker's action item.

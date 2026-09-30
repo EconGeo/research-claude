@@ -61,7 +61,7 @@ Simulates a realistic journal submission. Three phases, orchestrated sequentiall
 #### Phase 1: Editor Desk Review
 The target journal is `[journal]`, else the pick in the newest
 `quality_reports/journal_recommendations_*.md`; with neither, **Option gate**
-(`.claude/rules/option-gates.md`): 5–10 candidates from
+(read `.claude/rules/option-gates.md` first): 5–10 candidates from
 `.claude/references/journal-profiles.md`, `--yes` takes rank 1. Dispatch the **editor** agent
 with the paper and that journal. Returns text (desk review +
 referee selection if SEND OUT). Session saves to

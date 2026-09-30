@@ -66,9 +66,12 @@ KNOWN_UNBOUND: set[str] = set()
 # `## Mode Details` and a clause in Comprehensive item 2: every route that dispatches
 # writer-critic runs `pipeline.py critic-inputs` first and names the log (the critic has no
 # Bash); measured 13,054.
+# 2026-09-29 (rule load exclusions): strategize 8,800 -> 8,850. `option-gates.md` no longer loads
+# at startup (`claudeMdExcludes`), so the design gate's rule citation became an explicit read
+# ("read ... first"); +11 chars, measured 8,801.
 BUDGET = {
     "review": 13100,
-    "strategize": 8800,
+    "strategize": 8850,
     # 2026-09-24 (option gates, Task A9): write 7,600 -> 8,100. The GATE 1 / abstract hook
     # gate and the ambiguous-paper-type confirmation; measured 8,033.
     # 2026-09-24 (routing, Task B6): write 8,100 -> 8,200. Step 1 lists the manuscript

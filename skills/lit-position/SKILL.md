@@ -108,7 +108,7 @@ willing to put a paper in more than one:
   asked and it did not work," which looks identical in a literature search and is
   the more common case.
 
-**Option gate** (`.claude/rules/option-gates.md`): name 5–7 candidate gaps — columns *gap*,
+**Option gate** (read `.claude/rules/option-gates.md` first): name 5–7 candidate gaps — columns *gap*,
 *state* (contested / unexamined), *nearest paper*, *why open* — ranked, and wait (`--yes`
 takes rank 1). The pick is the gap `positioning.md` is written against; the others stay in
 this file as *Other open questions*.

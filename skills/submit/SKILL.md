@@ -25,7 +25,7 @@ context's) and `.claude/references/discipline-cards.md`, and returns a ranked ta
 journals — columns *contribution fit*, *methodology fit*, *audience*, *desk-reject risk*,
 *AI-disclosure field* (from the profile) — with a one-line rationale for rank 1.
 
-**Option gate** (`.claude/rules/option-gates.md`): present that table and wait (`--yes` takes
+**Option gate** (read `.claude/rules/option-gates.md` first): present that table and wait (`--yes` takes
 rank 1). Neither this skill nor the scout has a web tool; "recent publications" is judged
 from the profile's stated scope, not a search.
 
@@ -110,6 +110,7 @@ the state never stands in for them.
    report to `quality_reports/verification_report.md`, and run `record-score replication`. An
    existing verification report does not substitute (Principles: *Don't skip verification*).
 2.5. **AI Disclosure Audit** — read `ai_use_log.md` and the manuscript AI Use Statement:
+   - Read `.claude/rules/ai-disclosure.md` first: the Wiley/COPE statement template and its placement are there
    - If `ai_use_log.md` missing or empty: **STOP** — "AI disclosure log missing. Run agents or manually populate ai_use_log.md before submission. See .claude/rules/ai-disclosure.md."
    - Read the `## AI Use Statement {.unnumbered}` section in `manuscript_<project>.qmd`
    - If the statement is missing or still contains placeholder text: **STOP** — "AI Use Statement not populated. Populate from ai_use_log.md using the Wiley/COPE-aligned template before submission."

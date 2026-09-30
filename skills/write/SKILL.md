@@ -81,7 +81,7 @@ session saves to `quality_reports/reviews/writer-critic_<date>.md` and
 Only after the critic's score. Sections go through the drafting gates (`.claude/skills/write/templates/drafting-gates.md`), each gate closing with a score, pausing for approval at each:
 
 **GATE 1:** Introduction + Literature positioning — before the writer drafts the intro,
-**Option gate** (`.claude/rules/option-gates.md`): 5–8 hooks / contribution statements,
+**Option gate** (read `.claude/rules/option-gates.md` first): 5–8 hooks / contribution statements,
 columns *hook*, *contribution sentence*, *closest paper it answers*; `--yes` takes rank 1; the
 pick is the intro's first paragraph → present, wait for approval
 **GATE 2:** Data + Empirical Strategy (or Model) → present, wait for approval
