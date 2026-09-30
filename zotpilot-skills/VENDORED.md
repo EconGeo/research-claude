@@ -16,7 +16,7 @@ that server's MCP tools.
 ## Provenance / refresh
 
 - Source: `https://github.com/EconGeo/ZotPilot.git`, `claude-skills/`
-- Vendored from commit: `6e63dd8` (`v0.5.0-76-g6e63dd8`, merges of `feat/secrets-env` and PR #6 `refactor/ztp-tutor-progressive-disclosure`)
+- Vendored from commit: `d9ea447` (synced 2026-09-29 by scripts/sync-zotpilot-skills.sh)
 
 ## The fork is the only source — do not sync from upstream
 
