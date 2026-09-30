@@ -57,8 +57,13 @@ on real findings they will fix on their own schedule — see the 2026-09-28 entr
 `docs/SESSION_REPORT.md`. On 2026-09-29 `docs/plans/2026-09-29-writer-critic-render-inputs.md`
 landed (merge `6fc61f0`, ledger L-005): writer-critic scores Render from a `pipeline.py
 critic-inputs` log the dispatching skill hands it, and reports NOT SCORED without one — see the
-2026-09-29 entry in `docs/SESSION_REPORT.md`. **Open in this repo:** row L-004 in
-`docs/improvement-ledger.md`.
+2026-09-29 entry in `docs/SESSION_REPORT.md`. L-004 was declined the same day (one Quarto-native
+exhibit regime, merge `4659caf`). Also on 2026-09-29, `docs/plans/2026-09-29-rule-load-exclusions.md`
+went live (merge `86db57c`): 13 rules are kept out of startup by `claudeMdExcludes` in
+`~/.claude/settings.json` and read at the step that needs them (`tests/test_rule_reads.py`);
+audit and verification in `docs/audits/2026-09-29_rule-consumer-audit.md`. **A `--tip` project
+loads no shared rule until external imports are approved for it** (README, "Coauthors and
+archival reproduction"). **Nothing is open in this repo.**
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 

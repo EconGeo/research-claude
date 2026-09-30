@@ -2,12 +2,10 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (inline) or superpowers:subagent-driven-development. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status (2026-09-29): Tasks 0–4 done on branch `rule-load-exclusions` (worktree
-`~/Academic/.worktrees/rule-load-exclusions/research-claude`); Task 5 (go live) held by the user.
-Results and the user's D1–D3 rulings: `docs/audits/2026-09-29_rule-consumer-audit.md`. Final list
-is 13 rules, not 15 — `meta-governance.md` and `shared-pipeline.md` stay always on (D1).
-Before Task 5 Step 2: the shared checkout `~/Academic/research-claude` must carry the read steps
-(it was on `plan/rule-load-exclusions` at `dac9b29`), or every paper loses the rules.**
+**Status: done (2026-09-29).** Merged to `main` at `86db57c`; `claudeMdExcludes` (13 rules) is in
+`~/.claude/settings.json`. Final list is 13, not 15 — `meta-governance.md` and `shared-pipeline.md`
+stay always on (D1). Every paper repo now starts with 6 rules instead of 18 (tested with
+`InstructionsLoaded`). Results, rulings and verification: `docs/audits/2026-09-29_rule-consumer-audit.md`.
 
 ## Decisions (user, 2026-09-29)
 

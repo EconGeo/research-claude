@@ -1290,3 +1290,33 @@ Per the plan, the fleet is at that lock with `run-hook.sh` tracked in all six re
 
 **Not done.** Nothing pushed; local `main` is ahead of `origin` by the `ef0e1c8`, the five branch
 commits and the merge, plus the docs commit that follows.
+
+
+## 2026-09-29 — Rule load exclusions live (claudeMdExcludes)
+
+**Operations:**
+- Executed `docs/plans/2026-09-29-rule-load-exclusions.md` in worktree branch `rule-load-exclusions`; merged `86db57c`.
+- Audit of every consumer, read in full: `docs/audits/2026-09-29_rule-consumer-audit.md`.
+- Read steps added to 11 gated skills (every **Option gate**), `/checkpoint`, `/submit`, `/write` (GATE 1 moved before dispatch), coder-critic, coder, data-engineer, writer, strategist, explorer, theorist, storyteller. Contract test `tests/test_rule_reads.py`.
+- `~/.claude/settings.json`: `claudeMdExcludes` for 13 rules. `~/.claude/CLAUDE.md` carve-out 2: read quarto-empirical + format rules before a hand edit of a manuscript.
+- `~/.claude.json`: external imports approved for ESG, zoning2026, affordable_housing_2026.
+- README / `rules/shared-pipeline.md` / seeded `bootstrap-pipeline.sh`: `--tip` projects need that approval.
+- Committed the author's Quarto-native exhibit regime and declined L-004 (`4659caf`).
+
+**Decisions:**
+- D1 keep `meta-governance.md` and `shared-pipeline.md` always on — both fire on any turn — author.
+- D2 research-journal entries at `/checkpoint` time, not per dispatch — journal is written from state — author.
+- D3 hand-edit read line in `~/.claude/CLAUDE.md` — author.
+
+**Results:**
+- Startup: 21 files / ~26.7k tokens of rules → 9 files / ~7.6k (tested in all six papers; BRI 8, it has one fewer CLAUDE.md).
+- Subagents load project rules and the exclusion applies to them (tested), hence agent-side reads.
+- Symlinked rules outside the project load only with external-import approval: ESG, zoning2026, affordable_housing_2026 had loaded 0 of 18 rules; fixture/eval copies still do.
+- pytest 586 passed; check_fork PASS; `run_fixture.sh --live` PASS with the exclusions on.
+
+**Commits:**
+- `86db57c` merge rule-load-exclusions; `4659caf` merge quarto-native-regime; this docs commit.
+
+**Status:**
+- Done: plan Tasks 0–5.
+- Pending: pipeline locks record `ef0e1c8` (check_install WARN, refresh before submission); nothing pushed; `/context` check in a fresh paper session (author).
