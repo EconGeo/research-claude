@@ -59,7 +59,7 @@ loop over stages from start in REQUIRES order, stop after --until:
             (the driver never issues one — `strike` has no round key, so a second call in
             the same round is a second strike); the driver reads the count from `state show`
             and at `limits.rounds_per_pair` escalates to the registry's ESCALATION_TARGET:
-            when the target is the user, as an **Option gate** (`.claude/rules/option-gates.md`)
+            when the target is the user, as an **Option gate** (read `.claude/rules/option-gates.md` first)
             of 5–10 alternatives drawn from the Escalation block of
             `.claude/skills/pipeline/references/<stage>.md`, `--yes` takes rank 1; when the
             target is an agent, with that block's question

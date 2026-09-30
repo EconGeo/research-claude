@@ -25,7 +25,7 @@ The coder outputs `.claude/skills/analyze/templates/pre-code-report.md` filled i
 path, paper type, naming map, planned **chunk labels** (not filenames). If the memo is missing,
 proceed on the user's description and flag that categories 1–3 of the review cannot be verified.
 Every row of the report's *Assumptions made* is an **Option gate**
-(`.claude/rules/option-gates.md`) with 2–4 alternatives — sample restriction, control set,
+(read `.claude/rules/option-gates.md` first) with 2–4 alternatives — sample restriction, control set,
 clustering level, functional form are the usual ones; design questions belong to
 `/strategize`, not here. Wait once for the whole table; `--yes` takes rank 1 on every row. The
 picks are recorded in the report itself, which is saved alongside the coder-critic review.

@@ -66,9 +66,15 @@ KNOWN_UNBOUND: set[str] = set()
 # `## Mode Details` and a clause in Comprehensive item 2: every route that dispatches
 # writer-critic runs `pipeline.py critic-inputs` first and names the log (the critic has no
 # Bash); measured 13,054.
+# 2026-09-29 (rule load exclusions): strategize 8,800 -> 8,850. `option-gates.md` no longer loads
+# at startup (`claudeMdExcludes`), so the design gate's rule citation became an explicit read
+# ("read ... first"); +11 chars, measured 8,801.
+# 2026-09-29 (rule load exclusions, final-review fix): review 13,100 -> 13,200. The desk-reject
+# venue gate gained its own read of option-gates.md (it runs when a journal was given, so the
+# Phase 1 read never ran); measured 13,110.
 BUDGET = {
-    "review": 13100,
-    "strategize": 8800,
+    "review": 13200,
+    "strategize": 8850,
     # 2026-09-24 (option gates, Task A9): write 7,600 -> 8,100. The GATE 1 / abstract hook
     # gate and the ambiguous-paper-type confirmation; measured 8,033.
     # 2026-09-24 (routing, Task B6): write 8,100 -> 8,200. Step 1 lists the manuscript
@@ -78,7 +84,10 @@ BUDGET = {
     # 2026-09-29 (L-005, writer-critic render inputs): write 8,250 -> 8,850. Step 5 gains the
     # `critic-inputs` run and its log path in the dispatch, and the humanize route does the same;
     # a dispatch instruction at each of the two writer-critic sites; measured 8,828.
-    "write": 8850,
+    # 2026-09-29 (rule load exclusions, minor fix): write 8,850 -> 9,050. GATE 1's option gate moved
+    # from Step 6 into Step 4, before the writer is dispatched: its pick is the intro's first
+    # paragraph, and `intro`/`abstract` reached it only after drafting. Measured 9,014.
+    "write": 9050,
     # 2026-09-24 (option gates, Task A3): discover 6,200 -> 7,300. Four gates (question
     # framings, journal tiers, data shortlist, ideas), each a wait instruction; measured 7,195.
     # 2026-09-24 (routing, Task B5): discover 7,300 -> 7,500. Ideate's novelty check now

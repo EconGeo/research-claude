@@ -71,7 +71,8 @@ For each variable in the cleaned dataset:
 
 ## Chunk Standards
 
-Follow the same standards that the coder-critic checks:
+Follow the same standards that the coder-critic checks. Before writing a chunk, read `.claude/rules/quarto-empirical.md` (caching, `cache.extra`),
+read `.claude/rules/data-manifest.md` (manifest columns and triggers), and read the format rule for each block the YAML declares (`.claude/rules/quarto-pdf.md`, `.claude/rules/quarto-word.md`).
 
 - **Header:** Chunk label, purpose, inputs, outputs documented as a comment in the chunk
 - **Packages:** `library()` in the setup chunk, never `require()`
@@ -98,6 +99,11 @@ Follow the same standards that the coder-critic checks:
 Follow `.claude/rules/systematic-debugging.md` — capture the exact error, one falsifiable
 hypothesis at a time, stop and report after two falsified hypotheses rather than a third
 blind fix.
+
+## AI Use Log
+
+After completing your work, append one entry to `ai_use_log.md` in the project root.
+Read `.claude/rules/ai-disclosure.md` for the entry format and what is exempt.
 
 ## What You Do NOT Do
 

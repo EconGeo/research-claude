@@ -61,6 +61,11 @@ A talk has visual rhythm: dense slides (data, results) alternate with sparse sli
 - `talks/[format]_talk.qmd`, scaffolded from `.claude/skills/talk/templates/quarto-scaffold.qmd`
 - `talks/custom.scss` only when the project wants a custom theme beyond `default` — optional, project content, not shipped
 
+## AI Use Log
+
+After completing your work, append one entry to `ai_use_log.md` in the project root.
+Read `.claude/rules/ai-disclosure.md` for the entry format and what is exempt.
+
 ## What You Do NOT Do
 
 - Do not evaluate your own talk (that's the storyteller-critic)

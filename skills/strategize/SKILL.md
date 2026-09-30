@@ -27,7 +27,7 @@ Workflow:
    discovery inputs. Missing spec, literature review or data assessment → proceed with ASSUMED
    placeholders, each flagged.
 2. Read `.claude/references/domain-profile.md` for the field's common designs, then
-   **Option gate** (`.claude/rules/option-gates.md`): show 5–8 candidate designs — columns
+   **Option gate** (read `.claude/rules/option-gates.md` first): show 5–8 candidate designs — columns
    *variation exploited*, *estimand*, *key assumption*, *main threat*, *data fit* — ranked,
    rank 1 marked, and wait (rank / `edit` / `none`; `--yes` takes rank 1). The pick and the
    losing designs land in Step 7's decision record under *Alternatives considered*.

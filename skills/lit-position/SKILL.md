@@ -108,7 +108,7 @@ willing to put a paper in more than one:
   asked and it did not work," which looks identical in a literature search and is
   the more common case.
 
-**Option gate** (`.claude/rules/option-gates.md`): name 5–7 candidate gaps — columns *gap*,
+**Option gate** (read `.claude/rules/option-gates.md` first): name 5–7 candidate gaps — columns *gap*,
 *state* (contested / unexamined), *nearest paper*, *why open* — ranked, and wait (`--yes`
 takes rank 1). The pick is the gap `positioning.md` is written against; the others stay in
 this file as *Other open questions*.
@@ -118,7 +118,7 @@ this file as *Other open questions*.
 One paragraph. Name the two or three papers this project sits between, and state
 what it adds that they do not.
 
-**Option gate** (`.claude/rules/option-gates.md`): draft 5–7 positioning variants — columns
+**Option gate** (read `.claude/rules/option-gates.md` first): draft 5–7 positioning variants — columns
 *sentence*, *papers it sits between*, *what it adds*, *the redundancy sentence it must
 survive* — and wait (`--yes` takes rank 1). Stress-test only the pick:
 
@@ -144,7 +144,7 @@ as text; session saves it to `quality_reports/reviews/lit-critic_<date>.md` the 
 returns. Record:
 `python3 .claude/scripts/pipeline.py state record-score literature <score> --critic lit-critic --deductions <total> --report <path>`.
 Below 80 → return to Step 1 for the named gaps (max 3 rounds, `pipeline.py state strike lit-position`);
-strike three → **Option gate** (`.claude/rules/option-gates.md`): 3–5 narrowed claims, each
+strike three → **Option gate** (read `.claude/rules/option-gates.md` first): 3–5 narrowed claims, each
 with the search extension that would restore the wider one — "narrow the claim or extend the
 search?" is the user's pick, not a free-text question; `--yes` takes rank 1 (the narrowest
 claim the critic's named gaps allow).

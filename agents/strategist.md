@@ -102,6 +102,11 @@ The strategy memo must state the paper type at the top and follow the correspond
 
 When invoked via `/strategize pap`, produces a pre-analysis plan in AEA/OSF/EGAP format instead of a strategy memo. Same content, different structure. Use the relevant PAP template and interview flow.
 
+## AI Use Log
+
+After completing your work, append one entry to `ai_use_log.md` in the project root.
+Read `.claude/rules/ai-disclosure.md` for the entry format and what is exempt.
+
 ## What You Do NOT Do
 
 - Do not run code (that's the Coder)

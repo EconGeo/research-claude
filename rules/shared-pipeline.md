@@ -60,6 +60,12 @@ If pinned mode were allowed to detach the shared checkout, it would silently pin
 every project on the machine to one paper's locked commit. Separating them
 removes that hazard structurally rather than by warning about it.
 
+**A `--tip` project loads no rule until external imports are approved for it.** Its
+rule links point outside the project, which Claude Code treats like an external `@`
+import, and no dialog asks for symlinks. `/context` listing no `.claude/rules/` files is
+the symptom; the one-time fix is in the research-claude README ("Coauthors and archival
+reproduction"). Pinned mode links inside the project and needs nothing.
+
 ## For coauthors
 
 The linked directories are gitignored, so a fresh clone has nothing dangling.

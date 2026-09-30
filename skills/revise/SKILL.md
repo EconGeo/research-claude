@@ -46,7 +46,7 @@ comment answered with prose is how papers get rejected on the second round.
 
 Show the classification table and **wait** for the user to confirm or re-class rows before
 routing — a mis-classed FATAL is the expensive mistake. For every FATAL, **Option gate**
-(`.claude/rules/option-gates.md`): at least 5 paths — *re-estimate*, *narrow the claim*,
+(read `.claude/rules/option-gates.md` first): at least 5 paths — *re-estimate*, *narrow the claim*,
 *add the robustness check the referee implies*, *concede in limitations*, *change venue* —
 each with what it costs and what it saves; `--yes` takes rank 1. The pick lands in the
 tracker's action item.
@@ -58,7 +58,7 @@ tracker's action item.
 | **NEW ANALYSIS** | → Coder agent | Flag for user, create analysis task |
 | **CLARIFICATION** | → Writer agent | Draft rewritten passage (local) |
 | **REWRITE** | → Writer agent | Draft structural revision (section or argument reorganised) |
-| **DISAGREE** | → User (mandatory) | **Option gate**: 3–5 response strategies (evidence-led, partial concession, reframing, scope clarification, decline with citation), pick one, then draft; flag for review |
+| **DISAGREE** | → User (mandatory) | **Option gate** (read `.claude/rules/option-gates.md` first): 3–5 response strategies (evidence-led, partial concession, reframing, scope clarification, decline with citation), pick one, then draft; flag for review |
 | **MINOR** | → Writer agent | Draft fix directly |
 
 ### Step 4: Build Tracking Document

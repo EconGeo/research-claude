@@ -51,12 +51,14 @@ Based on `$ARGUMENTS`:
 - **`strategy`**: Draft empirical strategy (reduced-form), model + estimation (structural), or model + tests (theory+empirics)
 - **`results`**: Draft results — narration style depends on paper type and output type (regression tables, event study figures, counterfactual simulations, etc.)
 - **`conclusion`**: Draft conclusion with type-appropriate ending (policy implications, counterfactual implications, or research agenda)
-- **`abstract`**: Draft abstract (must have other sections first); same option gate as GATE 1, over contribution statements
+- **`abstract`**: Draft abstract (must have other sections first); same option gate as GATE 1 (Step 4), over contribution statements
 - **`data`**: Draft data section — expanded for descriptive/measurement papers
 - **`model`**: Draft model section (structural or theory+empirics papers only)
 - **No argument**: Ask user which section to draft
 
 #### 4. Dispatch writer
+**Before dispatching for `intro`, `abstract` or `full`,** run GATE 1's **Option gate** (read `.claude/rules/option-gates.md` first): 5–8 hooks / contribution statements (contribution statements only for `abstract`), columns *hook*, *contribution sentence*, *closest paper it answers*; `--yes` takes rank 1. The pick goes to the writer as the intro's first paragraph (or the abstract's contribution).
+
 Dispatch **writer** with the paper type, the section, and the argument-move templates. It writes the section into the declared manuscript under its `#` heading; every number is an inline expression (INV-11). Standalone: `python3 .claude/scripts/pipeline.py log writer`.
 
 #### 4b. Cleanup pass
@@ -80,10 +82,7 @@ session saves to `quality_reports/reviews/writer-critic_<date>.md` and
 #### 6. Present to user
 Only after the critic's score. Sections go through the drafting gates (`.claude/skills/write/templates/drafting-gates.md`), each gate closing with a score, pausing for approval at each:
 
-**GATE 1:** Introduction + Literature positioning — before the writer drafts the intro,
-**Option gate** (`.claude/rules/option-gates.md`): 5–8 hooks / contribution statements,
-columns *hook*, *contribution sentence*, *closest paper it answers*; `--yes` takes rank 1; the
-pick is the intro's first paragraph → present, wait for approval
+**GATE 1:** Introduction + Literature positioning, opening with Step 4's gate pick → present, wait for approval
 **GATE 2:** Data + Empirical Strategy (or Model) → present, wait for approval
 **GATE 3:** Results + Robustness + Conclusion → present, wait for approval
 

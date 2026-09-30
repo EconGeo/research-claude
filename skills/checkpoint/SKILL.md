@@ -46,6 +46,9 @@ Then scan:
   one continues the history rather than repeating it
 - `python3 .claude/scripts/pipeline.py state show` — what the staleness sweep in
   `.claude/rules/session-handoff.md` compares the plan's status claims against
+
+Read `.claude/rules/session-handoff.md` now: Step 4f applies its R2, Step 5 its R1 checklist and R3
+dry-run command, and none of them is restated here.
 - The conversation, for decisions, corrections and learnings that qualify for memory
 
 ### Step 2: Detect Obsidian Configuration
