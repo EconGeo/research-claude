@@ -49,6 +49,7 @@ chunk patterns are in `.claude/skills/analyze/templates/chunk-structure.md`; rea
 ### Stage 0: Wrangling chunk
 One `build-*` chunk per panel, `cache.extra` on every raw file it reads, every drop documented
 with a count, every file in `data/raw/data_manifest.md` (INV-23, INV-24). Nothing written to disk.
+Read `.claude/rules/data-manifest.md` before adding a manifest row (columns, and the Notes a `manual` row needs).
 
 ### Stage 1: Main specification chunk
 `estimate-main` with `dependson` on its data chunk, using the estimator the strategy memo names
@@ -69,7 +70,7 @@ writer reads the rendered manuscript and the chunk objects. Before writing any `
 chunk, read `.claude/references/quarto-authoring.md` (Tables, Figures, Cross-references): a
 table note wider than the text block clips without an error, and `escape` rules differ by
 output format. Also read the format rule for each block the YAML declares — the table and figure
-mechanics of each output: read `.claude/rules/quarto-pdf.md` for `pdf:`, `.claude/rules/quarto-word.md` for `docx:`.
+mechanics of each output: read `.claude/rules/quarto-pdf.md` and `.claude/rules/quarto-word.md` for the PDF and Word blocks.
 
 **Done means:** `quarto render` exits 0, `python3 .claude/scripts/prose_number_check.py` exits 0,
 `python3 .claude/scripts/check_render.py <pdf>` exits 0, and the coder-critic has scored the

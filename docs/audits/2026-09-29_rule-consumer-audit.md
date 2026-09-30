@@ -160,7 +160,9 @@ mode — later gates in the same run reuse the read), `checkpoint`, `submit` Ste
 
 ## 5. Exclusion list (Task 2 — written, not live)
 
-Pending the D1 answer. As recommended (D1 kept on, so 13 excluded):
+**User rulings, 2026-09-29:** D1 — keep `meta-governance.md` and `shared-pipeline.md` always
+on; D2 — accept checkpoint-time journal entries (`logging.md` excluded); D3 — add the read line
+to `~/.claude/CLAUDE.md` carve-out 2 (done). Final list, 13 excluded:
 
 ```json
 "claudeMdExcludes": [

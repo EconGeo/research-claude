@@ -33,6 +33,7 @@ READS = [
     ("agents/coder-critic.md", "quarto-empirical", 1),
     ("agents/coder.md", "quarto-pdf", 1),
     ("agents/coder.md", "quarto-word", 1),
+    ("agents/coder.md", "data-manifest", 1),
     ("agents/data-engineer.md", "quarto-empirical", 1),
     ("agents/data-engineer.md", "data-manifest", 1),
     ("agents/data-engineer.md", "quarto-pdf", 1),
@@ -47,13 +48,19 @@ READS = [
 ]
 
 
-def read_lines(text: str, rule: str) -> int:
-    """Lines on which 'read' precedes the rule's backticked path (or, inside rules/, its bare
-    file name) within 160 characters. Same line only: a 'Read X' on the line above a gate
-    that merely names the rule is not a read of the rule."""
+def read_pattern(rule: str) -> re.Pattern:
+    """'read' (any case, 'reads' too, never negated) followed on the same line by the rule's
+    path, backticks optional, with nothing between but prose and other `.claude/rules/` paths —
+    a read of some other file on the line does not count as a read of this rule."""
     name = re.escape(f"{rule}.md")
-    pat = re.compile(rf"\b[Rr]ead\b[^\n]{{0,160}}?`(?:\.claude/rules/)?{name}`")
-    return len(pat.findall(text))
+    between = r"(?:[^`\n]|`\.claude/rules/[\w-]+\.md`)*?"
+    return re.compile(
+        rf"(?<!not )(?<!n't )(?<!never )\b(?i:read)s?\b{between}`?(?:\.claude/rules/)?{name}`?"
+    )
+
+
+def read_lines(text: str, rule: str) -> int:
+    return len(read_pattern(rule).findall(text))
 
 
 class TestExcludedRulesAreRead(unittest.TestCase):
@@ -69,3 +76,40 @@ class TestExcludedRulesAreRead(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+GATED_SKILLS = ["analyze", "discover", "lit-position", "pipeline", "review", "revise",
+                "strategize", "submit", "talk", "write", "ztp-data-tag"]
+
+
+class TestEveryOptionGateReadsTheRule(unittest.TestCase):
+    """Each gate carries its own read: a later gate reached by another branch (a desk reject
+    with the journal given, a DISAGREE row with no FATAL, a strike-three after compaction)
+    must not depend on an earlier gate's read having run."""
+
+    def test_each_gate_marker_is_followed_by_a_read(self):
+        pat = read_pattern("option-gates")
+        problems = []
+        for skill in GATED_SKILLS:
+            text = (ROOT / "skills" / skill / "SKILL.md").read_text()
+            for m in re.finditer(re.escape("**Option gate**"), text):
+                window = text[m.start(): m.start() + 200]
+                if not pat.search(window):
+                    line = text[: m.start()].count("\n") + 1
+                    problems.append(f"{skill}/SKILL.md:{line}: gate without its own read")
+        self.assertEqual([], problems)
+
+
+class TestReadPatternIsStrict(unittest.TestCase):
+    def test_false_passes_rejected(self):
+        pat = read_pattern("option-gates")
+        for line in ["Do not read `.claude/rules/option-gates.md` here.",
+                     "Read `.claude/references/quarto-authoring.md`; gate per `.claude/rules/option-gates.md`."]:
+            self.assertIsNone(pat.search(line), line)
+
+    def test_true_reads_accepted(self):
+        pat = read_pattern("option-gates")
+        for line in ["Read .claude/rules/option-gates.md before the gate.",
+                     "READ `.claude/rules/option-gates.md`",
+                     "(read `.claude/rules/option-gates.md` first)"]:
+            self.assertIsNotNone(pat.search(line), line)

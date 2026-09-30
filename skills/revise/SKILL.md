@@ -58,7 +58,7 @@ tracker's action item.
 | **NEW ANALYSIS** | → Coder agent | Flag for user, create analysis task |
 | **CLARIFICATION** | → Writer agent | Draft rewritten passage (local) |
 | **REWRITE** | → Writer agent | Draft structural revision (section or argument reorganised) |
-| **DISAGREE** | → User (mandatory) | **Option gate**: 3–5 response strategies (evidence-led, partial concession, reframing, scope clarification, decline with citation), pick one, then draft; flag for review |
+| **DISAGREE** | → User (mandatory) | **Option gate** (read `.claude/rules/option-gates.md` first): 3–5 response strategies (evidence-led, partial concession, reframing, scope clarification, decline with citation), pick one, then draft; flag for review |
 | **MINOR** | → Writer agent | Draft fix directly |
 
 ### Step 4: Build Tracking Document

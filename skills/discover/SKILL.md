@@ -43,7 +43,7 @@ identification strategy, expected results, feasibility assessment, risk factors.
 
 **Output 2: Domain Profile** → `.claude/references/domain-profile.md` (if still template)
 Fill in field, target journals, common data sources, identification strategies, field conventions, seminal references, and referee concerns based on the interview. Target journals are
-offered as an **Option gate** (`.claude/rules/option-gates.md`) of 5–8 journals in tiers from
+offered as an **Option gate** (read `.claude/rules/option-gates.md` first) of 5–8 journals in tiers from
 `.claude/references/discipline-cards.md`; `--yes` takes rank 1; the pick fills the field.
 
 **Output 3: Decision Record** → `quality_reports/decisions/discovery_[topic].md`, written with

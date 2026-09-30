@@ -69,8 +69,11 @@ KNOWN_UNBOUND: set[str] = set()
 # 2026-09-29 (rule load exclusions): strategize 8,800 -> 8,850. `option-gates.md` no longer loads
 # at startup (`claudeMdExcludes`), so the design gate's rule citation became an explicit read
 # ("read ... first"); +11 chars, measured 8,801.
+# 2026-09-29 (rule load exclusions, final-review fix): review 13,100 -> 13,200. The desk-reject
+# venue gate gained its own read of option-gates.md (it runs when a journal was given, so the
+# Phase 1 read never ran); measured 13,110.
 BUDGET = {
-    "review": 13100,
+    "review": 13200,
     "strategize": 8850,
     # 2026-09-24 (option gates, Task A9): write 7,600 -> 8,100. The GATE 1 / abstract hook
     # gate and the ambiguous-paper-type confirmation; measured 8,033.

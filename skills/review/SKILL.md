@@ -71,7 +71,7 @@ The editor:
 1. Reads the paper (abstract, intro, contribution, identification, results)
 2. Searches the literature via WebSearch to verify novelty claims
 3. Decides: **DESK REJECT** or **SEND TO REFEREES**
-4. If desk reject → report with reasons, then **Option gate**: 5 alternative venues with the
+4. If desk reject → report with reasons, then **Option gate** (read `.claude/rules/option-gates.md` first): 5 alternative venues with the
    desk review's stated reason mapped to each; `--yes` takes rank 1 and reports it. Done.
 5. If send to referees → editor selects referee dispositions and pet peeves from the journal's **Referee pool** (see .claude/references/journal-profiles.md). The six dispositions are defined in `.claude/skills/review/templates/disposition-pool.md`; the peeve pools and sampling rules are in `.claude/agents/editor.md`.
 
