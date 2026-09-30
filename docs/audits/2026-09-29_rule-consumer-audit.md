@@ -210,10 +210,19 @@ Saving ≈ 76.4 KB, ≈ 19.1k tokens per session start, main session and every s
 **Regression:** `tests/run_fixture.sh --live` → `✓ run_fixture: PASS` (all mechanical and live
 checks). `python3 -m pytest tests/ -q` → 583 passed. `check_fork.sh` → PASS.
 
-**Finding, pre-existing and not caused by this change:** in fixture copies under `/private/tmp`
-and `/var/folders` *no* rule loads at session start, with or without the exclusion list (tested:
-a baseline run with no `claudeMdExcludes` in `fx_ck` logged only the two CLAUDE.md files). In
-`~/Research/NAR_settlement` all 18 load. Cause unverified. Consequence: the live fixture tier
-and the evals have never exercised startup-loaded rules, so a green eval never showed a skill
-working *with* rules in context — which, after this change, is the state that matches
-production more closely than before.
+**Finding, pre-existing and not caused by this change — symlinked rules need external-import
+approval.** per docs (`code.claude.com/docs/en/memory`, "Share rules across projects with
+symlinks"): a `.claude/rules/` symlink whose target is outside the working directory is treated
+like an external `@` import and loads only once external imports are approved for the project;
+the approval dialog appears only for `@path` imports, never for symlinks alone. tested:
+- a real file in a fixture copy's `.claude/rules/` loaded; symlinks beside it (relative or
+  absolute, to the worktree or the shared checkout) did not;
+- `~/.claude.json` has `hasClaudeMdExternalIncludesApproved: true` for NAR_settlement, POGM4 and
+  BRI, and `false` for ESG, zoning2026 and affordable_housing_2026;
+- with no exclusion list, ESG and zoning2026 load 3 files at startup (CLAUDE.md only, **zero
+  rules**); POGM4 loads 21.
+
+So ESG, zoning2026, affordable_housing_2026, every fixture/eval copy and every coauthor clone
+have never had any shared rule — `agents.md` and `content-invariants.md` included — in context at
+startup. The exclusion list changes nothing there; the read steps added here are the only way
+those sessions see the excluded rules at all.

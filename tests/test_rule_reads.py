@@ -113,3 +113,34 @@ class TestReadPatternIsStrict(unittest.TestCase):
                      "READ `.claude/rules/option-gates.md`",
                      "(read `.claude/rules/option-gates.md` first)"]:
             self.assertIsNotNone(pat.search(line), line)
+
+
+def section(text: str, start_re: str, end_re: str) -> str:
+    m = re.search(start_re, text, flags=re.M)
+    assert m, start_re
+    rest = text[m.end():]
+    n = re.search(end_re, rest, flags=re.M)
+    return rest[: n.start()] if n else rest
+
+
+class TestReadsComeBeforeFirstUse(unittest.TestCase):
+    def test_checkpoint_reads_session_handoff_in_step_1(self):
+        # Step 4f applies R2 and Step 5 applies R1/R3; a read at Step 5 comes after 4f.
+        text = (ROOT / "skills/checkpoint/SKILL.md").read_text()
+        body = section(text, r"^### Step 1:", r"^### Step 2:")
+        self.assertTrue(read_pattern("session-handoff").search(body))
+
+    def test_write_runs_gate_1_before_dispatching_the_writer(self):
+        # GATE 1's pick is the intro's first paragraph, so it must precede Step 4's dispatch;
+        # `intro` and `abstract` never reach Step 6's GATE 1 text before the writer runs.
+        text = (ROOT / "skills/write/SKILL.md").read_text()
+        body = section(text, r"^#### 4\. Dispatch writer", r"^#### 4b\.")
+        self.assertIn("**Option gate**", body)
+        self.assertTrue(read_pattern("option-gates").search(body))
+
+
+class TestWriterKeepsWriteGateItem4(unittest.TestCase):
+    def test_writer_output_runs_check_render(self):
+        # Item 4 reached the writer only through quarto-empirical.md, which no longer loads.
+        text = (ROOT / "agents/writer.md").read_text()
+        self.assertIn("check_render.py", section(text, r"^## Output", r"^## "))
