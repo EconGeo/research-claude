@@ -38,4 +38,21 @@ class TestSync(unittest.TestCase):
         self.env["ZOTPILOT_FORK_URL"] = f"file://{self.rc}/no-such-repo"
         self.assertEqual(self.sync("--check").returncode, 3)
 
+    def test_missing_dest_check_is_exit_1(self):
+        shutil.rmtree(self.rc / "zotpilot-skills")
+        r = self.sync("--check")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("zotpilot-skills/ missing", r.stdout + r.stderr)
+
+    def test_upstream_removed_file_is_deleted(self):
+        stale = self.rc / "zotpilot-skills" / "ztp-x" / "gone.md"; stale.write_text("stale\n")
+        self.assertEqual(self.sync().returncode, 0)
+        self.assertFalse(stale.exists())
+
+    def test_clone_failure_shows_git_stderr(self):
+        self.env["ZOTPILOT_FORK_URL"] = f"file://{self.rc}/no-such-repo"
+        r = self.sync("--check")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("git:", r.stderr)
+
 if __name__ == "__main__": unittest.main()
