@@ -181,3 +181,39 @@ to `~/.claude/CLAUDE.md` carve-out 2 (done). Final list, 13 excluded:
   "**/research-claude/rules/content-standards.md"
 ]
 ```
+
+## 6. Verification (Task 4, 2026-09-29)
+
+Harness: a scratch settings file with an `InstructionsLoaded` hook appending each event to a
+log, plus the §5 list, passed with `--settings` (a `claude` shim on `PATH` added it for
+`run_fixture.sh`). No timeouts on any run.
+
+**Startup load, `~/Research/NAR_settlement` (tested):**
+
+| | files at `session_start` | rule bytes | ≈ tokens (bytes/4) |
+|---|---|---|---|
+| before | 21 (3 CLAUDE.md + 18 rules) | 106,932 | ≈ 26.7k |
+| after | 9 (3 CLAUDE.md + `agents`, `content-invariants`, `systematic-debugging`, `literature-search-order`, `meta-governance`, `shared-pipeline`) | 30,572 | ≈ 7.6k |
+
+Saving ≈ 76.4 KB, ≈ 19.1k tokens per session start, main session and every subagent.
+
+**Point-of-need reads (tested, `--output-format stream-json` transcripts):**
+- `/checkpoint` on a fixture copy: read `.claude/rules/session-handoff.md` (Step 1 batch)
+  before reporting the staleness sweep and dry-run lines.
+- `/review --proofread`: the writer-critic subagent read `content-invariants.md` and
+  `quarto-pdf.md` before scoring (the fixture declares only `pdf:`).
+- `run_fixture.sh --live` (`/pipeline run --until strategy --yes`): the session read
+  `option-gates.md` before `/discover data`'s gate; the explorer subagent read
+  `ai-disclosure.md` and created `ai_use_log.md` in that format; the strategist appended its
+  entry in the same format. Critic scores recorded (data 100, strategy 86).
+
+**Regression:** `tests/run_fixture.sh --live` → `✓ run_fixture: PASS` (all mechanical and live
+checks). `python3 -m pytest tests/ -q` → 583 passed. `check_fork.sh` → PASS.
+
+**Finding, pre-existing and not caused by this change:** in fixture copies under `/private/tmp`
+and `/var/folders` *no* rule loads at session start, with or without the exclusion list (tested:
+a baseline run with no `claudeMdExcludes` in `fx_ck` logged only the two CLAUDE.md files). In
+`~/Research/NAR_settlement` all 18 load. Cause unverified. Consequence: the live fixture tier
+and the evals have never exercised startup-loaded rules, so a green eval never showed a skill
+working *with* rules in context — which, after this change, is the state that matches
+production more closely than before.
