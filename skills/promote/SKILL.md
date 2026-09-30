@@ -1,10 +1,7 @@
 ---
 name: promote
 description: >
-  Review pipeline changes made from a project session and land them upstream in
-  research-claude. Use after improving a shared skill, agent, or rule from inside a
-  paper project, or when a project override looks like it should be shared. Reports
-  uncommitted edits to the linked tree and real files shadowing a canonical item.
+  Land pipeline changes made from a paper session upstream in research-claude: uncommitted edits through the links, project overrides and improvement-ledger rows. Use after improving a shared skill, agent or rule from a paper project.
 allowed-tools: Read,Grep,Glob,Bash,Edit
 ---
 

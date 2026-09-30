@@ -1,12 +1,7 @@
 ---
 name: checkpoint
 description: >
-  Session handoff — persists what happened in the current session to memory,
-  SESSION_REPORT.md, and the research journal. Use when wrapping up a work session,
-  before `/compact`, or when the user says "checkpoint", "save progress", "sync",
-  "wrap up", "log this", or "handoff". Optionally pushes to Obsidian if the user
-  has configured `.claude/state/obsidian-config.md`. Does NOT run briefings,
-  calendar, or mail. Just gather, confirm, save.
+  Session handoff: save the session to memory, SESSION_REPORT.md and the research journal (and Obsidian, if configured). Use when wrapping up, before /compact, or on "checkpoint", "save progress", "wrap up" or "handoff".
 argument-hint: "[--auto | --memory-only | --scaffold-only | --dry-run]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash
 ---

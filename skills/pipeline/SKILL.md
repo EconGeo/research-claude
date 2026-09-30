@@ -1,6 +1,7 @@
 ---
 name: pipeline
-description: Drive the research pipeline end to end or from any stage — resolves the manuscript, evaluates REQUIRES/PRODUCES with pipeline.py, dispatches each stage skill's creator→critic pair, holds approval gates, escalates on three strikes, records state, recovers after /compact. Use for "run the pipeline", "what's next", "resume", or to run a stage under validation.
+description: >
+  Drive the research pipeline end to end or from any stage, with pipeline.py gating each creator→critic pair and recording state. Use for "run the pipeline", "what's next", "resume", or running a stage under validation.
 argument-hint: "[run | status | next | resume] [--from <stage>] [--until <stage>] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent,mcp__zotpilot__*
 ---

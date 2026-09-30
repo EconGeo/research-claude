@@ -1,13 +1,7 @@
 ---
 name: ztp-ollama
 description: >
-  Configure, verify and troubleshoot ZotPilot's local Ollama embedding provider —
-  the fully-local, no-API-key indexing path. Trigger on: "set up ollama embeddings",
-  "configure zotpilot for local embeddings", "use bge-large", "index without an API key",
-  "zotpilot ollama", "switch embedding provider to ollama", "my embeddings are slow /
-  failing", "connection refused on indexing", "embedding dimension mismatch". Use this
-  INSTEAD OF ztp-setup's provider step whenever the target is Ollama — the setup wizard
-  does not offer Ollama and will steer you to a different provider.
+  Configure, verify and troubleshoot ZotPilot's local Ollama embedding provider (no API key). Use for Ollama setup, slow or failing local embeddings, connection refused while indexing, or an embedding dimension mismatch — instead of ztp-setup's provider step, which does not offer Ollama.
 allowed-tools: Read, Bash
 ---
 

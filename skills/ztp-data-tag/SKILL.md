@@ -1,13 +1,7 @@
 ---
 name: ztp-data-tag
 description: >
-  Backfill a structured "data used" field (datasets, variables, unit, timespan, access)
-  onto papers already in your Zotero library, stored as both namespaced tags and a
-  structured note. Trigger on: "tag my library with datasets", "extract datasets and
-  variables from my papers", "backfill the data field", "what data do my papers use",
-  "add data tags to Zotero", "build a data-discovery index from my library". Pilots one
-  collection first, then offers to extend to the whole library. Opt-in and user-driven —
-  it writes to your Zotero library, so it always confirms before batch writes.
+  Backfill a "data used" field (datasets, variables, unit, timespan, access) onto Zotero papers as namespaced tags plus a structured note. Use for "tag my library with datasets" or "what data do my papers use". Pilots one collection and confirms before any batch write.
 argument-hint: "[--yes]"
 allowed-tools: Read, Bash, mcp__zotpilot__*
 ---

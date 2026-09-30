@@ -1,11 +1,7 @@
 ---
 name: lit-position
 description: >
-  Position a project against the literature using the local Zotero corpus. Calls
-  ztp-research to find and ingest, ztp-review to synthesize, then produces the two
-  artifacts ZotPilot does not — frontier_map.md and positioning.md. Use when starting
-  a project, writing an introduction, or defending a contribution claim.
-  Local-first per .claude/rules/literature-search-order.md.
+  Position a project against the literature from the local Zotero corpus: ztp-research to find and ingest, ztp-review to synthesize, then frontier_map.md and positioning.md. Use when starting a project, writing an introduction, or defending a contribution claim.
 argument-hint: "[research question or topic] [--yes]"
 allowed-tools: Read,Write,Edit,Grep,Glob,Bash,WebSearch,WebFetch,Agent,mcp__zotpilot__*
 ---
