@@ -8,7 +8,7 @@ output quality. The three checkers that predate this file parse the transcript t
 are left as they are.
 """
 from __future__ import annotations
-import json, pathlib, re, sys
+import glob, json, os, pathlib, re, sys
 
 _MOCK = re.compile(r"^(CALL|WRITE) (\w+) (\{.*?\})(?: -> (\{.*\}))?$")
 
@@ -102,6 +102,66 @@ def agent(uses, subagent_type) -> int | None:
 _BASE_DIR = re.compile(r"Base directory for this skill: (.+?)(?:\n|$)")
 
 
+def _session_id_from_stream(path) -> str | None:
+    """Extract session_id from the stream file. Present in result lines and system/init."""
+    for line in pathlib.Path(path).read_text().splitlines():
+        try:
+            m = json.loads(line)
+            if isinstance(m, dict) and m.get("session_id"):
+                return m["session_id"]
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
+def _session_transcript_path(session_id: str) -> pathlib.Path | None:
+    """Locate the session transcript file at ~/.claude/projects/*/<session_id>.jsonl,
+    honouring $CLAUDE_CONFIG_DIR if set."""
+    config_dir = os.environ.get("CLAUDE_CONFIG_DIR")
+    if config_dir:
+        search_base = pathlib.Path(config_dir) / "projects"
+    else:
+        search_base = pathlib.Path.home() / ".claude" / "projects"
+
+    # glob to find the file across all subdirs
+    matches = list(search_base.glob(f"*/{session_id}.jsonl"))
+    return matches[0] if matches else None
+
+
+def skill_loads(path) -> list[str]:
+    """Base directories of all ZotPilot (ztp-*, seed-papers) skill loads found in the stream
+    and the associated session transcript."""
+    out = []
+
+    # Scan stream file
+    for content in _messages(path):
+        for b in content:
+            if not (isinstance(b, dict) and b.get("type") == "text"):
+                continue
+            for m in _BASE_DIR.finditer(b.get("text", "")):
+                d = m.group(1).strip()
+                if re.fullmatch(r"ztp-[\w-]+|seed-papers", pathlib.PurePath(d).name):
+                    if d not in out:
+                        out.append(d)
+
+    # Scan session transcript if it exists
+    session_id = _session_id_from_stream(path)
+    if session_id:
+        transcript_path = _session_transcript_path(session_id)
+        if transcript_path:
+            for content in _messages(str(transcript_path)):
+                for b in content:
+                    if not (isinstance(b, dict) and b.get("type") == "text"):
+                        continue
+                    for m in _BASE_DIR.finditer(b.get("text", "")):
+                        d = m.group(1).strip()
+                        if re.fullmatch(r"ztp-[\w-]+|seed-papers", pathlib.PurePath(d).name):
+                            if d not in out:
+                                out.append(d)
+
+    return out
+
+
 def skills_loaded_outside_project(path) -> list[str]:
     """Base dirs of ZotPilot skill loads (ztp-*, seed-papers) NOT from this eval project's
     .claude/skills/. Claude Code runs a same-named ~/.claude/skills copy instead of the project's
@@ -111,16 +171,9 @@ def skills_loaded_outside_project(path) -> list[str]:
     p = pathlib.Path(path)
     roots = {str(p.parent.absolute()), str(p.parent.resolve())}
     out = []
-    for content in _messages(path):
-        for b in content:
-            if not (isinstance(b, dict) and b.get("type") == "text"):
-                continue
-            for m in _BASE_DIR.finditer(b.get("text", "")):
-                d = m.group(1).strip()
-                if not re.fullmatch(r"ztp-[\w-]+|seed-papers", pathlib.PurePath(d).name):
-                    continue
-                if not any(d.startswith(r + "/.claude/skills/") for r in roots):
-                    out.append(d)
+    for d in skill_loads(path):
+        if not any(d.startswith(r + "/.claude/skills/") for r in roots):
+            out.append(d)
     return out
 
 

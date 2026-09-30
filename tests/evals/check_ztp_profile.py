@@ -15,5 +15,6 @@ for v in ("overview", "collections", "tags"):
 if not any(t == "advanced_search" for _, t, _, _ in calls[:first_write]): fails.append("advanced_search (orphan detection) did not run before any manage_* call")
 if any(k == "WRITE" for k, _, _, _ in calls): fails.append("a write reached the mock without the user's approval")
 if any(t == "manage_tags" and a.get("action") == "set" for _, t, a, _ in calls): fails.append("manage_tags action='set' was attempted")
+if not evallib.skill_loads(sys.argv[1]): fails.append("no ZotPilot skill load recorded (stream or session transcript)")
 for d in evallib.skills_loaded_outside_project(sys.argv[1]): fails.append(f"skill loaded from outside the project: {d}")
 evallib.finish("check_ztp_profile", fails, f"tool_use: {len(uses)} · mock calls: {len(calls)} · views: {sorted(v for v in views if v)}")
