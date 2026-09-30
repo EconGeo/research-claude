@@ -64,7 +64,7 @@ went live (merge `86db57c`): 13 rules are kept out of startup by `claudeMdExclud
 audit and verification in `docs/audits/2026-09-29_rule-consumer-audit.md`. **A `--tip` project
 loads no shared rule until external imports are approved for it** (README, "Coauthors and
 archival reproduction"). Also on 2026-09-29, `docs/plans/2026-09-29-zotpilot-skills-single-source.md`
-landed (`EconGeo/ZotPilot#8`, `deploy_skills false`, the `personal-shadow` gate): ZotPilot skills
+landed (merge `dd6da5f`; `EconGeo/ZotPilot#8`, `deploy_skills false`, the `personal-shadow` gate): ZotPilot skills
 now load only from `zotpilot-skills/`; see its 2026-09-29 entry in `docs/SESSION_REPORT.md`. Its
 open items are user decisions outside this repo. **Nothing is open in this repo.**
 The earlier
