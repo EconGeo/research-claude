@@ -1332,7 +1332,7 @@ commits and the merge, plus the docs commit that follows.
 - Docs: `zotpilot-skills/VENDORED.md` "Only this copy may load", CLAUDE.md, README Step 7.
 
 **Results:**
-- Gates: `check_install` `personal-shadow` (FAIL) PASS x6; `zotpilot-vendored` (`--all`, WARN-only) PASS. Sync script `--check` (`8748a0e`), check_install (`e720406`).
+- Gates: `check_install` `personal-shadow` (FAIL-level) → PASS ×6; `zotpilot-vendored` (`--all`, WARN-only) PASS. Sync script `--check` (`8748a0e`), check_install (`e720406`).
 - Evals: checkers for ztp-research, ztp-review, ztp-profile, ztp-tutor, seed-papers fail when a skill loads from outside the project, or when no load is recorded (`c7d39c4`, `d5b60fc`). stream-json output has no "Base directory" line for slash-command skills, so the check reads Claude Code's session transcript by session_id. Live runs 2026-09-29: all five exit 0, each loaded `<eval project>/.claude/skills/<skill>` (the project copy) - the first time the vendored copies themselves were graded.
 - Fork CI: test job green; lint job red on two pre-existing mypy errors in untouched files (`index_authority.py:291`, `pdf/llamaindex_chunker.py:39`); main's CI red since 2026-09-25.
 - `check_install --all` residue unrelated to this plan: POGM4 `[membership]` FAIL (7 `references/` never linked - run `./bootstrap-pipeline.sh --tip` there).
@@ -1344,4 +1344,4 @@ commits and the merge, plus the docs commit that follows.
 - Cloud and Cowork sessions read neither `~/.claude/skills` nor the gitignored project links: out of scope.
 
 **Status:**
-- Done: plan Tasks 0-8 on branch `zotpilot-skills-single-source`; merge to `main` pending, nothing pushed.
+- Done: plan Tasks 1-8 on branch `zotpilot-skills-single-source` (final-review fixes applied; `python3 -m pytest -q tests/` → pytest 609 passed); merge to `main` pending, nothing pushed.

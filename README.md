@@ -383,6 +383,8 @@ pip install --upgrade --force-reinstall git+https://github.com/EconGeo/ZotPilot.
 zotpilot --version   # confirm the new build
 ```
 
+An existing install keeps any skill copies an earlier `register` deployed to `~/.claude/skills/`; remove them with `zotpilot config set deploy_skills false && zotpilot register`.
+
 **Switching to the `bge-large` embedding model (optional but recommended).** Existing
 indexes were built with `nomic-embed-text` (768-dim) in the default ChromaDB collection
 named `chunks`. `bge-large` is 1024-dim, so it needs its own collection — point the config

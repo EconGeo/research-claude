@@ -28,7 +28,7 @@ directory. Found and fixed 2026-09-29 (`docs/plans/2026-09-29-zotpilot-skills-si
 - The machine runs with `zotpilot config set deploy_skills false`. `register` then deploys
   nothing and removes what it deployed before. **Never set it back to true.**
 - `check_install.sh` FAILs `personal-shadow` if any user-level skill shares a project skill's
-  name, and (`--all`) WARNs `zotpilot-vendored` when this directory is behind the fork.
+  name (unless both resolve to the same directory), and (`--all`) WARNs `zotpilot-vendored` when this directory is behind the fork.
 - `scripts/sync-zotpilot-skills.sh` writes the commit line below itself; `--check` compares only.
 - Sessions started in the research root get the same copy through
   `scripts/link-zotpilot-skills.sh ~/Research`.
