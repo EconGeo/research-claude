@@ -1320,3 +1320,28 @@ commits and the merge, plus the docs commit that follows.
 **Status:**
 - Done: plan Tasks 0–5.
 - Pending: pipeline locks record `ef0e1c8` (check_install WARN, refresh before submission); nothing pushed; `/context` check in a fresh paper session (author).
+
+
+## 2026-09-29 — ZotPilot skills load from zotpilot-skills/ only
+
+**Operations:**
+- Finding: `zotpilot register`/`setup`/`upgrade` deployed the fork's skills into `~/.claude/skills/ztp-{profile,research,review,setup,tutor}` (and `~/.config/opencode/skills/`). Claude Code runs a personal skill instead of a same-named project skill, so every paper ran those copies. Evidence: NAR_settlement session transcript `88e46716…jsonl` loaded `Base directory for this skill: ~/.claude/skills/ztp-research`.
+- Fork: `EconGeo/ZotPilot#8` merged as `d9ea447` (`cf17237` strict bool coercion + `deploy_skills`; `748f880` reconcile opt-out). Also fixed: `zotpilot config set oa_pdf_upload false` had stored the string "false", which `Config.load` read back as True (enabling Web-API PDF uploads).
+- Machine: `deploy_skills false`; `zotpilot register` removed 5 Claude Code + 5 OpenCode copies (verified identical to the vendored copy first); re-run removes 0; `zotpilot status` Drift clean, Restart no. `~/Research/.claude/skills/` links the six vendored skills via `scripts/link-zotpilot-skills.sh` (`8026381`).
+- Re-sync: `zotpilot-skills/` fork `6e63dd8` to `d9ea447` (`ab0b0e4`): ztp-research target library / `select_zotero_library` / `save_unconfirmed`; ztp-setup step 7 deploy_skills note. `sync-zotpilot-skills.sh --check` exits 0.
+- Docs: `zotpilot-skills/VENDORED.md` "Only this copy may load", CLAUDE.md, README Step 7.
+
+**Results:**
+- Gates: `check_install` `personal-shadow` (FAIL) PASS x6; `zotpilot-vendored` (`--all`, WARN-only) PASS. Sync script `--check` (`8748a0e`), check_install (`e720406`).
+- Evals: checkers for ztp-research, ztp-review, ztp-profile, ztp-tutor, seed-papers fail when a skill loads from outside the project, or when no load is recorded (`c7d39c4`, `d5b60fc`). stream-json output has no "Base directory" line for slash-command skills, so the check reads Claude Code's session transcript by session_id. Live runs 2026-09-29: all five exit 0, each loaded `<eval project>/.claude/skills/<skill>` (the project copy) - the first time the vendored copies themselves were graded.
+- Fork CI: test job green; lint job red on two pre-existing mypy errors in untouched files (`index_authority.py:291`, `pdf/llamaindex_chunker.py:39`); main's CI red since 2026-09-25.
+- `check_install --all` residue unrelated to this plan: POGM4 `[membership]` FAIL (7 `references/` never linked - run `./bootstrap-pipeline.sh --tip` there).
+
+**Open (user decisions):**
+- `~/Research/NAR_settlement_legacy_archive/.claude/skills/` holds real `ztp-*` copies (2026-06-17); they now load in sessions started there. Delete them or leave the archive untouched.
+- `~/Research/.claude/skills/obsidian-digest-sync` is a leftover (skill removed 2026-09-09).
+- OpenCode no longer has ZotPilot skills; link `zotpilot-skills/*` into `~/.config/opencode/skills/` if used.
+- Cloud and Cowork sessions read neither `~/.claude/skills` nor the gitignored project links: out of scope.
+
+**Status:**
+- Done: plan Tasks 0-8 on branch `zotpilot-skills-single-source`; merge to `main` pending, nothing pushed.

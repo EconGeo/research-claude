@@ -331,6 +331,10 @@ micromamba activate zotpilot
 # includes multi-library indexing, token-aware chunking, bge-large, BBT 7+ compat.
 pip install git+https://github.com/EconGeo/ZotPilot.git
 
+# Do not let ZotPilot copy its skills into ~/.claude/skills: the project links them from
+# zotpilot-skills/, and a user-level copy would override the project's.
+zotpilot config set deploy_skills false
+
 # Find the zotpilot binary path (you'll need this for .mcp.json)
 which zotpilot
 # → /Users/YOUR_USERNAME/micromamba/envs/zotpilot/bin/zotpilot
