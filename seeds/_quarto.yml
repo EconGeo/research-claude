@@ -1,0 +1,6 @@
+project:
+  type: default
+  # Quarto's docx float wrapper violates the Word schema (Word reports "unreadable
+  # content" and offers to recover); this repairs every rendered .docx in place.
+  # The script is shared pipeline code — see .claude/rules/quarto-word.md, "Post-render repair".
+  post-render: python3 .claude/scripts/fix_docx_floats.py

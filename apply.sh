@@ -24,7 +24,7 @@
 # Scaffolding SEEDS are still copied, because they are project-owned and meant to be
 # edited: references/ templates, state/ examples, data/raw/data_manifest.md, .gitignore,
 # and everything else under seeds/ (settings.json, bootstrap-pipeline.sh, ai-use-log.md,
-# quarto-preamble.tex).
+# quarto-preamble.tex, _quarto.yml).
 #
 # See rules/shared-pipeline.md for what a symlinked .claude/ means in practice.
 
@@ -77,6 +77,7 @@ Copied as project-owned SEEDS (never overwritten if present), from seeds/:
   data/raw/data_manifest.md       raw-data provenance manifest seed
   .gitignore                      keeps *.qmd + *.bib; ignores render artifacts and the linked dirs
   templates/quarto-preamble.tex   PDF preamble the manuscript YAML requires
+  _quarto.yml                     post-render repair of Quarto's docx floats (Word opens cleanly)
 
 Refreshed on every run (real, tracked file — survives a fresh git worktree):
   .claude/run-hook.sh        launches hooks from here or the main checkout; fails open
@@ -241,6 +242,10 @@ fi
   copy_seed "$SCRIPT_DIR/seeds/gitignore" "$PROJECT_DIR/.gitignore"
 [[ -f "$SCRIPT_DIR/seeds/quarto-preamble.tex" ]] && \
   copy_seed "$SCRIPT_DIR/seeds/quarto-preamble.tex" "$PROJECT_DIR/templates/quarto-preamble.tex"
+# _quarto.yml wires the docx post-render repair (scripts/fix_docx_floats.py). An existing
+# _quarto.yml is left alone — add its post-render line by hand (rules/quarto-word.md).
+[[ -f "$SCRIPT_DIR/seeds/_quarto.yml" ]] && \
+  copy_seed "$SCRIPT_DIR/seeds/_quarto.yml" "$PROJECT_DIR/_quarto.yml"
 if [[ -f "$SCRIPT_DIR/seeds/bootstrap-pipeline.sh" ]]; then
   copy_seed "$SCRIPT_DIR/seeds/bootstrap-pipeline.sh" "$PROJECT_DIR/bootstrap-pipeline.sh"
 

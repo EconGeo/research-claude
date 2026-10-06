@@ -154,6 +154,24 @@ for DOCX.
 quarto render manuscript_<project>.qmd --to docx   # Word output from the same file
 ```
 
+### Post-render repair (required)
+
+Quarto (1.9) wraps every cross-referenced float in a one-cell layout table whose XML breaks
+the Word schema: a flextable float leaves the cell ending in a `<w:tbl>`, and each caption
+gets two `<w:pPr>` blocks. Word then reports "unreadable content" and offers to recover.
+`.claude/scripts/fix_docx_floats.py` repairs both in place; the project's `_quarto.yml`
+runs it after every render:
+
+```yaml
+project:
+  type: default
+  post-render: python3 .claude/scripts/fix_docx_floats.py
+```
+
+`apply.sh` seeds this file; a project that already has a `_quarto.yml` adds the
+`post-render:` line by hand. The script needs `lxml` and is idempotent. To repair a docx
+rendered without it: `python3 .claude/scripts/fix_docx_floats.py <file>.docx`.
+
 ---
 
 ## What the writer-critic checks (Word format mode)
