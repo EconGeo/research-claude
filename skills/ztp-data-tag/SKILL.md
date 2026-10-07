@@ -3,7 +3,7 @@ name: ztp-data-tag
 description: >
   Tag Zotero papers with the datasets they use (source, type, geography, period, variables, dependent variables, evidence page) using SQL grep over ChromaDB plus a local Ollama model — no Claude tokens per paper. Use for "tag my library with datasets", "what data do my papers use", "which papers use MLS data and where". Runs 15-paper passes, one collection at a time; Claude only reads the pass report and tunes the vocabulary.
 argument-hint: "[--library user|group:<id>] [--collection NAME] [--pass N] [--yes]"
-allowed-tools: Read, Edit, Bash, mcp__zotpilot__*
+allowed-tools: Read, Edit, Bash
 ---
 
 # ztp-data-tag v2 — local, grep-first dataset/variable tagging
@@ -33,7 +33,8 @@ evidence pages live in the sidecar and the note.
 2. Ollama up with the model: `curl -s localhost:11434/api/tags | grep -q qwen2.5:7b-instruct`
    — else `open -a Ollama`, `ollama pull qwen2.5:7b-instruct` (see `/ztp-ollama`).
 3. Papers indexed in Chroma. Unindexed items are listed in the report; index them with
-   `mcp__zotpilot__index_library` (Ollama must be up) and include them in a later pass.
+   ZotPilot's `index_library` tool (ask the user first; Ollama must be up) and include them in a
+   later pass.
 
 ## Step 1 — Dry run (always first on a new collection or after a vocabulary change)
 
@@ -58,8 +59,8 @@ Same command without `--dry-run`. Notes are written before tags; `data-tagged:v2
 idempotency marker — items carrying it are skipped on later passes, as are items already
 recorded in the sidecar with zero datasets (`ok` / `no_candidates`); `--refresh-v2` forces
 reprocessing of both. The v2 skip reads the local Zotero DB and live writes reach desktop Zotero
-via sync, so let Zotero sync between live passes. v1 items (`data-tagged` without `:v2`) are reprocessed and their note updated
-in place.
+via sync, so let Zotero sync between live passes. v1 items (`data-tagged` without `:v2`) are
+reprocessed and their note updated in place.
 
 ## Step 4 — Tune between passes (this is where Claude tokens go)
 
@@ -67,7 +68,8 @@ From the report: (a) **Review queue** — promote real sources into `data_vocab.
 (slug, name, regex aliases, type, geo_level, access) and DV needles into `dv_classes`;
 (b) **Grep vs model** — model-only slugs need an alias, grep-only slugs may be false positives
 (tighten the regex); (c) **Prompt** — if the model misreads a pattern across papers, adjust
-`scripts/prompts/extract.md` (the extraction prompt), then re-dry-run; (d) **Candidate selection** — papers flagged "heading regex missed" need a
+`scripts/prompts/extract.md` (the extraction prompt), then re-dry-run;
+(d) **Candidate selection** — papers flagged "heading regex missed" need a
 `HEADING_RE` extension in `scripts/data_tag/candidates.py` *and* a positive case in
 `tests/test_data_tag_candidates.py`. Bump `version:` in the YAML. Run
 `micromamba run -n zotpilot python -m pytest tests/test_data_tag_*.py -q` in research-claude,
@@ -77,9 +79,10 @@ list them, wait for yes.
 ## Queries (sidecar; no Zotero needed)
 
 ```bash
-micromamba run -n zotpilot python .claude/skills/ztp-data-tag/scripts/data_tag.py query type residential-transactions-mls
-micromamba run -n zotpilot python .claude/skills/ztp-data-tag/scripts/data_tag.py query matrix
-micromamba run -n zotpilot python .claude/skills/ztp-data-tag/scripts/data_tag.py query topic "Housing rental yield"
+DT=.claude/skills/ztp-data-tag/scripts/data_tag.py
+micromamba run -n zotpilot python $DT query type residential-transactions-mls
+micromamba run -n zotpilot python $DT query matrix
+micromamba run -n zotpilot python $DT query topic "Housing rental yield"
 ```
 
 ## Undo
