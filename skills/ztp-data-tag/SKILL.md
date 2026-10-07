@@ -1,187 +1,104 @@
 ---
 name: ztp-data-tag
 description: >
-  Backfill a "data used" field (datasets, variables, unit, timespan, access) onto Zotero papers as namespaced tags plus a structured note. Use for "tag my library with datasets" or "what data do my papers use". Pilots one collection and confirms before any batch write.
-argument-hint: "[--yes]"
-allowed-tools: Read, Bash, mcp__zotpilot__*
+  Tag Zotero papers with the datasets they use (source, type, geography, period, variables, dependent variables, evidence page) using SQL grep over ChromaDB plus a local Ollama model — no Claude tokens per paper. Use for "tag my library with datasets", "what data do my papers use", "which papers use MLS data and where". Runs 15-paper passes, one collection at a time; Claude only reads the pass report and tunes the vocabulary.
+argument-hint: "[--library user|group:<id>] [--collection NAME] [--pass N] [--yes]"
+allowed-tools: Read, Edit, Bash, mcp__zotpilot__*
 ---
 
-# ztp-data-tag — Backfill the data field across your Zotero library
+# ztp-data-tag v2 — local, grep-first dataset/variable tagging
 
-This skill reads papers already indexed in ZotPilot and records, for each one, the
-**datasets and key variables it uses**. It stores the result two ways on each Zotero item:
+Spec: `docs/superpowers/specs/2026-10-07-ztp-data-tag-v2-design.md` (research-claude).
+Code: `scripts/data_tag.py` beside this file (package `scripts/data_tag/`), run with the
+`zotpilot` micromamba env. Nothing here calls the ZotPilot MCP tools; the script reads the
+Chroma and Zotero SQLite files read-only and writes Zotero through pyzotero.
 
-- **Namespaced tags** — `dataset:hmda`, `var:loan-denial-rate`, plus a `data-tagged`
-  marker — for filtering in Zotero and ZotPilot, and `[[wikilink]]`-style hubs in Obsidian.
-- **A structured note** — a "Data (auto-extracted)" note holding the full JSON record.
+## What a pass does
 
-It is **opt-in**: nothing runs until the user asks, and it always pilots one collection
-and confirms before writing a batch.
+For each of N papers: select data/variable chunks from Chroma → regex grep against
+`scripts/data_vocab.yaml` → one `qwen2.5:7b-instruct` call → merge → write the sidecar
+(`~/.local/share/zotpilot/data_tags.sqlite`) → write Zotero tags + one "Data (auto-extracted)"
+note → render `quality_reports/data_tags/pass_NN.md`.
 
-## Schema
+Per-item write failures are recorded as `write_conflict` / `write_error` in the sidecar and the
+pass continues. `DATA_TAG_MODEL` (env) overrides the model, as does `--model`.
 
-```json
-{"datasets": [], "variables": [], "unit": "", "timespan": "", "access": "", "source": "full-text|abstract-only"}
+Tags written: `dataset:<slug>` (vocabulary sources only), `datatype:<type>`, `geo:<level>`,
+`var:<slug>`, `dv:<class>`, `data-tagged`, `data-tagged:v2`. Geography detail, periods and
+evidence pages live in the sidecar and the note.
+
+## Preconditions (stop with the fix if unmet)
+
+1. `source ~/.secrets.env` in the shell you run from — `ZOTERO_API_KEY`, `ZOTERO_USER_ID`.
+2. Ollama up with the model: `curl -s localhost:11434/api/tags | grep -q qwen2.5:7b-instruct`
+   — else `open -a Ollama`, `ollama pull qwen2.5:7b-instruct` (see `/ztp-ollama`).
+3. Papers indexed in Chroma. Unindexed items are listed in the report; index them with
+   `mcp__zotpilot__index_library` (Ollama must be up) and include them in a later pass.
+
+## Step 1 — Dry run (always first on a new collection or after a vocabulary change)
+
+```bash
+micromamba run -n zotpilot python .claude/skills/ztp-data-tag/scripts/data_tag.py run \
+  --library group:2350352 --pass <N> --n 15 --dry-run
 ```
+Read `quality_reports/data_tags/pass_NN.md` **in full**. Check the per-paper table against
+2–3 papers the user knows. The sidecar is written even in dry-run (pass rows are replaced on
+re-run); Zotero is not touched. Re-running the same `--pass N` re-processes exactly the papers
+recorded for pass N (sidecar rows replaced, notes updated in place); new items need a new pass id.
 
-- `datasets` — named data sources (e.g. "HMDA", "Zillow ZTRAX"). `[]` if none stated.
-- `variables` — key measures/variables (e.g. "loan-denial rate", "LTV").
-- `unit` — observation/geographic unit (e.g. "census tract").
-- `timespan` — coverage (e.g. "2010-2020").
-- `access` — "public (FFIEC)" / "proprietary (Zillow)" if identifiable.
-- `source` — "full-text" if extracted from the indexed PDF, "abstract-only" if only the
-  abstract was available (lower confidence — flag these for the user).
+## Step 2 — **USER_REQUIRED**: approve the live run
 
-`source` is a quality flag layered on top of the five-key schema above, so any downstream
-parser or Obsidian hub can treat every backfilled paper uniformly.
+Show the user the per-paper table and the review queue. Ask for an explicit yes before any
+non-dry run. `--yes` in the skill invocation counts as that yes for the current pass only
+(`run` itself has no `--yes` flag; `--yes` exists only on `undo`).
 
-## Preconditions (check first; stop with guidance if unmet)
+## Step 3 — Live run
 
-1. **ZotPilot MCP connected** — confirm `mcp__zotpilot__get_index_stats` is available.
-   If absent, tell the user to set up ZotPilot (`/ztp-setup`) and stop.
-2. **Write credentials configured** — tags and notes need `zotero_api_key` +
-   `zotero_user_id`. If `mcp__zotpilot__manage_tags` / `mcp__zotpilot__create_note`
-   fail for missing keys, stop and point the user to the ZotPilot install step in the
-   research-claude README ("Step 7 — Install and configure ZotPilot") (write-ops config).
-3. **Library indexed** — run `mcp__zotpilot__get_index_stats`. If many items are
-   unindexed, warn that abstract-only extraction will be weaker for them. If it returns
-   `embedding_ready: false`, the local embedding server (Ollama) is down: follow its
-   `_notice_embedding` (see `/ztp-ollama`) before any `index_library` call — Step 3's
-   `search_papers` needs it too.
+Same command without `--dry-run`. Notes are written before tags; `data-tagged:v2` is the
+idempotency marker — items carrying it are skipped on later passes, as are items already
+recorded in the sidecar with zero datasets (`ok` / `no_candidates`); `--refresh-v2` forces
+reprocessing of both. The v2 skip reads the local Zotero DB and live writes reach desktop Zotero
+via sync, so let Zotero sync between live passes. v1 items (`data-tagged` without `:v2`) are reprocessed and their note updated
+in place.
 
-## Step 1 — Pick a pilot collection (USER_REQUIRED)
+## Step 4 — Tune between passes (this is where Claude tokens go)
 
-Do NOT process the whole library on the first run. List collections with
-`mcp__zotpilot__browse_library(view="collections")`, then **Option gate**
-(read `.claude/rules/option-gates.md` first): rank 5–8 collections — columns *name*, *items*,
-*indexed share*, *why a good pilot* (small, mostly indexed, empirical) — and wait; `--yes`
-takes rank 1. The pilot processes that one collection (~N papers), shows the results, and
-only then offers the rest of the library.
+From the report: (a) **Review queue** — promote real sources into `data_vocab.yaml` `sources`
+(slug, name, regex aliases, type, geo_level, access) and DV needles into `dv_classes`;
+(b) **Grep vs model** — model-only slugs need an alias, grep-only slugs may be false positives
+(tighten the regex); (c) **Prompt** — if the model misreads a pattern across papers, adjust
+`scripts/prompts/extract.md` (the extraction prompt), then re-dry-run; (d) **Candidate selection** — papers flagged "heading regex missed" need a
+`HEADING_RE` extension in `scripts/data_tag/candidates.py` *and* a positive case in
+`tests/test_data_tag_candidates.py`. Bump `version:` in the YAML. Run
+`micromamba run -n zotpilot python -m pytest tests/test_data_tag_*.py -q` in research-claude,
+commit, then run the next pass with `--pass N+1`. Promotions are a **USER_REQUIRED** gate:
+list them, wait for yes.
 
-## Step 2 — Enumerate items, skip already-tagged
+## Queries (sidecar; no Zotero needed)
 
-1. List items in the chosen collection via `mcp__zotpilot__advanced_search` (filter by
-   collection) or `mcp__zotpilot__browse_library`.
-2. Drop any item that already carries the `data-tagged` marker tag — those were done in a
-   prior run. Report how many are new vs already-tagged.
-
-If every item already carries `data-tagged`, report "collection already processed" and stop.
-
-## Step 3 — Extract the data field per paper
-
-For each batch of 5 new items, dispatch **data-tag-extractor**
-(`.claude/agents/data-tag-extractor.md`; `Agent`, `subagent_type=data-tag-extractor`) with the
-`doc_id`s and the collection name. It holds ZotPilot itself, runs the per-paper loop —
-`get_paper_details` for metadata and abstract, one collection-scoped `search_papers` grouped by
-`doc_id` for the data/methods chunks, `get_passage_context` on the best hits — and returns one
-JSON record per paper in the schema above, with `source` set to `full-text` or `abstract-only`.
-The whole-library loop therefore never lives in this context; only the records do.
-
-Slugify tag values here: lowercase, spaces → hyphens (e.g. `dataset:zillow-ztrax`,
-`var:loan-denial-rate`). Keep the readable names in the note's JSON. A record with empty
-arrays is reported as such, not filled in.
-
-## Step 4 — Preview and confirm (USER_REQUIRED before any write)
-
-Show a table for the batch — title · datasets · variables · source — and ask for approval
-before writing. Batch writes (>5 papers) must never run without confirmation.
-
-## Step 5 — Write back to Zotero
-
-**Note first, tags second.** The `data-tagged` marker is the library-wide idempotency key
-(Step 2 skips anything carrying it, forever). Write `data-tagged` **only** for an item that
-now holds a Data note. Writing it first and the note second let an item be marked done with no
-note — silently and permanently.
-
-For each approved item:
-
-1. **Check for an existing Data note** — `mcp__zotpilot__get_notes(item_key=...)`. If a note
-   titled "Data (auto-extracted)" is already there, the item is genuinely done: go to step 3.
-2. **Note** — `mcp__zotpilot__create_note(idempotent=true, title="Data (auto-extracted)", ...)`
-   containing the JSON block and a readable list. **`idempotent=true` skips creation if the
-   item already has ANY ZotPilot note** — one from `/ztp-tutor` or `/ztp-research` counts —
-   not specifically a Data note. So if the call returns without creating, **stop here for this
-   item: do NOT write `data-tagged`.** Record it for Step 6 under
-   "skipped: has a non-Data ZotPilot note (no Data note written)" so the user can decide.
-3. **Tags** — only for an item that now has a Data note:
-   `mcp__zotpilot__manage_tags(action="add", allow_new=true, ...)` with the `dataset:` and
-   `var:` tags plus the `data-tagged` marker.
-   - **`allow_new=true` is REQUIRED.** The `dataset:*`/`var:*` tags are new to the library
-     vocabulary; without `allow_new=true`, `add` silently creates **none** of them.
-   - Use `action="add"` ONLY. NEVER `action="set"` — set replaces all existing tags and is
-     destructive.
-
-   The note's content:
-
-   ```
-   Data (auto-extracted by /ztp-data-tag)
-
-   {"datasets": ["HMDA"], "variables": ["loan-denial rate","LTV"], "unit": "census tract", "timespan": "2010-2020", "access": "public (FFIEC)", "source": "full-text"}
-
-   - Datasets: HMDA
-   - Variables: loan-denial rate, LTV
-   - Unit: census tract · 2010-2020 · public (FFIEC)
-   ```
-
-## Step 5b — Merge near-duplicate tags
-
-Before reporting, list every `dataset:*` / `var:*` tag written this batch next to any existing
-library tag within edit distance 2 or differing only by a plural or a hyphen
-(`dataset:hmda` vs `dataset:hmda-data`) — a near-duplicate splits the vocabulary Obsidian hubs
-key on. Offer each pair as `keep both / merge into existing / merge into new`; `--yes` keeps
-both. Merging is `manage_tags(action="add")` of the survivor then `action="remove"` of the
-other — never `set`.
-
-## Step 6 — Report and pause for review (USER_REQUIRED)
-
-After the pilot collection, present a summary table and STOP:
-
-- N processed · M with datasets found · K abstract-only (lower confidence)
-- S skipped: has a non-Data ZotPilot note, so no Data note was written and **no
-  `data-tagged` marker** — list them by title; they will be picked up again on the next run
-  unless the user adds the Data note by hand or asks you to write it non-idempotently
-- The tag namespaces created (`dataset:*`, `var:*`)
-
-Then offer the user a choice — do NOT auto-continue:
-1. Adjust the schema/tag conventions and re-run the pilot.
-2. Run the next collection, or the whole library (resumable — skips `data-tagged`).
-3. Re-index (`mcp__zotpilot__index_library`) so the new Data notes become searchable.
-
-## Step 7 — Whole-library run (only after the user approves)
-
-Same loop over all items (or the remaining collections), still in batches of 5 with the
-`data-tagged` skip. Remind the user this is one LLM pass per paper — for a large library
-it may span multiple sessions; the marker tag makes it resumable.
+```bash
+micromamba run -n zotpilot python .claude/skills/ztp-data-tag/scripts/data_tag.py query type residential-transactions-mls
+micromamba run -n zotpilot python .claude/skills/ztp-data-tag/scripts/data_tag.py query matrix
+micromamba run -n zotpilot python .claude/skills/ztp-data-tag/scripts/data_tag.py query topic "Housing rental yield"
+```
 
 ## Undo
 
-- Remove tags: `mcp__zotpilot__manage_tags(action="remove")` for `data-tagged`,
-  `dataset:*`, `var:*`. Removing `data-tagged` alone makes the item eligible for
-  reprocessing on the next run.
-- **Notes:** delete the "Data (auto-extracted)" note with
-  `mcp__zotpilot__delete_note(note_key=...)` (find the key via
-  `mcp__zotpilot__get_notes(item_key=...)`). It only deletes items of type 'note'
-  and, by default, only ZotPilot-created notes. Delete the note **and** remove
-  `data-tagged` together: an item with the marker and no Data note is exactly the state
-  Step 5 exists to prevent.
+`data_tag.py undo --pass N` previews; `--yes` applies. It removes only the tags that pass
+**added**, deletes only notes the pass **created**, and **restores the previous HTML** of notes the
+pass updated (e.g. v1 notes), using the sidecar's write log. Tags that existed before the pass are
+untouched. It reads the library from the pass record; an explicit `--library` that does not match
+is refused. It is resumable (rows are marked undone).
+
+## Whole-library run (only after the user says so)
+
+`--library user --n 0 --pass N` processes every remaining indexed item; resumable via the
+marker. Expect hours on local hardware; run it in a terminal tab, not inside a Claude turn.
 
 ## Rules
 
-- **Opt-in & confirm.** Never write without an explicit user OK on the batch preview.
-- **Pilot first.** Always one collection before any whole-library run.
-- **`add` + `allow_new=true`, never `set`** for tags — `allow_new=true` is required or no
-  new `dataset:*`/`var:*` tags are created; `set` is destructive (replaces all tags).
-- **Notes are idempotent via `idempotent=true`** — re-runs won't duplicate them. But the
-  flag keys on *any* ZotPilot note, so an item with a note from another skill gets no Data
-  note; Step 5 checks `get_notes` first and never writes `data-tagged` for such an item. To
-  remove a note, use `mcp__zotpilot__delete_note(note_key=...)` (note-type-guarded;
-  ZotPilot-only by default).
-- **Resumable & cross-project.** The `data-tagged` Zotero tag is the idempotency key —
-  it lives on the item in the global Zotero library, so it is visible from every project.
-  Always skip items that carry it unless the user asks for a refresh. NEVER track "done"
-  state in a project-local file; that would silently re-tag the whole library in each new
-  project. (Tags/notes persist in Zotero immediately; ChromaDB only reflects them after a
-  re-index, which is needed for search but not for this skip check.)
-- **Flag weak extractions.** Mark `source: abstract-only` items so the user can review.
-- **Keep the five-key schema stable** — `datasets/variables/unit/timespan/access` — so
-  Obsidian hubs and any parser treat every backfilled paper uniformly.
+- Never call `manage_tags(action="set")` or any MCP write — the script merges tags itself.
+- Never write to `chroma.sqlite3` or `zotero.sqlite`.
+- No Claude-side extraction fallback. If the model is weak on a paper, the fix is the
+  vocabulary, the heading regex, or `DATA_TAG_MODEL=qwen2.5:14b-instruct` — never Claude.
+- Confirm before every live pass and before every vocabulary promotion.

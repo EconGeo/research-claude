@@ -556,9 +556,10 @@ This is **opt-in and gated** — nothing touches your vault unless you configure
    The real `obsidian-config.md` is gitignored by design — your vault paths and mappings stay local.
 
 To build a data-discovery index over your **existing** library — not through the vault,
-directly against Zotero — run `/ztp-data-tag`: it extracts each paper's datasets and key
-variables and writes them back as tags + a structured Data note, piloting one collection
-first. See its entry in the skills table below.
+directly against Zotero — run `/ztp-data-tag`: it finds each paper's datasets (source, type,
+geography, period, variables and dependent variables, with the evidence page) using SQL grep
+over ChromaDB plus a local Ollama model, and writes them back as tags, a "Data" note and a
+queryable sidecar DB — 15 papers per pass, no Claude tokens per paper. See its entry below.
 
 ---
 
@@ -587,7 +588,7 @@ Once installed, the main entry points are:
 | `/pipeline` | Run the whole pipeline end to end, or resume it — see [The pipeline driver](#the-pipeline-driver) below |
 | `/ztp-research` | Find and ingest new papers into your Zotero library |
 | `/ztp-review` | Synthesize papers already in your library |
-| `/ztp-data-tag` | Backfill dataset/variable tags + a structured Data note onto papers already in your Zotero library (pilots one collection first) |
+| `/ztp-data-tag` | Tag papers with the datasets they use — source, type, geography, period, variables/DVs, evidence page — via grep + local Ollama; 15-paper passes, sidecar DB for cross-tabs |
 | `/seed-papers` | Optional: confirm which of your Zotero papers are anchors before `/lit-position` (writes `zotero_seed.md`, which `/lit-position` reads) |
 | `/lit-position` | Position the project against the literature (frontier map + positioning claim) |
 | `/strategize` | Design your identification strategy |
