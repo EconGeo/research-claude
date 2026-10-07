@@ -44,7 +44,10 @@ parser or Obsidian hub can treat every backfilled paper uniformly.
    fail for missing keys, stop and point the user to the ZotPilot install step in the
    research-claude README ("Step 7 — Install and configure ZotPilot") (write-ops config).
 3. **Library indexed** — run `mcp__zotpilot__get_index_stats`. If many items are
-   unindexed, warn that abstract-only extraction will be weaker for them.
+   unindexed, warn that abstract-only extraction will be weaker for them. If it returns
+   `embedding_ready: false`, the local embedding server (Ollama) is down: follow its
+   `_notice_embedding` (see `/ztp-ollama`) before any `index_library` call — Step 3's
+   `search_papers` needs it too.
 
 ## Step 1 — Pick a pilot collection (USER_REQUIRED)
 

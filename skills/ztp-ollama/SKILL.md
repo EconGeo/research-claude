@@ -1,7 +1,7 @@
 ---
 name: ztp-ollama
 description: >
-  Configure, verify and troubleshoot ZotPilot's local Ollama embedding provider (no API key). Use for Ollama setup, slow or failing local embeddings, connection refused while indexing, or an embedding dimension mismatch — instead of ztp-setup's provider step, which does not offer Ollama.
+  Configure, verify and troubleshoot ZotPilot's local Ollama embedding provider (no API key). Use for Ollama setup, checking Ollama is running before indexing, slow or failing local embeddings, "Ollama is not running" or connection refused while indexing, or an embedding dimension mismatch — instead of ztp-setup's provider step, which does not offer Ollama.
 allowed-tools: Read, Bash
 ---
 
@@ -56,7 +56,22 @@ zotpilot index --limit 20
 ```
 
 `doctor` treats Ollama as a keyless provider, so it should not complain about a missing API
-key. `index` covers **all** Zotero libraries by default, including group libraries.
+key; its `embedding_backend` check fails if the server is down or the model is not pulled.
+`index` covers **all** Zotero libraries by default, including group libraries.
+
+## Before every index run: Ollama must be up
+
+Ollama is a separate server, and nothing starts it for you. Check it **before** indexing,
+not after the first failure:
+
+1. Call `mcp__zotpilot__get_index_stats` (or run `zotpilot doctor`). With the Ollama provider
+   it reports `embedding_ready`; when that is `false`, `_notice_embedding` names the fix.
+2. If Ollama is down, start it — `open -a Ollama` on macOS, or `ollama serve` — and wait until
+   `curl -s http://localhost:11434/api/tags` answers. If the model is missing, `ollama pull` it.
+3. Only then call `index_library` / `zotpilot index`.
+
+`index_library` also runs this check itself before it touches the index and stops with the
+same message, so a forgotten step costs one failed call, not a half-deleted index.
 
 ## `embedding_dimensions` must match the model — nothing checks it for you
 
@@ -112,14 +127,15 @@ with `--force`.
 
 ## Troubleshooting
 
-**`Cannot reach ... is the server running?` / connection refused.** Ollama is not up. Start
-it with `ollama serve` and confirm with `curl -s http://localhost:11434/api/tags`. Note that
+**`Ollama is not running at …`.** Start it with `open -a Ollama` (macOS) or `ollama serve`
+and confirm with `curl -s http://localhost:11434/api/tags`. Note that
 **this provider does not retry** — unlike the Gemini and DashScope paths, it makes a single
 attempt per batch, so a server that is merely slow to wake will fail the run outright rather
 than recovering. Start Ollama first and let it settle before a long index.
 
-**`model not found`.** The model name in config must exactly match an `ollama list` entry,
-tag included (`snowflake-arctic-embed:l`, not `snowflake-arctic-embed`).
+**`Ollama is running but model '…' is not pulled`.** Run the `ollama pull` it names. The
+model name in config must match an `ollama list` entry; an untagged name means `:latest`, so
+give any other tag explicitly (`snowflake-arctic-embed:l`, not `snowflake-arctic-embed`).
 
 **Searches return irrelevant results after a model change.** The index is mixed. Rebuild
 with `zotpilot index --force`.
