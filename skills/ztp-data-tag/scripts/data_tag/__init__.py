@@ -1,0 +1,6 @@
+"""ztp-data-tag v2 — local, grep-first dataset/variable tagging over ChromaDB."""
+OLLAMA_URL = "http://localhost:11434"
+MODEL = "qwen2.5:7b-instruct"
+NOTE_TITLE = "Data (auto-extracted)"
+MARKER_V1 = "data-tagged"
+MARKER_V2 = "data-tagged:v2"
