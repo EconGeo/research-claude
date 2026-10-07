@@ -14,19 +14,30 @@ US_STATES = {"alabama","alaska","arizona","arkansas","california","colorado","co
     "west virginia","wisconsin","wyoming"}
 
 
+_STATE_ALT = "|".join(sorted((re.escape(s_) for s_ in US_STATES), key=len, reverse=True))
+# A state name, unless it is part of an institution name ("Indiana University").
+_STATE_RE = re.compile(rf"\b(?:{_STATE_ALT})\b(?!\s+(?:university|college|institute|department|bank|state))")
+_CITY_STATE_RE = re.compile(rf"^[a-z][a-z .'-]*,\s*(?:{_STATE_ALT})\b")
+
+
 def infer_geo_level(text: str | None, places: list[str]) -> str | None:
     low = (text or "").lower()
     if re.search(r"\b(oecd|countries|cross-country|international|european union|eu-\d+)\b", low): return "multi-country"
     if re.search(r"\b(global|worldwide)\b", low): return "global"
-    if re.search(r"\b(united states|u\.s\.|usa|nationwide|national|all u\.?s\.? )", low): return "national"
+    if re.search(r"\b(united states|u\.s\.|usa\b|nationwide|national|all u\.?s\.? )", low): return "national"
     if re.search(r"\b(msa|cbsa|metropolitan|metro)\b", low): return "metro"
     if re.search(r"\bcount(y|ies)\b", low): return "county"
     if re.search(r"\b(census tract|block group|neighborhood|neighbourhood|zip code)\b", low): return "neighborhood"
     if re.search(r"\bparcel\b", low): return "parcel"
-    if re.search(r"\bstate of\b", low) or any(s in low for s in US_STATES): return "state"
+    if re.search(r"\bdistrict of columbia\b|\bwashington,?\s+d\.?c\b", low): return "city"
+    pre = low.split(",")[0].strip()
+    if _CITY_STATE_RE.match(low) and pre not in US_STATES and " and " not in pre: return "city"
+    if re.search(r"\bstate of\b(?!\s+the\s+art)", low) or _STATE_RE.search(re.sub(r"\bstate of the art\b", "", low)): return "state"
     if re.search(r"\bcity of\b", low): return "city"
     if re.search(r"\bregion\b", low): return "region"
-    if places and len(places) == 1 and re.match(r"^[A-Z][\w .'-]+,\s*[A-Z]{2}$", places[0]): return "city"
+    if not low.strip() and places and len(places) == 1:
+        if places[0].strip().lower() in US_STATES: return "state"
+        if re.match(r"^[A-Z][\w .'-]+,\s*[A-Z]{2}$", places[0]): return "city"
     return None
 
 
@@ -130,16 +141,22 @@ def build_records(doc_id: str, chunks: list[Chunk], candidates: list[Chunk],
         geo_level = ds["geography"]["level"] or infer_geo_level(ds["geography"]["text"], ds["geography"]["places"])
         if slug and slug in records:
             rec = records[slug]
-            rec.source, rec.confidence = "merged", max(rec.confidence, 0.95)
-            rec.name_raw, rec.provider = ds["name"], ds.get("provider")
-            rec.type_slug = ds["type"]
-            rec.geo_text, rec.geo_level = ds["geography"]["text"], geo_level or rec.geo_level
-            rec.places = ds["geography"]["places"]
-            rec.period_start, rec.period_end = ds["period"]["start"], ds["period"]["end"]
-            rec.unit, rec.access = ds.get("unit_of_observation"), ds.get("access") or rec.access
-            rec.variables = variables
+            if rec.source == "grep":
+                rec.source, rec.confidence = "merged", max(rec.confidence, 0.95)
+                rec.name_raw = ds["name"]          # replace the vocab display name
+            rec.provider = ds.get("provider") or rec.provider
+            rec.type_slug = ds["type"] or rec.type_slug
+            rec.geo_text = ds["geography"]["text"] or rec.geo_text
+            rec.geo_level = geo_level or rec.geo_level
+            rec.places = ds["geography"]["places"] or rec.places
+            if ds["period"]["start"] is not None: rec.period_start = ds["period"]["start"]
+            if ds["period"]["end"] is not None: rec.period_end = ds["period"]["end"]
+            rec.unit = ds.get("unit_of_observation") or rec.unit
+            rec.access = ds.get("access") or rec.access
+            have = {v.slug for v in rec.variables}
+            rec.variables += [v for v in variables if v.slug not in have and not have.add(v.slug)]
             seen = {e.chunk_index for e in rec.evidence}
-            rec.evidence += [e for e in evidence if e.chunk_index not in seen]
+            rec.evidence += [e for e in evidence if e.chunk_index not in seen and not seen.add(e.chunk_index)]
             continue
         rec = DatasetRecord(ds["name"], ds.get("provider"), slug, ds["type"], ds["geography"]["text"], geo_level,
                             ds["geography"]["places"], ds["period"]["start"], ds["period"]["end"],

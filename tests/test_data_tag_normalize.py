@@ -64,3 +64,39 @@ def test_tags_for(vocab):
         assert expected in tags
     assert not any(t.startswith("dataset:") and "denver-water" in t for t in tags)
     assert tags == sorted(set(tags))
+
+
+def test_duplicate_slug_llm_datasets_union(vocab):
+    out = llm()
+    out["datasets"] = [out["datasets"][0], {
+        "name": "MLS listings", "provider": "REcolorado", "type": "residential-transactions-mls",
+        "geography": {"text": None, "level": None, "places": []}, "period": {"start": None, "end": None},
+        "unit_of_observation": None, "access": None,
+        "variables": [{"name": "days on market", "role": "dependent"}, {"name": "square footage", "role": "control"}],
+        "evidence_chunks": [18]}]
+    doc = nz.build_records("D", [C17, C18], [C17, C18], {}, out, [], vocab)
+    mls = [d for d in doc.datasets if d.src_slug == "mls"]
+    assert len(mls) == 1 and mls[0].source == "llm" and mls[0].name_raw == "REcolorado MLS sales"
+    assert {v.slug for v in mls[0].variables} == {"log-sale-price", "square-footage", "days-on-market"}
+    assert sorted(e.chunk_index for e in mls[0].evidence) == [17, 18]
+    assert mls[0].period_start == 2010 and mls[0].geo_text == "Denver MSA" and mls[0].places == ["Denver, CO"]
+
+
+def test_grep_merge_null_does_not_overwrite(vocab):
+    out = llm()
+    out["datasets"] = [{"name": "REcolorado MLS sales", "provider": None, "type": "residential-transactions-mls",
+        "geography": {"text": None, "level": None, "places": []}, "period": {"start": None, "end": None},
+        "unit_of_observation": None, "access": None, "variables": [], "evidence_chunks": []}]
+    grep = {17: vocab.match_sources(C17.text)}
+    doc = nz.build_records("D", [C17, C18], [C17, C18], grep, out, [], vocab)
+    mls = [d for d in doc.datasets if d.src_slug == "mls"][0]
+    assert mls.source == "merged" and mls.access == vocab.sources["mls"].access
+    assert mls.geo_level == vocab.sources["mls"].geo_level and mls.evidence
+
+
+@pytest.mark.parametrize("text,places,level", [
+    ("Washington, DC", [], "city"), ("Washington D.C.", [], "city"), ("District of Columbia", [], "city"),
+    ("Indiana University", [], None), ("Denver, Colorado", [], "city"), ("state of the art", [], None),
+    ("USAID", [], None), ("", ["Colorado"], "state"), ("Colorado", [], "state"), ("Colorado, Wyoming", [], "state")])
+def test_infer_geo_level_probes(text, places, level):
+    assert nz.infer_geo_level(text, places) == level
