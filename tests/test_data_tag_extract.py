@@ -14,7 +14,8 @@ def test_schema_has_enums(vocab):
     schema = ex.build_schema(vocab)
     ds = schema["properties"]["datasets"]["items"]["properties"]
     assert ds["type"]["enum"] == vocab.types
-    assert ds["geography"]["properties"]["level"]["enum"] == vocab.geo_levels
+    enum = ds["geography"]["properties"]["level"]["enum"]
+    assert [e for e in enum if e is not None] == vocab.geo_levels and None in enum
     assert ds["variables"]["items"]["properties"]["role"]["enum"] == ["dependent", "independent", "control", "instrument", "other"]
 
 def test_prompt_labels_chunks_and_hints(vocab):
@@ -67,3 +68,29 @@ def test_validate_tolerates_non_int_evidence(vocab):
     raw = {"datasets": [{"name": "X", "type": "survey", "evidence_chunks": ["a", None, [1], 17]}]}
     clean, dropped = ex.validate_output(raw, {17}, vocab)
     assert clean["datasets"][0]["evidence_chunks"] == [17] and dropped
+
+@pytest.mark.parametrize("raw", [[1], {"datasets": ["x"]}, {"datasets": "x"}, None,
+    {"datasets": [{"name": "A", "type": "survey", "geography": "str", "period": "p", "places": 3,
+                   "variables": "v", "evidence_chunks": 5}]},
+    {"datasets": [{"name": "A", "type": "survey", "geography": {"places": 7},
+                   "variables": [{"name": 5, "role": "control"}, {"name": "ok"}]}]},
+    {"datasets": [{"name": 5, "type": "survey"}]}, {"datasets": [], "notes": 3}])
+def test_validate_never_raises(vocab, raw):
+    clean, dropped = ex.validate_output(raw, {17}, vocab)
+    assert isinstance(clean["datasets"], list)
+
+def test_validate_defensive_details(vocab):
+    raw = {"datasets": ["x", {"name": "A", "type": "survey",
+           "geography": {"places": ["Denver", 3]}, "variables": [{"name": 5}, {"name": "ok"}]}]}
+    clean, dropped = ex.validate_output(raw, {17}, vocab)
+    assert len(clean["datasets"]) == 1 and dropped
+    assert clean["datasets"][0]["geography"]["places"] == ["Denver"]
+    assert clean["datasets"][0]["variables"] == [{"name": "ok", "role": "other"}]
+
+def test_extract_wraps_null_content(monkeypatch, vocab):
+    class R:
+        def raise_for_status(self): pass
+        def json(self): return {"message": {"content": None}}
+    monkeypatch.setattr(ex.httpx, "post", lambda url, json=None, timeout=None: R())
+    with pytest.raises(ex.OllamaError):
+        ex.OllamaClient("http://x", "m").extract(cands(), [], vocab)

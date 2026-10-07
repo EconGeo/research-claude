@@ -27,7 +27,7 @@ def build_schema(vocab: Vocab) -> dict:
             "type": {"type": "string", "enum": vocab.types},
             "geography": {"type": "object", "required": ["text", "level", "places"],
                           "properties": {"text": nullable_str,
-                                         "level": {"type": ["string", "null"], "enum": vocab.geo_levels},
+                                         "level": {"type": ["string", "null"], "enum": vocab.geo_levels + [None]},
                                          "places": {"type": "array", "items": {"type": "string"}}}},
             "period": {"type": "object", "required": ["start", "end"],
                        "properties": {"start": nullable_int, "end": nullable_int}},
@@ -62,20 +62,33 @@ def _is_year(value) -> bool:
 def validate_output(raw: dict, candidate_indices: set[int], vocab: Vocab) -> tuple[dict, list[str]]:
     dropped: list[str] = []
     clean_sets = []
-    for ds in raw.get("datasets", []) or []:
-        name = (ds.get("name") or "").strip()
+    if not isinstance(raw, dict):
+        return {"datasets": [], "notes": ""}, [f"model reply is not an object: {type(raw).__name__}"]
+    items = raw.get("datasets")
+    if not isinstance(items, list):
+        if items:
+            dropped.append(f"'datasets' is not a list: {type(items).__name__}")
+        items = []
+    for ds in items:
+        if not isinstance(ds, dict):
+            dropped.append(f"dataset item is not an object: {type(ds).__name__}"); continue
+        name = ds.get("name")
+        name = name.strip() if isinstance(name, str) else ""
         if not name:
             dropped.append("dataset without name"); continue
         if ds.get("type") not in vocab.types:
             dropped.append(f"{name}: unknown type {ds.get('type')!r}"); continue
-        claimed = ds.get("evidence_chunks") or []
+        claimed = ds.get("evidence_chunks")
+        claimed = claimed if isinstance(claimed, list) else []
         ev = [i for i in claimed if isinstance(i, int) and i in candidate_indices]
         bad_ev = [i for i in claimed if not (isinstance(i, int) and i in candidate_indices)]
         if bad_ev:
             dropped.append(f"{name}: evidence chunk(s) {bad_ev} not in candidate set")
-        geo = ds.get("geography") or {}
+        geo = ds.get("geography")
+        geo = geo if isinstance(geo, dict) else {}
         level = geo.get("level") if geo.get("level") in vocab.geo_levels else None
-        period = ds.get("period") or {}
+        period = ds.get("period")
+        period = period if isinstance(period, dict) else {}
         start, end = period.get("start"), period.get("end")
         if isinstance(start, int) and isinstance(end, int) and start > end:
             dropped.append(f"{name}: period {start}>{end} nulled"); start = end = None
@@ -83,14 +96,18 @@ def validate_output(raw: dict, candidate_indices: set[int], vocab: Vocab) -> tup
             if yr is not None and not _is_year(yr):
                 dropped.append(f"{name}: implausible year {yr} nulled"); start = end = None
                 break
+        raw_vars = ds.get("variables")
         variables = [{"name": v["name"].strip(), "role": v.get("role") if v.get("role") in ROLES else "other"}
-                     for v in (ds.get("variables") or []) if isinstance(v, dict) and v.get("name")]
+                     for v in (raw_vars if isinstance(raw_vars, list) else [])
+                     if isinstance(v, dict) and isinstance(v.get("name"), str) and v["name"].strip()]
+        places = geo.get("places")
+        places = [p for p in places if isinstance(p, str)] if isinstance(places, list) else []
         clean_sets.append({"name": name, "provider": ds.get("provider"), "type": ds["type"],
-                           "geography": {"text": geo.get("text"), "level": level, "places": list(geo.get("places") or [])},
+                           "geography": {"text": geo.get("text"), "level": level, "places": places},
                            "period": {"start": start, "end": end},
                            "unit_of_observation": ds.get("unit_of_observation"), "access": ds.get("access"),
                            "variables": variables, "evidence_chunks": ev})
-    return {"datasets": clean_sets, "notes": (raw.get("notes") or "")[:200]}, dropped
+    return {"datasets": clean_sets, "notes": (raw.get("notes") if isinstance(raw.get("notes"), str) else "")[:200]}, dropped
 
 
 class OllamaClient:
@@ -120,6 +137,6 @@ class OllamaClient:
             try:
                 raw = self._chat(prompt, schema)
                 return validate_output(raw, {c.chunk_index for c in candidates}, vocab)
-            except (json.JSONDecodeError, KeyError, httpx.HTTPError) as exc:
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError, AttributeError, httpx.HTTPError) as exc:
                 last_exc = exc
         raise OllamaError(f"extraction failed after 2 attempts: {last_exc}")
