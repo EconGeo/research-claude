@@ -114,17 +114,28 @@ class ZoteroWriterV2:
         self.last_note_created = None
         self._zot = zotero.Zotero(api_id, lib_type, api_key)
 
+    def _send_update(self, item: dict) -> None:
+        """One update_item call. Real pyzotero raises on non-2xx (tested), but a response-like
+        return is also checked so a silent 412/403/404 can never pass as success."""
+        result = self._zot.update_item(item["data"])
+        status = getattr(result, "status_code", None)
+        if isinstance(status, int):
+            if status == 412:
+                raise PreConditionFailed("412")
+            if not 200 <= status < 300:
+                raise RuntimeError(f"update_item failed with HTTP {status} on {item.get('key')}")
+
     def _update_with_retry(self, fetch, mutate) -> dict:
         # pyzotero update_item takes the inner item["data"] dict (a full wrapper with extra
         # top-level keys is rejected by check_items); it reads data["key"] and data["version"].
         item = fetch()
         mutate(item)
         try:
-            self._zot.update_item(item["data"]); return item
+            self._send_update(item); return item
         except PreConditionFailed:
             item = fetch(); mutate(item)
             try:
-                self._zot.update_item(item["data"]); return item
+                self._send_update(item); return item
             except PreConditionFailed as exc:
                 raise WriteConflict(f"412 twice on {item.get('key')}") from exc
 
@@ -155,6 +166,7 @@ class ZoteroWriterV2:
         def mutate(item):
             existing = {t["tag"] for t in item["data"].get("tags", [])}
             added[:] = sorted(set(tags) - existing)
-            item["data"]["tags"] = [{"tag": t} for t in sorted(existing | set(tags))]
+            # keep existing tag dicts untouched (preserves "type"); append only new tags
+            item["data"]["tags"] = list(item["data"].get("tags", [])) + [{"tag": t} for t in added]
         self._update_with_retry(lambda: self._zot.item(item_key), mutate)
         return added

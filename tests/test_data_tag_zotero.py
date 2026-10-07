@@ -68,10 +68,13 @@ def test_render_note_html_v1_compatible():
     assert v1["unit"] == "sale" and v1["timespan"] == "2010-2019" and v1["schema"] == "v2"
     assert "<table>" in html and "<b>log sale price</b>" in html and "p. 6" in html and "pass 1" in html
 
+class FakeResp:
+    def __init__(self, status_code): self.status_code = status_code
+
 class FakeZot:
     def __init__(self):
         self.items_db = {"AAA": {"key": "AAA", "version": 5, "data": {"key": "AAA", "version": 5, "tags": [{"tag": "Housing"}]}}}
-        self.notes = []; self.updated = []; self.fail_412_once = False
+        self.notes = []; self.updated = []; self.fail_412_once = False; self.status_seq = []
     def item(self, key):
         if key in self.items_db: return json.loads(json.dumps(self.items_db[key]))
         return json.loads(json.dumps(next(n for n in self.notes if n["key"] == key)))
@@ -84,13 +87,16 @@ class FakeZot:
         # real pyzotero update_item takes the inner data dict (has "key" and "version"); wrap for assertions
         assert "data" not in payload and "key" in payload and "version" in payload, "must pass item['data']"
         item = {"key": payload["key"], "data": payload}
+        if self.status_seq:
+            code = self.status_seq.pop(0)
+            if code >= 300: return FakeResp(code)
         if self.fail_412_once:
             self.fail_412_once = False
             raise zio.PreConditionFailed("412")
         self.updated.append(item); self.items_db[item["key"]] = item if item["key"] in self.items_db else self.items_db.get(item["key"])
         for n in self.notes:
             if n["key"] == item["key"]: n["data"] = item["data"]
-        return True
+        return FakeResp(204)
 
 def _writer(fake):
     w = zio.ZoteroWriterV2.__new__(zio.ZoteroWriterV2); w._zot = fake; return w
@@ -116,3 +122,40 @@ def test_merge_tags_second_412_raises():
     fake.update_item = always
     with pytest.raises(zio.WriteConflict):
         w.merge_tags("AAA", ["x"])
+
+
+def test_status_412_returned_not_raised_retries_then_succeeds():
+    fake = FakeZot(); fake.status_seq = [412, 204]; w = _writer(fake)
+    assert w.merge_tags("AAA", ["x"]) == ["x"] and len(fake.updated) == 1
+
+def test_status_412_returned_twice_raises_write_conflict():
+    fake = FakeZot(); fake.status_seq = [412, 412]; w = _writer(fake)
+    with pytest.raises(zio.WriteConflict):
+        w.merge_tags("AAA", ["x"])
+
+def test_other_non_2xx_status_raises_runtimeerror_with_key():
+    fake = FakeZot(); fake.status_seq = [403]; w = _writer(fake)
+    with pytest.raises(RuntimeError, match="403.*AAA"):
+        w.merge_tags("AAA", ["x"])
+
+def test_merge_tags_preserves_existing_tag_dicts_and_type():
+    fake = FakeZot(); fake.items_db["AAA"]["data"]["tags"] = [{"tag": "auto", "type": 1}, {"tag": "Housing"}]
+    w = _writer(fake)
+    assert w.merge_tags("AAA", ["new", "auto"]) == ["new"]
+    assert fake.updated[-1]["data"]["tags"] == [{"tag": "auto", "type": 1}, {"tag": "Housing"}, {"tag": "new"}]
+
+def test_real_pyzotero_update_item_on_412_with_mock_transport():
+    """Pins real-client behaviour offline: does update_item raise on 412?"""
+    import httpx
+    from pyzotero import zotero
+    seen = []
+    def handler(request):
+        seen.append((request.method, str(request.url)))
+        return httpx.Response(412, text="precondition failed")
+    zot = zotero.Zotero("1", "user", "k")
+    zot.client = httpx.Client(transport=httpx.MockTransport(handler))
+    zot.item_fields = lambda: [{"field": "note"}, {"field": "itemType"}]  # no network
+    payload = {"key": "AAA", "version": 5, "itemType": "note", "note": "x", "tags": []}
+    with pytest.raises(zio.PreConditionFailed):
+        zot.update_item(payload)
+    assert seen and all(m == "PATCH" for m, _ in seen)  # only the mocked PATCH; nothing escaped
