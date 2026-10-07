@@ -1,0 +1,284 @@
+version: 1
+sources:
+  costar:
+    name: CoStar
+    aliases: ['\bCoStar\b', '\bCo-Star\b', '\bCoStar Group\b']
+    type: commercial-property
+    geo_level: national
+    access: proprietary
+  rca:
+    name: Real Capital Analytics
+    aliases: ['\bReal Capital Analytics\b', '\bRCA\b(?! Records)']
+    type: commercial-property
+    geo_level: national
+    access: proprietary
+  ncreif:
+    name: NCREIF
+    aliases: ['\bNCREIF\b', '\bNPI\b', '\bODCE\b']
+    type: commercial-property
+    geo_level: national
+    access: proprietary
+  crsp:
+    name: CRSP
+    aliases: ['\bCRSP\b']
+    type: reit-firm-financials
+    geo_level: national
+    access: proprietary
+  compustat:
+    name: Compustat
+    aliases: ['\bCompustat\b']
+    type: reit-firm-financials
+    geo_level: national
+    access: proprietary
+  snl:
+    name: S&P Global / SNL
+    aliases: ['\bSNL\b', '\bS&P Global Market Intelligence\b', '\bS&P Capital IQ\b']
+    type: reit-firm-financials
+    geo_level: national
+    access: proprietary
+  bloomberg:
+    name: Bloomberg
+    aliases: ['\bBloomberg\b']
+    type: macro-financial-series
+    geo_level: global
+    access: proprietary
+  datastream:
+    name: Datastream
+    aliases: ['\bDatastream\b']
+    type: macro-financial-series
+    geo_level: global
+    access: proprietary
+  gresb:
+    name: GRESB
+    aliases: ['\bGRESB\b']
+    type: reit-firm-financials
+    geo_level: global
+    access: proprietary
+  msci_esg:
+    name: MSCI ESG
+    aliases: ['\bMSCI ESG\b', '\bMSCI KLD\b', '\bKLD\b']
+    type: reit-firm-financials
+    geo_level: global
+    access: proprietary
+  hmda:
+    name: HMDA
+    aliases: ['\bHMDA\b', 'Home Mortgage Disclosure Act']
+    type: mortgage-loan-level
+    geo_level: national
+    access: public
+  corelogic:
+    name: CoreLogic
+    aliases: ['\bCoreLogic\b', '\bDataQuick\b']
+    type: residential-transactions-deeds
+    geo_level: national
+    access: proprietary
+  ztrax:
+    name: Zillow ZTRAX
+    aliases: ['\bZTRAX\b', 'Zillow Transaction and Assessment']
+    type: residential-transactions-deeds
+    geo_level: national
+    access: proprietary
+  zillow:
+    name: Zillow (ZHVI/ZORI)
+    aliases: ['\bZHVI\b', '\bZORI\b', '\bZillow Home Value Index\b', '\bZillow Observed Rent Index\b']
+    type: residential-listings-rents
+    geo_level: national
+    access: public
+  redfin:
+    name: Redfin
+    aliases: ['\bRedfin\b']
+    type: residential-transactions-mls
+    geo_level: national
+    access: public
+  attom:
+    name: ATTOM
+    aliases: ['\bATTOM\b']
+    type: residential-transactions-deeds
+    geo_level: national
+    access: proprietary
+  mls:
+    name: MLS
+    aliases: ['\bMLS\b', 'Multiple Listing Service', '\bREcolorado\b', '\bMRIS\b', '\bBright MLS\b']
+    type: residential-transactions-mls
+    geo_level: metro
+    access: proprietary
+  acs:
+    name: ACS
+    aliases: ['\bACS\b', 'American Community Survey']
+    type: census-acs
+    geo_level: national
+    access: public
+  census:
+    name: Decennial Census
+    aliases: ['\bDecennial Census\b', '\b(?:19|20)\d0 Census\b', '\bCensus of Population\b']
+    type: census-acs
+    geo_level: national
+    access: public
+  lehd:
+    name: LEHD/LODES
+    aliases: ['\bLEHD\b', '\bLODES\b']
+    type: census-acs
+    geo_level: national
+    access: public
+  cps:
+    name: CPS
+    aliases: ['\bCPS\b', 'Current Population Survey']
+    type: survey
+    geo_level: national
+    access: public
+  ahs:
+    name: AHS
+    aliases: ['\bAHS\b', 'American Housing Survey']
+    type: survey
+    geo_level: national
+    access: public
+  psid:
+    name: PSID
+    aliases: ['\bPSID\b', 'Panel Study of Income Dynamics']
+    type: survey
+    geo_level: national
+    access: public
+  lihtc:
+    name: HUD LIHTC database
+    aliases: ['\bLIHTC\b', 'Low[- ]Income Housing Tax Credit']
+    type: administrative-program
+    geo_level: national
+    access: public
+  hud_posh:
+    name: HUD Picture of Subsidized Households
+    aliases: ['Picture of Subsidized Households', '\bPSH\b']
+    type: administrative-program
+    geo_level: national
+    access: public
+  hud_fmr:
+    name: HUD Fair Market Rents
+    aliases: ['Fair Market Rents?', '\bFMRs?\b']
+    type: administrative-program
+    geo_level: national
+    access: public
+  fema_nfhl:
+    name: FEMA NFHL / NFIP
+    aliases: ['\bNFHL\b', '\bNFIP\b', 'FEMA flood', 'Flood Insurance Rate Map', '\bFIRM\b(?!s? (?:size|value|level))', 'Special Flood Hazard Area', '\bSFHA\b']
+    type: hazard-flood
+    geo_level: national
+    access: public
+  noaa_storm:
+    name: NOAA Storm Events
+    aliases: ['NOAA Storm Events', 'Billion-Dollar', '\bNCEI\b']
+    type: hazard-disaster
+    geo_level: national
+    access: public
+  fema_decl:
+    name: FEMA disaster declarations
+    aliases: ['FEMA disaster declaration', 'Presidential disaster declaration']
+    type: hazard-disaster
+    geo_level: national
+    access: public
+  first_street:
+    name: First Street Foundation
+    aliases: ['First Street']
+    type: hazard-flood
+    geo_level: national
+    access: proprietary
+  prism:
+    name: PRISM climate
+    aliases: ['\bPRISM\b']
+    type: climate-weather
+    geo_level: national
+    access: public
+  energy_star:
+    name: ENERGY STAR / LEED
+    aliases: ['\bENERGY STAR\b', '\bEnergy Star\b', '\bLEED\b', '\bUSGBC\b']
+    type: other
+    geo_level: national
+    access: public
+  wrluri:
+    name: WRLURI
+    aliases: ['\bWRLURI\b', 'Wharton Residential Land Use']
+    type: zoning-land-use
+    geo_level: national
+    access: public
+  saiz:
+    name: Saiz elasticity
+    aliases: ['Saiz \(2010\)', 'Saiz housing supply elasticit']
+    type: zoning-land-use
+    geo_level: metro
+    access: public
+  assessor:
+    name: County assessor records
+    aliases: ["assessor(?:'|\\x27)?s? (?:office|records?|data|parcel)", 'tax assessor', 'assessment roll']
+    type: gis-parcel-boundary
+    geo_level: county
+    access: public
+  apartment_list:
+    name: Apartment List
+    aliases: ['\bApartment List\b']
+    type: residential-listings-rents
+    geo_level: national
+    access: public
+  yardi:
+    name: Yardi Matrix
+    aliases: ['\bYardi\b']
+    type: residential-listings-rents
+    geo_level: national
+    access: proprietary
+  realpage:
+    name: RealPage / Axiometrics
+    aliases: ['\bRealPage\b', '\bAxiometrics\b']
+    type: residential-listings-rents
+    geo_level: national
+    access: proprietary
+  moodys_cre:
+    name: "Moody's CRE / Reis"
+    aliases: ['\bReis\b', "Moody(?:'|\\x27)s (?:CRE|Analytics REIS)"]
+    type: commercial-property
+    geo_level: national
+    access: proprietary
+  trepp:
+    name: Trepp
+    aliases: ['\bTrepp\b']
+    type: commercial-property
+    geo_level: national
+    access: proprietary
+  fred:
+    name: FRED
+    aliases: ['\bFRED\b', 'Federal Reserve Economic Data']
+    type: macro-financial-series
+    geo_level: national
+    access: public
+
+types:
+  - residential-transactions-mls
+  - residential-transactions-deeds
+  - residential-listings-rents
+  - commercial-property
+  - mortgage-loan-level
+  - reit-firm-financials
+  - census-acs
+  - administrative-program
+  - survey
+  - hazard-flood
+  - hazard-disaster
+  - climate-weather
+  - zoning-land-use
+  - permits-construction
+  - gis-parcel-boundary
+  - macro-financial-series
+  - hand-collected
+  - other
+
+geo_levels: [parcel, neighborhood, city, metro, county, state, region, national, multi-country, global]
+
+dv_classes:
+  house-price: ['price', 'home value', 'house value', 'sale price', 'transaction price', 'HPI']
+  rent: ['rent', 'rental rate', 'asking rent']
+  transaction-volume: ['sales volume', 'number of sales', 'transactions', 'turnover']
+  time-on-market: ['time on market', 'days on market', 'marketing time', 'TOM', 'DOM']
+  mortgage-approval: ['denial', 'approval', 'origination', 'loan application']
+  default-foreclosure: ['default', 'foreclosure', 'delinquen']
+  reit-return: ['REIT return', 'stock return', 'abnormal return', 'excess return']
+  cap-rate: ['cap rate', 'capitalization rate', 'yield']
+  construction-permits: ['permits', 'housing starts', 'units built', 'new construction']
+  affordability: ['affordab', 'cost burden', 'rent-to-income', 'price-to-income']
+  displacement-mobility: ['displacement', 'mobility', 'move-out', 'residential mobility', 'eviction']
+  other: []
