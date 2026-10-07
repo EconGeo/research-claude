@@ -36,13 +36,13 @@ class Sidecar:
     # ---- passes -------------------------------------------------------------
     def begin_pass(self, pass_id: int, library: str, collection: str | None, vocab_version: int, model: str, n_docs: int) -> None:
         con = self._con
-        doc_ids = [r[0] for r in con.execute("SELECT doc_id FROM documents WHERE pass_id=?", (pass_id,))]
-        for doc_id in doc_ids:
-            self._delete_doc_rows(doc_id)
-        con.execute("DELETE FROM review_queue WHERE pass_id=? AND status='open'", (pass_id,))
-        con.execute("INSERT OR REPLACE INTO passes VALUES (?,?,?,?,?,?,?,?)",
-                    (pass_id, library, collection, n_docs, vocab_version, model, datetime.now(timezone.utc).isoformat(timespec="seconds"), ""))
-        con.commit()
+        with con:  # atomic: commit on success, roll back on error
+            doc_ids = [r[0] for r in con.execute("SELECT doc_id FROM documents WHERE pass_id=?", (pass_id,))]
+            for doc_id in doc_ids:
+                self._delete_doc_rows(doc_id)
+            con.execute("DELETE FROM review_queue WHERE pass_id=? AND status='open'", (pass_id,))
+            con.execute("INSERT OR REPLACE INTO passes VALUES (?,?,?,?,?,?,?,?)",
+                        (pass_id, library, collection, n_docs, vocab_version, model, datetime.now(timezone.utc).isoformat(timespec="seconds"), ""))
 
     def passes(self) -> list[sqlite3.Row]:
         return self._con.execute("SELECT * FROM passes ORDER BY pass_id").fetchall()
@@ -57,25 +57,26 @@ class Sidecar:
             con.execute(f"DELETE FROM evidence WHERE dataset_id IN ({marks})", ids)
         con.execute("DELETE FROM datasets WHERE doc_id=?", (doc_id,))
         con.execute("DELETE FROM documents WHERE doc_id=?", (doc_id,))
+        con.execute("DELETE FROM review_queue WHERE doc_id=? AND status='open'", (doc_id,))
 
     def write_doc(self, doc: DocRecord, pass_id: int, title: str, year: int | None, library_id: str) -> None:
         con = self._con
-        self._delete_doc_rows(doc.doc_id)
-        con.execute("INSERT INTO documents VALUES (?,?,?,?,?,?,?,?)",
-                    (doc.doc_id, library_id, title, year, pass_id, doc.status, doc.llm_notes, json.dumps(doc.dropped)))
-        for d in doc.datasets:
-            cur = con.execute("INSERT INTO datasets (doc_id,pass_id,name_raw,provider,src_slug,type_slug,geo_text,geo_level,"
-                              "places_json,period_start,period_end,unit,access,confidence,source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                              (doc.doc_id, pass_id, d.name_raw, d.provider, d.src_slug, d.type_slug, d.geo_text, d.geo_level,
-                               json.dumps(d.places), d.period_start, d.period_end, d.unit, d.access, d.confidence, d.source))
-            ds_id = cur.lastrowid
-            con.executemany("INSERT INTO variables (dataset_id,name_raw,slug,role,dv_class) VALUES (?,?,?,?,?)",
-                            [(ds_id, v.name_raw, v.slug, v.role, v.dv_class) for v in d.variables])
-            con.executemany("INSERT INTO evidence (dataset_id,chunk_index,page_num,snippet) VALUES (?,?,?,?)",
-                            [(ds_id, e.chunk_index, e.page_num, e.snippet) for e in d.evidence])
-        con.executemany("INSERT INTO review_queue (pass_id,kind,name_raw,doc_id,suggested_slug,snippet) VALUES (?,?,?,?,?,?)",
-                        [(pass_id, r.kind, r.name_raw, doc.doc_id, r.suggested_slug, r.snippet) for r in doc.review])
-        con.commit()
+        with con:  # atomic: a failed insert rolls back the whole doc
+            self._delete_doc_rows(doc.doc_id)
+            con.execute("INSERT INTO documents VALUES (?,?,?,?,?,?,?,?)",
+                        (doc.doc_id, library_id, title, year, pass_id, doc.status, doc.llm_notes, json.dumps(doc.dropped)))
+            for d in doc.datasets:
+                cur = con.execute("INSERT INTO datasets (doc_id,pass_id,name_raw,provider,src_slug,type_slug,geo_text,geo_level,"
+                                  "places_json,period_start,period_end,unit,access,confidence,source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                                  (doc.doc_id, pass_id, d.name_raw, d.provider, d.src_slug, d.type_slug, d.geo_text, d.geo_level,
+                                   json.dumps(d.places), d.period_start, d.period_end, d.unit, d.access, d.confidence, d.source))
+                ds_id = cur.lastrowid
+                con.executemany("INSERT INTO variables (dataset_id,name_raw,slug,role,dv_class) VALUES (?,?,?,?,?)",
+                                [(ds_id, v.name_raw, v.slug, v.role, v.dv_class) for v in d.variables])
+                con.executemany("INSERT INTO evidence (dataset_id,chunk_index,page_num,snippet) VALUES (?,?,?,?)",
+                                [(ds_id, e.chunk_index, e.page_num, e.snippet) for e in d.evidence])
+            con.executemany("INSERT INTO review_queue (pass_id,kind,name_raw,doc_id,suggested_slug,snippet) VALUES (?,?,?,?,?,?)",
+                            [(pass_id, r.kind, r.name_raw, doc.doc_id, r.suggested_slug, r.snippet) for r in doc.review])
 
     def set_doc_status(self, doc_id: str, status: str) -> None:
         self._con.execute("UPDATE documents SET status=? WHERE doc_id=?", (status, doc_id)); self._con.commit()
