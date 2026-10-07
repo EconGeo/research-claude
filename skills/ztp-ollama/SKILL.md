@@ -2,7 +2,7 @@
 name: ztp-ollama
 description: >
   Configure, verify and troubleshoot ZotPilot's local Ollama embedding provider (no API key). Use for Ollama setup, checking Ollama is running before indexing, slow or failing local embeddings, "Ollama is not running" or connection refused while indexing, or an embedding dimension mismatch — instead of ztp-setup's provider step, which does not offer Ollama.
-allowed-tools: Read, Bash
+allowed-tools: Read, Bash, mcp__zotpilot__*
 ---
 
 # ztp-ollama — the local Ollama embedding path
