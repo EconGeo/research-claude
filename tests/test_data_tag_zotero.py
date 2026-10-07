@@ -1,0 +1,118 @@
+import sqlite3, json, pytest
+from data_tag import zotero_io as zio
+from data_tag.normalize import DocRecord, DatasetRecord, Variable, Evidence
+
+def _zot_db(path):
+    con = sqlite3.connect(path)
+    con.executescript("""
+    CREATE TABLE items (itemID INTEGER PRIMARY KEY, itemTypeID INTEGER, libraryID INTEGER, key TEXT);
+    CREATE TABLE itemTypes (itemTypeID INTEGER, typeName TEXT);
+    CREATE TABLE deletedItems (itemID INTEGER);
+    CREATE TABLE fields (fieldID INTEGER, fieldName TEXT);
+    CREATE TABLE itemData (itemID INTEGER, fieldID INTEGER, valueID INTEGER);
+    CREATE TABLE itemDataValues (valueID INTEGER, value TEXT);
+    CREATE TABLE tags (tagID INTEGER, name TEXT);
+    CREATE TABLE itemTags (itemID INTEGER, tagID INTEGER, type INTEGER);
+    CREATE TABLE collections (collectionID INTEGER, collectionName TEXT, libraryID INTEGER, key TEXT);
+    CREATE TABLE collectionItems (collectionID INTEGER, itemID INTEGER);
+    CREATE TABLE groups (groupID INTEGER, libraryID INTEGER, name TEXT);
+    INSERT INTO itemTypes VALUES (1,'journalArticle'),(2,'attachment'),(3,'note');
+    INSERT INTO fields VALUES (1,'title'),(2,'date');
+    INSERT INTO groups VALUES (2350352, 3, 'affordable_housing');
+    INSERT INTO items VALUES (1,1,3,'BBB'),(2,1,3,'AAA'),(3,2,3,'PDF1'),(4,1,3,'DEL'),(5,1,1,'USR');
+    INSERT INTO deletedItems VALUES (4);
+    INSERT INTO itemDataValues VALUES (1,'Paper B'),(2,'Paper A'),(3,'2019-03-01');
+    INSERT INTO itemData VALUES (1,1,1),(2,1,2),(2,2,3);
+    INSERT INTO tags VALUES (1,'data-tagged:v2'),(2,'Housing');
+    INSERT INTO itemTags VALUES (1,1,0),(2,2,0);
+    INSERT INTO collections VALUES (10,'REE',3,'CK');
+    INSERT INTO collectionItems VALUES (10,2);
+    """); con.commit(); con.close()
+
+@pytest.fixture
+def zdb(tmp_path):
+    p = tmp_path / "zotero.sqlite"; _zot_db(p); return p
+
+def test_enumerate_items_sorted_with_tags(zdb):
+    items = zio.enumerate_items(zdb, 3, None)
+    assert [i.key for i in items] == ["AAA", "BBB"]
+    assert items[0].title == "Paper A" and items[0].year == 2019 and items[0].tags == ["Housing"]
+    assert items[1].tags == ["data-tagged:v2"]
+
+def test_enumerate_items_by_collection(zdb):
+    assert [i.key for i in zio.enumerate_items(zdb, 3, "REE")] == ["AAA"]
+
+def test_resolve_library(zdb, monkeypatch):
+    monkeypatch.setenv("ZOTERO_USER_ID", "5848868")
+    assert zio.resolve_library("user", zdb) == ("user", "5848868", 1)
+    assert zio.resolve_library("group:2350352", zdb) == ("group", "2350352", 3)
+
+def test_check_autosync(tmp_path):
+    p = tmp_path / "prefs.js"; p.write_text('user_pref("extensions.zotero.sync.autoSync", false);')
+    assert zio.check_autosync(p) is False
+    p.write_text('user_pref("x", 1);'); assert zio.check_autosync(p) is None
+
+def _doc():
+    ds = DatasetRecord("REcolorado MLS", "REcolorado", "mls", "residential-transactions-mls", "Denver MSA", "metro", ["Denver, CO"],
+                       2010, 2019, "sale", "proprietary", 0.95, "merged",
+                       [Variable("log sale price", "log-sale-price", "dependent", "house-price"), Variable("sqft", "sqft", "control", None)],
+                       [Evidence(17, 6, "snip")])
+    return DocRecord("AAA", "ok", [ds])
+
+def test_render_note_html_v1_compatible():
+    html = zio.render_note_html(_doc(), "Paper A", 1, 1, "qwen2.5:7b-instruct")
+    assert html.startswith("<h1>Data (auto-extracted)</h1>")
+    start = html.index("{"); end = html.index("}</p>") + 1
+    import html as h; v1 = json.loads(h.unescape(html[start:end]))
+    assert v1["datasets"] == ["REcolorado MLS"] and v1["variables"] == ["log sale price", "sqft"]
+    assert v1["unit"] == "sale" and v1["timespan"] == "2010-2019" and v1["schema"] == "v2"
+    assert "<table>" in html and "<b>log sale price</b>" in html and "p. 6" in html and "pass 1" in html
+
+class FakeZot:
+    def __init__(self):
+        self.items_db = {"AAA": {"key": "AAA", "version": 5, "data": {"key": "AAA", "version": 5, "tags": [{"tag": "Housing"}]}}}
+        self.notes = []; self.updated = []; self.fail_412_once = False
+    def item(self, key):
+        if key in self.items_db: return json.loads(json.dumps(self.items_db[key]))
+        return json.loads(json.dumps(next(n for n in self.notes if n["key"] == key)))
+    def children(self, key, itemType=None): return [n for n in self.notes if n["data"]["parentItem"] == key]
+    def item_template(self, t): return {"itemType": "note", "note": "", "tags": [], "parentItem": ""}
+    def create_items(self, payload):
+        n = {"key": f"N{len(self.notes)+1}", "version": 1, "data": {**payload[0], "key": f"N{len(self.notes)+1}", "version": 1}}
+        self.notes.append(n); return {"success": {"0": n["key"]}, "failed": {}}
+    def update_item(self, payload):
+        # real pyzotero update_item takes the inner data dict (has "key" and "version"); wrap for assertions
+        assert "data" not in payload and "key" in payload and "version" in payload, "must pass item['data']"
+        item = {"key": payload["key"], "data": payload}
+        if self.fail_412_once:
+            self.fail_412_once = False
+            raise zio.PreConditionFailed("412")
+        self.updated.append(item); self.items_db[item["key"]] = item if item["key"] in self.items_db else self.items_db.get(item["key"])
+        for n in self.notes:
+            if n["key"] == item["key"]: n["data"] = item["data"]
+        return True
+
+def _writer(fake):
+    w = zio.ZoteroWriterV2.__new__(zio.ZoteroWriterV2); w._zot = fake; return w
+
+def test_upsert_note_creates_then_updates():
+    fake = FakeZot(); w = _writer(fake)
+    k1 = w.upsert_note("AAA", "<h1>Data (auto-extracted)</h1><p>v1</p>")
+    k2 = w.upsert_note("AAA", "<h1>Data (auto-extracted)</h1><p>v2</p>")
+    assert k1 == k2 == "N1" and len(fake.notes) == 1 and "v2" in fake.notes[0]["data"]["note"]
+    assert w.last_note_created is False
+    w2 = _writer(FakeZot()); assert w2.last_note_created is None
+    w2.upsert_note("AAA", "<h1>Data (auto-extracted)</h1><p>v1</p>"); assert w2.last_note_created is True
+
+def test_merge_tags_adds_only_new_and_retries_412():
+    fake = FakeZot(); fake.fail_412_once = True; w = _writer(fake)
+    added = w.merge_tags("AAA", ["Housing", "dataset:mls", "data-tagged:v2"])
+    assert added == ["data-tagged:v2", "dataset:mls"]
+    assert sorted(t["tag"] for t in fake.updated[-1]["data"]["tags"]) == ["Housing", "data-tagged:v2", "dataset:mls"]
+
+def test_merge_tags_second_412_raises():
+    fake = FakeZot(); w = _writer(fake)
+    def always(_): raise zio.PreConditionFailed("412")
+    fake.update_item = always
+    with pytest.raises(zio.WriteConflict):
+        w.merge_tags("AAA", ["x"])
