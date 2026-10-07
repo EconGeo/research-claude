@@ -16,7 +16,7 @@ US_STATES = {"alabama","alaska","arizona","arkansas","california","colorado","co
 
 _STATE_ALT = "|".join(sorted((re.escape(s_) for s_ in US_STATES), key=len, reverse=True))
 # A state name, unless it is part of an institution name ("Indiana University").
-_STATE_RE = re.compile(rf"\b(?:{_STATE_ALT})\b(?!\s+(?:university|college|institute|department|bank|state))")
+_STATE_RE = re.compile(rf"\b(?:{_STATE_ALT})\b(?!(?:\s+state)?\s+(?:university|college|institute)\b)")
 _CITY_STATE_RE = re.compile(rf"^[a-z][a-z .'-]*,\s*(?:{_STATE_ALT})\b")
 
 

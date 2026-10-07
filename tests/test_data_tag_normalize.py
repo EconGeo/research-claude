@@ -100,3 +100,10 @@ def test_grep_merge_null_does_not_overwrite(vocab):
     ("USAID", [], None), ("", ["Colorado"], "state"), ("Colorado", [], "state"), ("Colorado, Wyoming", [], "state")])
 def test_infer_geo_level_probes(text, places, level):
     assert nz.infer_geo_level(text, places) == level
+
+
+@pytest.mark.parametrize("text,level", [
+    ("Indiana University", None), ("Colorado State University", None), ("New York State", "state"),
+    ("Washington State", "state"), ("Texas state", "state"), ("Florida Department of Revenue", "state")])
+def test_infer_geo_level_institution_exclusion(text, level):
+    assert nz.infer_geo_level(text, []) == level
