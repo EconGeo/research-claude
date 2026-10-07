@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pyzotero import zotero
 from pyzotero.zotero_errors import PreConditionFailedError as PreConditionFailed  # HTTP 412
+from pyzotero.zotero_errors import ResourceNotFoundError  # HTTP 404
 from . import NOTE_TITLE
 from .normalize import DocRecord
 
@@ -109,9 +110,11 @@ def render_note_html(doc: DocRecord, title: str, pass_id: int, vocab_version: in
 
 class ZoteroWriterV2:
     last_note_created: bool | None = None  # set by upsert_note: True if created, False if updated
+    last_note_prev_html: str | None = None  # set by upsert_note: the note's HTML before an in-place update
 
     def __init__(self, api_key: str, api_id: str, lib_type: str):
         self.last_note_created = None
+        self.last_note_prev_html = None
         self._zot = zotero.Zotero(api_id, lib_type, api_key)
 
     def _send_update(self, item: dict) -> None:
@@ -147,10 +150,15 @@ class ZoteroWriterV2:
 
     def upsert_note(self, item_key: str, note_html: str) -> str:
         existing = self._find_note(item_key)
+        self.last_note_prev_html = None
         if existing:
-            def mutate(n): n["data"]["note"] = note_html
+            prev: list[str] = []
+            def mutate(n):
+                prev[:] = [n["data"].get("note", "")]  # last call (after any 412 re-read) wins
+                n["data"]["note"] = note_html
             self._update_with_retry(lambda: self._zot.item(existing["key"]), mutate)
             self.last_note_created = False
+            self.last_note_prev_html = prev[0] if prev else None
             return existing["key"]
         template = self._zot.item_template("note")
         self._zot.url_params = None
@@ -178,8 +186,16 @@ class ZoteroWriterV2:
             item["data"]["tags"] = [t for t in item["data"].get("tags", []) if t["tag"] not in drop]
         self._update_with_retry(lambda: self._zot.item(item_key), mutate)
 
+    def restore_note(self, note_key: str, html: str) -> None:
+        def mutate(n): n["data"]["note"] = html
+        self._update_with_retry(lambda: self._zot.item(note_key), mutate)
+
     def delete_note(self, note_key: str) -> None:
-        note = self._zot.item(note_key)
-        if (note.get("data") or {}).get("itemType") != "note":
-            raise RuntimeError(f"{note_key} is not a note; refusing to delete")
-        self._zot.delete_item(note)
+        """Delete a note; a note that is already gone (404) counts as deleted."""
+        try:
+            note = self._zot.item(note_key)
+            if (note.get("data") or {}).get("itemType") != "note":
+                raise RuntimeError(f"{note_key} is not a note; refusing to delete")
+            self._zot.delete_item(note)
+        except ResourceNotFoundError:
+            return

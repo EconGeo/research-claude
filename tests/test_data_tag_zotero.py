@@ -93,7 +93,8 @@ class FakeZot:
         if self.fail_412_once:
             self.fail_412_once = False
             raise zio.PreConditionFailed("412")
-        self.updated.append(item); self.items_db[item["key"]] = item if item["key"] in self.items_db else self.items_db.get(item["key"])
+        self.updated.append(item)
+        if item["key"] in self.items_db: self.items_db[item["key"]] = item
         for n in self.notes:
             if n["key"] == item["key"]: n["data"] = item["data"]
         return FakeResp(204)
@@ -180,3 +181,19 @@ def test_delete_note_refuses_non_note():
         w.delete_note("AAA")
     w.upsert_note("AAA", "<h1>Data (auto-extracted)</h1>")
     w.delete_note("N1"); assert len(deleted) == 1 and deleted[0]["key"] == "N1"
+
+
+def test_upsert_note_captures_prev_html_and_restore_note():
+    fake = FakeZot(); w = _writer(fake)
+    w.upsert_note("AAA", "<h1>Data (auto-extracted)</h1><p>v1 original</p>")
+    assert w.last_note_prev_html is None
+    w.upsert_note("AAA", "<h1>Data (auto-extracted)</h1><p>v2</p>")
+    assert w.last_note_prev_html == "<h1>Data (auto-extracted)</h1><p>v1 original</p>"
+    w.restore_note("N1", w.last_note_prev_html)
+    assert "v1 original" in fake.notes[0]["data"]["note"]
+
+def test_delete_note_missing_is_already_deleted():
+    fake = FakeZot()
+    def gone(key): raise zio.ResourceNotFoundError("404")
+    fake.item = gone; w = _writer(fake)
+    w.delete_note("N9")  # no raise

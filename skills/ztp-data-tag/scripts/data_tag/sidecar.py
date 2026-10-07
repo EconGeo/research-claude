@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS evidence (id INTEGER PRIMARY KEY, dataset_id INTEGER,
 CREATE TABLE IF NOT EXISTS review_queue (id INTEGER PRIMARY KEY, pass_id INTEGER, kind TEXT, name_raw TEXT, doc_id TEXT,
     suggested_slug TEXT, snippet TEXT, status TEXT DEFAULT 'open');
 CREATE TABLE IF NOT EXISTS zotero_writes (id INTEGER PRIMARY KEY, doc_id TEXT, pass_id INTEGER, tags_json TEXT,
-    note_key TEXT, written_utc TEXT);
+    note_key TEXT, written_utc TEXT, undone_utc TEXT, prev_note_html TEXT, note_created INTEGER);
 CREATE INDEX IF NOT EXISTS ix_datasets_doc ON datasets(doc_id);
 CREATE INDEX IF NOT EXISTS ix_datasets_type ON datasets(type_slug);
 CREATE INDEX IF NOT EXISTS ix_datasets_src ON datasets(src_slug);
@@ -32,6 +32,15 @@ class Sidecar:
         self.path = Path(path); self.path.parent.mkdir(parents=True, exist_ok=True)
         self._con = sqlite3.connect(self.path); self._con.row_factory = sqlite3.Row
         self._con.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Idempotent: add zotero_writes columns that DBs created by earlier versions lack."""
+        have = {r[1] for r in self._con.execute("PRAGMA table_info(zotero_writes)")}
+        for col, decl in (("undone_utc", "TEXT"), ("prev_note_html", "TEXT"), ("note_created", "INTEGER")):
+            if col not in have:
+                self._con.execute(f"ALTER TABLE zotero_writes ADD COLUMN {col} {decl}")
+        self._con.commit()
 
     # ---- passes -------------------------------------------------------------
     def begin_pass(self, pass_id: int, library: str, collection: str | None, vocab_version: int, model: str, n_docs: int) -> None:
@@ -81,10 +90,34 @@ class Sidecar:
     def set_doc_status(self, doc_id: str, status: str) -> None:
         self._con.execute("UPDATE documents SET status=? WHERE doc_id=?", (status, doc_id)); self._con.commit()
 
-    def written_tags(self, doc_id: str, pass_id: int, tags: list[str], note_key: str | None) -> None:
-        self._con.execute("INSERT INTO zotero_writes (doc_id,pass_id,tags_json,note_key,written_utc) VALUES (?,?,?,?,?)",
-                          (doc_id, pass_id, json.dumps(tags), note_key, datetime.now(timezone.utc).isoformat(timespec="seconds")))
+    def written_tags(self, doc_id: str, pass_id: int, tags: list[str], note_key: str | None,
+                     prev_note_html: str | None = None, note_created: bool | None = None) -> int:
+        """Log one Zotero write; returns the row id. note_created=None means 'created iff note_key'."""
+        created = bool(note_key) if note_created is None else bool(note_created)
+        cur = self._con.execute(
+            "INSERT INTO zotero_writes (doc_id,pass_id,tags_json,note_key,written_utc,prev_note_html,note_created) VALUES (?,?,?,?,?,?,?)",
+            (doc_id, pass_id, json.dumps(tags), note_key, datetime.now(timezone.utc).isoformat(timespec="seconds"),
+             prev_note_html, int(created)))
         self._con.commit()
+        return cur.lastrowid
+
+    def set_write_tags(self, row_id: int, tags: list[str]) -> None:
+        self._con.execute("UPDATE zotero_writes SET tags_json=? WHERE id=?", (json.dumps(tags), row_id)); self._con.commit()
+
+    def mark_undone(self, row_id: int) -> None:
+        self._con.execute("UPDATE zotero_writes SET undone_utc=? WHERE id=?",
+                          (datetime.now(timezone.utc).isoformat(timespec="seconds"), row_id)); self._con.commit()
+
+    def doc_ids_in_pass(self, pass_id: int) -> list[str]:
+        return [r["doc_id"] for r in self.docs_in_pass(pass_id)]
+
+    def empty_doc_ids(self, statuses: tuple[str, ...] = ("ok", "no_candidates")) -> set[str]:
+        """Docs processed with a terminal status but no dataset rows: they never get the v2 marker."""
+        marks = ",".join("?" * len(statuses))
+        rows = self._con.execute(
+            f"SELECT doc_id FROM documents d WHERE status IN ({marks}) "
+            "AND NOT EXISTS (SELECT 1 FROM datasets WHERE doc_id=d.doc_id)", statuses).fetchall()
+        return {r[0] for r in rows}
 
     # ---- reads --------------------------------------------------------------
     def docs_in_pass(self, pass_id: int) -> list[sqlite3.Row]:

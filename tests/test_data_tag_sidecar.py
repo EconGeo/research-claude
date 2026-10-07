@@ -66,3 +66,21 @@ def test_failed_write_doc_rolls_back(sc):
     sc.set_doc_status("D2", "needs_review")
     assert sc.datasets_for_doc("D1") == [] and [d["doc_id"] for d in sc.docs_in_pass(1)] == ["D2"]
     assert sc.open_review(1)[0]["doc_id"] == "D2" and len(sc.open_review(1)) == 1
+
+
+def test_migration_adds_columns_to_old_db(tmp_path):
+    import sqlite3
+    p = tmp_path / "old.sqlite"; con = sqlite3.connect(p)
+    con.execute("CREATE TABLE zotero_writes (id INTEGER PRIMARY KEY, doc_id TEXT, pass_id INTEGER, tags_json TEXT, note_key TEXT, written_utc TEXT)")
+    con.commit(); con.close()
+    sc = Sidecar(p); Sidecar(p)  # idempotent on reopen
+    rid = sc.written_tags("D1", 1, [], "N1", "<p>old</p>", False)
+    sc.set_write_tags(rid, ["x"]); sc.mark_undone(rid)
+    w = sc.writes_in_pass(1)[0]
+    assert w["undone_utc"] and w["prev_note_html"] == "<p>old</p>" and w["note_created"] == 0 and w["tags_json"] == '["x"]'
+
+def test_empty_doc_ids_and_doc_ids_in_pass(sc):
+    sc.begin_pass(1, "g", None, 1, "m", 2)
+    sc.write_doc(rec("D1"), 1, "T", 2020, "3"); sc.write_doc(DocRecord("D2", "ok"), 1, "T", 2020, "3")
+    sc.write_doc(DocRecord("D3", "model_error"), 1, "T", 2020, "3")
+    assert sc.empty_doc_ids() == {"D2"} and sorted(sc.doc_ids_in_pass(1)) == ["D1", "D2", "D3"]
