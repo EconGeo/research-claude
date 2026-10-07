@@ -9,7 +9,7 @@ allowed-tools: Read, Edit, Bash
 # ztp-data-tag v2 — local, grep-first dataset/variable tagging
 
 Spec: `docs/superpowers/specs/2026-10-07-ztp-data-tag-v2-design.md` (research-claude).
-Code: `scripts/data_tag.py` beside this file (package `scripts/data_tag/`), run with the
+Code: `skills/ztp-data-tag/scripts/data_tag.py` (package `skills/ztp-data-tag/scripts/data_tag/`), run with the
 `zotpilot` micromamba env. Nothing here calls the ZotPilot MCP tools; the script reads the
 Chroma and Zotero SQLite files read-only and writes Zotero through pyzotero.
 
@@ -23,7 +23,9 @@ note → render `quality_reports/data_tags/pass_NN.md`.
 Per-item write failures are recorded as `write_conflict` / `write_error` in the sidecar and the
 pass continues (a later pass retries them). Only papers with status `ok` and at least one dataset
 are written to Zotero; `model_error` papers get no note, tags or marker and are listed in the
-report for a re-run. `DATA_TAG_MODEL` (env) overrides the model, as does `--model`.
+report for a re-run. Nothing is skipped silently: the pass report header counts `skipped_v2`,
+`skipped_sidecar`, `skipped_written` and `unindexed` (the last with the item list), and the per-paper
+Status column shows `model_error`, `write_conflict` and `write_error`. `DATA_TAG_MODEL` (env) overrides the model, as does `--model`.
 
 Tags written: `dataset:<slug>` (vocabulary sources only), `datatype:<type>`, `geo:<level>`,
 `var:<slug>`, `dv:<class>`, `data-tagged`, `data-tagged:v2` — from datasets the model reported
@@ -39,6 +41,18 @@ and evidence pages live in the sidecar and the note.
 3. Papers indexed in Chroma. Unindexed items are listed in the report; index them with
    ZotPilot's `index_library` tool (ask the user first; Ollama must be up) and include them in a
    later pass.
+
+## Step 0 — Pick the target collection (never start without one)
+
+The target collection is the user's choice. Every pass is scoped to one collection of one library.
+The pick is an **Option gate** (read `.claude/rules/option-gates.md` first): list at least 5
+candidate collections ranked by indexed, not-yet-tagged papers (rank 1 marked as the
+recommendation), with columns `rank | collection | library | papers | untagged`. Take the counts
+read-only from the Zotero SQLite (`sqlite3 "file:$ZOTERO_DB?mode=ro&immutable=1"`, never write)
+and cross-check indexing with the pass report's `unindexed` line. Wait for a rank number, `edit`
+or `none`. Under `--yes` take rank 1 and record `auto: rank 1 (--yes)` in the dry-run
+summary you show the user. A `--collection` given in the invocation answers the gate. The pick sets
+`--library` and `--collection` for Step 1.
 
 ## Step 1 — Dry run (always first on a new collection or after a vocabulary change)
 
@@ -75,11 +89,10 @@ From the report: (a) **Review queue** — promote real sources into `data_vocab.
 (tighten the regex); (c) **Prompt** — if the model misreads a pattern across papers, adjust
 `scripts/prompts/extract.md` (the extraction prompt), then re-dry-run;
 (d) **Candidate selection** — papers flagged "heading regex missed" need a
-`HEADING_RE` extension in `scripts/data_tag/candidates.py` *and* a positive case in
-`tests/test_data_tag_candidates.py`. Bump `version:` in the YAML. Run
+`HEADING_RE` extension in `skills/ztp-data-tag/scripts/data_tag/candidates.py` *and* a positive case in
+`tests/test_data_tag_candidates.py`. Promotions are a **USER_REQUIRED** gate: list them, wait for yes, then apply. Bump `version:` in the YAML. Run
 `micromamba run -n zotpilot python -m pytest tests/test_data_tag_*.py -q` in research-claude,
-commit, then run the next pass with `--pass N+1`. Promotions are a **USER_REQUIRED** gate:
-list them, wait for yes.
+commit, then run the next pass with `--pass N+1`.
 
 ## Queries (sidecar; no Zotero needed)
 

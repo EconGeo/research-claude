@@ -28,7 +28,7 @@ GATED = [
     ("write", r"Draft Paper Section", 5),  # Task A9
     ("pipeline", r"run \[", 5),  # Task A10
     ("analyze", r"Pre-Code Report", 2),  # Task A11
-    ("ztp-data-tag", r"Pick a pilot collection", 5),  # Task A12
+    ("ztp-data-tag", r"Pick the target collection", 5),  # Task A12 (v2: the v1 pilot-collection pick, now Step 0)
 ]
 
 
