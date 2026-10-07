@@ -27,9 +27,10 @@ report for a re-run. Nothing is skipped silently: the pass report header counts 
 `skipped_sidecar`, `skipped_written` and `unindexed` (the last with the item list), and the per-paper
 Status column shows `model_error`, `write_conflict` and `write_error`. `DATA_TAG_MODEL` (env) overrides the model, as does `--model`.
 
-Tags written: `dataset:<slug>` (vocabulary sources only), `datatype:<type>`, `geo:<level>`,
-`var:<slug>`, `dv:<class>`, `data-tagged`, `data-tagged:v2` — from datasets the model reported
-or confirmed. Grep-only (keyword) hits the model did not confirm are recorded in the sidecar and
+Tags written: `dataset:<slug>`, `datatype:<type>`, `geo:<level>` (all three only for datasets with
+a vocabulary source), `dv:<class>` (vocabulary classes only), `data-tagged`, `data-tagged:v2` —
+from datasets the model reported or confirmed. Variables are not tagged; they live in the sidecar
+and the note table (dependent variables in bold). Grep-only (keyword) hits the model did not confirm are recorded in the sidecar and
 shown as "keyword only" in the note and report, but are not tagged. Geography detail, periods
 and evidence pages live in the sidecar and the note.
 

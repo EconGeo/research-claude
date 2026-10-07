@@ -224,7 +224,7 @@ def test_render_note_pages_and_chunks_unique_and_keyword_only():
                         [], [Evidence(3, 1, "b")])
     html = zio.render_note_html(DocRecord("AAA", "ok", [ds, ds2]), "T", 1, 2, "m")
     assert "<td>p. 1, p. 7, chunk 12</td>" in html and html.count("p. 1") == 2  # once per dataset row
-    assert "chunks 3, 4, 5, 9, 12 ·" in html
+    assert "chunks" not in html and "vocab v2 · m · T</small>" in html
     assert html.count("(keyword only)") == 1 and "<code>mls</code> <i>(keyword only)</i>" in html
 
 

@@ -70,3 +70,20 @@ def test_resolve_dv_dividend_yield_known_limit(vocab):
 def test_psh_alias_removed(vocab):
     assert vocab.match_sources("permanent supportive housing (PSH) units") == []
     assert [h.slug for h in vocab.match_sources("HUD Picture of Subsidized Households")] == ["hud_posh"]
+
+
+def test_v3_sources(vocab):
+    assert vocab.version >= 3
+    assert vocab.resolve_source("CHAS data") == "hud_chas"
+    assert vocab.resolve_source("Census PUMS data") == "pums"
+    assert vocab.resolve_source("REALIS database") == "realis"
+
+
+@pytest.mark.parametrize("name,dv", [
+    ("HHI (Herfindahl-Hirschman Index)", "market-concentration"),
+    ("largest firm's market share", "market-concentration"),
+    ("HCV subsidies", "subsidy-voucher"),
+    ("number of sold houses", "transaction-volume"),
+    ("SP", "house-price"), ("S&P 500 return", None), ("spatial", None)])
+def test_v3_dv_classes(vocab, name, dv):
+    assert vocab.resolve_dv(name) == dv

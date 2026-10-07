@@ -183,20 +183,19 @@ def page_labels(refs, chunk_prefix: str = "chunk ") -> list[str]:
 def tags_for(doc: DocRecord) -> list[str]:
     """Zotero tags for a written doc. Grep-only datasets (source == "grep": a keyword hit the model
     never confirmed) stay in the sidecar, note and report but produce no tags; the two markers are
-    always added. Empty slugs (e.g. a variable named "Δ") are skipped."""
+    always added. `dataset:`, `datatype:` and `geo:` tags come only from datasets with a vocabulary
+    src_slug; `dv:` tags from vocabulary classes. Variables get no tags (sidecar and note only)."""
     tags = {MARKER_V1, MARKER_V2}
     for d in doc.datasets:
         if d.source not in ("llm", "merged"):
             continue
         if d.src_slug:
             tags.add(f"dataset:{d.src_slug}")
-        if d.type_slug:
-            tags.add(f"datatype:{d.type_slug}")
-        if d.geo_level:
-            tags.add(f"geo:{d.geo_level}")
+            if d.type_slug:
+                tags.add(f"datatype:{d.type_slug}")
+            if d.geo_level:
+                tags.add(f"geo:{d.geo_level}")
         for v in d.variables:
-            if v.slug:
-                tags.add(f"var:{v.slug}")
             if v.dv_class:
                 tags.add(f"dv:{v.dv_class}")
     return sorted(tags)

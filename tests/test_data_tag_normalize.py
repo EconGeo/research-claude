@@ -59,9 +59,11 @@ def test_tags_for(vocab):
     doc = nz.build_records("D", [C17, C18], [C17, C18], grep, llm(), [], vocab)
     tags = nz.tags_for(doc)
     for expected in ["dataset:mls", "datatype:residential-transactions-mls",
-                     "datatype:administrative-program", "dv:house-price", "geo:metro", "geo:city",
-                     "var:log-sale-price", "var:square-footage", "var:shutoff-count", "data-tagged", "data-tagged:v2"]:
+                     "dv:house-price", "geo:metro", "data-tagged", "data-tagged:v2"]:
         assert expected in tags
+    assert not any(t.startswith("var:") for t in tags)
+    # unlisted datasets (no vocabulary src_slug) yield no datatype:/geo: tags
+    assert "datatype:administrative-program" not in tags and "geo:city" not in tags
     # Controller ruling (final review, finding 3): grep-only datasets (source == "grep", never
     # confirmed by the model) stay in the sidecar/note/report but produce NO Zotero tags.
     assert "dataset:fema_nfhl" not in tags and "datatype:hazard-flood" not in tags
@@ -123,7 +125,7 @@ def test_tags_for_skips_empty_slugs():
     ds = nz.DatasetRecord("X", None, None, "", None, None, [], None, None, None, None, 0.6, "llm",
                           [nz.Variable("Δ", "", "control", None), nz.Variable("rent", "rent", "dependent", "rent")])
     tags = nz.tags_for(nz.DocRecord("D", "ok", [ds]))
-    assert "var:" not in tags and "datatype:" not in tags and "var:rent" in tags and "dv:rent" in tags
+    assert not any(t.startswith(("var:", "datatype:", "geo:", "dataset:")) for t in tags) and "dv:rent" in tags
 
 
 def test_page_labels_sorted_unique():

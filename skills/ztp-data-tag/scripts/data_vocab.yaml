@@ -1,4 +1,4 @@
-version: 2
+version: 3
 sources:
   costar:
     name: CoStar
@@ -246,6 +246,24 @@ sources:
     type: macro-financial-series
     geo_level: national
     access: public
+  hud_chas:
+    name: HUD CHAS
+    aliases: ['Comprehensive Housing Affordability Strategy', '\bCHAS\b']
+    type: administrative-program
+    geo_level: national
+    access: public
+  pums:
+    name: Census PUMS
+    aliases: ['\bPUMS\b', 'Public Use Microdata Sample']
+    type: census-acs
+    geo_level: national
+    access: public
+  realis:
+    name: URA REALIS (Singapore)
+    aliases: ['\bREALIS\b']
+    type: residential-transactions-deeds
+    geo_level: national
+    access: proprietary
 
 types:
   - residential-transactions-mls
@@ -270,9 +288,9 @@ types:
 geo_levels: [parcel, neighborhood, city, metro, county, state, region, national, multi-country, global]
 
 dv_classes:
-  house-price: ['price', 'home value', 'house value', 'sale price', 'transaction price', 'HPI']
+  house-price: ['price', 'home value', 'house value', 'sale price', 'transaction price', 'HPI', 'SP']
   rent: ['rent', 'rental rate', 'asking rent']
-  transaction-volume: ['sales volume', 'number of sales', 'transactions', 'turnover']
+  transaction-volume: ['sales volume', 'number of sales', 'transactions', 'turnover', 'number of sold houses', 'houses sold']
   time-on-market: ['time on market', 'days on market', 'marketing time', 'TOM', 'DOM']
   mortgage-approval: ['denial', 'approval', 'origination', 'loan application']
   default-foreclosure: ['default', 'foreclosure', 'delinquen']
@@ -281,4 +299,6 @@ dv_classes:
   construction-permits: ['permits', 'housing starts', 'units built', 'new construction']
   affordability: ['affordab', 'cost burden', 'rent-to-income', 'price-to-income']
   displacement-mobility: ['displacement', 'mobility', 'move-out', 'residential mobility', 'eviction']
+  market-concentration: ['HHI', 'Herfindahl', 'market concentration', 'market share', 'concentration ratio']
+  subsidy-voucher: ['HCV', 'housing choice voucher', 'voucher', 'subsid']
   other: []

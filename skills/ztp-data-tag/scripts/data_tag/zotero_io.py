@@ -107,8 +107,7 @@ def render_note_html(doc: DocRecord, title: str, pass_id: int, vocab_version: in
             name += " <i>(keyword only)</i>"  # grep hit the model never confirmed: recorded, not tagged
         parts.append(f"<tr><td>{name}</td><td>{esc(d.type_slug)}</td><td>{geo}</td><td>{period}</td><td>{variables}</td><td>{pages}</td></tr>")
     parts.append("</table>")
-    chunk_ids = ", ".join(str(c) for c in sorted({e.chunk_index for d in doc.datasets for e in d.evidence}))
-    parts.append(f"<p><small>ztp-data-tag v2 · pass {pass_id} · vocab v{vocab_version} · {esc(model)} · chunks {chunk_ids} · {esc(title)}</small></p>")
+    parts.append(f"<p><small>ztp-data-tag v2 · pass {pass_id} · vocab v{vocab_version} · {esc(model)} · {esc(title)}</small></p>")
     return "".join(parts)
 
 
