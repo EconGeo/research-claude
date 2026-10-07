@@ -195,3 +195,41 @@ def test_zero_dataset_docs_from_other_pass_are_skipped(env):
 def test_negative_n_and_missing_query_value_rejected(env):
     with pytest.raises(SystemExit): cli.main(_args(env, ["--n", "-1"]))
     with pytest.raises(SystemExit): cli.main(["query", "type", "--sidecar", str(env["sidecar"])])
+
+
+def test_model_error_doc_is_never_written_live(env):
+    # Controller ruling (finding 4): model_error docs get no note/tags/marker; they are re-run later.
+    class Boom(FakeClient):
+        def extract(self, *a): from data_tag.extract import OllamaError; raise OllamaError("x")
+    writer = RecWriter()
+    cli.main(_args(env), client=Boom(), writer_factory=lambda *a: writer)
+    sc = Sidecar(env["sidecar"])
+    assert sc.docs_in_pass(1)[0]["status"] == "model_error" and sc.datasets_for_doc("AAA")  # grep rows kept
+    assert writer.notes == {} and writer.tags == {} and sc.writes_in_pass(1) == []
+    assert "model_error" in (env["report"] / "pass_01.md").read_text()
+
+
+def test_written_docs_skipped_in_later_pass_before_sync(env):
+    # Finding 6: the local Zotero DB has no v2 marker on AAA yet (desktop not synced), but the
+    # sidecar logged a write in pass 1 -> pass 2 skips AAA; --refresh-v2 overrides; re-running pass 1 replays it.
+    writer = RecWriter()
+    cli.main(_args(env), client=FakeClient(), writer_factory=lambda *a: writer)
+    p2 = ["run", "--library", "group:2350352", "--pass", "2", "--chroma", str(env["chroma"]), "--zotero-sqlite", str(env["zot"]),
+          "--sidecar", str(env["sidecar"]), "--report-dir", str(env["report"])]
+    assert cli.main(_args(env, ["--dry-run"]), client=FakeClient(), writer_factory=lambda *a: writer)["processed"] == ["AAA"]
+    summary = cli.main(p2 + ["--dry-run"], client=FakeClient(), writer_factory=lambda *a: writer)
+    assert summary["processed"] == [] and summary["skipped_written"] == ["AAA"]
+    assert "skipped_written: 1" in (env["report"] / "pass_02.md").read_text()
+    assert "AAA" in cli.main(p2 + ["--dry-run", "--refresh-v2"], client=FakeClient(), writer_factory=lambda *a: writer)["processed"]
+
+
+def test_failed_write_and_undone_docs_are_retried(env):
+    class W(RecWriter):
+        def merge_tags(self, key, tags): raise cli.WriteConflict("412 twice")
+    cli.main(_args(env), client=FakeClient(), writer_factory=lambda *a: W())
+    p2 = ["run", "--library", "group:2350352", "--pass", "2", "--chroma", str(env["chroma"]), "--zotero-sqlite", str(env["zot"]),
+          "--sidecar", str(env["sidecar"]), "--report-dir", str(env["report"]), "--dry-run"]
+    assert cli.main(p2, client=FakeClient(), writer_factory=lambda *a: RecWriter())["processed"] == ["AAA"]
+    # an undone write no longer blocks either
+    sc = Sidecar(env["sidecar"]); w = sc.writes_in_pass(1)[0]; sc.mark_undone(w["id"]); sc.set_doc_status("AAA", "undone")
+    assert "AAA" not in sc.written_doc_ids()

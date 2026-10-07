@@ -119,6 +119,16 @@ class Sidecar:
             "AND NOT EXISTS (SELECT 1 FROM datasets WHERE doc_id=d.doc_id)", statuses).fetchall()
         return {r[0] for r in rows}
 
+    def written_doc_ids(self, retry_statuses: tuple[str, ...] = ("write_conflict", "write_error")) -> set[str]:
+        """Docs with a Zotero write not yet undone. Docs whose latest sidecar status is a failed
+        write are excluded so a later pass retries them."""
+        marks = ",".join("?" * len(retry_statuses))
+        rows = self._con.execute(
+            "SELECT DISTINCT w.doc_id FROM zotero_writes w WHERE w.undone_utc IS NULL "
+            f"AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.doc_id=w.doc_id AND d.status IN ({marks}))",
+            retry_statuses).fetchall()
+        return {r[0] for r in rows}
+
     # ---- reads --------------------------------------------------------------
     def docs_in_pass(self, pass_id: int) -> list[sqlite3.Row]:
         return self._con.execute("SELECT * FROM documents WHERE pass_id=? ORDER BY doc_id", (pass_id,)).fetchall()

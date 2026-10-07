@@ -6,6 +6,7 @@ from collections import Counter
 from pathlib import Path
 from .sidecar import Sidecar
 from .vocab import Vocab
+from .normalize import page_labels
 
 
 def _cell(text) -> str:
@@ -48,8 +49,10 @@ def render_pass_report(sidecar: Sidecar, pass_id: int, vocab: Vocab, diagnostics
             lines.append(f"| {title} | — | | | | | | {_cell(d['status'])} |"); continue
         for ds in datasets:
             dvs = ", ".join(sorted({v["dv_class"] or v["slug"] for v in sidecar.variables_for(ds["id"]) if v["role"] == "dependent"}))
-            pages = ", ".join(f"p. {e['page_num']}" if e["page_num"] is not None else f"c{e['chunk_index']}" for e in sidecar.evidence_for(ds["id"]))
+            pages = ", ".join(page_labels(((e["page_num"], e["chunk_index"]) for e in sidecar.evidence_for(ds["id"])), "c"))
             name = f"`{_cell(ds['src_slug'])}`" if ds["src_slug"] else f"*{_cell(ds['name_raw'])}* (unlisted)"
+            if ds["source"] == "grep":
+                name += " (keyword only)"  # recorded, never tagged
             geo = f"{ds['geo_text'] or ''} ({ds['geo_level']})" if ds["geo_level"] else (ds["geo_text"] or "?")
             lines.append(f"| {title} | {name} | {_cell(ds['type_slug'])} | {_cell(geo)} | {_period(ds)} | {_cell(dvs)} | {_cell(pages)} | {_cell(d['status'])} |")
     lines += ["", "## Review queue", ""]

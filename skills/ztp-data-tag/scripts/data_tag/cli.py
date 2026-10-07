@@ -57,6 +57,7 @@ def run_pass(args, *, chroma: ChromaReader, sidecar: Sidecar, vocab: Vocab, clie
     rerun_ids = set(sidecar.doc_ids_in_pass(args.pass_id))
     skipped_v2: list[str] = []
     skipped_sidecar: list[str] = []
+    skipped_written: list[str] = []
     if rerun_ids:
         # Re-running a pass id replays exactly that pass's documents (begin_pass wipes them):
         # exempt from marker/sidecar skips, --n does not apply. New items need a new pass id.
@@ -64,8 +65,12 @@ def run_pass(args, *, chroma: ChromaReader, sidecar: Sidecar, vocab: Vocab, clie
     else:
         skipped_v2 = [i.key for i in items if MARKER_V2 in i.tags and not args.refresh_v2]
         empty_docs = set() if args.refresh_v2 else sidecar.empty_doc_ids()
+        # The v2 marker is read from the local Zotero DB, which lags the API until desktop sync;
+        # the sidecar's write log closes that gap (a doc written by an earlier pass is not redone).
+        written_docs = set() if args.refresh_v2 else sidecar.written_doc_ids()
         skipped_sidecar = [i.key for i in items if i.key not in skipped_v2 and i.key in empty_docs]
-        todo = [i for i in items if i.key not in skipped_v2 and i.key not in empty_docs]
+        skipped_written = [i.key for i in items if i.key not in skipped_v2 and i.key not in empty_docs and i.key in written_docs]
+        todo = [i for i in items if i.key not in skipped_v2 and i.key not in empty_docs and i.key not in written_docs]
     indexed = chroma.indexed_doc_ids([i.key for i in todo])
     unindexed = [i.key for i in todo if i.key not in indexed]
     todo = [i for i in todo if i.key in indexed]
@@ -99,7 +104,8 @@ def run_pass(args, *, chroma: ChromaReader, sidecar: Sidecar, vocab: Vocab, clie
                                  "n_candidates": len(candidates), "words": sum(len(c.text.split()) for c in candidates),
                                  "grep_only": sorted(set(hint_slugs) - llm_slugs), "llm_only": sorted(llm_slugs - set(hint_slugs)),
                                  "wall_s": time.time() - t0}
-        if writer is not None and doc.status in ("ok", "model_error") and doc.datasets:
+        # only a clean extraction is written; model_error docs stay unwritten (no marker) for a re-run
+        if writer is not None and doc.status == "ok" and doc.datasets:
             try:
                 note_key = writer.upsert_note(item.key, render_note_html(doc, item.title, args.pass_id, vocab.version, args.model))
                 created = bool(getattr(writer, "last_note_created", True))
@@ -114,10 +120,11 @@ def run_pass(args, *, chroma: ChromaReader, sidecar: Sidecar, vocab: Vocab, clie
                 sidecar.set_doc_status(item.key, "write_error"); print(f"write error {item.key}: {exc!r}", file=sys.stderr)
         processed.append(item.key)
     report = render_pass_report(sidecar, args.pass_id, vocab, diagnostics,
-                                  extra_counts={"skipped_v2": skipped_v2, "skipped_sidecar": skipped_sidecar, "unindexed": unindexed})
+                                  extra_counts={"skipped_v2": skipped_v2, "skipped_sidecar": skipped_sidecar,
+                                                "skipped_written": skipped_written, "unindexed": unindexed})
     out = write_pass_report(report, args.report_dir, args.pass_id)
-    print(f"pass {args.pass_id}: {len(processed)} processed, {len(skipped_v2)} skipped (v2), {len(skipped_sidecar)} skipped (sidecar), {len(unindexed)} unindexed → {out}")
-    return {"processed": processed, "skipped_v2": skipped_v2, "skipped_sidecar": skipped_sidecar, "unindexed": unindexed, "report": str(out)}
+    print(f"pass {args.pass_id}: {len(processed)} processed, {len(skipped_v2)} skipped (v2), {len(skipped_sidecar)} skipped (sidecar), {len(skipped_written)} skipped (written), {len(unindexed)} unindexed → {out}")
+    return {"processed": processed, "skipped_v2": skipped_v2, "skipped_sidecar": skipped_sidecar, "skipped_written": skipped_written, "unindexed": unindexed, "report": str(out)}
 
 
 def undo_pass(args, *, sidecar: Sidecar, writer_factory) -> int:

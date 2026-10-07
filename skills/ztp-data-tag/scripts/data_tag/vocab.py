@@ -7,6 +7,12 @@ import yaml
 
 DEFAULT_PATH = Path(__file__).resolve().parents[1] / "data_vocab.yaml"
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
+_DV_SEP_RE = re.compile(r"[-_/]")
+
+
+def _norm_dv(text: str) -> str:
+    """Replace -, _ and / with spaces and collapse whitespace (for DV needle matching)."""
+    return " ".join(_DV_SEP_RE.sub(" ", text).split())
 
 
 def slugify(text: str) -> str:
@@ -86,16 +92,23 @@ class Vocab:
         return None
 
     def resolve_dv(self, name: str | None) -> str | None:
+        """Longest matching needle wins. Input and needles are normalised ([-_/] -> space,
+        whitespace collapsed). All-caps needles (TOM, DOM, HPI) match case-sensitively as whole
+        words, so "domestic"/"tomorrow" do not hit them; other needles match case-insensitively
+        at a word start ("delinquen" covers "delinquency")."""
         if not name:
             return None
+        text = _norm_dv(name)
         matches = {}  # dv_slug -> longest matching needle length
         for dv_slug, needles in self.dv_classes.items():
             for needle in needles:
-                pat = re.compile(r"\b" + re.escape(needle), re.I)
-                if pat.search(name):
-                    needle_len = len(needle)
-                    if dv_slug not in matches or needle_len > matches[dv_slug]:
-                        matches[dv_slug] = needle_len
+                norm = _norm_dv(needle)
+                if norm.isupper():
+                    pat = re.compile(r"\b" + re.escape(norm) + r"\b")
+                else:
+                    pat = re.compile(r"\b" + re.escape(norm), re.I)
+                if pat.search(text) and len(norm) > matches.get(dv_slug, -1):
+                    matches[dv_slug] = len(norm)
         if not matches:
             return None
         return max(matches, key=matches.get)

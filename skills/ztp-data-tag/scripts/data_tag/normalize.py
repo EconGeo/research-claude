@@ -171,16 +171,32 @@ def build_records(doc_id: str, chunks: list[Chunk], candidates: list[Chunk],
     return DocRecord(doc_id, "ok", list(records.values()) + unlisted, review, dropped, llm_out.get("notes", ""))
 
 
+def page_labels(refs, chunk_prefix: str = "chunk ") -> list[str]:
+    """Evidence refs [(page_num, chunk_index), ...] -> sorted unique "p. N" labels, then sorted
+    unique chunk labels for refs without a page. Shared by the note and the pass report."""
+    refs = list(refs)
+    pages = sorted({p for p, _ in refs if p is not None})
+    chunks = sorted({c for p, c in refs if p is None})
+    return [f"p. {p}" for p in pages] + [f"{chunk_prefix}{c}" for c in chunks]
+
+
 def tags_for(doc: DocRecord) -> list[str]:
+    """Zotero tags for a written doc. Grep-only datasets (source == "grep": a keyword hit the model
+    never confirmed) stay in the sidecar, note and report but produce no tags; the two markers are
+    always added. Empty slugs (e.g. a variable named "Δ") are skipped."""
     tags = {MARKER_V1, MARKER_V2}
     for d in doc.datasets:
+        if d.source not in ("llm", "merged"):
+            continue
         if d.src_slug:
             tags.add(f"dataset:{d.src_slug}")
-        tags.add(f"datatype:{d.type_slug}")
+        if d.type_slug:
+            tags.add(f"datatype:{d.type_slug}")
         if d.geo_level:
             tags.add(f"geo:{d.geo_level}")
         for v in d.variables:
-            tags.add(f"var:{v.slug}")
+            if v.slug:
+                tags.add(f"var:{v.slug}")
             if v.dv_class:
                 tags.add(f"dv:{v.dv_class}")
     return sorted(tags)

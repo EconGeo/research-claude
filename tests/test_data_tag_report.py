@@ -56,3 +56,17 @@ def test_report_dedup_and_extras(tmp_path):
     assert "average 1500 words over 2 papers" in md
     assert "skipped_v2: 1" in md and "unindexed: 2 — U1, U2" in md
     assert md.count("heading regex missed") == 0
+
+
+def test_report_pages_unique_and_keyword_only(tmp_path):
+    sc = Sidecar(tmp_path / "s.sqlite"); v = Vocab.load()
+    sc.begin_pass(1, "group:1", None, 2, "m", 1)
+    ev = [Evidence(i, 1, "s") for i in range(5)] + [Evidence(9, 7, "s"), Evidence(11, None, "s"), Evidence(12, None, "s")]
+    grep_ds = DatasetRecord("FEMA", None, "fema_nfhl", "hazard-flood", None, "national", [], None, None, None, None, 0.9, "grep", [], ev)
+    llm_ds = DatasetRecord("CoStar", None, "costar", "commercial-property", None, None, [], None, None, None, None, 0.7, "llm", [], [Evidence(1, 2, "s")])
+    sc.write_doc(DocRecord("AAA", "ok", [grep_ds, llm_ds]), 1, "Paper A", 2020, "3")
+    md = render_pass_report(sc, 1, v, {})
+    fema = next(l for l in md.splitlines() if "fema_nfhl" in l and l.startswith("| Paper A"))
+    assert "| p. 1, p. 7, c11, c12 |" in fema and "(keyword only)" in fema
+    costar = next(l for l in md.splitlines() if "`costar`" in l)
+    assert "keyword only" not in costar

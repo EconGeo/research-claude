@@ -1,4 +1,4 @@
-version: 1
+version: 2
 sources:
   costar:
     name: CoStar
@@ -146,7 +146,7 @@ sources:
     access: public
   hud_posh:
     name: HUD Picture of Subsidized Households
-    aliases: ['Picture of Subsidized Households', '\bPSH\b']
+    aliases: ['Picture of Subsidized Households']  # no \bPSH\b: hits 'permanent supportive housing (PSH)'
     type: administrative-program
     geo_level: national
     access: public

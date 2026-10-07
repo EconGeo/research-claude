@@ -1,16 +1,18 @@
 """Zotero side: enumerate items from the local SQLite (read-only); write notes/tags via pyzotero."""
 from __future__ import annotations
 import html as html_mod
-import json, os, re, sqlite3
+import json, os, re, sqlite3, sys
 from dataclasses import dataclass
 from pathlib import Path
 from pyzotero import zotero
 from pyzotero.zotero_errors import PreConditionFailedError as PreConditionFailed  # HTTP 412
 from pyzotero.zotero_errors import ResourceNotFoundError  # HTTP 404
 from . import NOTE_TITLE
-from .normalize import DocRecord
+from .normalize import DocRecord, page_labels
 
 DEFAULT_ZOTERO_SQLITE = Path("/Users/andrew.mueller/Library/CloudStorage/OneDrive-UniversityofDenver/Zotero/zotero.sqlite")
+# v1 notes were titled either "Data (auto-extracted)" or "[ZotPilot] Data (auto-extracted)"
+_NOTE_H1_RE = re.compile(r"<h1>(?:\[ZotPilot\] )?" + re.escape(NOTE_TITLE) + r"</h1>")
 DEFAULT_PREFS = next(iter(Path.home().glob("Library/Application Support/Zotero/Profiles/*/prefs.js")), None)
 
 
@@ -99,11 +101,13 @@ def render_note_html(doc: DocRecord, title: str, pass_id: int, vocab_version: in
         period = "–".join(str(y) for y in (d.period_start, d.period_end) if y) or "?"
         geo = esc(d.geo_text or "") + (f" ({d.geo_level})" if d.geo_level else "")
         variables = ", ".join(f"<b>{esc(v.name_raw)}</b>" if v.role == "dependent" else esc(v.name_raw) for v in d.variables)
-        pages = ", ".join(f"p. {e.page_num}" if e.page_num is not None else f"chunk {e.chunk_index}" for e in d.evidence)
+        pages = ", ".join(page_labels((e.page_num, e.chunk_index) for e in d.evidence))
         name = esc(d.name_raw) + (f" <code>{d.src_slug}</code>" if d.src_slug else " <i>(unlisted)</i>")
+        if d.source == "grep":
+            name += " <i>(keyword only)</i>"  # grep hit the model never confirmed: recorded, not tagged
         parts.append(f"<tr><td>{name}</td><td>{esc(d.type_slug)}</td><td>{geo}</td><td>{period}</td><td>{variables}</td><td>{pages}</td></tr>")
     parts.append("</table>")
-    chunk_ids = ", ".join(str(e.chunk_index) for d in doc.datasets for e in d.evidence)
+    chunk_ids = ", ".join(str(c) for c in sorted({e.chunk_index for d in doc.datasets for e in d.evidence}))
     parts.append(f"<p><small>ztp-data-tag v2 · pass {pass_id} · vocab v{vocab_version} · {esc(model)} · chunks {chunk_ids} · {esc(title)}</small></p>")
     return "".join(parts)
 
@@ -144,7 +148,7 @@ class ZoteroWriterV2:
 
     def _find_note(self, item_key: str) -> dict | None:
         for child in self._zot.children(item_key, itemType="note"):
-            if f"<h1>{NOTE_TITLE}</h1>" in (child.get("data") or {}).get("note", ""):
+            if _NOTE_H1_RE.search((child.get("data") or {}).get("note", "")):
                 return child
         return None
 
@@ -161,6 +165,8 @@ class ZoteroWriterV2:
             self.last_note_prev_html = prev[0] if prev else None
             return existing["key"]
         template = self._zot.item_template("note")
+        # item_template() leaves itemType=note in pyzotero's url_params; without this reset that
+        # parameter would leak into the next GET (e.g. merge_tags' item() fetch of the parent).
         self._zot.url_params = None
         template["parentItem"], template["note"], template["tags"] = item_key, note_html, []
         result = self._zot.create_items([template])
@@ -180,15 +186,23 @@ class ZoteroWriterV2:
         return added
 
     def remove_tags(self, item_key: str, tags: list[str]) -> None:
+        """Remove tags; an item that is already gone (404) counts as done, so undo cannot stick."""
         drop = set(tags)
         def mutate(item):
             # filter, don't rebuild: remaining tag dicts (incl. "type") stay untouched
             item["data"]["tags"] = [t for t in item["data"].get("tags", []) if t["tag"] not in drop]
-        self._update_with_retry(lambda: self._zot.item(item_key), mutate)
+        try:
+            self._update_with_retry(lambda: self._zot.item(item_key), mutate)
+        except ResourceNotFoundError:
+            print(f"remove_tags: item {item_key} not found (404); treating as already gone", file=sys.stderr)
 
     def restore_note(self, note_key: str, html: str) -> None:
+        """Restore a note's HTML; a note that is already gone (404) counts as done."""
         def mutate(n): n["data"]["note"] = html
-        self._update_with_retry(lambda: self._zot.item(note_key), mutate)
+        try:
+            self._update_with_retry(lambda: self._zot.item(note_key), mutate)
+        except ResourceNotFoundError:
+            print(f"restore_note: note {note_key} not found (404); treating as already gone", file=sys.stderr)
 
     def delete_note(self, note_key: str) -> None:
         """Delete a note; a note that is already gone (404) counts as deleted."""

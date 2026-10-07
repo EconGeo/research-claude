@@ -51,3 +51,22 @@ def test_resolve_dv_word_boundary(vocab):
     assert vocab.resolve_dv("price-to-income ratio") == "affordability"
     # Should match "rent-to-income" needle
     assert vocab.resolve_dv("rent-to-income") == "affordability"
+
+
+@pytest.mark.parametrize("name,dv", [
+    ("days-on-market", "time-on-market"), ("days_on_market", "time-on-market"), ("TOM", "time-on-market"),
+    ("log DOM", "time-on-market"), ("domestic migration", None), ("tomorrow", None),
+    ("Case-Shiller HPI", "house-price"), ("chip", None), ("sale/price", "house-price"),
+    ("rent  to  income", "affordability")])
+def test_resolve_dv_normalised_and_caps_needles(vocab, name, dv):
+    assert vocab.resolve_dv(name) == dv
+
+
+def test_resolve_dv_dividend_yield_known_limit(vocab):
+    # 'yield' is a plan-vocabulary cap-rate needle; "dividend yield" still lands there (known, accepted).
+    assert vocab.resolve_dv("dividend yield") == "cap-rate"
+
+
+def test_psh_alias_removed(vocab):
+    assert vocab.match_sources("permanent supportive housing (PSH) units") == []
+    assert [h.slug for h in vocab.match_sources("HUD Picture of Subsidized Households")] == ["hud_posh"]

@@ -21,11 +21,15 @@ For each of N papers: select data/variable chunks from Chroma → regex grep aga
 note → render `quality_reports/data_tags/pass_NN.md`.
 
 Per-item write failures are recorded as `write_conflict` / `write_error` in the sidecar and the
-pass continues. `DATA_TAG_MODEL` (env) overrides the model, as does `--model`.
+pass continues (a later pass retries them). Only papers with status `ok` and at least one dataset
+are written to Zotero; `model_error` papers get no note, tags or marker and are listed in the
+report for a re-run. `DATA_TAG_MODEL` (env) overrides the model, as does `--model`.
 
 Tags written: `dataset:<slug>` (vocabulary sources only), `datatype:<type>`, `geo:<level>`,
-`var:<slug>`, `dv:<class>`, `data-tagged`, `data-tagged:v2`. Geography detail, periods and
-evidence pages live in the sidecar and the note.
+`var:<slug>`, `dv:<class>`, `data-tagged`, `data-tagged:v2` — from datasets the model reported
+or confirmed. Grep-only (keyword) hits the model did not confirm are recorded in the sidecar and
+shown as "keyword only" in the note and report, but are not tagged. Geography detail, periods
+and evidence pages live in the sidecar and the note.
 
 ## Preconditions (stop with the fix if unmet)
 
@@ -57,9 +61,10 @@ non-dry run. `--yes` in the skill invocation counts as that yes for the current 
 
 Same command without `--dry-run`. Notes are written before tags; `data-tagged:v2` is the
 idempotency marker — items carrying it are skipped on later passes, as are items already
-recorded in the sidecar with zero datasets (`ok` / `no_candidates`); `--refresh-v2` forces
-reprocessing of both. The v2 skip reads the local Zotero DB and live writes reach desktop Zotero
-via sync, so let Zotero sync between live passes. v1 items (`data-tagged` without `:v2`) are
+recorded in the sidecar with zero datasets (`ok` / `no_candidates`), and items the sidecar's
+write log shows an earlier pass already wrote (not undone) — so a pass run before desktop Zotero
+has synced does not redo the previous pass (`skipped_written` in the report); `--refresh-v2`
+forces reprocessing of all three. v1 items (`data-tagged` without `:v2`) are
 reprocessed and their note updated in place.
 
 ## Step 4 — Tune between passes (this is where Claude tokens go)
@@ -91,7 +96,8 @@ micromamba run -n zotpilot python $DT query topic "Housing rental yield"
 **added**, deletes only notes the pass **created**, and **restores the previous HTML** of notes the
 pass updated (e.g. v1 notes), using the sidecar's write log. Tags that existed before the pass are
 untouched. It reads the library from the pass record; an explicit `--library` that does not match
-is refused. It is resumable (rows are marked undone).
+is refused. It is resumable (rows are marked undone); an item or note already gone from Zotero
+(404) counts as undone.
 
 ## Whole-library run (only after the user says so)
 

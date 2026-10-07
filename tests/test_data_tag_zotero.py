@@ -197,3 +197,42 @@ def test_delete_note_missing_is_already_deleted():
     def gone(key): raise zio.ResourceNotFoundError("404")
     fake.item = gone; w = _writer(fake)
     w.delete_note("N9")  # no raise
+
+
+@pytest.mark.parametrize("title", ["Data (auto-extracted)", "[ZotPilot] Data (auto-extracted)"])
+def test_upsert_note_updates_v1_note_both_titles(title):
+    fake = FakeZot()
+    fake.notes.append({"key": "V1", "version": 3, "data": {"key": "V1", "version": 3, "itemType": "note",
+                       "parentItem": "AAA", "note": f'<div class="zotero-note znv1"><h1>{title}</h1><p>old</p></div>'}})
+    w = _writer(fake)
+    assert w.upsert_note("AAA", "<h1>Data (auto-extracted)</h1><p>v2</p>") == "V1"
+    assert len(fake.notes) == 1 and w.last_note_created is False and "old" in w.last_note_prev_html
+
+
+def test_find_note_ignores_other_h1():
+    fake = FakeZot()
+    fake.notes.append({"key": "X", "version": 1, "data": {"key": "X", "version": 1, "parentItem": "AAA",
+                       "note": "<h1>[Other] Data (auto-extracted)</h1>"}})
+    assert _writer(fake)._find_note("AAA") is None
+
+
+def test_render_note_pages_and_chunks_unique_and_keyword_only():
+    ev = [Evidence(5, 1, "a"), Evidence(3, 1, "b"), Evidence(9, 7, "c"), Evidence(4, 1, "d"), Evidence(12, None, "e")]
+    ds = DatasetRecord("MLS", None, "mls", "residential-transactions-mls", None, "metro", [], None, None, None, None, 0.9, "grep",
+                       [], ev)
+    ds2 = DatasetRecord("CoStar", None, "costar", "commercial-property", None, None, [], None, None, None, None, 0.7, "llm",
+                        [], [Evidence(3, 1, "b")])
+    html = zio.render_note_html(DocRecord("AAA", "ok", [ds, ds2]), "T", 1, 2, "m")
+    assert "<td>p. 1, p. 7, chunk 12</td>" in html and html.count("p. 1") == 2  # once per dataset row
+    assert "chunks 3, 4, 5, 9, 12 ·" in html
+    assert html.count("(keyword only)") == 1 and "<code>mls</code> <i>(keyword only)</i>" in html
+
+
+def test_restore_note_and_remove_tags_missing_count_as_done(capsys):
+    fake = FakeZot()
+    def gone(key): raise zio.ResourceNotFoundError("404")
+    fake.item = gone; w = _writer(fake)
+    w.restore_note("N9", "<p>x</p>")  # no raise
+    w.remove_tags("ZZZ", ["dataset:x"])  # no raise
+    err = capsys.readouterr().err
+    assert "N9" in err and "ZZZ" in err and "404" in err
