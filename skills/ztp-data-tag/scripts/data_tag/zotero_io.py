@@ -170,3 +170,16 @@ class ZoteroWriterV2:
             item["data"]["tags"] = list(item["data"].get("tags", [])) + [{"tag": t} for t in added]
         self._update_with_retry(lambda: self._zot.item(item_key), mutate)
         return added
+
+    def remove_tags(self, item_key: str, tags: list[str]) -> None:
+        drop = set(tags)
+        def mutate(item):
+            # filter, don't rebuild: remaining tag dicts (incl. "type") stay untouched
+            item["data"]["tags"] = [t for t in item["data"].get("tags", []) if t["tag"] not in drop]
+        self._update_with_retry(lambda: self._zot.item(item_key), mutate)
+
+    def delete_note(self, note_key: str) -> None:
+        note = self._zot.item(note_key)
+        if (note.get("data") or {}).get("itemType") != "note":
+            raise RuntimeError(f"{note_key} is not a note; refusing to delete")
+        self._zot.delete_item(note)

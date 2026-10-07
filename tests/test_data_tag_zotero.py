@@ -159,3 +159,24 @@ def test_real_pyzotero_update_item_on_412_with_mock_transport():
     with pytest.raises(zio.PreConditionFailed):
         zot.update_item(payload)
     assert seen and all(m == "PATCH" for m, _ in seen)  # only the mocked PATCH; nothing escaped
+
+
+def test_remove_tags_keeps_remaining_dicts_and_type():
+    fake = FakeZot(); fake.items_db["AAA"]["data"]["tags"] = [{"tag": "auto", "type": 1}, {"tag": "Housing"}, {"tag": "dataset:x"}]
+    w = _writer(fake)
+    w.remove_tags("AAA", ["dataset:x", "absent"])
+    assert fake.updated[-1]["data"]["tags"] == [{"tag": "auto", "type": 1}, {"tag": "Housing"}]
+
+def test_remove_tags_retries_412():
+    fake = FakeZot(); fake.fail_412_once = True; fake.items_db["AAA"]["data"]["tags"] = [{"tag": "Housing"}, {"tag": "x"}]
+    w = _writer(fake); w.remove_tags("AAA", ["x"])
+    assert fake.updated[-1]["data"]["tags"] == [{"tag": "Housing"}]
+
+def test_delete_note_refuses_non_note():
+    fake = FakeZot(); deleted = []; fake.delete_item = deleted.append
+    w = _writer(fake)
+    fake.items_db["AAA"]["data"]["itemType"] = "journalArticle"
+    with pytest.raises(RuntimeError, match="not a note"):
+        w.delete_note("AAA")
+    w.upsert_note("AAA", "<h1>Data (auto-extracted)</h1>")
+    w.delete_note("N1"); assert len(deleted) == 1 and deleted[0]["key"] == "N1"
