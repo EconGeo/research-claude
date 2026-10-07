@@ -38,3 +38,21 @@ def test_report_escaping(tmp_path):
     entry = parsed["weird-source"]
     assert entry["name"] == nasty
     assert re.search(entry["aliases"][0], nasty)
+
+def test_report_dedup_and_extras(tmp_path):
+    sc = Sidecar(tmp_path / "s.sqlite"); v = Vocab.load()
+    known = next(iter(v.sources))
+    sc.begin_pass(1, "group:1", None, 1, "m", 2)
+    for doc, title in (("AAA", "Paper A"), ("BBB", "Paper B")):
+        sc.write_doc(DocRecord(doc, "ok", [], [ReviewItem("source", "Denver Water", "denver-water", "snip"),
+                                               ReviewItem("source", "Known Thing", known, "snip")]), 1, title, 2020, "3")
+    md = render_pass_report(sc, 1, v, {"AAA": {"words": 1000, "best_score": 9}, "BBB": {"words": 2000}},
+                            extra_counts={"skipped_v2": ["X"], "unindexed": ["U1", "U2"]})
+    block = md.split("```yaml\n")[1].split("```")[0]
+    assert block.count('"denver-water":') == 1 and "already in vocab" in block
+    assert list(yaml.safe_load(block)) == ["denver-water"]
+    queue = md.split("## Review queue")[1].split("##")[0]
+    assert "Paper A" in queue and "Paper B" in queue and queue.count("`Denver Water`") == 1
+    assert "average 1500 words over 2 papers" in md
+    assert "skipped_v2: 1" in md and "unindexed: 2 — U1, U2" in md
+    assert md.count("heading regex missed") == 0

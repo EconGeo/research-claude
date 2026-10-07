@@ -28,15 +28,19 @@ def _period(row) -> str:
     return "–".join(str(y) for y in years) if years else "?"
 
 
-def render_pass_report(sidecar: Sidecar, pass_id: int, vocab: Vocab, diagnostics: dict) -> str:
+def render_pass_report(sidecar: Sidecar, pass_id: int, vocab: Vocab, diagnostics: dict,
+                       extra_counts: dict[str, list[str]] | None = None) -> str:
     pass_row = next(p for p in sidecar.passes() if p["pass_id"] == pass_id)
     docs = sidecar.docs_in_pass(pass_id)
     status_counts = Counter(d["status"] for d in docs)
     wall = sum(diag.get("wall_s", 0) for diag in diagnostics.values())
     lines = [f"# ztp-data-tag pass {pass_id}", "",
              f"- library: `{pass_row['library']}` · collection: `{pass_row['collection'] or 'all'}` · vocab v{pass_row['vocab_version']} · model `{pass_row['model']}` · started {pass_row['started_utc']}",
-             f"- processed: {len(docs)} · " + " · ".join(f"{k}: {n}" for k, n in sorted(status_counts.items())) + f" · wall {wall:.0f}s", "",
-             "## Per paper", "", "| Paper | Dataset | Type | Geography | Period | DVs | Pages | Status |", "|---|---|---|---|---|---|---|---|"]
+             f"- processed: {len(docs)} · " + " · ".join(f"{k}: {n}" for k, n in sorted(status_counts.items())) + f" · wall {wall:.0f}s"]
+    for key, items in (extra_counts or {}).items():
+        detail = f" — {', '.join(_line(i) for i in items)}" if key == "unindexed" and items else ""
+        lines.append(f"- {key}: {len(items)}{detail}")
+    lines += ["", "## Per paper", "", "| Paper | Dataset | Type | Geography | Period | DVs | Pages | Status |", "|---|---|---|---|---|---|---|---|"]
     for d in docs:
         title = _cell(d["title"])
         datasets = sidecar.datasets_for_doc(d["doc_id"])
@@ -50,10 +54,16 @@ def render_pass_report(sidecar: Sidecar, pass_id: int, vocab: Vocab, diagnostics
             lines.append(f"| {title} | {name} | {_cell(ds['type_slug'])} | {_cell(geo)} | {_period(ds)} | {_cell(dvs)} | {_cell(pages)} | {_cell(d['status'])} |")
     lines += ["", "## Review queue", ""]
     review = sidecar.open_review(pass_id)
-    if not review:
-        lines.append("_empty_")
+    titles = {d["doc_id"]: d["title"] for d in docs}
+    groups: dict[tuple, list] = {}
     for r in review:
-        lines.append(f"- **{r['kind']}** `{_line(r['name_raw'])}` → suggested `{_line(r['suggested_slug'])}` — {r['doc_id']}: {_line(r['snippet'])[:160]}")
+        groups.setdefault((r["kind"], r["suggested_slug"] or r["name_raw"]), []).append(r)
+    if not groups:
+        lines.append("_empty_")
+    for (kind, _), rows in groups.items():
+        first = rows[0]
+        papers = ", ".join(dict.fromkeys(_line(titles.get(r["doc_id"], r["doc_id"])) for r in rows))
+        lines.append(f"- **{kind}** `{_line(first['name_raw'])}` → suggested `{_line(first['suggested_slug'])}` — {papers}: {_line(first['snippet'])[:160]}")
     lines += ["", "## Grep vs model", ""]
     for d in docs:
         diag = diagnostics.get(d["doc_id"], {})
@@ -62,17 +72,25 @@ def render_pass_report(sidecar: Sidecar, pass_id: int, vocab: Vocab, diagnostics
     lines += ["", "## Candidate selection", ""]
     for d in docs:
         diag = diagnostics.get(d["doc_id"], {})
-        flag = " ⚠ heading regex missed" if diag.get("best_score", 0) < 5 else ""
+        score = diag.get("best_score")
+        flag = " ⚠ heading regex missed" if score is not None and score < 5 else ""
         lines.append(f"- {_line(d['title'])}: best score {diag.get('best_score', '?')} · {diag.get('n_candidates', '?')} chunks · {diag.get('words', '?')} words · {diag.get('wall_s', 0):.0f}s{flag}")
-    lines += ["", "## Proposed vocabulary diff", "", "```yaml", "# promote from review queue (edit aliases/type/geo before applying):"]
-    for r in review:
-        if r["kind"] == "source":
+    word_counts = [diagnostics[d["doc_id"]]["words"] for d in docs if "words" in diagnostics.get(d["doc_id"], {})]
+    if word_counts:
+        lines.append(f"- average {sum(word_counts) / len(word_counts):.0f} words over {len(word_counts)} papers")
+    lines += ["", "## Proposed vocabulary diff", "", "```yaml", "# promote from review queue (edit aliases/type/geo_level/access before applying):"]
+    for (kind, _), rows in groups.items():
+        r = rows[0]
+        if kind == "source" and r["suggested_slug"] in vocab.sources:
+            lines.append(f"  # {_line(r['suggested_slug'])} already in vocab — add alias for {_yaml_str(r['name_raw'])}?")
+        elif kind == "source":
             # Word-bounded, regex-escaped alias; every scalar is a quoted YAML string.
             alias = r"(?<!\w)" + re.escape(_line(r["name_raw"])) + r"(?!\w)"
             lines.append(f"  {_yaml_str(r['suggested_slug'])}: {{name: {_yaml_str(r['name_raw'])}, aliases: [{_yaml_str(alias)}], "
                          f"type: other, geo_level: national, access: unknown}}")
         else:
-            lines.append(f"  # dv_class needle for {_yaml_str(r['name_raw'])} (doc {_line(r['doc_id'])})")
+            docs_txt = ", ".join(dict.fromkeys(_line(x["doc_id"]) for x in rows))
+            lines.append(f"  # dv_class needle for {_yaml_str(r['name_raw'])} (doc {docs_txt})")
     lines += ["```", ""]
     return "\n".join(lines)
 
