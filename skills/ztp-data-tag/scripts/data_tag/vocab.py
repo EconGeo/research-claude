@@ -88,8 +88,14 @@ class Vocab:
     def resolve_dv(self, name: str | None) -> str | None:
         if not name:
             return None
-        low = name.lower()
+        matches = {}  # dv_slug -> longest matching needle length
         for dv_slug, needles in self.dv_classes.items():
-            if any(n.lower() in low for n in needles):
-                return dv_slug
-        return None
+            for needle in needles:
+                pat = re.compile(r"\b" + re.escape(needle), re.I)
+                if pat.search(name):
+                    needle_len = len(needle)
+                    if dv_slug not in matches or needle_len > matches[dv_slug]:
+                        matches[dv_slug] = needle_len
+        if not matches:
+            return None
+        return max(matches, key=matches.get)

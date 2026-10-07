@@ -33,3 +33,21 @@ def test_resolve_dv(vocab):
 
 def test_slugify():
     assert slugify("Loan-Denial  Rate (HMDA)") == "loan-denial-rate-hmda"
+
+def test_match_assessor_curly_apostrophe(vocab):
+    hits = vocab.match_sources("Data from county assessor's records.")
+    assert hits and hits[0].slug == "assessor"
+
+def test_match_moodys_curly_apostrophe(vocab):
+    hits = vocab.match_sources("Moody's CRE data.")
+    assert hits and hits[0].slug == "moodys_cre"
+
+def test_resolve_dv_word_boundary(vocab):
+    # Should not match "apparent" as a word start for rent
+    assert vocab.resolve_dv("apparent effect") is None
+    # Should not match "random" as a word start for time-on-market
+    assert vocab.resolve_dv("random effects") is None
+    # Should match "rent-to-income" (longer needle beats "price")
+    assert vocab.resolve_dv("price-to-income ratio") == "affordability"
+    # Should match "rent-to-income" needle
+    assert vocab.resolve_dv("rent-to-income") == "affordability"

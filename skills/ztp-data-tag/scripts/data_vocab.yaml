@@ -206,7 +206,7 @@ sources:
     access: public
   assessor:
     name: County assessor records
-    aliases: ["assessor(?:'|\\x27)?s? (?:office|records?|data|parcel)", 'tax assessor', 'assessment roll']
+    aliases: ["assessor(?:'|'|\\x27)?s? (?:office|records?|data|parcel)", 'tax assessor', 'assessment roll']
     type: gis-parcel-boundary
     geo_level: county
     access: public
@@ -230,7 +230,7 @@ sources:
     access: proprietary
   moodys_cre:
     name: "Moody's CRE / Reis"
-    aliases: ['\bReis\b', "Moody(?:'|\\x27)s (?:CRE|Analytics REIS)"]
+    aliases: ['\bReis\b', "Moody(?:'|'|\\x27)s (?:CRE|Analytics REIS)"]
     type: commercial-property
     geo_level: national
     access: proprietary
