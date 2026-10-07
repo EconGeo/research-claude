@@ -1,6 +1,7 @@
 # ztp-data-tag v2 — local, grep-first dataset/variable tagging
 
-**Status:** design approved in conversation 2026-10-07; spec awaiting user review.
+**Status:** approved 2026-10-07 (decisions 1–3 confirmed; §7 write path amended after
+reading the ZotPilot write code). Plan: `quality_reports/plans/2026-10-07_ztp-data-tag-v2.md`.
 **Supersedes:** the extraction engine of `skills/ztp-data-tag/SKILL.md` v1
 (`docs/plans/2026-06-12-ztp-data-tag-skill.md`). The v1 tag namespaces and the Zotero note
 stay compatible (§7).
@@ -270,10 +271,32 @@ Note: one child note per item titled **"Data (auto-extracted)"** (v1 title, so
 2. a table: Dataset · Type · Geography · Period · Variables (DV in bold) · Page(s);
 3. a footer: `pass NN · vocab vN · qwen2.5:7b · chunk ids …`.
 
-Write path: Zotero Web API directly from the script (the MCP `create_note(idempotent=true)`
-refuses to write if *any* ZotPilot note exists, which is exactly the v1 pitfall; the script
-finds the existing "Data (auto-extracted)" note by title and `PATCH`es it, or creates it).
-Tags are added with `PATCH` on the item's `tags` array (merge, never replace).
+Write path: the script writes through **pyzotero** (the same client ZotPilot's
+`ZoteroWriter` uses, already in the `zotpilot` env) with `library_type="group"` /
+`library_id=<groupID>` for group libraries. Not through the MCP tools, because — per
+`zotero_writer.py`, `tools/write_ops.py`, `state.py` and `tools/admin.py`, read in full
+2026-10-07 —
+
+- the MCP writer is pinned to `zotero_library_type` from config (`user`); the
+  `switch_library` override exists in `admin.py` but is **not registered as an MCP tool**,
+  so the MCP cannot write to a group library at all;
+- `create_note(idempotent=true)` skips when *any* `[ZotPilot]` note exists (the v1
+  pitfall) and there is no note-update operation, so re-passes would stack duplicates;
+- every MCP write is a Claude tool call — the per-paper token cost v2 exists to remove.
+
+Both paths are the Zotero Web API; there is no local write path (Zotero's local HTTP
+server is read-only). Consequences and mitigations:
+
+- Writes land in the cloud and reach desktop Zotero via sync. Preflight checks that
+  auto-sync is enabled in `prefs.js` (`extensions.zotero.sync.autoSync`) and warns if not.
+- Concurrent desktop edits: `update_item` sends `If-Unmodified-Since-Version`; on HTTP 412
+  the script re-reads the item once and retries; a second 412 is logged and reported.
+- Rate limits: honour `Backoff` / `Retry-After` headers; cap at one write per item per pass
+  (note create-or-update, then one tag merge).
+
+The script locates the existing "Data (auto-extracted)" child note by its `<h1>` title and
+updates it in place (`update_item`), or creates it. Tags are merged into the item's `tags`
+array — never replaced.
 
 ## 8. Pass report — what Claude reads
 
