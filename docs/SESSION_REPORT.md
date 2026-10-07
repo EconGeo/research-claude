@@ -1345,3 +1345,30 @@ commits and the merge, plus the docs commit that follows.
 
 **Status:**
 - Done: plan Tasks 1-8 on branch `zotpilot-skills-single-source` (final-review fixes applied; `python3 -m pytest -q tests/` → pytest 609 passed); merge to `main` pending, nothing pushed.
+
+## 2026-10-07 11:44 -- ztp-data-tag v2: spec + implementation plan (design only, no code)
+
+**Operations:**
+- Brainstormed and wrote `docs/superpowers/specs/2026-10-07-ztp-data-tag-v2-design.md`; wrote `docs/superpowers/plans/2026-10-07-ztp-data-tag-v2.md` (12 tasks, TDD, code inline).
+- Read in full: `skills/ztp-data-tag/SKILL.md` (v1), `docs/plans/2026-06-12-ztp-data-tag-skill.md`, ZotPilot `section_classifier.py`, `zotero_writer.py`, `tools/write_ops.py`, `state.py` writer init, `tools/admin.py`.
+- Probed read-only: Chroma `embedding_metadata` (1.73M chunks, 3,388 docs; metadata keys/types), Zotero SQLite (group 2350352 → libraryID 3, 59 items, 42 indexed), v1 tag counts (34 `data-tagged`), Zotero key scope (`/keys/current`: groups write), Ollama models (embedding-only).
+
+**Decisions:**
+- Approach A (standalone script over Chroma) over extending ZotPilot's classifier -- no re-index, no shared-package change mid-experiment.
+- Writes through pyzotero directly, not MCP -- MCP writer is pinned to the user library (`switch_library` not registered as a tool) and `create_note(idempotent=true)` skips on any ZotPilot note.
+- Keep v1 tag namespaces, add `datatype:`/`dv:`/`geo:`/`data-tagged:v2`; reprocess v1 items.
+- Variables with roles; dependent variables tagged via controlled `dv_classes`; geography level + period mandatory per dataset.
+- Execution: subagent-driven, in a fresh session after context clear.
+
+**Results:**
+- Spec §3 facts: no `data` section category exists in the classifier; "Data" headings fall to `unknown` -- the skill detects headings from chunk text.
+- Plan self-review: spec coverage complete; five Review-Focus failure modes each pinned to a test.
+
+**Commits:**
+- `debd128` spec(ztp-data-tag): v2 design
+- `0e5cc7a` spec(ztp-data-tag): v2 -- write via pyzotero directly
+- `87e3c4b` plan(ztp-data-tag): v2 implementation plan
+
+**Status:**
+- Done: spec + plan on branch `feat/ztp-data-tag-v2` (not merged, not pushed).
+- Pending: Tasks 1-12 of the plan; Task 1 pulls `qwen2.5:7b-instruct`; Task 12 = pass 1 on affordable_housing with user gates. v1 `agents/data-tag-extractor.md` becomes unused -- ask before deleting.
