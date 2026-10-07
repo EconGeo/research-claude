@@ -1,7 +1,7 @@
 # ztp-data-tag v2 — local, grep-first dataset/variable tagging
 
 **Status:** approved 2026-10-07 (decisions 1–3 confirmed; §7 write path amended after
-reading the ZotPilot write code). Plan: `quality_reports/plans/2026-10-07_ztp-data-tag-v2.md`.
+reading the ZotPilot write code). Plan: `docs/superpowers/plans/2026-10-07-ztp-data-tag-v2.md`.
 **Supersedes:** the extraction engine of `skills/ztp-data-tag/SKILL.md` v1
 (`docs/plans/2026-06-12-ztp-data-tag-skill.md`). The v1 tag namespaces and the Zotero note
 stay compatible (§7).
