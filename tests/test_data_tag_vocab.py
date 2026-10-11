@@ -114,3 +114,25 @@ def test_v4_aliases_quiet_on_prose(vocab):
     prose = ("The bea ch was crowded; a nar row road and a fhfa... Their csw of tenure and the warren, "
              "a census taker, and the housing survey of nearby frs areas were noted.")
     assert vocab.match_sources(prose) == []
+
+
+@pytest.mark.parametrize("name,slug", [
+    ("Situs RERC property discount rates", "situs_rerc"),
+    ("Survey of Professional Forecasters at the Federal Reserve", "spf"),
+    ("Australian Property Monitors (APM)", "apm"),
+    ("Australian Bureau of Statistics (ABS) Census", "abs_census"),
+    ("S&P Global REIT rental revenues", "snl"),
+    ("S&P CoreLogic Case-Shiller index", "case_shiller"),
+    ("S&P 500 returns", None),
+])
+def test_v5_sources(vocab, name, slug):
+    assert vocab.version == 5
+    assert vocab.resolve_source(name) == slug
+
+
+@pytest.mark.parametrize("name,dv", [
+    ("MLS market penetration", "brokerage-market-share"),
+    ("largest firm's market share", "market-concentration"),
+])
+def test_v5_dv_classes(vocab, name, dv):
+    assert vocab.resolve_dv(name) == dv

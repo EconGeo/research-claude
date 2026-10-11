@@ -1,4 +1,4 @@
-version: 4
+version: 5
 sources:
   costar:
     name: CoStar
@@ -32,7 +32,7 @@ sources:
     access: proprietary
   snl:
     name: S&P Global / SNL
-    aliases: ['\bSNL\b', '\bS&P Global Market Intelligence\b', '\bS&P Capital IQ\b']
+    aliases: ['\bSNL\b', '\bS&P Global Market Intelligence\b', '\bS&P Capital IQ\b', '\bS&P Global(?! ?CoreLogic)\b']
     type: reit-firm-financials
     geo_level: national
     access: proprietary
@@ -68,7 +68,7 @@ sources:
     access: public
   corelogic:
     name: CoreLogic
-    aliases: ['\bCoreLogic\b', '\bDataQuick\b']
+    aliases: ['\bCoreLogic\b(?! Case)', '\bDataQuick\b']  # not 'S&P CoreLogic Case-Shiller'
     type: residential-transactions-deeds
     geo_level: national
     access: proprietary
@@ -320,6 +320,31 @@ sources:
     geo_level: national
     access: public
 
+  situs_rerc:
+    name: Situs RERC
+    aliases: ['\bRERC\b', 'Real Estate Research Corporation']
+    type: commercial-property
+    geo_level: national
+    access: proprietary
+  spf:
+    name: Survey of Professional Forecasters
+    aliases: ['Survey of Professional Forecasters']
+    type: macro-financial-series
+    geo_level: national
+    access: public
+  apm:
+    name: Australian Property Monitors / Domain
+    aliases: ['Australian Property Monitors', '\bAPM\b']
+    type: residential-transactions-mls
+    geo_level: national
+    access: proprietary
+  abs_census:
+    name: Australian Bureau of Statistics
+    aliases: ['Australian Bureau of Statistics']  # no bare \bABS\b: asset-backed securities
+    type: census-acs
+    geo_level: national
+    access: public
+
 types:
   - residential-transactions-mls
   - residential-transactions-deeds
@@ -359,4 +384,5 @@ dv_classes:
   household-formation: ['household growth', 'household formation', 'headship']
   homeownership-tenure: ['homeownership', 'home ownership', 'tenure', 'down payment']
   consumption: ['consumption', 'household spending', 'expenditure']
+  brokerage-market-share: ['MLS market penetration', 'market penetration', 'listing share', 'brokerage market share']
   other: []
