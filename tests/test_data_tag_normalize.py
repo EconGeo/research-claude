@@ -46,9 +46,9 @@ def test_build_records_merges_grep_and_llm(vocab):
     assert [(r.kind, r.name_raw) for r in doc.review] == [("source", "Denver Water shutoff records")]
 
 def test_dv_review_queue_for_unlisted_dv(vocab):
-    out = llm(); out["datasets"][0]["variables"] = [{"name": "tenure choice", "role": "dependent"}]
+    out = llm(); out["datasets"][0]["variables"] = [{"name": "neighborhood satisfaction", "role": "dependent"}]
     doc = nz.build_records("D", [C17, C18], [C17, C18], {}, out, [], vocab)
-    assert ("dv_class", "tenure choice") in [(r.kind, r.name_raw) for r in doc.review]
+    assert ("dv_class", "neighborhood satisfaction") in [(r.kind, r.name_raw) for r in doc.review]
 
 def test_status_no_candidates(vocab):
     doc = nz.build_records("D", [], [], {}, {"datasets": [], "notes": ""}, [], vocab)

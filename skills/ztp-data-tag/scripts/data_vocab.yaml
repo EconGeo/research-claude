@@ -1,4 +1,4 @@
-version: 3
+version: 4
 sources:
   costar:
     name: CoStar
@@ -80,7 +80,7 @@ sources:
     access: proprietary
   zillow:
     name: Zillow (ZHVI/ZORI)
-    aliases: ['\bZHVI\b', '\bZORI\b', '\bZillow Home Value Index\b', '\bZillow Observed Rent Index\b']
+    aliases: ['\bZHVI\b', '\bZORI\b', '\bZillow Home Value Index\b', '\bZillow Observed Rent Index\b', '\bZillow(?:\.com)?\b']
     type: residential-listings-rents
     geo_level: national
     access: public
@@ -110,7 +110,7 @@ sources:
     access: public
   census:
     name: Decennial Census
-    aliases: ['\bDecennial Census\b', '\b(?:19|20)\d0 Census\b', '\bCensus of Population\b']
+    aliases: ['\bDecennial Census\b', '\b(?:19|20)\d0 Census\b', '\bCensus of Population\b', 'Census Bureau', '\bCensus 2000\b']
     type: census-acs
     geo_level: national
     access: public
@@ -265,6 +265,61 @@ sources:
     geo_level: national
     access: proprietary
 
+  fhfa_hpi:
+    name: FHFA House Price Index
+    aliases: ['\bFHFA\b', 'Federal Housing Finance Agency', '\bOFHEO\b']
+    type: macro-financial-series
+    geo_level: national
+    access: public
+  case_shiller:
+    name: S&P CoreLogic Case-Shiller
+    aliases: ['Case[–-]Shiller', '\bCSW\b']
+    type: macro-financial-series
+    geo_level: metro
+    access: proprietary
+  ipums:
+    name: IPUMS
+    aliases: ['\bIPUMS\b']
+    type: census-acs
+    geo_level: national
+    access: public
+  hvs:
+    name: Census Housing Vacancy Survey
+    aliases: ['Housing Vacancy Survey', '\bCPS/HVS\b', '\bHVS\b']
+    type: survey
+    geo_level: national
+    access: public
+  bea:
+    name: BEA regional accounts
+    aliases: ['Bureau of Economic Analysis', '\bBEA\b']
+    type: macro-financial-series
+    geo_level: state
+    access: public
+  nar:
+    name: National Association of Realtors
+    aliases: ['National Association of Realtors', '\bNAR\b']
+    type: residential-transactions-mls
+    geo_level: national
+    access: proprietary
+  warren_group:
+    name: The Warren Group
+    aliases: ['Warren Group']
+    type: residential-transactions-deeds
+    geo_level: state
+    access: proprietary
+  seh:
+    name: Survey of English Housing
+    aliases: ['Survey of English Housing', 'English Housing Survey']
+    type: survey
+    geo_level: national
+    access: public
+  frs:
+    name: Family Resources Survey
+    aliases: ['Family Resources Survey']
+    type: survey
+    geo_level: national
+    access: public
+
 types:
   - residential-transactions-mls
   - residential-transactions-deeds
@@ -289,11 +344,11 @@ geo_levels: [parcel, neighborhood, city, metro, county, state, region, national,
 
 dv_classes:
   house-price: ['price', 'home value', 'house value', 'sale price', 'transaction price', 'HPI', 'SP']
-  rent: ['rent', 'rental rate', 'asking rent']
+  rent: ['rent', 'rental rate', 'asking rent', 'renewal rate', 'lease renewal']
   transaction-volume: ['sales volume', 'number of sales', 'transactions', 'turnover', 'number of sold houses', 'houses sold']
   time-on-market: ['time on market', 'days on market', 'marketing time', 'TOM', 'DOM']
   mortgage-approval: ['denial', 'approval', 'origination', 'loan application']
-  default-foreclosure: ['default', 'foreclosure', 'delinquen']
+  default-foreclosure: ['default', 'foreclosure', 'delinquen', 'payment problem', 'arrears']
   reit-return: ['REIT return', 'stock return', 'abnormal return', 'excess return']
   cap-rate: ['cap rate', 'capitalization rate', 'yield']
   construction-permits: ['permits', 'housing starts', 'units built', 'new construction']
@@ -301,4 +356,7 @@ dv_classes:
   displacement-mobility: ['displacement', 'mobility', 'move-out', 'residential mobility', 'eviction']
   market-concentration: ['HHI', 'Herfindahl', 'market concentration', 'market share', 'concentration ratio']
   subsidy-voucher: ['HCV', 'housing choice voucher', 'voucher', 'subsid']
+  household-formation: ['household growth', 'household formation', 'headship']
+  homeownership-tenure: ['homeownership', 'home ownership', 'tenure', 'down payment']
+  consumption: ['consumption', 'household spending', 'expenditure']
   other: []

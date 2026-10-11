@@ -29,7 +29,7 @@ def test_resolve_source_by_name_and_alias(vocab):
 def test_resolve_dv(vocab):
     assert vocab.resolve_dv("log sale price") == "house-price"
     assert vocab.resolve_dv("monthly asking rent") == "rent"
-    assert vocab.resolve_dv("tenure choice") is None
+    assert vocab.resolve_dv("tenure choice") == "homeownership-tenure"  # v4: was None before the tenure class
 
 def test_slugify():
     assert slugify("Loan-Denial  Rate (HMDA)") == "loan-denial-rate-hmda"
@@ -87,3 +87,30 @@ def test_v3_sources(vocab):
     ("SP", "house-price"), ("S&P 500 return", None), ("spatial", None)])
 def test_v3_dv_classes(vocab, name, dv):
     assert vocab.resolve_dv(name) == dv
+
+
+@pytest.mark.parametrize("name,slug", [
+    ("FHFA house price index", "fhfa_hpi"), ("Case\u2013Shiller\u2013Weiss repeat sales indexes (CSW)", "case_shiller"),
+    ("IPUMS USA", "ipums"), ("Housing Vacancy Survey", "hvs"),
+    ("Bureau of Economic Analysis per capita income", "bea"), ("NAR transactions", "nar"),
+    ("Warren Group data", "warren_group"), ("Survey of English Housing", "seh"),
+    ("Family Resources Survey (FRS)", "frs"), ("Census Bureau population", "census"),
+    ("Zillow.com data on price appreciation", "zillow")])
+def test_v4_sources(vocab, name, slug):
+    assert vocab.version >= 4
+    assert vocab.resolve_source(name) == slug
+
+
+@pytest.mark.parametrize("name,dv", [
+    ("Serious payment problem", "default-foreclosure"), ("apartment renewal rates", "rent"),
+    ("annual household growth", "household-formation"),
+    ("down payment (wealth) constraint", "homeownership-tenure"),
+    ("household consumption", "consumption")])
+def test_v4_dv_classes(vocab, name, dv):
+    assert vocab.resolve_dv(name) == dv
+
+
+def test_v4_aliases_quiet_on_prose(vocab):
+    prose = ("The bea ch was crowded; a nar row road and a fhfa... Their csw of tenure and the warren, "
+             "a census taker, and the housing survey of nearby frs areas were noted.")
+    assert vocab.match_sources(prose) == []
