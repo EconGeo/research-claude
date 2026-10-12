@@ -154,3 +154,23 @@ A render error, a script traceback, or a chunk that will not run is not a strike
 it happens before a critic ever sees the work. `.claude/rules/systematic-debugging.md`
 governs it: capture the exact error, one hypothesis at a time, stop and report after two
 falsified hypotheses rather than guessing a third time.
+
+## 6. A model change reopens the whole-manuscript review
+
+Any change to a model, sample, label, inference rule or headline result reopens the
+full-manuscript review: writer-critic and strategist-critic on the **whole** manuscript, never
+a section-scoped pass, and the live plan's finding ledger. Every summary sentence (abstract,
+Introduction, Conclusions, implications) is re-checked against the body result it summarises.
+An earlier audit or review scored on the previous version does not carry over.
+
+Why: inline guards check that a stated claim has the right sign and significance; nothing
+checks for a qualifier that was left out. Observed: after a redesign, a set of section-scoped
+passes each scored the section they touched, while the abstract and conclusions kept dropping
+qualifiers a full review had already flagged — and a model audit of the pre-redesign version
+was taken as covering the new one.
+
+**The finding ledger.** When a plan is written from critic reports, every finding gets one
+row naming its plan item; at closing, each row names the line or commit that resolves it or
+the stated reason it is not acted on. No row is blank, and a fresh-context agent that has not
+seen the plan checks the ledger against the reports and the final manuscript before re-scoring.
+A finding never leaves the record by being omitted from the next plan.
