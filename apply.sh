@@ -271,6 +271,10 @@ if [[ -f "$SCRIPT_DIR/seeds/run-hook.sh" ]]; then
   if [[ -f "$PROJECT_DIR/.claude/settings.json" ]]; then
     wrapped="$(python3 "$SCRIPT_DIR/scripts/wrap_hooks.py" "$PROJECT_DIR/.claude/settings.json")"
     [[ "$wrapped" -gt 0 ]] && echo "  settings.json: $wrapped hook command(s) routed through .claude/run-hook.sh"
+    # The two guards (no stray analysis scripts; no manuscript edit before a full read) are
+    # enforcement, so existing projects get them too, not only new seeds.
+    guarded="$(python3 "$SCRIPT_DIR/scripts/wire_guard_hooks.py" "$PROJECT_DIR/.claude/settings.json")"
+    [[ "$guarded" -gt 0 ]] && echo "  settings.json: $guarded guard hook entr(ies) added (script-guard, read-gate)"
   fi
 fi
 
