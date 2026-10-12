@@ -11,7 +11,7 @@ class ProjectCase(unittest.TestCase):
         self.proj = pathlib.Path(tempfile.mkdtemp()).resolve()
         (self.proj / "CLAUDE.md").write_text("# P\n\nmanuscript: manuscript_p.qmd\n")
         self.ms = self.proj / "manuscript_p.qmd"
-        self.ms.write_text("".join(f"line {i}\n" for i in range(1, 4501)))
+        self.ms.write_text("".join(f"line {i}\n" for i in range(1, 2501)))
         self.tmp = pathlib.Path(tempfile.mkdtemp())
         self.session = f"test-{os.getpid()}-{id(self)}"
 
@@ -88,32 +88,35 @@ class TestReadGate(ProjectCase):
         if limit: ti["limit"] = limit
         p = {"hook_event_name": "PostToolUse", "tool_name": "Read", "tool_input": ti}
         if response:
-            start = max(offset or 1, 1); n = min(limit or 2000, 4500 - start + 1)
+            start = max(offset or 1, 1); n = min(limit or 2000, self.total() - start + 1)
             p["tool_response"] = {"type": "text", "file": {"filePath": str(self.ms), "startLine": start,
-                                                           "numLines": n, "totalLines": 4500}}
+                                                           "numLines": n, "totalLines": self.total()}}
         if agent: p["agent_id"] = agent
         return self.run_hook(READ_GATE, p)
 
-    def edit(self, agent=None, post=False):
+    def total(self):
+        return len(self.ms.read_text().splitlines())
+
+    def edit(self, agent=None, post=False, old="a"):
         p = {"hook_event_name": "PostToolUse" if post else "PreToolUse", "tool_name": "Edit",
-             "tool_input": {"file_path": str(self.ms), "old_string": "a", "new_string": "b"}}
+             "tool_input": {"file_path": str(self.ms), "old_string": old, "new_string": "b"}}
         if agent: p["agent_id"] = agent
         return self.run_hook(READ_GATE, p)
 
     def full_read(self, agent=None, response=True):
-        for off in (1, 2001, 4001):
+        for off in range(1, self.total() + 1, 2000):
             self.read(off, 2000, agent, response)
 
     def test_edit_without_read_denied(self):
         out = self.edit()
         self.assertTrue(self.denied(out))
-        self.assertIn("1-4500", out)
+        self.assertIn("1-2500", out)
 
     def test_default_read_is_partial(self):
         self.read()
         out = self.edit()
         self.assertTrue(self.denied(out))
-        self.assertIn("2001-4500", out)
+        self.assertIn("2001-2500", out)
 
     def test_chunked_full_read_allows_edit(self):
         self.full_read()
@@ -160,6 +163,60 @@ class TestReadGate(ProjectCase):
         p = {"hook_event_name": "PreToolUse", "tool_name": "Write",
              "tool_input": {"file_path": str(self.ms), "content": "x"}}
         self.assertFalse(self.denied(self.run_hook(READ_GATE, p)))
+
+
+class TestReadGateLargeManuscript(TestReadGate.__bases__[0]):
+    """Above FULL_READ_MAX_LINES an Edit needs only the level-1/2 section(s) it touches."""
+    def setUp(self):
+        super().setUp()
+        body = ["# Introduction"] + [f"intro {i}" for i in range(2, 1001)]          # 1-1000
+        body += ["## Data"] + ["```{r}", "# not a heading, an R comment"]           # 1001-1003
+        body += [f"data {i}" for i in range(1004, 3000)] + ["```"]                  # 1004-3000
+        body += ["# Results"] + [f"result {i}" for i in range(3002, 5001)]          # 3001-5000
+        self.ms.write_text("\n".join(body) + "\n")
+
+    def read(self, lo, hi):
+        p = {"hook_event_name": "PostToolUse", "tool_name": "Read",
+             "tool_input": {"file_path": str(self.ms), "offset": lo, "limit": hi - lo + 1},
+             "tool_response": {"type": "text", "file": {"startLine": lo, "numLines": hi - lo + 1}}}
+        return self.run_hook(READ_GATE, p)
+
+    def edit(self, old, **extra):
+        ti = {"file_path": str(self.ms), "old_string": old, "new_string": "x", **extra}
+        return self.run_hook(READ_GATE, {"hook_event_name": "PreToolUse", "tool_name": "Edit",
+                                         "tool_input": ti})
+
+    def test_section_read_is_enough(self):
+        self.assertTrue(self.denied(self.edit("result 4000")))
+        self.read(3001, 5000)
+        self.assertFalse(self.denied(self.edit("result 4000")))
+
+    def test_edit_inside_chunk_needs_the_chunk(self):
+        self.read(1004, 2000)
+        out = self.edit("data 1500")
+        self.assertTrue(self.denied(out))
+        self.assertIn("1002-3000", out)
+        self.read(1002, 1003); self.read(2001, 3000)
+        self.assertFalse(self.denied(self.edit("data 1500")))
+
+    def test_yaml_comment_is_not_a_heading(self):
+        text = self.ms.read_text().replace("# Introduction", "---\ntitle: x\n# yaml comment\n---\n# Introduction", 1)
+        self.ms.write_text(text)
+        out = self.edit("intro 500")
+        self.assertIn("lines 5-", out)
+
+    def test_edit_spanning_two_sections_needs_both(self):
+        self.read(1001, 3000)
+        self.assertTrue(self.denied(self.edit("data 2999\n```\n# Results")))
+
+    def test_replace_all_needs_full_read(self):
+        self.read(3001, 5000)
+        self.assertTrue(self.denied(self.edit("result 4000", replace_all=True)))
+
+    def test_project_can_force_full(self):
+        (self.proj / "CLAUDE.md").write_text("manuscript: manuscript_p.qmd\nread-gate: full\n")
+        self.read(3001, 5000)
+        self.assertTrue(self.denied(self.edit("result 4000")))
 
 
 if __name__ == "__main__":

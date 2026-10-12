@@ -14,6 +14,13 @@ CLAUDE.md). One file, two events:
 "This agent" is keyed by session_id + agent_id, so a dispatched writer must read the manuscript
 itself; the main session reading it does not count for the subagent, and vice versa.
 
+Large manuscripts get a section gate instead. A full read of a 1 MB manuscript costs ~250k
+tokens per agent, so above FULL_READ_MAX_LINES an Edit inside one code chunk needs that whole
+chunk, and any other Edit needs every line of the level-1/level-2 section(s) it touches
+(headings inside chunks and the YAML header are ignored), not the whole file. Write,
+`replace_all` and Bash writes still need the whole file. A project can force full reads at any
+size with a line `read-gate: full` in its CLAUDE.md.
+
 Coverage comes from the Read result's `file.startLine/numLines/totalLines` when present, else
 from tool_input offset/limit (default limit 2000, the Read tool's default). Chunked reads add up.
 State is session-scoped under the system temp dir, never in the repo. Bash is gated best-effort
@@ -25,6 +32,9 @@ import json, os, re, sys, tempfile
 from pathlib import Path
 
 DEFAULT_LIMIT = 2000
+FULL_READ_MAX_LINES = 3000
+HEADING = re.compile(r"^#{1,2}\s")
+FENCE = re.compile(r"^\s*(```|~~~)")
 
 
 def manuscript_path():
@@ -85,6 +95,50 @@ def gaps(ranges, total):
     if nxt <= total:
         missing.append([nxt, total])
     return [g for g in missing if g[0] <= g[1]]
+
+
+def force_full() -> bool:
+    claude_md = Path(os.environ.get("CLAUDE_PROJECT_DIR", "")) / "CLAUDE.md"
+    try:
+        return bool(re.search(r"^read-gate:\s*full\s*$", claude_md.read_text(errors="ignore"), re.M))
+    except OSError:
+        return False
+
+
+def sections_touched(text: str, old: str):
+    """[lo, hi] the agent must have read to edit `old`, or None when `old` is absent.
+
+    An edit wholly inside one code chunk needs that chunk, fences included. Anything else needs
+    the level-1/2 section(s) it spans. Headings inside chunks (R comments) and inside the YAML
+    front matter do not count as section breaks.
+    """
+    at = text.find(old) if old else -1
+    if at < 0:
+        return None
+    first = text.count("\n", 0, at) + 1
+    last = first + old.count("\n")
+    lines = text.splitlines()
+    heads, chunks, open_at = [], [], None
+    start = 1
+    if lines and lines[0].strip() == "---":
+        end_yaml = next((i for i, l in enumerate(lines[1:], 2) if l.strip() in ("---", "...")), 1)
+        start = end_yaml + 1
+    for i in range(start, len(lines) + 1):
+        line = lines[i - 1]
+        if FENCE.match(line):
+            if open_at is None:
+                open_at = i
+            else:
+                chunks.append((open_at, i)); open_at = None
+        elif open_at is None and HEADING.match(line):
+            heads.append(i)
+    for lo, hi in chunks:
+        if lo <= first and last <= hi:
+            return [lo, hi]
+    lo = max([h for h in heads if h <= first], default=1)
+    nxt = [h for h in heads if h > last]
+    hi = (nxt[0] - 1) if nxt else len(lines)
+    return [lo, hi]
 
 
 def same_file(a, b: Path) -> bool:
@@ -179,17 +233,28 @@ def main() -> int:
         return 0
 
     total = line_count(ms)
-    if rec["sig"] is not None and rec["sig"] != stat_sig(ms):
-        deny(f"read-gate: {ms.name} changed since you last read it (another agent, the user, or a "
-             f"tool outside Edit/Write). Read all {total} lines again before editing — "
-             f"Read with offset/limit in chunks of {DEFAULT_LIMIT}. Rule: read before asserting.")
-        return 0
-    missing = gaps(rec["ranges"], rec.get("total") or total)
+    changed = rec["sig"] is not None and rec["sig"] != stat_sig(ms)
+    ranges = [] if changed else rec["ranges"]
+    section = None
+    if (tool == "Edit" and total > FULL_READ_MAX_LINES and not tool_input.get("replace_all")
+            and not force_full()):
+        section = sections_touched(ms.read_text(errors="ignore"), tool_input.get("old_string", ""))
+        if section is None:
+            return 0  # old_string not in the file: the Edit tool will refuse it itself
+    if section:
+        lo, hi = section
+        missing = [[max(a, lo), min(b, hi)] for a, b in gaps(ranges, hi) if b >= lo]
+        what = f"the chunk or section you are editing (lines {lo}-{hi})"
+    else:
+        missing = gaps(ranges, total if changed else (rec.get("total") or total))
+        what = f"all {total} lines"
     if missing:
-        spans = ", ".join(f"{lo}-{hi}" for lo, hi in missing[:8])
-        deny(f"read-gate: you have not read all of {ms.name} in this session (unread lines: {spans} "
-             f"of {total}). Read the whole manuscript before changing it — Read with offset/limit in "
-             f"chunks of {DEFAULT_LIMIT}. Rule: read before asserting (~/.claude/CLAUDE.md).")
+        spans = ", ".join(f"{a}-{b}" for a, b in missing[:8])
+        why = (f"{ms.name} changed since you last read it (another agent, the user, or a tool "
+               f"outside Edit/Write)" if changed else f"you have not read {what} of {ms.name}")
+        deny(f"read-gate: {why}. Unread lines: {spans}. Read {what} before changing it — Read "
+             f"with offset/limit in chunks of {DEFAULT_LIMIT}. Rule: read before asserting "
+             f"(~/.claude/CLAUDE.md).")
     return 0
 
 
