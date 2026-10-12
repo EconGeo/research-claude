@@ -52,6 +52,8 @@ Before shipping a skill that depends on a hook, check that the hook is wired.
 | `notify.sh` | Notification | Cross-platform desktop notification when Claude needs attention. Fails open without `jq` |
 | `dispatch-log.py` | SubagentStop | Appends every subagent completion to `quality_reports/agent_dispatch.jsonl` — the log `pipeline.py`'s `critic-ran` predicate reads |
 | `critic-pairing.py` | Stop | Surfaces a creator that ran without its critic; blocks once per session per creator, then advisory |
+| `script-guard.py` | PreToolUse (Write/Bash) | Refuses creating a new R/Python/Julia script outside `explorations/`, `scripts/acquire/` and `.claude/` in a project that declares `manuscript:` (rules/quarto-empirical.md). Blocking |
+| `read-gate.py` | PostToolUse (Read/Edit/Write) + PreToolUse (Edit/Write/Bash) | Records which manuscript lines each agent has read; refuses an edit to the declared manuscript until that agent has read every line since the file last changed. Blocking |
 
 ## Getting the contract right
 
