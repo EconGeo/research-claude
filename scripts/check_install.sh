@@ -309,6 +309,11 @@ check_project() {
       bad manuscript-declared "no 'manuscript: <file>.qmd' line in CLAUDE.md"
     else warn manuscript-declared "no manuscript yet — /pipeline refuses until one is declared"; fi
   else bad manuscript-declared "CLAUDE.md declares $decl manuscripts; exactly one is required"; fi
+  # CLAUDE.md loads into every session; dated history in it gets asserted as current fact
+  # (rules diet, docs/plans/2026-10-12_rule-diet.md). History belongs in docs/claude_md_history.md.
+  local cl; cl="$(wc -l < "$P/CLAUDE.md" 2>/dev/null | tr -d ' ')"; cl="${cl:-0}"
+  if [[ "$cl" -le 60 ]]; then ok claude-md-size "$cl lines"
+  else warn claude-md-size "CLAUDE.md is $cl lines (cap 60) — move dated status and history to docs/claude_md_history.md"; fi
 
   # ── 8. gitignore covers the linked dirs ───────────────────────────────────
   local gi_missing=() pat
