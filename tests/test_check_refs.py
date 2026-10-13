@@ -75,6 +75,9 @@ class TestArtifactPaths(unittest.TestCase):
     def test_allow_listed_infrastructure_passes(self):
         self.assertEqual(self._run("reads `quality_reports/pipeline_state.json` and `quality_reports/agent_dispatch.jsonl`\n"), 0)
 
+    def test_data_tag_pass_reports_allow_listed(self):
+        self.assertEqual(self._run("Read `quality_reports/data_tags/pass_NN.md`; default `quality_reports/data_tags`\n"), 0)
+
     def test_brace_group_expands_and_each_member_is_checked(self):
         self.assertEqual(self._run("`quality_reports/literature/<project>/{annotated_bibliography,frontier_map,positioning}.md`\n"), 0)
         self.assertEqual(self._run("`quality_reports/literature/<project>/{positioning,summary}.md`\n"), 1)
@@ -314,5 +317,38 @@ class TestScriptRefs(unittest.TestCase):
     def test_real_tree_passes(self):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(cr.crit_script_refs(ROOT), 0)
+
+
+class TestSkillRefs(unittest.TestCase):
+    """A `/token` must name a skill. HTML close tags (`</table>`) are never skill invocations, so
+    SLASH's lookbehind refuses `<`; a glob tail (`Profiles/*/prefs.js`) is allow-listed like
+    `positioning`, because `*` must stay matchable for bold markdown (`**/review**`)."""
+
+    def _run(self, text: str) -> int:
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "skills" / "review").mkdir(parents=True)
+            (root / "skills" / "review" / "SKILL.md").write_text("---\nname: review\n---\n")
+            (root / "rules").mkdir()
+            (root / "rules" / "probe.md").write_text(text)
+            with contextlib.redirect_stdout(io.StringIO()):
+                return cr.crit_skill_refs(root)
+
+    def test_unknown_skill_flagged(self):
+        self.assertEqual(self._run("run /nonesuch next\n"), 1)
+
+    def test_html_close_tag_not_flagged(self):
+        self.assertEqual(self._run('parts.append("</table>"); "<p><small>x</small></p>"\n'), 0)
+
+    def test_glob_tail_prefs_not_flagged(self):
+        self.assertEqual(self._run('glob("Profiles/*/prefs.js")\n'), 0)
+
+    def test_bold_skill_still_checked(self):
+        self.assertEqual(self._run("run **/review** then **/nonesuch**\n"), 1)
+        self.assertEqual(self._run("run **/review** next\n"), 0)
+
+    def test_real_tree_passes(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cr.crit_skill_refs(ROOT), 0)
 
 if __name__ == "__main__": unittest.main()

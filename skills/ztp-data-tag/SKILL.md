@@ -9,14 +9,14 @@ allowed-tools: Read, Edit, Bash
 # ztp-data-tag v2 — local, grep-first dataset/variable tagging
 
 Spec: `docs/superpowers/specs/2026-10-07-ztp-data-tag-v2-design.md` (research-claude).
-Code: `skills/ztp-data-tag/scripts/data_tag.py` (package `skills/ztp-data-tag/scripts/data_tag/`), run with the
+Code: `.claude/skills/ztp-data-tag/scripts/data_tag.py` (package `.claude/skills/ztp-data-tag/scripts/data_tag/`), run with the
 `zotpilot` micromamba env. Nothing here calls the ZotPilot MCP tools; the script reads the
 Chroma and Zotero SQLite files read-only and writes Zotero through pyzotero.
 
 ## What a pass does
 
 For each of N papers: select data/variable chunks from Chroma → regex grep against
-`scripts/data_vocab.yaml` → one `qwen2.5:7b-instruct` call → merge → write the sidecar
+`.claude/references/data-vocab.yaml` → one `qwen2.5:7b-instruct` call → merge → write the sidecar
 (`~/.local/share/zotpilot/data_tags.sqlite`) → write Zotero tags + one "Data (auto-extracted)"
 note → render `quality_reports/data_tags/pass_NN.md`.
 
@@ -84,13 +84,13 @@ reprocessed and their note updated in place.
 
 ## Step 4 — Tune between passes (this is where Claude tokens go)
 
-From the report: (a) **Review queue** — promote real sources into `data_vocab.yaml` `sources`
+From the report: (a) **Review queue** — promote real sources into `.claude/references/data-vocab.yaml` `sources`
 (slug, name, regex aliases, type, geo_level, access) and DV needles into `dv_classes`;
 (b) **Grep vs model** — model-only slugs need an alias, grep-only slugs may be false positives
 (tighten the regex); (c) **Prompt** — if the model misreads a pattern across papers, adjust
-`scripts/prompts/extract.md` (the extraction prompt), then re-dry-run;
+`.claude/skills/ztp-data-tag/scripts/prompts/extract.md` (the extraction prompt), then re-dry-run;
 (d) **Candidate selection** — papers flagged "heading regex missed" need a
-`HEADING_RE` extension in `skills/ztp-data-tag/scripts/data_tag/candidates.py` *and* a positive case in
+`HEADING_RE` extension in `.claude/skills/ztp-data-tag/scripts/data_tag/candidates.py` *and* a positive case in
 `tests/test_data_tag_candidates.py`. Promotions are a **USER_REQUIRED** gate: list them, wait for yes, then apply. Bump `version:` in the YAML. Run
 `micromamba run -n zotpilot python -m pytest tests/test_data_tag_*.py -q` in research-claude,
 commit, then run the next pass with `--pass N+1`.

@@ -45,7 +45,7 @@ class TestDataTagVocabularyMerge(unittest.TestCase):
     def test_step_5b_merges_near_duplicate_tags_before_the_report(self):
         step4 = TAG[TAG.index("## Step 4"):TAG.index("## Queries")]
         self.assertIn("**Review queue**", step4)
-        self.assertIn("data_vocab.yaml", step4)
+        self.assertIn("data-vocab.yaml", step4)
         self.assertRegex(step4, r"[Pp]romotions are a \*\*USER_REQUIRED\*\* gate")
         self.assertIn("wait for yes", step4)
         self.assertLess(step4.index("Review queue"), step4.index("USER_REQUIRED"))

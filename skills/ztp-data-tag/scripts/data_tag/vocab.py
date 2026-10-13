@@ -5,7 +5,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import yaml
 
-DEFAULT_PATH = Path(__file__).resolve().parents[1] / "data_vocab.yaml"
+# references/, not this skill: a vocabulary of real data vendors is a discipline reference
+# (check_fork.sh identity section). .resolve() follows the per-item skill link back to the repo.
+DEFAULT_PATH = Path(__file__).resolve().parents[4] / "references" / "data-vocab.yaml"
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 _DV_SEP_RE = re.compile(r"[-_/]")
 

@@ -126,7 +126,7 @@ def test_v4_aliases_quiet_on_prose(vocab):
     ("S&P 500 returns", None),
 ])
 def test_v5_sources(vocab, name, slug):
-    assert vocab.version == 5
+    assert vocab.version >= 5
     assert vocab.resolve_source(name) == slug
 
 
@@ -136,3 +136,11 @@ def test_v5_sources(vocab, name, slug):
 ])
 def test_v5_dv_classes(vocab, name, dv):
     assert vocab.resolve_dv(name) == dv
+
+
+def test_v6_vocab_ships_from_references_without_identity_tokens(vocab):
+    """v6: the vocabulary lives in references/ (vendor names are a discipline reference) and
+    drops the one source on check_fork.sh's project-identity banlist (R-131)."""
+    assert vocab.version >= 6
+    assert vocab.path.parent.name == "references"
+    assert "wrluri" not in vocab.sources  # <!-- residue:prohibition -->
