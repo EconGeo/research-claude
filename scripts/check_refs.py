@@ -36,7 +36,8 @@ ABSENT_SKILLS = ["new-project", "review-paper", "audit-replication", "data-depos
                  "seven-pass-review", "devils-advocate", "promote-memory", "data-analysis", "obsidian-digest-sync"]
 INV_RETIRED = {"INV-22"}
 INV_REF = re.compile(r"\bINV-(\d{1,2})\b")
-SLASH = re.compile(r"(?<![A-Za-z0-9_/.\-`])/([a-z][a-z0-9-]{2,})\b(?!/)")
+# `<` in the lookbehind: an HTML close tag (`</table>`) is never a skill invocation.
+SLASH = re.compile(r"(?<![A-Za-z0-9_/.\-`<])/([a-z][a-z0-9-]{2,})\b(?!/)")
 # Slash tokens that are not skills: Claude Code built-ins, shell paths, this plan's own vocabulary.
 SLASH_ALLOW = {"compact", "clear", "help", "init", "memory", "config", "permissions", "cost", "doctor", "status",
                "login", "logout", "model", "mcp", "agents", "hooks", "resume", "plan", "rewind", "export", "bug",
@@ -55,6 +56,8 @@ SLASH_ALLOW = {"compact", "clear", "help", "init", "memory", "config", "permissi
                "skill",  # scripts/registry_lib.py:137 "producer must be a /skill invocation" —
                # generic placeholder prose for "a slash-prefixed name", not a reference to a
                # skill literally named `skill` (no registry producer ever reads "/skill").
+               "prefs",  # glob tail Profiles/*/prefs.js in skills/ztp-data-tag/scripts/data_tag/zotero_io.py —
+               # the `*` lookbehind gap again (see "positioning"); `*` stays matchable for **/skill**.
                # Fix round 2, Task 3b.8. A bare `/learn` candidate for this set was investigated
                # and rejected: skills/tools/SKILL.md:98 documents a real `/tools learn`
                # subcommand, so hooks/context-monitor.py's nudge text was corrected to say
@@ -291,6 +294,7 @@ AP_ALLOW = {
     "quality_reports/reviews/replication_*_*.md": "/review --replicate report — records no score (R-106)",
     "quality_reports/claim_source_map_*.md":      "named only as retired INV-22's former artifact",
     "quality_reports/deposit_manifest_*.md":      "/submit deposit output — not gated (Phase 3.5)",
+    "quality_reports/data_tags/*":                "/ztp-data-tag pass reports — records, not gated",
     "quality_reports/critic_inputs/*.log":        "pipeline.py critic-inputs log handed to writer-critic — gitignored session mechanics, not gated (L-005)",
 }
 

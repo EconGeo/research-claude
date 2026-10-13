@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """script-guard.py — PreToolUse (Write|Edit|Bash): no new analysis scripts outside their homes.
 
-Enforces rules/quarto-empirical.md ("No external R analysis scripts"): in a project that
+Enforces .claude/rules/quarto-empirical.md ("No external R analysis scripts"): in a project that
 declares `manuscript: <file>.qmd` in its CLAUDE.md, a NEW code file (R, Python, Julia,
 R Markdown or notebook)
 may be created only under

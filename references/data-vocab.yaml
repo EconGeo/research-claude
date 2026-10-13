@@ -1,4 +1,4 @@
-version: 5
+version: 6
 sources:
   costar:
     name: CoStar
@@ -190,12 +190,6 @@ sources:
     name: ENERGY STAR / LEED
     aliases: ['\bENERGY STAR\b', '\bEnergy Star\b', '\bLEED\b', '\bUSGBC\b']
     type: other
-    geo_level: national
-    access: public
-  wrluri:
-    name: WRLURI
-    aliases: ['\bWRLURI\b', 'Wharton Residential Land Use']
-    type: zoning-land-use
     geo_level: national
     access: public
   saiz:
