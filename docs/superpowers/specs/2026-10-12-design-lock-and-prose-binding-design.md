@@ -2,6 +2,29 @@
 
 2026-10-12. Status: spec, awaiting author review. Branch `feat/design-lock-prose-binding`.
 
+## 0. Changes made while planning (author to confirm)
+
+Reading the code changed seven details; the plan implements these, not the text below them.
+
+1. **Signing is the author's terminal command.** `session-guard` cannot detect an unattended
+   run, so the author runs `pipeline.py design sign|unlock` in their own terminal and the new
+   `design-guard` hook refuses any agent attempt to run them. That makes the lock hold for
+   unattended runs too.
+2. **Helpers are `rc_num`, `rc_pct`, `rc_sig`, `rc_dir`, `rc_cmp`.** `dir` is a base R function,
+   and the R naming rule forbids assigning base names at top level.
+3. **No `rc_register()`.** The fingerprint takes its model list from the `spec:` of each
+   hypothesis in the design block, and stops when one is missing. A side effect inside a cached
+   chunk does not replay from the cache, so a registry would silently empty itself.
+4. **At pre-commit, staleness is a warning, not a block.** Blocking it would refuse the very
+   commit that lands a re-estimation. The block is at `post`, `next` and the score gates.
+5. **The git hook ships as `templates/git-hooks/pre-commit`,** installed via
+   `core.hooksPath = .claude/templates/git-hooks`. That keeps it out of the Claude-hook auditors.
+6. **"Unattended runs make no rulings" is `[judgment]`:** a core rule plus skill text, with no
+   hook behind it.
+7. **The lock hashes the block's normalised text,** not parsed YAML (stdlib has no YAML parser).
+   The design-change disclosure is a required `{#sec-design-changes}` section that the commit
+   check enforces once an amendment exists. It is not a table generated from the log.
+
 ## 1. Problem
 
 A forensic audit of two paper projects, each on its 15th–20th manuscript rewrite, found three
