@@ -33,7 +33,10 @@ picks are recorded in the report itself, which is saved alongside the coder-crit
 ### Step 2: Wrangling — data-engineer, then its paired critic
 Dispatch **data-engineer**: `build-*` chunks with `cache.extra`, manifest rows, `tbl-summary`
 chunk. Then `python3 .claude/scripts/pipeline.py log data-engineer` (standalone) and dispatch
-**coder-critic** on the manuscript. It returns its report as text; session saves it to
+**coder-critic** on the manuscript. Before every coder-critic dispatch (this step and Step 3, each
+round), run `python3 .claude/scripts/pipeline.py critic-inputs` and name the log path it prints in
+the prompt: coder-critic has no Bash and scores INV-11 and the render state from that log only.
+It returns its report as text; session saves it to
 `quality_reports/reviews/coder-critic_<date>.md` first, then records its score:
 `python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report quality_reports/reviews/coder-critic_<date>.md`.
 Three rounds maximum (`pipeline.py state strike data-engineer` after each failing round;
@@ -42,7 +45,7 @@ escalation target from the registry).
 ### Step 3: Estimation — coder, then its paired critic
 Dispatch **coder**: `estimate-*`, `robustness-*`, `tbl-*`, `fig-*` chunks per
 `.claude/skills/analyze/templates/chunk-structure.md`; render clean; prose check clean. Log,
-dispatch **coder-critic**, save its returned report to
+run `critic-inputs`, dispatch **coder-critic** with the log path, save its returned report to
 `quality_reports/reviews/coder-critic_<date>.md`, then record the score. Three rounds maximum
 (`pipeline.py state strike coder` after each failing round; escalation target from the registry).
 
