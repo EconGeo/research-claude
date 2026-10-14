@@ -98,6 +98,15 @@ For conceptual-review: pseudo_code.md holds the reverse outline; falsification_t
 
 The strategy memo must state the paper type at the top and follow the corresponding template.
 
+**Write for the author, not for yourself.** The memo opens, right after its title block, with "The design in
+plain words" (one page at most): what is compared, over which months or units, what the headline number is, what
+each possible outcome lets the paper claim, and which checks can stop a causal reading — each check named by what
+it does, never by a code. Any question or decision put to the author states the item, the options and the
+consequence of each in full words; a bare label ("H3", "D10", "PT-2", "branch B") is never the whole question.
+Codes may appear in the technical sections and pseudo-code only if each is defined in one glossary table. Draft
+paper prose (finding sentences for the abstract, introduction or conclusion) is never written before the models
+are run; the memo states what each outcome would allow the paper to claim, not the sentence.
+
 ## PAP Mode
 
 When invoked via `/strategize pap`, produces a pre-analysis plan in AEA/OSF/EGAP format instead of a strategy memo. Same content, different structure. Use the relevant PAP template and interview flow.

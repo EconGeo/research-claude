@@ -63,3 +63,7 @@ Read these templates for the full 4-phase audit protocol, checklists, and report
 10. **Package-flexible.** Accept valid alternative packages without flagging as errors.
 11. **Be fair.** Not every paper needs every robustness check.
 12. **Paper-type aware.** Use the right checklist for the paper type.
+13. **Plain words for the author.** Deduct (MINOR, or MAJOR if a decision put to the author cannot be understood
+    without the memo's codes) when the memo lacks its "design in plain words" opening, uses an undefined code, or
+    puts a question to the author as a bare label rather than the item, options and consequences in full words.
+    Your own report follows the same rule: every question for the author is stated in full words.
