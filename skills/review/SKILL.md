@@ -163,7 +163,10 @@ coder-critic returns text; session saves to `quality_reports/reviews/coder-criti
 **When the target is the declared manuscript** (`--code <manuscript>` — the adoption route in
 `.claude/skills/pipeline/references/adopt.md`), the full checklist applies. Categories 1–4 are
 assessed against the newest `quality_reports/strategy/<project>/strategy_memo_<YYYY-MM-DD_HHMM>.md` when it exists and against
-the manuscript's own design section when it does not — the report says which. Record:
+the manuscript's own design section when it does not — the report says which. Before the dispatch,
+run `python3 .claude/scripts/pipeline.py critic-inputs` and name the log path it prints in the
+coder-critic prompt beside the lint report: coder-critic has no Bash, so INV-11 (and the render
+state) is scored from that log's `prose_number_check.py` and `quarto render` sections only. Record:
 `python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report <path>`.
 A standalone review under `scripts/acquire/` or `explorations/` records nothing — `code` is the
 manuscript's analysis, not acquisition or exploration code.
