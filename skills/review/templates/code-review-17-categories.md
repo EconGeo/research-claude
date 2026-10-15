@@ -152,8 +152,9 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
   visible where fit; why-comments; no helper layers; accessors not object internals; no
   `suppressWarnings()` around an estimator.
 - **Plain checks:** `stopifnot()` with messages on sample sizes, merge keys and design invariants
-  before a result is used — and no guard machinery (in-chunk re-derivations, size tests,
-  hand-written bootstraps checking a package's, prose-wording guards).
+  before a result is used; plain result guards on prose sentences and a result-pin list are
+  allowed — and no guard machinery (in-chunk re-derivations, size tests, hand-written bootstraps
+  checking a package's, wording scanners over prose or table cells).
 - **Ports:** rewritten code matched to its predecessor within stated tolerances in an
   `explorations/` comparison table; a difference reported, never tuned away.
 

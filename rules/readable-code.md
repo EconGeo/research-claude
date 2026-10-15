@@ -108,10 +108,26 @@ stopifnot("one row per unit" = !anyDuplicated(exposure_by_unit$unit_id),
           "sample lost rows in the join" = nrow(sample_joined) == nrow(sample_cohort))
 ```
 
+**Result guards on prose are allowed, and plain.** A sentence that states a sign, a significance
+or an ordering may carry an inline guard that stops the render when the live result no longer
+says so, and the headline claims (abstract, Introduction, Conclusions) may be collected in one
+named list of result pins evaluated in a single chunk. Each is a `stopifnot()` with a message,
+reading the result through accessors or the exhibit's own row:
+
+```markdown
+`r local({stopifnot("main: the effect is negative and significant at 5%" =
+  coef(model_main)["treated"] < 0, pvalue(model_main)["treated"] < 0.05); ""})`
+```
+
+Why: when the data or a model changes, a sentence typed earlier keeps its verdict while the
+number beside it moves. A render that stops on the stale sentence catches what a numeric check
+cannot (observed: one data-vintage change stopped a render on 38 such sentences).
+
 No guard machinery beyond that: no in-chunk re-derivations of a package's own output, no
 size tests run inside the manuscript, no hand-written bootstraps to check a package's bootstrap,
-and no code that polices prose wording. Prose is checked by `prose_number_check.py` and nothing
-else.
+and no wording scanners — regex passes over the prose or table cells for retired or forbidden
+words. A result guard checks a result; it never pattern-matches text. Numbers in prose are checked
+by `prose_number_check.py`.
 
 ## 6. Porting or rewriting earlier code
 

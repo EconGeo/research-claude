@@ -131,7 +131,7 @@ Checks" — it is not restated here; cite it by row. Additional rows:
 | Reported number rests on a package default for an option that matters (clustering, SE type, weights, solver, scaling, tolerance, draws) | -5 per call |
 | Version record (`package_versions.txt` / `renv.lock`) missing or stale; GitHub package without its SHA | -5 |
 | Archived or abandoned package where a maintained one does the job | -5 per package |
-| Guard machinery: in-chunk re-derivation of a package's output, size test, hand-written check bootstrap, or prose-wording guard | -5 per chunk |
+| Guard machinery: in-chunk re-derivation of a package's output, size test, hand-written check bootstrap, or wording scanner (regex over prose or table cells); plain result guards and result pins (`.claude/rules/readable-code.md` §5) are not deducted | -5 per chunk |
 | Base or builtin name assigned at top level (`.claude/rules/readable-code.md` §4) | -5 per name |
 | `suppressWarnings()` around an estimator call | -5 per call |
 | No `stopifnot()` on sample size or merge keys before a merged or filtered frame feeds a reported result | -3 per frame |
