@@ -58,7 +58,8 @@ class TestWrapHooks(unittest.TestCase):
     def test_seed_settings_all_routed_and_valid_json(self):
         text = (ROOT / "seeds" / "settings.json").read_text()
         cmds = [h["command"] for v in json.loads(text)["hooks"].values() for g in v for h in g["hooks"]]
-        self.assertEqual(len(cmds), 12)
+        # 15 since b6f6c75: script-guard.py once, read-gate.py twice.
+        self.assertEqual(len(cmds), 15)
         for c in cmds:
             self.assertRegex(c, r'^"\$CLAUDE_PROJECT_DIR"/\.claude/run-hook\.sh [\w.-]+$')
 
