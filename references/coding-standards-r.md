@@ -7,14 +7,15 @@ These standards apply to all R code produced by the Coder agent. Derived from C+
 ## 1. Runtime and Dependencies
 
 - **R >= 4.3.0** (native pipe `|>`, `\(x)` lambda)
-- **`renv`** for dependency lockfile (`renv.lock` committed)
+- Package versions recorded in `package_versions.txt` (or `renv.lock` where a project uses `renv`) — `.claude/rules/readable-code.md` §3, which also governs package choice and readability and wins where this file differs
 - All packages declared and loaded at script top — no `install.packages()` in scripts
 
 ### Core Stack
 
 | Package | Purpose |
 |---------|---------|
-| `data.table` | Primary data manipulation |
+| `dplyr`, `tidyr` | Data manipulation, as `|>` pipelines an RA can read |
+| `data.table` | Only where file size demands it (fast reads of very large files) |
 | `fixest` | Fixed effects, event studies, `etable` |
 | `modelsummary` | Publication tables |
 | `ggplot2` | All figures |
@@ -26,8 +27,8 @@ These standards apply to all R code produced by the Coder agent. Derived from C+
 | Package | Reason | Replacement |
 |---------|--------|-------------|
 | `stargazer` | Deprecated, inflexible | `modelsummary` or `fixest::etable` |
-| `plyr` | Superseded, namespace conflicts | `data.table` |
-| `reshape` / `reshape2` | Superseded | `data.table::melt` / `dcast` |
+| `plyr` | Superseded, namespace conflicts | `dplyr` |
+| `reshape` / `reshape2` | Superseded | `tidyr::pivot_longer` / `pivot_wider` |
 | `xtable` (without booktabs) | Non-journal output | `kableExtra` with `booktabs = TRUE` |
 
 ---
@@ -148,6 +149,9 @@ if (nrow(sub) == 0L) stop(sprintf("No observations for group %d, time %d", g, t)
 ```
 
 ### Documentation
+A function exists only when used 3+ times or isolating custom math (`.claude/rules/readable-code.md`
+§4). A custom-math function names the formula's source (paper, equation) and the toy or published
+check it passed:
 ```r
 #' Estimate the Average Treatment Effect on the Treated
 #'
@@ -159,7 +163,7 @@ if (nrow(sub) == 0L) stop(sprintf("No observations for group %d, time %d", g, t)
 
 ---
 
-## 6. data.table Idioms
+## 6. data.table Idioms (where data.table is used at all)
 
 - Use `:=` for in-place column creation
 - Use `.SD`, `.N`, `.GRP` for group operations
@@ -215,7 +219,7 @@ For sequential: `RNGkind("L'Ecuyer-CMRG")` before `set.seed()`.
 ## 10. Performance
 
 - Vectorize: `vapply()` over explicit loops when possible
-- Use `data.table` grouping, not `split-apply-combine`
+- Use `dplyr::group_by()` / `summarise()` (or `data.table` grouping where size demands it), not `split-apply-combine`
 - Pre-allocate all result containers before loops
 - `data.table` modifies in place with `:=` — use it, don't copy
 - Profile with `profvis::profvis()` before micro-optimizing

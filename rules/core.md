@@ -42,3 +42,10 @@ enforces; `[judgment]` marks one nothing checks.
     permanent in `<file>`?" (`.claude/rules/meta-governance.md`). `[judgment]`
 11. Critics cite content invariants by number from `.claude/rules/content-invariants.md`, which
     they read themselves.
+
+## Code
+12. **Human-readable code, standard packages first.** Code is written for a research assistant
+    to check line by line; every estimator comes from an established CRAN package, and custom
+    code only when no package does the job.
+    Before writing or reviewing code, read `.claude/rules/readable-code.md`.
+    `[judgment: coder-critic category 17]`

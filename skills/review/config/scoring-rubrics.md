@@ -121,6 +121,27 @@ Checks" — it is not restated here; cite it by row. Additional rows:
 | Growing vectors in loops (INV-17) | -5 |
 | Missing `stopifnot()` preconditions on setup-chunk helpers | -5 |
 
+### Readability and package-first (category 17, `.claude/rules/readable-code.md`)
+| Issue | Deduction |
+|---|---|
+| Ported or rewritten result differs from its predecessor and the difference was tuned away (tolerance loosened, spec changed, rows dropped) instead of reported | -20 |
+| Custom code where an established package does the job | -10 per instance |
+| Custom code used for a reported result without its why-no-package comment, formula source, or toy/published check | -10 per instance |
+| Ported or rewritten code with no comparison to its predecessor within stated tolerances | -10 |
+| Reported number rests on a package default for an option that matters (clustering, SE type, weights, solver, scaling, tolerance, draws) | -5 per call |
+| Version record (`package_versions.txt` / `renv.lock`) missing or stale; GitHub package without its SHA | -5 |
+| Archived or abandoned package where a maintained one does the job | -5 per package |
+| Guard machinery: in-chunk re-derivation of a package's output, size test, hand-written check bootstrap, or prose-wording guard | -5 per chunk |
+| Base or builtin name assigned at top level (`.claude/rules/readable-code.md` §4) | -5 per name |
+| `suppressWarnings()` around an estimator call | -5 per call |
+| No `stopifnot()` on sample size or merge keys before a merged or filtered frame feeds a reported result | -3 per frame |
+| Helper layer: own function used fewer than 3 times that isolates no custom math, or own helper calling own helper to fit a model | -3 per function |
+| Package behaviour claimed in a comment without `tested:` / `per docs:` | -3 per claim |
+| Bootstrap or permutation draws not stated in the call and the exhibit note | -3 per exhibit |
+| Result read by position from a fitted object's internals instead of an accessor | -2 per instance |
+| More than one model or exhibit in a chunk, or a chunk past ~80 lines | -2 per chunk |
+| Comments narrate what instead of why; non-obvious choice (sample rule, option) uncommented | -2 per chunk |
+
 ### Minor
 | Issue | Deduction |
 |---|---|

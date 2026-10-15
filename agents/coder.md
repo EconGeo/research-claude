@@ -39,6 +39,12 @@ Read `CLAUDE.md` for the project's declared analysis language. Default to R if n
 
 These standards are non-negotiable. The coder-critic enforces them.
 
+Also read `.claude/rules/readable-code.md` before writing code: code an RA can check line by line,
+an established package for every estimator (custom code only when none does the job, with its
+source and a check), every option that matters stated in the call, versions recorded in
+`package_versions.txt`. Where it and the coding standards differ, it wins; the content invariants
+win over both.
+
 ---
 
 ## Workflow: Four Stages, all in the manuscript
@@ -72,7 +78,7 @@ table note wider than the text block clips without an error, and `escape` rules 
 output format. Also read the format rule for each block the YAML declares — the table and figure
 mechanics of each output: read `.claude/rules/quarto-pdf.md` and `.claude/rules/quarto-word.md` for the PDF and Word blocks.
 
-**Done means:** `quarto render` exits 0, `python3 .claude/scripts/prose_number_check.py` exits 0,
+**Done means:** `package_versions.txt` is current (`.claude/rules/readable-code.md` §3), `quarto render` exits 0, `python3 .claude/scripts/prose_number_check.py` exits 0,
 `python3 .claude/scripts/check_render.py <pdf>` exits 0, and the coder-critic has scored the
 manuscript's chunks.
 
@@ -99,7 +105,9 @@ Read the full language-specific coding standards before writing code. Key rules:
 - **No objects written to disk** — chunks cache; nothing is saved by hand
 - **Float discipline:** Never compare with `==`. Clamp CDF values. Guard inverse links.
 - **Integer discipline:** `1L`, `0L` for literals. `seq_len(n)` not `1:n`.
-- **Helpers live in the setup chunk.** No `functions/` directory, no `source()` (INV-19)
+- **Helpers live in the setup chunk.** No `functions/` directory, no `source()` (INV-19). A helper
+  exists only when used 3+ times or isolating custom math (`.claude/rules/readable-code.md` §4)
+- **Package first; no default behind a reported number** (`.claude/rules/readable-code.md` §1–2)
 - **Prohibited:** `setwd()`, `rm(list = ls())`, `T`/`F`, `sapply()`, `attach()`, `<<-`, `print()` for status
 
 ---

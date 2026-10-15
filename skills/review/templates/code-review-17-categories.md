@@ -1,4 +1,4 @@
-# Code Review: 16 Check Categories
+# Code Review: 17 Check Categories
 
 Extracted from `coder-critic.md`. Used by the coder-critic agent for code review.
 
@@ -8,6 +8,7 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 
 **Before running categories:**
 
+- Read `.claude/rules/readable-code.md` -- category 17 scores it.
 - Read `.claude/rules/content-invariants.md` -- enforce INV-11, INV-13 through INV-19, INV-23, INV-24. Cite invariant numbers (e.g., "violates INV-16") in report alongside deductions.
 - Identify the paper type (reduced-form, structural, theory+empirics, descriptive) from the strategy memo or the code itself. This determines which checks apply.
 
@@ -56,7 +57,7 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 
 ---
 
-## Code Quality (Categories 5-16)
+## Code Quality (Categories 5-17)
 
 ### 5. Manuscript Layout
 - One `setup` chunk, `cache: false`, first; `execute: cache: true` in YAML?
@@ -89,7 +90,8 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 
 ### 10. Function Design
 - `snake_case` naming, verb-noun pattern (`estimate_att`, `test_oir`, `compute_weights`)
-- Roxygen-style docs for non-trivial functions
+- A function exists only when used 3+ times or isolating custom math (category 17); a custom-math
+  function names its source (paper, equation) and its check
 - Default parameters, no magic numbers
 - `stopifnot()` preconditions at function top
 - Named list return values (not positional)
@@ -137,6 +139,24 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 | `library()` inside functions | LOW | Load at script top |
 | `1:n` instead of `seq_len(n)` | LOW | Breaks when `n == 0` |
 
+### 17. Readability and Package-First (`.claude/rules/readable-code.md`)
+- **Package first:** every estimator, test and bootstrap from an established package; custom code
+  only where none fits, with a comment naming why, the formula's source, and its toy or published
+  check. GitHub packages pinned by SHA.
+- **Defaults:** every option that matters is explicit in the call (clustering, SE type, weights,
+  solver, scaling, tolerances, draws); no reported number rests on a default; behaviour comments
+  labelled `tested:` / `per docs:`.
+- **Versions:** `package_versions.txt` (or `renv.lock`) present and current with the setup chunk's
+  `library()` calls; no archived or abandoned package where a maintained one does the job.
+- **Readable:** tidyverse pipelines; descriptive names, no base/builtin name at top level; one model or exhibit per chunk; short chunks; formula
+  visible where fit; why-comments; no helper layers; accessors not object internals; no
+  `suppressWarnings()` around an estimator.
+- **Plain checks:** `stopifnot()` with messages on sample sizes, merge keys and design invariants
+  before a result is used — and no guard machinery (in-chunk re-derivations, size tests,
+  hand-written bootstraps checking a package's, prose-wording guards).
+- **Ports:** rewritten code matched to its predecessor within stated tolerances in an
+  `explorations/` comparison table; a difference reported, never tuned away.
+
 ---
 
 ## Data Cleaning (Stage 0)
@@ -169,7 +189,7 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 
 ## Standalone Mode
 
-When invoked via `/review --code <file under scripts/acquire/ or explorations/>`, run categories **5-16 only** (code quality + numerical discipline). No strategy memo comparison -- just code quality and best practices.
+When invoked via `/review --code <file under scripts/acquire/ or explorations/>`, run categories **5-17 only** (code quality, numerical discipline, readability). No strategy memo comparison -- just code quality and best practices.
 
 ---
 
@@ -189,7 +209,7 @@ When invoked via `/review --code <file under scripts/acquire/ or explorations/>`
 ## Numerical Discipline: [PASS/CONCERNS/FAIL]
 ## Robustness: [Complete/Incomplete]
 
-## Code Quality (12 categories)
+## Code Quality (13 categories)
 | Category | Status | Issues |
 |----------|--------|--------|
 | Manuscript layout | OK/WARN/FAIL | [details] |
@@ -204,6 +224,7 @@ When invoked via `/review --code <file under scripts/acquire/ or explorations/>`
 | Comment quality | OK/WARN/FAIL | [details] |
 | Error handling | OK/WARN/FAIL | [details] |
 | Prohibited patterns | OK/WARN/FAIL | [details] |
+| Readability and package-first | OK/WARN/FAIL | [details] |
 
 ## Score Breakdown
 - Starting: 100

@@ -39,7 +39,7 @@ Assemble AEA-compliant replication package.
 **Agents:** coder, then coder-critic (paired per `.claude/rules/registry.yaml`)
 
 Produces:
-- the declared manuscript, `references.bib`, `templates/`, `data/raw/data_manifest.md`, `scripts/acquire/`, `renv.lock`, README (`.claude/skills/submit/templates/replication-readme.md`) — assembled under `replication/`
+- the declared manuscript, `references.bib`, `templates/`, `data/raw/data_manifest.md`, `scripts/acquire/`, `package_versions.txt` (or `renv.lock`), README (`.claude/skills/submit/templates/replication-readme.md`) — assembled under `replication/`
 Save to `replication/`
 
 coder-critic returns its report as text; session saves it to `quality_reports/reviews/coder-critic_<date>.md` first, then records: `python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report quality_reports/reviews/coder-critic_<date>.md`.

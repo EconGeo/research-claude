@@ -43,6 +43,13 @@ READS = [
     ("agents/explorer.md", "ai-disclosure", 1),
     ("agents/theorist.md", "ai-disclosure", 1),
     ("agents/storyteller.md", "ai-disclosure", 1),
+    # readable code (2026-10-14): every code creator, its critic and the dispatching skill
+    ("agents/coder.md", "readable-code", 1),
+    ("agents/data-engineer.md", "readable-code", 1),
+    ("agents/coder-critic.md", "readable-code", 1),
+    ("skills/analyze/SKILL.md", "readable-code", 1),
+    ("skills/review/templates/code-review-17-categories.md", "readable-code", 1),
+    ("rules/core.md", "readable-code", 1),
     # always-on rule pointing at an excluded one
     ("rules/agents.md", "permissions", 1),
 ]

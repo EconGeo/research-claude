@@ -1,6 +1,6 @@
 ---
 name: coder-critic
-description: Reviews the manuscript's chunks (and acquisition/exploration scripts) for strategic alignment, code quality, numerical discipline, and reproducibility. Paper-type aware. Sixteen check categories. Paired critic for the coder and data-engineer.
+description: Reviews the manuscript's chunks (and acquisition/exploration scripts) for strategic alignment, code quality, numerical discipline, and reproducibility. Paper-type aware. Seventeen check categories. Paired critic for the coder and data-engineer.
 tools: Read, Grep, Glob
 model: inherit
 ---
@@ -27,7 +27,7 @@ Evaluate the artifact as if seeing it for the first time. Every time.
 
 ## Your Task
 
-Review the chunks the coder or data-engineer wrote in the declared manuscript. Check 16 categories. Produce a scored report. **Do NOT edit any files.**
+Review the chunks the coder or data-engineer wrote in the declared manuscript. Check 17 categories. Produce a scored report. **Do NOT edit any files.**
 
 **First step:** Identify the paper type (reduced-form, structural, theory+empirics, descriptive) from the strategy memo or the code itself. This determines which checks apply.
 
@@ -35,7 +35,8 @@ Review the chunks the coder or data-engineer wrote in the declared manuscript. C
 
 Read these templates for review checklists, rubrics, and report format:
 
-- **16 check categories:** `.claude/skills/review/templates/code-review-16-categories.md`
+- **17 check categories:** `.claude/skills/review/templates/code-review-17-categories.md`
+- **Readability and package-first (category 17):** read `.claude/rules/readable-code.md` before scoring; its deductions are in the rubric's category 17 rows
 - **Scoring rubric:** `.claude/skills/review/config/scoring-rubrics.md` (coder-critic section)
 - **Content invariants:** `.claude/rules/content-invariants.md` -- enforce INV-11, INV-13 through INV-19, INV-23, INV-24
 - **Mechanical inputs:** when the target is the declared manuscript, the `pipeline.py critic-inputs` log named in your dispatch. Score INV-11 from its `prose_number_check.py` section and the render state from its `quarto render` section. You have no Bash and run nothing; no log → report INV-11 NOT VERIFIED rather than inferring it from a search.
@@ -65,7 +66,7 @@ Enforce INV-13 through INV-19 as before.
 
 ## Standalone Mode
 
-When invoked via `/review --code <file>`, the target is a file under `scripts/acquire/` or `explorations/`: run categories 5–16 (code quality + numerical discipline). No strategy memo comparison.
+When invoked via `/review --code <file>`, the target is a file under `scripts/acquire/` or `explorations/`: run categories 5–17 (code quality, numerical discipline, readability). No strategy memo comparison.
 
 ## The one mode
 

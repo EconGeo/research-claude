@@ -26,10 +26,10 @@ Resolve the manuscript first: `python3 .claude/scripts/pipeline.py manuscript`.
 
 ## Submission checks (5–10) — `/submit audit`, `/submit final`
 
-The package is: the manuscript, `references.bib`, `templates/` (preamble, reference docx), `data/raw/data_manifest.md`, `scripts/acquire/`, `renv.lock` (or equivalent), README.
+The package is: the manuscript, `references.bib`, `templates/` (preamble, reference docx), `data/raw/data_manifest.md`, `scripts/acquire/`, `package_versions.txt` or `renv.lock`, README.
 
 5. **Package inventory.** Every file above present; no analysis code outside the manuscript; no `source()` in any chunk.
-6. **Dependencies.** `renv.lock` or `sessionInfo()` output; Python `requirements.txt` if acquisition uses it; non-standard packages documented.
+6. **Dependencies.** `package_versions.txt` (`.claude/scripts/package_versions.R`; GitHub packages with their SHA) or `renv.lock`; Python `requirements.txt` if acquisition uses it; non-standard packages documented.
 7. **Data provenance.** Every raw file has a manifest row with source, access type and acquisition script or manual instructions; data availability statement present.
 8. **Execution.** `quarto render <manuscript>` from a cold cache (`rm -rf *_cache`) exits 0; report runtime.
 9. **Cross-reference.** Every `@tbl-`/`@fig-` in prose names a chunk; every `tbl-`/`fig-` chunk is referenced.

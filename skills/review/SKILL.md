@@ -28,7 +28,7 @@ Unified review command that routes to the appropriate critic agents based on the
 - `--variance N` → **not wired; refuse and say so.** Specified in `.claude/agents/editor.md`, no referee-3…N dispatch exists (D-19). Do not improvise one.
 - `--theory` `[target]` → **Proof audit** (theorist-critic standalone, 4-phase review — logical validity, assumption minimality, citations, linkage)
 - `--proofread` → **Manuscript polish** (writer-critic standalone, 6 categories)
-- `--code` `[file]` → **Code review** (coder-critic standalone, categories 5-16)
+- `--code` `[file]` → **Code review** (coder-critic standalone, categories 5-17)
 - `--replicate` `[language]` → **Cross-language replication** (Coder re-implements the manuscript's estimation chunks + coder-critic + comparison against tolerances)
 - `--all` or no file → **Paper excellence** (all critics in parallel + weighted score — theorist-critic included when a theory section is present)
 
@@ -149,9 +149,9 @@ Include the lint report in the coder-critic's input so it can skip already-flagg
 
 #### Code review checklist
 
-The 16 categories are `.claude/skills/review/templates/code-review-16-categories.md`, which
+The 17 categories are `.claude/skills/review/templates/code-review-17-categories.md`, which
 coder-critic reads for itself. Categories 1–4 (strategic alignment) run only within the pipeline
-or via `--methods`; standalone runs cover code quality only (categories 5–16).
+or via `--methods`; standalone runs cover code quality only (categories 5–17).
 
 Severity calibration for issues not already in a deduction table is in
 `.claude/skills/review/config/scoring-rubrics.md` (Coder-Critic).

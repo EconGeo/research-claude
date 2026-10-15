@@ -31,7 +31,8 @@ clustering level, functional form are the usual ones; design questions belong to
 picks are recorded in the report itself, which is saved alongside the coder-critic review.
 
 ### Step 2: Wrangling — data-engineer, then its paired critic
-Dispatch **data-engineer**: `build-*` chunks with `cache.extra`, manifest rows, `tbl-summary`
+Read `.claude/rules/readable-code.md` before the first dispatch and name it in both creator
+prompts. Dispatch **data-engineer**: `build-*` chunks with `cache.extra`, manifest rows, `tbl-summary`
 chunk. Then `python3 .claude/scripts/pipeline.py log data-engineer` (standalone) and dispatch
 **coder-critic** on the manuscript. Before every coder-critic dispatch (this step and Step 3, each
 round), run `python3 .claude/scripts/pipeline.py critic-inputs` and name the log path it prints in
@@ -52,7 +53,8 @@ run `critic-inputs`, dispatch **coder-critic** with the log path, save its retur
 ### Step 4: What coder-critic checks
 The twelve deductions in `.claude/rules/quarto-empirical.md` ("What the Coder-Critic Checks")
 plus the numerical-discipline rows of `.claude/skills/review/config/scoring-rubrics.md`, using
-`.claude/skills/review/templates/code-review-16-categories.md`.
+`.claude/skills/review/templates/code-review-17-categories.md`; category 17 scores
+`.claude/rules/readable-code.md`.
 
 ### Step 5: Present
 Rendered output path; chunk labels added; coder-critic score; open items (missing data,
@@ -70,6 +72,8 @@ specifications the memo names that could not be run).
 
 ## Principles
 - **Reproduce, don't guess.** If the user specifies a regression, run exactly that.
+- **Readable, package first.** An established package for every estimator, every option that
+  matters stated in the call, code an RA can check (`.claude/rules/readable-code.md`).
 - **Root cause before retry.** A chunk error or render failure follows
   `.claude/rules/systematic-debugging.md` — one hypothesis, smallest test, stop after two
   falsified attempts and report rather than guess a third time.

@@ -71,7 +71,7 @@ For each variable in the cleaned dataset:
 
 ## Chunk Standards
 
-Follow the same standards that the coder-critic checks. Before writing a chunk, read `.claude/rules/quarto-empirical.md` (caching, `cache.extra`),
+Follow the same standards that the coder-critic checks. Before writing a chunk, read `.claude/rules/readable-code.md` (tidyverse pipelines an RA can check, package first, plain `stopifnot()` checks on sample sizes and merge keys). Read `.claude/rules/quarto-empirical.md` (caching, `cache.extra`),
 read `.claude/rules/data-manifest.md` (manifest columns and triggers), and read the format rule for each block the YAML declares (`.claude/rules/quarto-pdf.md`, `.claude/rules/quarto-word.md`).
 
 - **Header:** Chunk label, purpose, inputs, outputs documented as a comment in the chunk
@@ -86,7 +86,7 @@ read `.claude/rules/data-manifest.md` (manifest columns and triggers), and read 
 
 | Task | Package |
 |------|---------|
-| Data wrangling | `dplyr`, `tidyr`, `data.table` |
+| Data wrangling | `dplyr`, `tidyr`; `data.table` only where file size demands it |
 | Reading data | `readr`, `haven`, `readxl`, `arrow` |
 | Figures | `ggplot2`, `patchwork`, `scales` |
 | Colors | `viridis`, `RColorBrewer`, `ggsci` |

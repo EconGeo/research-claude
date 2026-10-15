@@ -27,7 +27,7 @@ These standards apply to all Python code produced by the Coder agent. Derived fr
 
 | Package | Reason | Replacement |
 |---------|--------|-------------|
-| `sklearn` for inference | Not designed for causal inference | Custom or `statsmodels` |
+| `sklearn` for inference | Not designed for causal inference | `statsmodels`, `linearmodels` or `pyfixest`; custom code only per `.claude/rules/readable-code.md` §1 |
 | `plotly` / `seaborn` for paper figures | PDF output issues, non-standard for econ | `matplotlib` |
 
 ---
