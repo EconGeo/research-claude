@@ -105,7 +105,9 @@ it does, never by a code. Any question or decision put to the author states the 
 consequence of each in full words; a bare label ("H3", "D10", "PT-2", "branch B") is never the whole question.
 Codes may appear in the technical sections and pseudo-code only if each is defined in one glossary table. Draft
 paper prose (finding sentences for the abstract, introduction or conclusion) is never written before the models
-are run; the memo states what each outcome would allow the paper to claim, not the sentence.
+are run; the memo states what each outcome would allow the paper to claim, not the sentence. It sets no rules for
+the abstract or page 1 (wording, required qualifiers, render checks): the abstract is written from the findings after
+the paper and edited then.
 
 ## PAP Mode
 
