@@ -1385,4 +1385,4 @@ commits and the merge, plus the docs commit that follows.
 - `/context` in NAR_settlement: memory files 6.6k tokens (~14.5k before this step).
 
 **Status:**
-- Done: plan steps 1–4, step 5 measurement. Pending: one-week transcript check for script-guard/read-gate denials; `~/Research/CLAUDE.md` at 79 lines vs ~40 target.
+- Done: plan steps 1–4, step 5 measurement. `~/Research/CLAUDE.md` 79 → 50 lines (backup `.bak-2026-10-17`); budget raises confirmed by the author. Pending: one-week transcript check for script-guard/read-gate denials (from 2026-10-24).
