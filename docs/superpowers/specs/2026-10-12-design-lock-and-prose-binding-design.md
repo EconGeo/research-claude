@@ -51,9 +51,9 @@ These override anything below that reads otherwise.
 12. **The stricter wording gate applies only to retrofitted papers** (a `design:` block exists):
     verdict ceiling 0, the wider lexicon, jargon. Papers not yet retrofitted keep today's checker
     behaviour.
+13. **The lock hashes the block's normalised text,** not parsed YAML (stdlib has no YAML parser).
 14. **INV-18 exception:** the final `fingerprint` chunk may write
     `quality_reports/render_fingerprint.json`; no other chunk writes a file.
-13. **The lock hashes the block's normalised text,** not parsed YAML (stdlib has no YAML parser).
 
 ## 1. Problem
 
