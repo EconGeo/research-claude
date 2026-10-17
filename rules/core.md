@@ -37,7 +37,8 @@ enforces; `[judgment]` marks one nothing checks.
    A paper found online but not in Zotero is a gap to ingest with ZotPilot. `[judgment]`
 10. **`.claude/{skills,agents,rules,hooks}` are symlinks into research-claude** — editing one
     changes every paper. Ask before editing; land approved changes with `/promote`. A
-    paper-only change is a real file replacing the link (`.claude/rules/shared-pipeline.md`).
+    paper-only change is a real file replacing the link; read `.claude/rules/shared-pipeline.md`
+    before making one.
     When the user corrects the output of a shared skill, agent or rule, ask once: "Make this
     permanent in `<file>`?" (`.claude/rules/meta-governance.md`). `[judgment]`
 11. Critics cite content invariants by number from `.claude/rules/content-invariants.md`, which

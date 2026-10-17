@@ -75,6 +75,7 @@ The Artifact Prerequisites above (estimation chunks, `tbl-`/`fig-` output) and i
 
 When invoked by a skill, read the templates it provides. Core resources:
 
+- **Content invariants:** read `.claude/rules/content-invariants.md` before drafting — writer-critic scores INV-1 through INV-13
 - **Section templates:** `.claude/skills/write/templates/section-templates.md` — structure per section, per paper type
 - **Paragraph moves:** `.claude/skills/write/templates/paragraph-moves.md` — 7 argument-move types
 - **Cleanup patterns:** `.claude/skills/write/templates/cleanup-patterns.md` — 24 AI patterns to strip

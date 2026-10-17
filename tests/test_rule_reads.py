@@ -50,7 +50,25 @@ READS = [
     ("skills/analyze/SKILL.md", "readable-code", 1),
     ("skills/review/templates/code-review-17-categories.md", "readable-code", 1),
     ("rules/core.md", "readable-code", 1),
-    # always-on rule pointing at an excluded one
+    # rule diet tier 2 (2026-10-17): agents, content-invariants, shared-pipeline,
+    # meta-governance and systematic-debugging left startup loading
+    *[(f"skills/{s}/SKILL.md", "agents", 1) for s in
+      ["lit-position", "discover", "strategize", "analyze", "write", "review", "revise",
+       "submit", "talk", "pipeline"]],
+    ("rules/core.md", "agents", 1),
+    *[(f"agents/{a}.md", "content-invariants", 1) for a in
+      ["coder-critic", "writer-critic", "storyteller-critic", "verifier", "writer", "coder",
+       "data-engineer", "storyteller"]],
+    ("rules/core.md", "shared-pipeline", 1),
+    ("skills/promote/SKILL.md", "shared-pipeline", 1),
+    ("skills/checkpoint/SKILL.md", "meta-governance", 1),
+    ("skills/promote/SKILL.md", "meta-governance", 1),
+    ("skills/pipeline/SKILL.md", "meta-governance", 1),
+    ("skills/tools/SKILL.md", "meta-governance", 1),
+    ("agents/coder.md", "systematic-debugging", 1),
+    ("agents/data-engineer.md", "systematic-debugging", 1),
+    ("skills/analyze/SKILL.md", "systematic-debugging", 1),
+    # an excluded rule pointing at another excluded one
     ("rules/agents.md", "permissions", 1),
 ]
 

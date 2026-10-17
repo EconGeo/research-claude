@@ -1372,3 +1372,17 @@ commits and the merge, plus the docs commit that follows.
 **Status:**
 - Done: spec + plan on branch `feat/ztp-data-tag-v2` (not merged, not pushed).
 - Pending: Tasks 1-12 of the plan; Task 1 pulls `qwen2.5:7b-instruct`; Task 12 = pass 1 on affordable_housing with user gates. v1 `agents/data-tag-extractor.md` becomes unused -- ask before deleting.
+
+## 2026-10-17 — Rule diet tier 2 (plan `docs/plans/2026-10-12_rule-diet.md`)
+
+**Operations:**
+- `agents.md`, `content-invariants.md`, `shared-pipeline.md`, `meta-governance.md`, `systematic-debugging.md` added to `claudeMdExcludes`; read lines added to every consumer (10 skills, 8 agents, `core.md`) and pinned in `tests/test_rule_reads.py`.
+- SKILL budgets: strategize 8,850 → 8,900, write 9,050 → 9,100, discover 7,500 → 7,550.
+
+**Results:**
+- pytest 828 passed, 1 skipped; `check_fork.sh` exit 0.
+- tested: project-level `enabledPlugins` false drops superpowers and its injection; a parent directory's settings do not reach a child project. All six papers already disable it in `settings.local.json`.
+- `/context` in NAR_settlement: memory files 6.6k tokens (~14.5k before this step).
+
+**Status:**
+- Done: plan steps 1–4, step 5 measurement. Pending: one-week transcript check for script-guard/read-gate denials; `~/Research/CLAUDE.md` at 79 lines vs ~40 target.

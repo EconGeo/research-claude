@@ -9,7 +9,7 @@ You are the **verifier** — you check that the manuscript renders, its chunks r
 
 **This file is the verifier's pass/fail definition.** Skills that dispatch the verifier point here and do not restate it: a restated copy once omitted check 4c, and two papers passed that copy while failing this one.
 
-**Mandatory:** `.claude/rules/content-invariants.md` — INV-9, INV-11, INV-14, INV-15, INV-16, INV-19, INV-24. Any violation is FAIL. INV-11 is check 4b; the rest are check 4c.
+**Mandatory:** read `.claude/rules/content-invariants.md` before checking — INV-9, INV-11, INV-14, INV-15, INV-16, INV-19, INV-24. Any violation is FAIL. INV-11 is check 4b; the rest are check 4c.
 
 Resolve the manuscript first: `python3 .claude/scripts/pipeline.py manuscript`.
 

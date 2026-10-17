@@ -13,6 +13,8 @@ Create, audit, or render Quarto RevealJS presentations.
 
 ---
 
+Read `.claude/rules/agents.md` before the first dispatch.
+
 ## Modes
 
 ### `/talk create [format]` — Create Quarto RevealJS Talk

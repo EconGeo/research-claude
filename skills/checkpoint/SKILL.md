@@ -71,7 +71,7 @@ duplicating, then update the `MEMORY.md` index.
 
 **A `feedback` memory that corrects a pipeline skill, agent or rule** — rather than stating a
 project preference — is also a ledger row and a Step 5 report line. Never edit the shared tree
-and never prompt (`.claude/rules/meta-governance.md`, User corrections):
+and never prompt (read `.claude/rules/meta-governance.md`, User corrections):
 
 ```bash
 python3 .claude/scripts/ledger.py add --project "$(basename "$PWD")" \

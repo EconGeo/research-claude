@@ -15,6 +15,8 @@ and never evaluates a predicate itself. Per-stage dispatch text lives in
 Stages, in `REQUIRES` order (never by sequence): `setup` → `literature` → `data` → `strategy`
 → `theory` (conditional) → `analyze` → `write` → `review` → `submit`; `talk` parallel, advisory.
 
+Read `.claude/rules/agents.md` before the first dispatch.
+
 ## `status` / `next`
 ```bash
 python3 .claude/scripts/pipeline.py manuscript && python3 .claude/scripts/pipeline.py state show && python3 .claude/scripts/pipeline.py score && python3 .claude/scripts/pipeline.py next
@@ -65,8 +67,8 @@ loop over stages from start in REQUIRES order, stop after --until:
             `.claude/skills/pipeline/references/<stage>.md`, `--yes` takes rank 1; when the
             target is an agent, with that block's question
   approval gate: present the stage summary and the score; wait unless --yes
-after the loop: score; "Suggested Learnings" (strikes, escalations, first-pass ≥ 90) per
-  .claude/rules/meta-governance.md — suggestions only, user approves, /promote lands
+after the loop: score; "Suggested Learnings" (strikes, escalations, first-pass ≥ 90) —
+  read .claude/rules/meta-governance.md first; suggestions only, user approves, /promote lands
 ```
 Limits: 3 rounds per pair, 5 overall (`registry.yaml: limits`; `state strike` refuses past either).
 

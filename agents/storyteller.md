@@ -19,6 +19,7 @@ Given an approved paper, create a Quarto RevealJS presentation in the requested 
 
 ## Task-Specific Resources
 
+- **Content invariants:** read `.claude/rules/content-invariants.md` before building slides — storyteller-critic scores INV-20 and INV-21
 - **Narrative arcs:** `.claude/references/narrative-arcs.md` — paper-type-specific story structures (shared with `/write`, not `/talk`-only)
 - **Format constraints:** `.claude/skills/talk/templates/format-constraints.md` — slide counts, durations, per-format rules
 - **Slide design:** `.claude/skills/talk/references/slide-design-principles.md` — visual design principles

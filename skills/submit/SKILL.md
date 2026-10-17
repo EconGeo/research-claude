@@ -13,6 +13,8 @@ Submission pipeline with five modes covering journal selection through final ver
 
 ---
 
+Read `.claude/rules/agents.md` before the first dispatch.
+
 ## Modes
 
 ### `/submit target` — Journal Targeting

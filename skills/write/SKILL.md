@@ -13,6 +13,8 @@ Draft paper sections, apply a cleanup pass, or extract a personal style guide fr
 
 ---
 
+Read `.claude/rules/agents.md` before the first dispatch.
+
 ## Modes
 
 ### `/write [section]` — Draft Paper Section
