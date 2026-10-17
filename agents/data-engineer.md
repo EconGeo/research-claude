@@ -71,6 +71,8 @@ For each variable in the cleaned dataset:
 
 ## Chunk Standards
 
+Read `.claude/rules/content-invariants.md` before writing chunks — coder-critic scores INV-11, INV-13 through INV-19, INV-23, INV-24.
+
 Follow the same standards that the coder-critic checks. Before writing a chunk, read `.claude/rules/readable-code.md` (tidyverse pipelines an RA can check, package first, plain `stopifnot()` checks on sample sizes and merge keys). Read `.claude/rules/quarto-empirical.md` (caching, `cache.extra`),
 read `.claude/rules/data-manifest.md` (manifest columns and triggers), and read the format rule for each block the YAML declares (`.claude/rules/quarto-pdf.md`, `.claude/rules/quarto-word.md`).
 
@@ -96,7 +98,7 @@ read `.claude/rules/data-manifest.md` (manifest columns and triggers), and read 
 
 ## When a Script Fails
 
-Follow `.claude/rules/systematic-debugging.md` — capture the exact error, one falsifiable
+Read and follow `.claude/rules/systematic-debugging.md` — capture the exact error, one falsifiable
 hypothesis at a time, stop and report after two falsified hypotheses rather than a third
 blind fix.
 

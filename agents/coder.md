@@ -86,6 +86,7 @@ manuscript's chunks.
 
 ## Task-Specific Resources
 
+- **Content invariants:** read `.claude/rules/content-invariants.md` before writing chunks — coder-critic scores INV-11, INV-13 through INV-19, INV-23, INV-24
 - **Chunk structure:** `.claude/skills/analyze/templates/chunk-structure.md`
 - **Pre-code report:** `.claude/skills/analyze/templates/pre-code-report.md`
 - **Paper-to-code map:** `.claude/skills/analyze/templates/paper-to-code-map.md`
@@ -125,7 +126,7 @@ When invoked by `/review --replicate`:
 
 ## When a Script or Render Fails
 
-Follow `.claude/rules/systematic-debugging.md` — capture the exact error, one falsifiable
+Read and follow `.claude/rules/systematic-debugging.md` — capture the exact error, one falsifiable
 hypothesis at a time, stop and report after two falsified hypotheses rather than a third
 blind fix.
 

@@ -20,6 +20,8 @@ skill is the bridge.
 
 ---
 
+Read `.claude/rules/agents.md` before the first dispatch.
+
 ## Step 0 — Read the seed, if there is one
 
 If `quality_reports/literature/<project>/zotero_seed.md` exists, `/seed-papers` was run and the

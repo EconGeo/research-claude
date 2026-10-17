@@ -76,7 +76,10 @@ KNOWN_UNBOUND: set[str] = set()
 # before coder-critic on `--code <manuscript>`; measured 13,414.
 BUDGET = {
     "review": 13500,
-    "strategize": 8850,
+    # 2026-10-17 (rule diet tier 2): strategize 8,850 -> 8,900, write 9,050 -> 9,100, discover
+    # 7,500 -> 7,550. agents.md left startup loading, so each dispatching skill reads it before its
+    # first dispatch (one line); measured 8,860 / 9,073 / 7,532.
+    "strategize": 8900,
     # 2026-09-24 (option gates, Task A9): write 7,600 -> 8,100. The GATE 1 / abstract hook
     # gate and the ambiguous-paper-type confirmation; measured 8,033.
     # 2026-09-24 (routing, Task B6): write 8,100 -> 8,200. Step 1 lists the manuscript
@@ -89,12 +92,12 @@ BUDGET = {
     # 2026-09-29 (rule load exclusions, minor fix): write 8,850 -> 9,050. GATE 1's option gate moved
     # from Step 6 into Step 4, before the writer is dispatched: its pick is the intro's first
     # paragraph, and `intro`/`abstract` reached it only after drafting. Measured 9,014.
-    "write": 9050,
+    "write": 9100,
     # 2026-09-24 (option gates, Task A3): discover 6,200 -> 7,300. Four gates (question
     # framings, journal tiers, data shortlist, ideas), each a wait instruction; measured 7,195.
     # 2026-09-24 (routing, Task B5): discover 7,300 -> 7,500. Ideate's novelty check now
     # names lit-scout and the local-first rule; measured 7,429.
-    "discover": 7500,
+    "discover": 7550,
     # 2026-09-25 (improvement loop, Task 4): checkpoint 5,500 -> 5,900. 4a appends the
     # correction to the shared ledger (one command, one id on the report line); measured 5611.
     "checkpoint": 5900,

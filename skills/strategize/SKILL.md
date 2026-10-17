@@ -13,6 +13,8 @@ Design an identification strategy, pre-analysis plan, or formal theory section b
 
 ---
 
+Read `.claude/rules/agents.md` before the first dispatch.
+
 ## Modes
 
 ### `/strategize [question]` or `/strategize strategy [question]` — Identification Strategy

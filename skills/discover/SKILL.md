@@ -13,6 +13,8 @@ Launch the Discovery phase of research. Routes to the appropriate agents based o
 
 ---
 
+Read `.claude/rules/agents.md` before the first dispatch.
+
 ## Modes
 
 ### Default (no mode specified)

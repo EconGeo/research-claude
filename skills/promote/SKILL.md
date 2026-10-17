@@ -71,7 +71,7 @@ etc. for ZotPilot); it is never committed here as-is.
 ## Step 2.6: The improvement ledger
 
 `/checkpoint` in every project appends its pipeline-improvement candidates to
-`$RC/docs/improvement-ledger.md` (`.claude/rules/meta-governance.md`, User corrections).
+`$RC/docs/improvement-ledger.md` (read `.claude/rules/meta-governance.md`, User corrections).
 Read it here — this is the only step that runs `ledger.py show --open`:
 
 ```bash
@@ -155,7 +155,7 @@ The same standard applies to a ledger row's note before it is quoted in a commit
 ## Step 5: Refresh the lock
 
 Offer to re-link so `.claude/pipeline.lock` records the new SHA — from the project,
-`./bootstrap-pipeline.sh --tip` (`.claude/rules/shared-pipeline.md`), or from the
+`./bootstrap-pipeline.sh --tip` (read `.claude/rules/shared-pipeline.md` for the two modes), or from the
 checkout, `"$RC/apply.sh" --project-dir "$PWD" --link --tip` (`--project-dir` is
 required; `apply.sh` exits 1 without it). Without this the lock still names the
 pre-promotion commit, and a coauthor bootstrapping from it gets the pipeline as it

@@ -13,6 +13,8 @@ Structure point-by-point referee responses with classification, agent routing pe
 
 ---
 
+Read `.claude/rules/agents.md` before the first dispatch.
+
 ## Workflow
 
 ### Step 1: Parse Inputs

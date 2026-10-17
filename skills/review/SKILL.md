@@ -13,6 +13,8 @@ Unified review command that routes to the appropriate critic agents based on the
 
 ---
 
+Read `.claude/rules/agents.md` before the first dispatch.
+
 ## Routing Logic
 
 ### Auto-detect by target

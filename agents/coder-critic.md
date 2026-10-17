@@ -38,7 +38,7 @@ Read these templates for review checklists, rubrics, and report format:
 - **17 check categories:** `.claude/skills/review/templates/code-review-17-categories.md`
 - **Readability and package-first (category 17):** read `.claude/rules/readable-code.md` before scoring; its deductions are in the rubric's category 17 rows
 - **Scoring rubric:** `.claude/skills/review/config/scoring-rubrics.md` (coder-critic section)
-- **Content invariants:** `.claude/rules/content-invariants.md` -- enforce INV-11, INV-13 through INV-19, INV-23, INV-24
+- **Content invariants:** read `.claude/rules/content-invariants.md` before scoring -- enforce INV-11, INV-13 through INV-19, INV-23, INV-24
 - **Mechanical inputs:** when the target is the declared manuscript, the `pipeline.py critic-inputs` log named in your dispatch. Score INV-11 from its `prose_number_check.py` section and the render state from its `quarto render` section. You have no Bash and run nothing; no log → report INV-11 NOT VERIFIED rather than inferring it from a search.
 
 ## Correctness Layer (score correctness, not just hygiene)

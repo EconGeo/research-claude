@@ -12,6 +12,8 @@ dispatching **data-engineer** then **coder**, with **coder-critic** after each.
 
 **Input:** `$ARGUMENTS` — analysis goal or path to the strategy memo.
 
+Read `.claude/rules/agents.md` before the first dispatch.
+
 ## Workflow
 
 ### Step 0: Resolve the manuscript and check inputs
@@ -74,9 +76,9 @@ specifications the memo names that could not be run).
 - **Reproduce, don't guess.** If the user specifies a regression, run exactly that.
 - **Readable, package first.** An established package for every estimator, every option that
   matters stated in the call, code an RA can check (`.claude/rules/readable-code.md`).
-- **Root cause before retry.** A chunk error or render failure follows
-  `.claude/rules/systematic-debugging.md` — one hypothesis, smallest test, stop after two
-  falsified attempts and report rather than guess a third time.
+- **Root cause before retry.** On a chunk error or render failure,
+  read `.claude/rules/systematic-debugging.md` and follow it — one hypothesis, smallest
+  test, stop after two falsified attempts and report rather than guess a third time.
 - **Strategy alignment.** If a memo exists, chunks implement it faithfully.
 - **Creator then critic, every time.** Each creator's paired critic is declared in `.claude/rules/registry.yaml`, not restated here.
 - **One manuscript.** No script tree, no results file, no output directory; the render is the output.
