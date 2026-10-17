@@ -69,6 +69,18 @@ class TestScriptGuard(ProjectCase):
                     "echo hi > explorations/out.R", "ls > /dev/null", "cat x.R"):
             self.assertFalse(self.denied(self.bash(cmd)), cmd)
 
+    def test_bash_shell_variables_are_expanded(self):
+        # Observed 2026-10-12..17: 26 of 44 denials were scratchpad writes such as
+        # `S=<scratchpad>; cat > $S/x.R`, read as the project-relative path `$S/x.R`.
+        for cmd in (f"S={self.tmp}; cat > $S/x.R <<'EOF'\n1\nEOF",
+                    f"export SP=\"{self.tmp}\" && echo 1 > \"${{SP}}/m5/y.R\"",
+                    "cat > \"$TMPDIR/cnt.R\" <<'EOF'\n1\nEOF",
+                    "echo 1 > $UNSET_VAR/z.R"):
+            self.assertFalse(self.denied(self.bash(cmd)), cmd)
+        for cmd in (f"P={self.proj}; cat > $P/mkvar.py <<'EOF'\n1\nEOF",
+                    f"D={self.proj}/code && touch \"$D/fit.R\""):
+            self.assertTrue(self.denied(self.bash(cmd)), cmd)
+
     def test_inactive_without_manuscript_declaration(self):
         (self.proj / "CLAUDE.md").write_text("# no declaration\n")
         self.assertFalse(self.denied(self.write("model_test.R")))
