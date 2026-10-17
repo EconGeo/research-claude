@@ -8,3 +8,7 @@
 # tests/__pycache__/ that `git add` would otherwise sweep in.
 __pycache__/
 *.pyc
+
+# Skill run output (e.g. ztp-data-tag pass reports) when a skill is run from this repo:
+# library-specific, never shipped in the public template.
+/quality_reports/
