@@ -225,6 +225,37 @@ class TestReadGateLargeManuscript(TestReadGate.__bases__[0]):
         self.read(3001, 5000)
         self.assertTrue(self.denied(self.edit("result 4000", replace_all=True)))
 
+    def apply_edit(self, old, new):
+        """Pre-check, perform and post-record an Edit, as the Edit tool would."""
+        ti = {"file_path": str(self.ms), "old_string": old, "new_string": new}
+        out = self.run_hook(READ_GATE, {"hook_event_name": "PreToolUse", "tool_name": "Edit",
+                                        "tool_input": ti})
+        if not self.denied(out):
+            self.ms.write_text(self.ms.read_text().replace(old, new, 1))
+            self.run_hook(READ_GATE, {"hook_event_name": "PostToolUse", "tool_name": "Edit",
+                                      "tool_input": ti})
+        return out
+
+    def test_own_edit_that_adds_lines_keeps_section_read(self):
+        # Observed 2026-10-12..17: 69 denials whose unread lines were exactly the lines the
+        # agent's previous edit had pushed past the end of the section it had read.
+        self.read(3001, 5000)
+        self.assertFalse(self.denied(self.apply_edit("result 3100\n", "result 3100\nn1\nn2\nn3\nn4\n")))
+        self.assertFalse(self.denied(self.edit("result 4999")))
+
+    def test_own_edit_that_removes_lines_keeps_section_read(self):
+        self.read(3001, 5000)
+        self.assertFalse(self.denied(self.apply_edit("result 3100\nresult 3101\nresult 3102\n", "")))
+        self.assertFalse(self.denied(self.edit("result 4999")))
+
+    def test_shift_does_not_credit_unread_lines(self):
+        # Data chunk read, Results not: an edit above Results moves it down; still unread.
+        self.read(1001, 3000)
+        self.apply_edit("data 1500\n", "data 1500\nn1\nn2\n")
+        out = self.edit("result 4000")
+        self.assertTrue(self.denied(out))
+        self.assertIn("3003-5002", out)
+
     def test_project_can_force_full(self):
         (self.proj / "CLAUDE.md").write_text("manuscript: manuscript_p.qmd\nread-gate: full\n")
         self.read(3001, 5000)
