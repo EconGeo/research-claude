@@ -17,8 +17,9 @@ These override anything below that reads otherwise.
    A target journal's profile wins where it forbids stars or mandates other cutoffs.
 3. **Signing is in chat.** The author approves in chat; the session then runs
    `pipeline.py design sign|unlock`. A `UserPromptSubmit` hook issues a one-time token when the
-   author's own message approves signing or unlocking; the command refuses without a fresh
-   token. An unattended run has no author message, so it cannot sign or unlock.
+   author's own message contains the exact line `approve design sign` or
+   `approve design unlock: <reason>`; the token is single-use, expires in 30 minutes and is
+   revoked by the author's next message. The command refuses without one. An unattended run has no author message, so it cannot sign or unlock.
 4. **Helpers are `rc_num`, `rc_pct`, `rc_sig`, `rc_stars`, `rc_dir`, `rc_cmp`.** `dir` is a base R
    function, and the R naming rule forbids assigning base names at top level.
 5. **No model drops silently.** The fingerprint hashes every fitted model object in the
@@ -26,9 +27,9 @@ These override anything below that reads otherwise.
    `plm`, `lm_robust`, extendable), with no registration step. The render also stops when a
    hypothesis's `spec:` names an object that does not exist.
 6. **Staleness blocks commits,** except the commit that lands the re-estimation (it changes model
-   chunk code or data hashes). After it, every manuscript commit is refused while any strategy,
-   manuscript or referee score is stale, until a whole-manuscript writer-critic re-scores under
-   the new fingerprint. Ledger rows fixed during that window close against the commit that ends
+   chunk code or data hashes). After it, every manuscript commit is refused while the manuscript
+   score is stale, until a whole-manuscript writer-critic re-scores under the new fingerprint.
+   Stale strategy and referee scores reopen their stages but never block a commit. Ledger rows fixed during that window close against the commit that ends
    it. Every session start prints the stale stages.
 7. **The git hook ships as `hooks/git/pre-commit`,** beside the other hooks, installed via
    `core.hooksPath = .claude/hooks/git`. The Claude-hook auditors skip `hooks/git/`.
@@ -50,6 +51,8 @@ These override anything below that reads otherwise.
 12. **The stricter wording gate applies only to retrofitted papers** (a `design:` block exists):
     verdict ceiling 0, the wider lexicon, jargon. Papers not yet retrofitted keep today's checker
     behaviour.
+14. **INV-18 exception:** the final `fingerprint` chunk may write
+    `quality_reports/render_fingerprint.json`; no other chunk writes a file.
 13. **The lock hashes the block's normalised text,** not parsed YAML (stdlib has no YAML parser).
 
 ## 1. Problem

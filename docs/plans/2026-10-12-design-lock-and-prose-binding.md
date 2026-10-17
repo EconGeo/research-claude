@@ -23,8 +23,8 @@ it as a defect. Reviews converge through a finding ledger, and unattended runs l
 - Claim helpers (base R, `rc_` prefix) are pasted into the setup chunk from a template. They key
   every chunk cache on the design and data hashes, and write a results fingerprint that hashes
   every fitted model object in the environment, found by class.
-- `pipeline.py` compares that fingerprint against every score. Stale scores block manuscript
-  commits through a git pre-commit hook (`hooks/git/pre-commit`), except the commit that lands
+- `pipeline.py` compares that fingerprint against every score. A stale manuscript score blocks
+  manuscript commits through a git pre-commit hook (`hooks/git/pre-commit`), except the commit that lands
   the re-estimation. It also owns the finding ledger, the rulings log and the questions file.
 
 **Tech Stack:** Python 3.9 stdlib (the `scripts/pipeline.py` convention), bash, base R plus
@@ -96,7 +96,9 @@ it as a defect. Reviews converge through a finding ledger, and unattended runs l
    hypothesis `spec:` names a missing object. Test: Task 5.
 6. **The re-estimation commit.** A commit whose staged `render_fingerprint.json` differs from
    HEAD's in `estimates_hash`, `data_hash` or `design_hash` passes while stale (with a WARN); every
-   other manuscript commit is refused while any strategy, manuscript or referee score is stale.
+   other manuscript commit is refused while the manuscript score is stale. Stale strategy and
+   referee scores reopen their stages (`post`, `next`, score gates) but never block a commit
+   (author ruling 2026-10-17).
    Tests: Task 12. Tested: in a checkout where `core.hooksPath` names a missing directory (a
    fresh worktree without the links), git commits run no hook and exit 0, so `check_install`
    fails `git-hooks-path` there.
@@ -1667,8 +1669,8 @@ def main() -> int:
     body = p.stdout.strip()
     print(json.dumps({"systemMessage": "Stale review stages:\n" + body,
                       "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext":
-                          "## Stale review stages\n\n```\n" + body + "\n```\n\nManuscript commits are refused until "
-                          "these are re-scored under the current fingerprint (rule 15 of .claude/rules/core.md)."}}))
+                          "## Stale review stages\n\n```\n" + body + "\n```\n\nWhile the manuscript stage is stale, manuscript "
+                          "commits are refused until it is re-scored under the current fingerprint (rule 15 of .claude/rules/core.md)."}}))
     return 0
 
 if __name__ == "__main__":
@@ -1712,7 +1714,7 @@ if __name__ == "__main__":
   - CLI:
     - `pipeline.py ledger add --creator C --report P --location L --finding T [--proposal]`;
     - `pipeline.py ledger close ID (--sha SHA | --pending) [--guard TEXT]`: `--pending` is allowed
-      only while `stale_components()` is non-empty (status `closed pending`);
+      only while `stale_components()` has `manuscript` (status `closed pending`);
     - `pipeline.py ledger decline ID --reason R --by author|session`;
     - `pipeline.py ledger accept|reject ID --by author|session [--reason R]` (`--reason` required
       for `--by session`);
@@ -1784,7 +1786,7 @@ questions (`quality_reports/questions_for_author.md`).
   - Statuses are validated against
     `^(open|closed (?:[0-9a-f]{7,40}|pending)|declined: .+|proposal: (pending|accepted|rejected))$`.
   - `settle` reads `git diff-tree --no-commit-id --name-only -r HEAD`; it acts only when the
-    declared manuscript is in that list and `stale_components(root)` is empty.
+    declared manuscript is in that list and `stale_components(root)` has no `manuscript` entry.
   - `questions_for_author.md` is created with a one-line header and each entry is
     `## <date> — blocks <stage>\n\n<text>\n`.
   - In `pipeline.py`, add the predicate:
@@ -1919,9 +1921,10 @@ questions (`quality_reports/questions_for_author.md`).
     - unstaged changes to the manuscript or to `render_fingerprint.json`;
     - `prose_number_check.py` ≠ 0; `quarto_structure_check.py` ≠ 0;
     - chunk code differing from HEAD while `cold_render.json`'s sha ≠ the manuscript's sha;
-    - any stale component (`stale_components`) **unless** `reestimation()` is True, in which case
-      it prints `WARN re-estimation commit — stale: …; every later manuscript commit is refused
-      until they are re-scored`;
+    - a stale `manuscript` component (`stale_components(root).get("manuscript")`) **unless**
+      `reestimation()` is True, in which case it prints `WARN re-estimation commit — stale: …;
+      every later manuscript commit is refused until the manuscript is re-scored`. Stale
+      `strategy`/`referees` only print `WARN stale: …` and never block (author ruling 2026-10-17);
     - `amendment_count(root) > 0` and no chunk labelled `tbl-design-changes` in the manuscript.
   - `hooks/git/post-commit` runs `pipeline.py ledger settle` and always exits 0.
 
@@ -1941,6 +1944,8 @@ questions (`quality_reports/questions_for_author.md`).
     `WARN re-estimation commit`.
   - **Data-only re-estimation:** stage a fingerprint whose `data_hash` alone changed → exit 0 WARN.
   - After `record-score` under `B` → the prose-only commit exits 0.
+  - **Stale strategy only:** manuscript score under the current fingerprint, strategy score under
+    an older one, stage a prose-only change → exit 0 with `WARN stale: strategy`.
   - A fingerprint modified but not staged → exit 1 `stage quality_reports/render_fingerprint.json`.
   - Amendment rows in the CSV and no `tbl-design-changes` chunk → exit 1 `tbl-design-changes`;
     adding a chunk with that label → exit 0.
@@ -2386,6 +2391,6 @@ every `AUTHOR` step.**
 - [ ] **Step 6:** Run `pipeline.py critic-inputs` and dispatch one whole-manuscript writer-critic
   (round 1, cold) under the new fingerprint, recording with `record-score`. Then run
   `pipeline.py stale`: a strategy or referee score recorded before the retrofit carries no
-  fingerprint and is stale, so re-score each stage it lists (strategist-critic against the signed
-  `design:` block; the referees, if they were ever scored) before the next manuscript commit.
+  fingerprint and is stale. That does not block commits; re-score those stages in the normal
+  pipeline order (strategist-critic against the signed `design:` block).
   Then run `check_install.sh` for the project: PASS.
