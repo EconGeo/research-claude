@@ -1386,3 +1386,17 @@ commits and the merge, plus the docs commit that follows.
 
 **Status:**
 - Done: plan steps 1–4, step 5 measurement. `~/Research/CLAUDE.md` 79 → 50 lines (backup `.bak-2026-10-17`); budget raises confirmed by the author. Pending: one-week transcript check for script-guard/read-gate denials (from 2026-10-24).
+
+## 2026-10-17 — Rule diet closed: transcript check, script-guard fix
+
+**Operations:**
+- Counted guard-hook denials in paper transcripts 2026-10-12 → 17 (no pre-diet baseline: hooks landed with the diet).
+- `hooks/script-guard.py`: expand shell variables in Bash targets (the command's own assignments, then the environment); fail open when one is unresolved. Test `test_bash_shell_variables_are_expanded`.
+
+**Results:**
+- script-guard 44 denials: 27 false positives (scratchpad `$S/x.R`), now allowed on replay; 17 project-root scripts still denied.
+- read-gate 174 denials: 70 ≤15-line short reads, 65 mostly unread, 29 changed since read, 10 never read in full. None traces to a rule the diet removed.
+- pytest 829 passed, 1 skipped; check_fork exit 0.
+
+**Status:**
+- Done: `docs/plans/2026-10-12_rule-diet.md` closed. Open (author): read-gate tolerance for short chunk reads.

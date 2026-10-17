@@ -69,10 +69,45 @@ def bash_targets(command: str, cwd: Path):
             found.append(args[-1])
     out = []
     for f in found:
-        f = f.strip("'\"")
+        f = expand_vars(f.strip("'\""), shell_assignments(command))
+        if f is None:
+            continue  # a variable this hook cannot resolve: fail open
         p = Path(os.path.expanduser(f))
         out.append(p if p.is_absolute() else cwd / p)
     return out
+
+
+ASSIGN = re.compile(r"(?:^|[;&|\n(]|\bexport)\s*([A-Za-z_]\w*)=(\"[^\"]*\"|'[^']*'|[^\s;&|)]*)")
+VAR = re.compile(r"\$(?:\{([A-Za-z_]\w*)\}|([A-Za-z_]\w*))")
+
+
+def shell_assignments(command: str) -> dict:
+    """`NAME=value` and `export NAME=value` in the command itself, in order: a scratchpad path is
+    usually set and used in one call (`S=/tmp/...; cat > $S/x.R`)."""
+    names = {}
+    for m in ASSIGN.finditer(command):
+        value = expand_vars(m.group(2).strip("'\""), names)
+        if value is not None:
+            names[m.group(1)] = value
+    return names
+
+
+def expand_vars(text: str, names: dict):
+    """Substitute $NAME / ${NAME} from the command's assignments, then the environment.
+    None when any variable stays unresolved."""
+    unresolved = False
+
+    def sub(m):
+        nonlocal unresolved
+        name = m.group(1) or m.group(2)
+        value = names.get(name, os.environ.get(name))
+        if value is None:
+            unresolved = True
+            return ""
+        return value
+
+    out = VAR.sub(sub, text)
+    return None if unresolved else out
 
 
 def deny(target: Path, root: Path, manuscript: str):
