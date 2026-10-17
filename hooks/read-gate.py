@@ -9,7 +9,9 @@ CLAUDE.md). One file, two events:
                                  the file's size/mtime after each of its own reads and edits
   PreToolUse   Edit|Write|Bash   refuse a change unless this agent has read every line, and the
                                  file has not changed since (someone else's edit — the user in
-                                 VS Code, a subagent — means a fresh read is needed)
+                                 VS Code, a subagent — means a fresh read is needed). An allowed
+                                 Edit records where it lands, so PostToolUse can shift the read
+                                 ranges by the lines it adds or removes.
 
 "This agent" is keyed by session_id + agent_id, so a dispatched writer must read the manuscript
 itself; the main session reading it does not count for the subagent, and vice versa.
@@ -141,6 +143,39 @@ def sections_touched(text: str, old: str):
     return [lo, hi]
 
 
+def edit_sites(text: str, tool_input: dict):
+    """[first_line, old_line_span] of each place an Edit replaces, last site first."""
+    old = tool_input.get("old_string") or ""
+    if not old:
+        return []
+    sites, at = [], text.find(old)
+    while at >= 0:
+        sites.append([text.count("\n", 0, at) + 1, old.count("\n")])
+        if not tool_input.get("replace_all"):
+            break
+        at = text.find(old, at + len(old))
+    return sites[::-1]
+
+
+def shift(ranges, sites, new_span):
+    """Carry read ranges across the agent's own Edit.
+
+    Lines above a site keep their numbers, lines below it move by the change in line count, and
+    the replaced lines become the new text, which the agent wrote. Without this, an edit that adds
+    N lines left the last N lines of the section looking unread (69 false denials, 2026-10-12..17).
+    """
+    for first, old_span in sites:  # last site first, so earlier sites keep their numbers
+        d = new_span - old_span
+        moved = []
+        for lo, hi in ranges:
+            if lo < first:
+                moved.append([lo, min(hi, first - 1)])
+            if hi > first + old_span:
+                moved.append([max(lo, first + old_span + 1) + d, hi + d])
+        ranges = merge(moved + [[first, first + new_span]])
+    return ranges
+
+
 def same_file(a, b: Path) -> bool:
     try:
         return Path(a).resolve() == b
@@ -211,8 +246,12 @@ def main() -> int:
             # Coverage is judged against the line count the reads were made at, so an edit that
             # shifts lines keeps a full read full (a Write means the agent wrote every line).
             known_total = rec.get("total") or total_now
+            pending = rec.pop("pending", None)
             if tool == "Write" or not gaps(rec["ranges"], known_total):
                 rec["ranges"] = [[1, total_now]]
+            elif (pending and pending["key"] == [tool_input.get("old_string"), tool_input.get("new_string")]
+                  and pending["total_after"] == total_now):
+                rec["ranges"] = shift(rec["ranges"], pending["sites"], pending["new_span"])
         else:
             return 0
         rec["sig"] = stat_sig(ms)
@@ -255,6 +294,15 @@ def main() -> int:
         deny(f"read-gate: {why}. Unread lines: {spans}. Read {what} before changing it — Read "
              f"with offset/limit in chunks of {DEFAULT_LIMIT}. Rule: read before asserting "
              f"(~/.claude/CLAUDE.md).")
+    elif tool == "Edit":
+        # Where this Edit lands, so PostToolUse can carry the read ranges across it.
+        sites = edit_sites(ms.read_text(errors="ignore"), tool_input)
+        new_span = (tool_input.get("new_string") or "").count("\n")
+        rec["pending"] = {"key": [tool_input.get("old_string"), tool_input.get("new_string")],
+                          "sites": sites, "new_span": new_span,
+                          "total_after": total + sum(new_span - s for _, s in sites)}
+        state[agent_key] = rec
+        sf.write_text(json.dumps(state))
     return 0
 
 
