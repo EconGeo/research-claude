@@ -66,7 +66,10 @@ loads no shared rule until external imports are approved for it** (README, "Coau
 archival reproduction"). Also on 2026-09-29, `docs/plans/2026-09-29-zotpilot-skills-single-source.md`
 landed (merge `dd6da5f`; `EconGeo/ZotPilot#8`, `deploy_skills false`, the `personal-shadow` gate): ZotPilot skills
 now load only from `zotpilot-skills/`; see its 2026-09-29 entry in `docs/SESSION_REPORT.md`. Its
-open items are user decisions outside this repo. **Nothing is open in this repo.**
+open items are user decisions outside this repo. On 2026-10-17 `docs/plans/2026-10-12_rule-diet.md`
+closed (merges `cbc652e`, `90a8500`): `core.md` is the one always-loaded pipeline rule, 19 rules load
+on demand, and script-guard expands shell variables. Its one author decision is read-gate tolerance
+for short chunk reads. **Nothing is open in this repo.**
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 
