@@ -108,6 +108,15 @@
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh install-check.py"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh stale-stages.py",
+            "timeout": 25
+          }
+        ]
       }
     ],
     "Stop": [

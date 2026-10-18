@@ -22,6 +22,8 @@ import author_token as tok
 STATE_REL = Path("quality_reports") / "pipeline_state.json"
 LOG_REL = Path("quality_reports") / "agent_dispatch.jsonl"
 RECEIPTS_REL = Path("quality_reports") / "receipts.jsonl"
+FINGERPRINT_REL = Path("quality_reports") / "render_fingerprint.json"
+STALE_ON_CHANGE = {"strategy", "manuscript", "referees"}
 GATES = {"commit": (80, None), "pr": (90, None), "submission": (95, 80)}
 
 def now() -> str:
@@ -95,6 +97,53 @@ def append_receipt(root: Path, entry: Dict[str, Any]) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a") as f:
         f.write(json.dumps(entry) + "\n")
+
+# ── results fingerprint & staleness ─────────────────────────────────────────
+def read_fingerprint(root: Path) -> Optional[Dict[str, Any]]:
+    p = root / FINGERPRINT_REL
+    return json.loads(p.read_text()) if p.exists() else None
+
+def current_fingerprint(root: Path, ms: Path) -> Dict[str, Optional[str]]:
+    fp = read_fingerprint(root) or {}
+    return {"estimates": fp.get("estimates_hash"), "design": dsb.design_hash(ms.read_text())}
+
+def git_head(root: Path) -> Optional[str]:
+    try:
+        r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True)
+    except OSError:
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+def stale_reason(root: Path, ms: Path, comp: str, entry: Dict[str, Any]) -> Optional[str]:
+    """Why a strategy/manuscript/referees score no longer stands, or None.
+
+    Off for a paper that is not retrofitted: no lock file and no fingerprint file. A lock FILE
+    counts as locked even if corrupt (fail closed, as design_state does)."""
+    if comp not in STALE_ON_CHANGE or not entry: return None
+    cur = current_fingerprint(root, ms); locked = (root / dsb.LOCK_REL).exists()
+    if cur["estimates"] is None:
+        return ("no render_fingerprint.json — render the manuscript (its fingerprint chunk writes it)"
+                if locked else None)
+    fp = entry.get("fingerprint") or {}
+    if fp.get("estimates") != cur["estimates"] or fp.get("design") != cur["design"]:
+        clears = {"manuscript": "a whole-manuscript writer-critic round", "strategy": "a strategist-critic round",
+                  "referees": "a new referee round"}[comp]
+        return f"STALE: {comp} score earned under an older fingerprint — re-score with {clears}"
+    return None
+
+def stale_components(root: Path) -> Dict[str, str]:
+    if not state_path(root).exists(): return {}
+    ms = declared_manuscript(root); comps = (load_state(root).get("components") or {})
+    return {c: r for c, e in comps.items() if (r := stale_reason(root, ms, c, e))}
+
+def stale_cmd(root: Path) -> int:
+    bad = stale_components(root)
+    for c, r in bad.items(): print(f"STALE {c}: {r}")
+    if not bad: print("stale: none")
+    return 1 if bad else 0
+
+def entry_stale(root: Path, ms: Path, st: Dict[str, Any], comp: str) -> Optional[str]:
+    return stale_reason(root, ms, comp, (st.get("components") or {}).get(comp) or {})
 
 def validate_state(st: Dict[str, Any], reg: Dict[str, Any]) -> List[str]:
     p: List[str] = []
@@ -462,7 +511,10 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         else:
             val = st.get("components", {}).get(pred["component"], {}).get("score")
         ok = val is not None and val >= float(pred["min"])
-        return ok, f"{pred['component']} score ≥ {pred['min']} (have {val})"
+        desc = f"{pred['component']} score ≥ {pred['min']} (have {val})"
+        why = entry_stale(root, ctx.ms, st, pred["component"]) if pred["component"] != "overall" else None
+        if why: return False, desc + " — " + why
+        return ok, desc
     if t == "score-if-scored":
         # A component that HAS been scored must clear `min`; one never scored is ignored.
         # A MISSING state file is not "never scored" — defaulting to {} here would make the
@@ -475,6 +527,8 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         val = st.get("components", {}).get(pred["component"], {}).get("score")
         if val is None:                                   # `is None`, never truthiness: 0.0 is a score
             return True, desc + " (never scored — not required yet)"
+        why = entry_stale(root, ctx.ms, st, pred["component"])
+        if why: return False, desc + f" (have {val}) — " + why
         return val >= float(pred["min"]), desc + f" (have {val})"
     if t == "fresh":
         ok, why = is_fresh(root, ctx.ms); return ok, f"fresh: {why}"
@@ -520,6 +574,9 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         report = ((st.get("components") or {}).get(comp) or {}).get("report")
         if report and not (root / report).is_file():
             return False, ran + f", but its recorded report {report} no longer exists on disk"
+        why = stale_reason(root, ctx.ms, comp, (st.get("components") or {}).get(comp) or {})
+        if why is not None:
+            return False, ran + " — " + why
         return True, ran + f", {comp} scored at {at} (creator {a}, critic {c})"
     if t == "prose-check":
         rc, out = run_script(root, "prose_number_check.py", str(ctx.ms.relative_to(root)))
@@ -607,6 +664,8 @@ def next_report(root: Path, reg) -> int:
                     ".claude/skills/pipeline/references/adopt.md)" if newest is None
                     else f" (creator {newest_agent} completed at {newest})")
             info[c] = ("CLOSED", f"{entry.get('score')} by {entry.get('critic')} at {at}" + deduction_note(entry) + tail)
+            why = stale_reason(root, declared_manuscript(root), c, entry)
+            if why: info[c] = ("OPEN", why)
         elif newest is not None:
             scorer = reg["components"][c].get("scored_by")
             d = f"{newest_agent} completed at {newest}; no {c} score after it — dispatch {scorer} and record-score"
@@ -691,7 +750,7 @@ def registry_check(root: Path) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default=".")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("manuscript"); sub.add_parser("fresh"); sub.add_parser("next"); sub.add_parser("critic-inputs")
+    sub.add_parser("stale"); sub.add_parser("manuscript"); sub.add_parser("fresh"); sub.add_parser("next"); sub.add_parser("critic-inputs")
     for k in ("pre", "post"): sub.add_parser(k).add_argument("agent")
     sc = sub.add_parser("score"); sc.add_argument("--gate", choices=sorted(GATES))
     st = sub.add_parser("state"); st.add_argument("op", choices=["init", "validate", "show", "record-score", "record-verify-claims", "record-deposit", "strike", "set-blocked", "clear-blocked"])
@@ -712,6 +771,7 @@ def main() -> int:
     if a.cmd == "fresh":
         ok, why = is_fresh(root, declared_manuscript(root)); print(("fresh: " if ok else "STALE: ") + why); return 0 if ok else 1
     if a.cmd == "critic-inputs": return critic_inputs(root)
+    if a.cmd == "stale": return stale_cmd(root)
     if a.cmd == "design": return design_cmd(root, a)
     if a.cmd in ("pre", "post"): return run_preds(a.cmd, a.agent, root, reg)
     if a.cmd == "next": return next_report(root, reg)
@@ -730,6 +790,8 @@ def main() -> int:
         print(f"overall={ov if ov is not None else 'n/a'}")
         if a.gate:
             need, per = GATES[a.gate]; ok = ov is not None and ov >= need and (per is None or all(e["score"] >= per for e in stt["components"].values()))
+            for c, why in stale_components(root).items():
+                ok = False; print(f"gate {a.gate}: {why}")
             if a.gate == "submission":
                 # Phase 3.1: /submit final could pass at >= 95 with `/verify-claims` never having
                 # run — a scored 95 says nothing about hallucinated citations or numbers, which
@@ -784,7 +846,9 @@ def main() -> int:
                 if abs(score - max(0.0, 100.0 - a.deductions)) > 0.05:
                     print(f"record-score: score {score:g} does not match --deductions {a.deductions:g} "
                           f"(expected {max(0.0, 100.0 - a.deductions):g} = max(0, 100 − deductions))"); return 1
-            entry = {"score": score, "critic": a.critic, "report": a.report, "at": now()}
+            ms = declared_manuscript(root)
+            entry = {"score": score, "critic": a.critic, "report": a.report, "at": now(),
+                     "fingerprint": current_fingerprint(root, ms), "head": git_head(root)}
             if a.deductions is not None: entry["deductions"] = a.deductions
             if a.scope and a.scope.startswith("section:"):
                 stt["sections"][a.scope.split(":", 1)[1]] = entry
@@ -793,10 +857,10 @@ def main() -> int:
             # Bind this verdict to the exact bytes it scored — both the manuscript and the
             # report file, at this instant, so the receipt is tied to what was actually
             # reviewed and not to whatever those files happen to contain later.
-            ms = declared_manuscript(root)
             receipt = {"at": entry["at"], "agent": a.critic, "component": comp, "score": score,
                        "report": a.report, "manuscript": str(ms.relative_to(root)),
-                       "manuscript_sha256": sha256_file(ms), "report_sha256": sha256_file(root / a.report)}
+                       "manuscript_sha256": sha256_file(ms), "report_sha256": sha256_file(root / a.report),
+                       "fingerprint": entry["fingerprint"], "head": entry["head"]}
             if a.scope: receipt["scope"] = a.scope
             # save_state first, append_receipt second: a receipt should never exist for a
             # score that was never actually recorded, e.g. if save_state were to fail.

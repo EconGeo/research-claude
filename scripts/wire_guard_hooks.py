@@ -20,6 +20,7 @@ WANTED = [
     ("PreToolUse", "Write|Edit|Bash", "design-guard.py"),
     ("PostToolUse", "Read|Edit|Write", "read-gate.py"),
     ("UserPromptSubmit", None, "design-token.py"),
+    ("SessionStart", None, "stale-stages.py"),
 ]
 
 

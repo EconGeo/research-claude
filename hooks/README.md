@@ -56,6 +56,7 @@ Before shipping a skill that depends on a hook, check that the hook is wired.
 | `read-gate.py` | PostToolUse (Read/Edit/Write) + PreToolUse (Edit/Write/Bash) | Records which manuscript lines each agent has read; refuses an edit to the declared manuscript until that agent has read every line since the file last changed. Blocking |
 | `design-guard.py` | PreToolUse (Write/Edit/Bash) | Refuses an edit that changes a signed `design:` block, a Bash write to the manuscript while signed, `pipeline.py design sign\|unlock` without the author's fresh token, any write to the lock, token and record files, and a Bash `claude … approve design` (a nested session never submits an approval line). Blocking; fails open on internal error |
 | `design-token.py` | UserPromptSubmit | Turns the author's chat approval line into a one-time token for `pipeline.py design sign` or `unlock`; revokes an unused token on the next message. Never blocks |
+| `stale-stages.py` | SessionStart | Prints the strategy, manuscript or referee scores a re-estimation or design change made stale; silent otherwise |
 
 ## Getting the contract right
 
