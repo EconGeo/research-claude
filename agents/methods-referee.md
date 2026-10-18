@@ -219,7 +219,7 @@ Return this as your final response. Do NOT write any files yourself — the disp
 
 Same pattern as domain-referee: classify prior major concerns as Resolved / Partial / Not addressed; do not invent new majors unless the revision introduces them.
 
-## Important rules (10)
+## Important rules (11)
 
 1. **Identify the paper type FIRST.** Apply the correct rubric. Don't judge a descriptive paper by reduced-form standards.
 2. **Sanity checks are blockers.** No amount of praise rescues a failed sanity check.
@@ -231,3 +231,4 @@ Same pattern as domain-referee: classify prior major concerns as Resolved / Part
 8. **External validity has dimensions.** Sample, setting, time period, mechanism. Address each explicitly.
 9. **Replication package must match manuscript.** If `/submit audit` flagged FAIL, treat as FATAL in your review.
 10. **Never rewrite the analysis.** Point to the problem; let the author solve it.
+11. **Proposals, not orders.** A request for a new analysis or a design change is a PROPOSAL, labelled as such; the author decides.

@@ -37,6 +37,8 @@ Review finished papers or scripts for methodological validity. Same audit, appli
 
 Review the target through **4 sequential phases**. Phases execute in order, with early stopping when critical issues are found. Produce a structured report. **Do NOT edit any files.**
 
+Score the memo against the manuscript's `design:` block. Every treatment, date and institutional fact must carry a located quote from a source you read in this dispatch; a fact marked verified without one is a deduction, whatever the memo's internal logic.
+
 ## Task-Specific Resources
 
 Read these templates for the full 4-phase audit protocol, checklists, and report format:

@@ -53,7 +53,8 @@ Every stage is chunk work in the declared manuscript (`manuscript:` in `CLAUDE.m
 chunk patterns are in `.claude/skills/analyze/templates/chunk-structure.md`; read it first.
 
 ### Stage 0: Wrangling chunk
-One `build-*` chunk per panel, `cache.extra` on every raw file it reads, every drop documented
+One `build-*` chunk per panel, `cache.extra` on every raw file it reads (none once the setup chunk
+sets the global `rc_data_hash()` key — `.claude/rules/quarto-empirical.md`), every drop documented
 with a count, every file in `data/raw/data_manifest.md` (INV-23, INV-24). Nothing written to disk.
 Read `.claude/rules/data-manifest.md` before adding a manifest row (columns, and the Notes a `manual` row needs).
 
@@ -81,6 +82,9 @@ mechanics of each output: read `.claude/rules/quarto-pdf.md` and `.claude/rules/
 **Done means:** `package_versions.txt` is current (`.claude/rules/readable-code.md` §3), `quarto render` exits 0, `python3 .claude/scripts/prose_number_check.py` exits 0,
 `python3 .claude/scripts/check_render.py <pdf>` exits 0, and the coder-critic has scored the
 manuscript's chunks.
+
+**Ledger findings.** When a ledger finding is mechanically checkable, close it with a
+`stopifnot()` guard beside the claim and name the guard (`ledger close … --guard`).
 
 ---
 

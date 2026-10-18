@@ -74,8 +74,11 @@ KNOWN_UNBOUND: set[str] = set()
 # Phase 1 read never ran); measured 13,110.
 # 2026-10-14 (author ruling): review 13,200 -> 13,500. `572cbeb` added the critic-inputs step
 # before coder-critic on `--code <manuscript>`; measured 13,414.
+# 2026-10-18 (design lock, Task 13): review 13,500 -> 14,450. The design-lock `pre writer` gate,
+# dispatch-ok / critic-context / ledger add before and after each critic, and referee requests as
+# ledger proposals; measured 14,413.
 BUDGET = {
-    "review": 13500,
+    "review": 14450,
     # 2026-10-17 (rule diet tier 2): strategize 8,850 -> 8,900, write 9,050 -> 9,100, discover
     # 7,500 -> 7,550. agents.md left startup loading, so each dispatching skill reads it before its
     # first dispatch (one line); measured 8,860 / 9,073 / 7,532.
@@ -92,7 +95,10 @@ BUDGET = {
     # 2026-09-29 (rule load exclusions, minor fix): write 8,850 -> 9,050. GATE 1's option gate moved
     # from Step 6 into Step 4, before the writer is dispatched: its pick is the intro's first
     # paragraph, and `intro`/`abstract` reached it only after drafting. Measured 9,014.
-    "write": 9100,
+    # 2026-10-18 (design lock, Task 13): write 9,100 -> 9,600. Step 0 runs `pre writer` as a
+    # blocking step; Step 5 adds dispatch-ok / critic-context and a ledger row per finding;
+    # measured 9,584.
+    "write": 9600,
     # 2026-09-24 (option gates, Task A3): discover 6,200 -> 7,300. Four gates (question
     # framings, journal tiers, data shortlist, ideas), each a wait instruction; measured 7,195.
     # 2026-09-24 (routing, Task B5): discover 7,300 -> 7,500. Ideate's novelty check now

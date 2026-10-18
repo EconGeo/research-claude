@@ -85,4 +85,33 @@ class TestGitHooksPath(unittest.TestCase):
         l = next((x for x in self.out().splitlines() if "[hooks-wired]" in x), "")
         self.assertTrue(l.startswith("FAIL") and "git hook" in l, l)
 
+class TestClaudeMdCaps(unittest.TestCase):
+    """Task 13: a project CLAUDE.md over 60 lines fails (was a warning), and design facts
+    (a dated treatment or event, a hypothesis line) in it fail — they belong in `design:`."""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(); t = pathlib.Path(self.tmp.name)
+        self.rc = t / "rc"; (self.rc / "skills" / "s").mkdir(parents=True); (self.rc / "skills" / "s" / "SKILL.md").write_text("s\n")
+        (self.rc / "agents").mkdir(); (self.rc / "agents" / "a.md").write_text("a\n")
+        git(t, "init", "-q", "-b", "main", str(self.rc)); git(self.rc, "add", "-A"); git(self.rc, "commit", "-qm", "one")
+        self.p = t / "proj"; (self.p / ".claude" / "skills").mkdir(parents=True)
+        os.symlink(self.rc / "skills" / "s", self.p / ".claude" / "skills" / "s")
+    def tearDown(self): self.tmp.cleanup()
+    def line(self, check, body):
+        (self.p / "CLAUDE.md").write_text(body)
+        out = subprocess.run(["bash", SCRIPT, "--project-dir", str(self.p)], capture_output=True, text=True).stdout
+        return next((l for l in out.splitlines() if f"[{check}]" in l), "")
+
+    def test_61_lines_fails(self):
+        self.assertTrue(self.line("claude-md-size", "x\n" * 61).startswith("FAIL"))
+    def test_60_lines_passes(self):
+        self.assertTrue(self.line("claude-md-size", "x\n" * 60).startswith("PASS"))
+    def test_treatment_date_fails(self):
+        l = self.line("claude-md-design-facts", "# P\nTreatment date: 2024-10-01\n")
+        self.assertTrue(l.startswith("FAIL") and "design:" in l, l)
+    def test_hypothesis_line_fails(self):
+        self.assertTrue(self.line("claude-md-design-facts", "# P\n- H1: prices fall\n").startswith("FAIL"))
+    def test_clean_file_passes(self):
+        l = self.line("claude-md-design-facts", "# P\nmanuscript: paper.qmd\nSee the 2024-10-01 session notes.\n")
+        self.assertTrue(l.startswith("PASS"), l)
+
 if __name__ == "__main__": unittest.main()

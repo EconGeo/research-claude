@@ -72,6 +72,16 @@ after the loop: score; "Suggested Learnings" (strikes, escalations, first-pass â
 ```
 Limits: 3 rounds per pair, 5 overall (`registry.yaml: limits`; `state strike` refuses past either).
 
+**Stop conditions (core rule 16).** An unattended run (`--yes`, or no author present) makes its
+own rulings and continues, logging every decision it takes for the author with
+`python3 .claude/scripts/pipeline.py ruling add --decision "<what>" --alternative "<the other
+option>" --reason "<why>"`. Two decisions are hard stops instead â€” write each with
+`python3 .claude/scripts/pipeline.py question add --text "<question>" --blocks "<stage or
+finding>"` and stop that line of work (other stages may continue):
+- a ruling that would contradict a decision the author recorded;
+- any change to the manuscript's `design:` block (signing or unlocking needs the author's own
+  approval line in chat, core rule 13).
+
 ## `resume`
 After `/compact` or a new session: `state show`, `score`, the last three lines of
 `quality_reports/agent_dispatch.jsonl`, then `pipeline.py next`. See
@@ -79,7 +89,8 @@ After `/compact` or a new session: `state show`, `score`, the last three lines o
 
 ## Two modes
 Orchestrated (this skill) validates dependencies. Standalone (any stage skill invoked directly)
-skips `pre` but never skips the critic, and still writes the dispatch log and the state file,
+runs only the `pre` its own steps name (blocking in `/analyze`, `/write`, `/revise`, `/review`)
+but never skips the critic, and still writes the dispatch log and the state file,
 so a later `/pipeline` sees what happened.
 
 ## Principles

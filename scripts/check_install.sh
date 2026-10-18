@@ -313,7 +313,10 @@ check_project() {
   # (rules diet, docs/plans/2026-10-12_rule-diet.md). History belongs in the project's own docs history file.
   local cl; cl="$(wc -l < "$P/CLAUDE.md" 2>/dev/null | tr -d ' ')"; cl="${cl:-0}"
   if [[ "$cl" -le 60 ]]; then ok claude-md-size "$cl lines"
-  else warn claude-md-size "CLAUDE.md is $cl lines (cap 60) — move dated status and history to a history file under the project docs folder"; fi
+  else bad claude-md-size "CLAUDE.md is $cl lines (cap 60) — move dated status and history to a history file under the project docs folder"; fi
+  # A dated treatment/event or a hypothesis line in CLAUDE.md is a second, unsigned copy of the design.
+  local facts; facts="$(grep -nEi '(treat(ment|ed)|event)[^.]{0,40}(19|20)[0-9]{2}-[0-9]{2}(-[0-9]{2})?|^[[:space:]]*[-*]?[[:space:]]*\**H[0-9]+\**[[:space:]]*[:.)]' "$P/CLAUDE.md" 2>/dev/null || true)"
+  [[ -z "$facts" ]] && ok claude-md-design-facts "none" || bad claude-md-design-facts "design facts belong in the manuscript's design: block: $(echo "$facts" | head -2 | tr '\n' ' ')"
 
   # The pre-commit gate is a git hook, installed by apply.sh as core.hooksPath. A hooksPath that names
   # a missing directory runs no hook and the commit still succeeds — which is exactly what a fresh

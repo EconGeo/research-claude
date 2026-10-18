@@ -50,3 +50,40 @@ enforces; `[judgment]` marks one nothing checks.
     code only when no package does the job.
     Before writing or reviewing code, read `.claude/rules/readable-code.md`.
     `[judgment: coder-critic category 17]`
+
+## Design, results and review
+13. **The design lives in the manuscript's `design:` block, and the author signs it in chat.**
+    The block holds hypotheses → model objects, treatment with a located source quote, sample,
+    inference rule, and the results of the power and size checks, which run in `explorations/`.
+    The author approves with one line of their own message — `approve design sign`, or
+    `approve design unlock: <reason>` — which issues a one-time token; only then does the
+    session run `pipeline.py design sign|unlock`. Every amendment is recorded in
+    `quality_reports/design_amendments.csv` and disclosed by a `tbl-design-changes` chunk.
+    Adjusting a model after seeing results is normal; recording it is what is required.
+    `[hook: design-token, design-guard; script: design-lock predicate, commit-check]`
+    - **The approval line** is a whole line of the author's own message, trimmed and
+      case-insensitive, optionally ending in one `.`: exactly `approve design sign` (nothing
+      after it — `approve design sign: …` does not count), or `approve design unlock: <reason>`
+      (the reason is required and recorded verbatim). A line inside a fenced code block or
+      starting with `>` does not count; a message must carry exactly one approval line.
+    - **The token is fresh** only if the author's most recent message issued it, it is at most
+      30 minutes old and unused, and it is for that operation and for the `design:` block as it
+      stood at approval. One successful `sign` or `unlock` spends it.
+    - **A session never submits an approval line itself** — design-guard refuses a nested
+      `claude` command carrying one.
+14. **Every result word is bound to the model:** helper output (`rc_sig`, `rc_stars`, `rc_dir`,
+    `rc_cmp`, `rc_num`, `rc_pct`, pasted into the setup chunk from
+    `.claude/templates/claims-helpers.R.txt`), a raw inline `if`, or a typed word in a sentence
+    that carries an inline `stopifnot()` result guard. Stars: `*` p ≤ 0.10, `**` p ≤ 0.05,
+    `***` p ≤ 0.01; "statistically significant" names its level. `[script: prose_number_check.py]`
+15. **A re-estimation reopens review mechanically.** Scores carry the results fingerprint; a
+    strategy, manuscript or referee score earned under another one is stale, and manuscript
+    commits are refused until it is re-scored (the re-estimation commit itself passes).
+    Findings live in `quality_reports/findings_ledger.md`. A passed, unchanged target is not
+    re-reviewed. `[script: pipeline.py; hook: pre-commit, stale-stages]`
+16. **Unattended runs make rulings and continue.** Log each with `pipeline.py ruling add`
+    (date, decision, the alternative, reason) in `quality_reports/rulings_log.md`. Two hard
+    stops: a ruling that would contradict a decision the author recorded, and any change to
+    the `design:` block. Write those with `pipeline.py question add` to
+    `quality_reports/questions_for_author.md` and stop that line of work.
+    `[judgment; script: ledger rulings]`

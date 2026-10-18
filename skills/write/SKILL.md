@@ -25,6 +25,10 @@ Draft a specific section: `intro`, `strategy`, `results`, `conclusion`, `abstrac
 
 Workflow:
 
+#### 0. Check inputs (blocking)
+
+`python3 .claude/scripts/pipeline.py pre writer` is **blocking**: a FAIL stops the skill and is reported.
+
 #### 1. Context Gathering
 
 Before drafting, read all available context:
@@ -70,7 +74,9 @@ After the writer returns and before dispatching writer-critic, apply
 the skill's description promises; without it the description is a claim no step delivers.
 
 #### 5. Dispatch writer-critic (every mode that touches prose)
-Run `python3 .claude/scripts/pipeline.py critic-inputs` first. It renders the manuscript, runs the
+Run `pipeline.py dispatch-ok writer-critic` (`PASSED-UNCHANGED`: no dispatch unless the author
+asked) and, from round 2, `critic-context writer-critic`, naming its file in the prompt
+(`.claude/rules/agents.md` §3). Then run `python3 .claude/scripts/pipeline.py critic-inputs`. It renders the manuscript, runs the
 prose-number and page checks, and prints the log path on its last line
 (`critic-inputs: quality_reports/critic_inputs/writer-critic_<stamp>.log`); name that path in the
 dispatch prompt. writer-critic has no Bash and scores Render (category 6) from that log only
@@ -79,7 +85,7 @@ scores it; do not fix and re-run before dispatching.
 
 Dispatch **writer-critic** in section mode. Returns report + Claim–Evidence Table as text;
 session saves to `quality_reports/reviews/writer-critic_<date>.md` and
-`quality_reports/reviews/claim_evidence_<project>_<date>.md`, records: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<name>`. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question. `/write humanize` gets the critic too, in proofread mode (below); `/write style-guide` is the only exempt mode (no prose).
+`quality_reports/reviews/claim_evidence_<project>_<date>.md`, records: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<name>`. Then one `ledger add --creator writer` row per finding. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question. `/write humanize` gets the critic too, in proofread mode (below); `/write style-guide` is the only exempt mode (no prose).
 
 #### 6. Present to user
 Only after the critic's score. Sections go through the drafting gates (`.claude/skills/write/templates/drafting-gates.md`), each gate closing with a score, pausing for approval at each:
@@ -124,10 +130,10 @@ Strip AI writing patterns from existing text without rewriting content.
 Strips the 24 AI patterns in `.claude/skills/write/templates/cleanup-patterns.md` (content,
 language, style and communication categories) under its academic adaptation rules.
 
-After the cleanup pass, run `python3 .claude/scripts/pipeline.py critic-inputs` and dispatch **writer-critic** in **proofread mode** with the log path it prints (as in step 5) (categories 4, 5, 6, 8
+After the cleanup pass, run `dispatch-ok`/`critic-context` and `python3 .claude/scripts/pipeline.py critic-inputs` as in step 5, and dispatch **writer-critic** in **proofread mode** with the log path it prints (as in step 5) (categories 4, 5, 6, 8
 only: writing quality, format, render, notation — not section mode, which would score
 identification fidelity and claims-evidence on prose it never saw drafted). Returns text;
-session saves to `quality_reports/reviews/writer-critic_<date>.md`, records: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<file>`. The `section:` prefix is mandatory — without it the score falls through to the component branch and overwrites the whole-manuscript score instead of scoping to this file. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question.
+session saves to `quality_reports/reviews/writer-critic_<date>.md`, records: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<file>`. The `section:` prefix is mandatory — without it the score falls through to the component branch and overwrites the whole-manuscript score instead of scoping to this file. Add one `ledger add` row per finding, as in step 5. Below 80 → writer fixes → critic re-reviews; `pipeline.py state strike writer` per failing round; strike three → User with a specific question.
 
 ---
 
