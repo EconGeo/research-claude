@@ -80,7 +80,19 @@ VERDICT WORDS. A typed word describing a result -- "significant", "outperforms",
 manuscript already carrying dozens is not red on day one; `prose-verdict-ceiling:
 N` in the project's CLAUDE.md makes a count above N fail, and
 `prose-verdict-words:` extends the lexicon the same way `prose-number-nouns:`
-extends the noun list.
+extends the noun list. Once the manuscript carries a `design:` block (a RETROFITTED
+paper) the count is enforced at 0 by default, the lexicon widens to direction,
+comparison, magnitude and universality words, and `prose-verdict-ceiling:` still
+overrides. Bind a word with `rc_sig`/`rc_stars`/`rc_dir`/`rc_cmp`, a raw inline `if`, or
+a `stopifnot()` guard in the sentence. A retrofitted paper also fails on PIPELINE
+JARGON (the patterns in `.claude/references/pipeline-jargon.txt` plus any
+`prose-jargon:` line): not allowlistable.
+
+ALLOWLIST CONTEXT. The allowlist may carry a third column, `context`. When it is
+non-empty the row explains only occurrences whose surrounding text contains it; a word
+row's `literal` is the lower-case word and its context is the sentence. An inline `if`
+comparing against a numeric literal other than 0.10/0.05/0.01 prints a `WARN literal
+threshold` line; it never fails.
 
 PROVENANCE. Written for one project in 2026-09 and promoted here unchanged in
 logic, with the manuscript and allowlist paths parameterized so any project can
@@ -106,6 +118,10 @@ prose-number-nouns pattern, or a prose-verdict-ceiling that is not a
 non-negative integer or is declared more than once.
 """
 import re, csv, sys, os, collections
+from pathlib import Path
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import design_block  # noqa: E402
 
 
 def project_root(qmd):
@@ -281,6 +297,7 @@ def load_manuscript(qmd):
                         in_block = True
                     elif value:
                         prose.append((i, value.strip("\"'")))
+                        in_block = True      # indented continuation lines of a plain scalar
             continue
         m = FENCE.match(line)
         if m:
@@ -307,7 +324,9 @@ def load_prose(qmd):
 # The fixed significance legend (`p <= 0.10`, `p <= 0.05`, `p <= 0.01`) is the
 # convention, not a result. Written with `<` it stays a literal, which points the
 # author at the convention.
-STAR_LEGEND = re.compile(r"\bp\s*(?:≤|<=|\$\\leq?\$)\s*0?\.(?:10?|05|01)\b")
+STAR_LEGEND = re.compile(
+    r"\bp\s*(?:≤|<=|\$\\leq?\$)\s*0?\.(?:10?|05|01)\b"
+    r"|\$p\s*\\leq?\s*0?\.(?:10?|05|01)\$")
 INLINE = re.compile(r"`(?:r|\{r\})\s[^`]*`")
 MATH = re.compile(r"\$\$.*?\$\$|\$[^$\n]*\$", re.S)
 # A literal ends on a digit, so "Table 4," and "Table 4." key as '4'. The old
@@ -349,7 +368,15 @@ _VERDICT = (r"significant|significantly|insignificant|"
             r"outperform(?:s|ed|ing)?|underperform(?:s|ed|ing)?|"
             r"positive|negative|rises|rose|falls|fell|"
             r"monotonic(?:ally)?|stronger|weaker|null")
+# Retrofitted papers only: direction, comparison, magnitude and universality words.
+# Multi-word entries last.
+_VERDICT_STRICT = (r"increase[sd]?|decrease[sd]?|declin(?:e|es|ed|ing)|larger|smaller|higher|lower|"
+                   r"doubled|halved|tripled|exceed(?:s|ed)?|robust(?:ly)?|substantial(?:ly)?|modest(?:ly)?|"
+                   r"sizable|consistent(?:ly)?|every specification|all specifications")
 LIVE = "\x00"
+GUARD = "\x01"
+# An inline `if` whose comparison uses a numeric literal; the convention cutoffs are quiet.
+THRESH = re.compile(r"`(?:r|\{r\})\s[^`]*\bif\s*\([^)`]*[<>]=?\s*(-?(?:\d+\.?\d*|\.\d+))\s*\)")
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 
 
@@ -378,8 +405,9 @@ def tokens(extra):
     return [t for t in re.split(r"[|,\s]+", extra) if t]
 
 
-def verdict_rx(extra):
-    words = "|".join([_VERDICT, *tokens(extra)])
+def verdict_rx(extra, strict=False):
+    base = [_VERDICT, _VERDICT_STRICT] if strict else [_VERDICT]
+    words = "|".join([*base, *tokens(extra)])
     return re.compile(rf"\b(?:{words})\b", re.I)
 
 
@@ -403,14 +431,35 @@ def paragraphs(prose):
         yield start, " ".join(para)
 
 
-def verdict_hits(prose, rx):
+def _mark(m):
+    return GUARD if "stopifnot(" in m.group(0) else LIVE
+
+
+def verdict_hits(prose, rx, guards=False):
+    """(line, word, sentence) per typed verdict word in a sentence with a live value.
+
+    With `guards`, a sentence carrying an inline `stopifnot(` span is bound: its words pass.
+    """
     out = []
     for start, text in paragraphs(prose):
-        for sentence in SENTENCE_END.split(INLINE.sub(LIVE, text)):
-            if LIVE in sentence:
-                shown = sentence.replace(LIVE, "`r …`")[:160]
+        for sentence in SENTENCE_END.split(INLINE.sub(_mark, text)):
+            if LIVE in sentence or GUARD in sentence:
+                if guards and GUARD in sentence:
+                    continue
+                shown = sentence.replace(LIVE, "`r …`").replace(GUARD, "`r …`")
                 out.extend((start, m.group(0).lower(), shown) for m in rx.finditer(sentence))
     return out
+
+
+def jargon_patterns(root):
+    """Pipeline-internal vocabulary: the shipped list plus the project's `prose-jargon:`."""
+    ref = Path(os.path.realpath(__file__)).parent.parent / "references" / "pipeline-jargon.txt"
+    pats = []
+    if ref.exists():
+        pats = [l.strip() for l in ref.read_text(encoding="utf-8").splitlines()
+                if l.strip() and not l.lstrip().startswith("#")]
+    pats += tokens(" ".join(declared(root, "prose-jargon")))
+    return re.compile("|".join(f"(?:{p})" for p in pats), re.I) if pats else None
 
 
 def extra_nouns(root):
@@ -470,7 +519,11 @@ def main(argv):
     note = f"  extra nouns: {extra}  (from {source})" if extra else ""
 
     try:
-        v_rx = verdict_rx("|".join(declared(root, "prose-verdict-words")))
+        retrofitted = design_block.design_block(open(qmd, encoding="utf-8").read()) is not None
+    except (OSError, UnicodeDecodeError):
+        retrofitted = False
+    try:
+        v_rx = verdict_rx("|".join(declared(root, "prose-verdict-words")), retrofitted)
     except re.error as e:
         print(f"error: prose-verdict-words in CLAUDE.md is not a valid pattern: {e}")
         return 2
@@ -489,17 +542,25 @@ def main(argv):
             print("error: prose-verdict-ceiling must be a non-negative integer, "
                   f"got {ceilings[0]!r}")
             return 2
+    if ceiling is None and retrofitted:
+        ceiling = 0
 
     # A key keeps no trailing comma: NUM ends a literal on a digit, so "1999,"
     # could never match, and its bare twin made it look stale. Normalise it and
     # say so, so the file gets cleaned rather than silently reinterpreted.
-    allow, comma_keys = {}, []
+    allow, comma_keys, allow_ctx = {}, [], {}
     if os.path.exists(allow_path):
         for r in csv.DictReader(open(allow_path, encoding="utf-8")):
             key = r["literal"]
             if key.endswith(","):
                 comma_keys.append(key)
             allow.setdefault(key.rstrip(","), r["reason"])
+            allow_ctx.setdefault(key.rstrip(","), []).append(
+                (r.get("context") or "").strip() or None)
+
+    def explained(key, ctx):
+        """A row explains an occurrence when it has no context or its context occurs in ctx."""
+        return key in allow and any(c is None or c in ctx for c in allow_ctx[key])
     if comma_keys:
         note += ("\n" if note else "") + (
             "  note: allowlist keys with a trailing comma: "
@@ -553,14 +614,49 @@ def main(argv):
             print("       Nothing after that line could be scanned, so no verdict is given.")
             return 2
 
-    verdicts = verdict_hits(prose, v_rx)
+    verdicts = verdict_hits(prose, v_rx, guards=retrofitted)
+    used_words = set()
+    if retrofitted:
+        kept = []
+        for h in verdicts:
+            if explained(h[1], h[2]):
+                used_words.add(h[1])
+            else:
+                kept.append(h)
+        verdicts = kept
     over = ceiling is not None and len(verdicts) > ceiling
 
-    unexplained = {k: v for k, v in hits.items() if k not in allow}
-    stale = [k for k in allow if k not in hits]
+    unexplained = {}
+    for k, occ in hits.items():
+        left = [o for o in occ if not explained(k, o[1])]
+        if left:
+            unexplained[k] = left
+    stale = [k for k in allow if k not in hits and k not in used_words]
 
-    failed = bool(glued) or bool(unexplained) or over
-    mode = f"ceiling {ceiling}" if ceiling is not None else \
+    jargon = []
+    j_rx = jargon_patterns(root) if retrofitted else None
+    if j_rx:
+        for lineno, line in prose:
+            for m in j_rx.finditer(INLINE.sub(" ", line)):
+                jargon.append((lineno, m.group(0)))
+        for lineno, text in captions:
+            for m in j_rx.finditer(INLINE.sub(" ", text)):
+                jargon.append((lineno, "caption: " + m.group(0)))
+
+    thresholds = []
+    for lineno, line in prose:
+        for m in THRESH.finditer(line):
+            if float(m.group(1)) not in (0.1, 0.05, 0.01):
+                thresholds.append((m.group(1), lineno))
+
+    def warn_thresholds():
+        for n, lineno in thresholds:
+            print(f"WARN literal threshold {n} at line {lineno} — the convention is "
+                  "0.10/0.05/0.01; use rc_sig()")
+
+    failed = bool(glued) or bool(unexplained) or over or bool(jargon)
+    mode = f"ceiling {ceiling}" + (" (default, retrofitted)" if retrofitted and not ceilings else "") \
+        if ceiling is not None else \
         "advisory; declare prose-verdict-ceiling: N in CLAUDE.md to enforce"
 
     def verdict_count():
@@ -581,6 +677,7 @@ def main(argv):
             print("  note: allowlist entries no longer present in the prose:",
                   ", ".join(sorted(stale)))
         verdict_count()
+        warn_thresholds()
         return 0
 
     why = []
@@ -590,6 +687,8 @@ def main(argv):
         why.append(f"{len(glued)} signs typed beside a live value")
     if over:
         why.append(f"{len(verdicts)} verdict words over a ceiling of {ceiling}")
+    if jargon:
+        why.append(f"{len(jargon)} pipeline-jargon hits")
     print("PROSE NUMBER CHECK FAILED —", "; ".join(why))
     print(f"  manuscript: {qmd}")
     print(f"  allowlist:  {allow_path}")
@@ -628,10 +727,18 @@ def main(argv):
     if over:
         print("VERDICT WORDS ABOVE CEILING —", len(verdicts), ">", ceiling)
         for lineno, word, sentence in verdicts:
-            print(f"  line {lineno}: {word} — {sentence}")
+            print(f"  line {lineno}: {word} — {sentence[:160]}")
+        print()
+
+    if jargon:
+        print("PIPELINE JARGON —", len(jargon), "hits (not allowlistable)")
+        print("  Say it in the paper's own terms; pipeline vocabulary is not for readers.\n")
+        for lineno, word in jargon:
+            print(f"  line {lineno}: {word}")
         print()
 
     verdict_count()
+    warn_thresholds()
     return 1
 
 
