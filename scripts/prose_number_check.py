@@ -49,12 +49,22 @@ in one is the same defect as a typed literal in a paragraph. Only three
 constructs are read, and only inside an executable chunk (an opener whose info
 string starts with `{`): a fence-line `fig.cap=`/`tbl.cap=` option, a `#|
 fig-cap:`/`tbl-cap:`/`*-subcap:` option line (not one computed with `!expr`), and
--- in an R chunk only -- a `caption=`/`title=` string literal. A display fence
+-- in an R chunk only -- a `caption=`, `title=`, `notes=`, `note=` or `general=`
+string literal. A display fence
 (bare ``` , ```r, ````markdown, or Quarto's unexecuted ```{{r}}) is not
 executable and yields no captions. Known limits, not read: a multi-line YAML
-caption (`#| fig-cap: |`); a YAML list-form `#| fig-subcap:`, whose items sit on
-the `#|   - "..."` lines below it; and a table note passed as `notes =` (as
-modelsummary takes it), which renders under the table but is not a caption.
+caption (`#| fig-cap: |`) and a YAML list-form `#| fig-subcap:`, whose items sit on
+the `#|   - "..."` lines below it.
+
+SURFACES BEYOND THE BODY. Applies to every paper. The YAML `title:`, `subtitle:`
+and `abstract:` values (a `|`/`>` block included) are prose: they render, and an
+inline `r` there is evaluated. Decimal literals inside `$...$`/`$$...$$` are
+scanned (`$\\beta_1$` and `$x_{it}$` carry no decimal and pass). Every
+`response-letter: <path>` line in the project's CLAUDE.md names a file scanned
+by the same rules, its hits labelled `letter:`; a declared letter that does not
+exist is exit 2. The star legend of the fixed convention (`p <= 0.10`, `p <=
+0.05`, `p <= 0.01`, written with `≤`, `<=` or `$\\le$`) is not a literal; a
+legend written with `<` is, and fails.
 
 SIGN GLUE. A `+`, `-` or minus sign typed immediately before an inline expression
 is not a literal to explain, it is a bug: the value already carries its own sign,
@@ -146,12 +156,13 @@ class CommentError(Unclosed):
 # Caption text is prose the reader sees, by the same logic that excludes HTML
 # comments: the test is whether it reaches the rendered page. Three places carry
 # it: a fence-line option, a #| option line, and an R string passed as caption=
-# or title= (flextable, modelsummary, gt, labs). Only those string literals are
-# admitted -- scanning every R string would re-import the code noise that
+# or title= or notes= (flextable, modelsummary, gt, labs). Only those string
+# literals are admitted -- scanning every R string would re-import the code noise that
 # excluding chunks exists to avoid.
 # Known limits, not read: a multi-line YAML caption (#| fig-cap: |), a YAML
-# list-form #| fig-subcap: (items on the lines below), and a table note passed
-# as notes = (modelsummary).
+# list-form #| fig-subcap: (items on the lines below). A table note passed as
+# notes=, note= or general= (modelsummary, gt, flextable) IS read: it renders under
+# the table like a caption.
 #
 # SCOPE (controller ruling): captions are read only inside an EXECUTABLE chunk
 # -- the opener's info string starts with `{` (`{r}`, `{python}`, ...), never a
@@ -164,7 +175,7 @@ class CommentError(Unclosed):
 # fence, which never opened as executable.
 FENCE_CAP = re.compile(r"""\b(?:fig|tbl)[.-]cap\s*=\s*(["'])(.*?)(?<!\\)\1""")
 OPT_CAP = re.compile(r"^#\|\s*(?:fig|tbl)-(?:cap|subcap)\s*:\s*(.+?)\s*$")
-R_CAP = re.compile(r"""\b(?:caption|title)\s*=\s*(["'])(.*?)(?<!\\)\1""")
+R_CAP = re.compile(r"""\b(?:caption|title|notes?|general)\s*=\s*(["'])(.*?)(?<!\\)\1""")
 ENGINE_R = re.compile(r"^\{r[\s,}]")
 
 
@@ -199,6 +210,12 @@ def chunk_captions(lineno, line, r_engine):
     return [(lineno, c.group(2)) for c in R_CAP.finditer(line)]
 
 
+# The YAML keys whose values render on the page. No other key is prose; `design:`
+# is data. A `|`/`>` value (optionally `|-`/`>-`) is a block of indented lines.
+YAML_TEXT = re.compile(r"^(title|subtitle|abstract):[ \t]*(.*)$")
+BLOCK_SCALAR = re.compile(r"^[|>][-+]?$")
+
+
 def load_manuscript(qmd):
     """Split the manuscript into prose lines and caption strings, in one pass.
 
@@ -227,6 +244,7 @@ def load_manuscript(qmd):
     fence, opened = None, 0
     fence_exec = fence_r = False
     in_yaml = in_comment = False
+    in_block = False
     comment_at = 0
     for i, line in enumerate(open(qmd, encoding="utf-8"), 1):
         if fence is not None:
@@ -251,6 +269,18 @@ def load_manuscript(qmd):
         if in_yaml:
             if s == "---":
                 in_yaml = False
+            elif in_block and (not s or line[0] in " \t"):
+                if s:
+                    prose.append((i, line))
+            else:
+                in_block = False
+                m = YAML_TEXT.match(line)
+                if m:
+                    value = m.group(2).strip()
+                    if BLOCK_SCALAR.match(value):
+                        in_block = True
+                    elif value:
+                        prose.append((i, value.strip("\"'")))
             continue
         m = FENCE.match(line)
         if m:
@@ -274,6 +304,10 @@ def load_prose(qmd):
 
 # `r expr` (knitr) and `{r} expr` (Quarto's native form). Matching only the first
 # made the modern syntax a false positive: `{r} round(b, 3)` reported '3'.
+# The fixed significance legend (`p <= 0.10`, `p <= 0.05`, `p <= 0.01`) is the
+# convention, not a result. Written with `<` it stays a literal, which points the
+# author at the convention.
+STAR_LEGEND = re.compile(r"\bp\s*(?:≤|<=|\$\\leq?\$)\s*0?\.(?:10?|05|01)\b")
 INLINE = re.compile(r"`(?:r|\{r\})\s[^`]*`")
 MATH = re.compile(r"\$\$.*?\$\$|\$[^$\n]*\$", re.S)
 # A literal ends on a digit, so "Table 4," and "Table 4." key as '4'. The old
@@ -483,6 +517,11 @@ def main(argv):
     hits = collections.OrderedDict()
 
     def scan(lineno, text, label):
+        text = STAR_LEGEND.sub(" ", text)
+        for mm in MATH.finditer(INLINE.sub(" ", text)):
+            for d in re.finditer(r"(?<![\w_^{])(\d+\.\d+)", mm.group(0)):
+                hits.setdefault(d.group(1), []).append(
+                    (lineno, label + "math: " + mm.group(0)[:110]))
         clean = MATH.sub(" ", INLINE.sub(" ", text))
         for m in NUM.finditer(clean):
             ctx = label + clean[max(0, m.start() - 55):m.end() + 55].strip().replace("\n", " ")
@@ -492,12 +531,27 @@ def main(argv):
             hits.setdefault(m.group(0).lower(), []).append((lineno, ctx))
 
     glued = []
-    for lineno, line in prose:
-        for m in SIGN_GLUE.finditer(line):
-            glued.append((lineno, line[max(0, m.start() - 55):m.end() + 55].strip()))
-        scan(lineno, line, "")
-    for lineno, text in captions:
-        scan(lineno, text, "caption: ")
+
+    def scan_file(prose, captions, label):
+        for lineno, line in prose:
+            for m in SIGN_GLUE.finditer(line):
+                glued.append((lineno, label + line[max(0, m.start() - 55):m.end() + 55].strip()))
+            scan(lineno, line, label)
+        for lineno, text in captions:
+            scan(lineno, text, label + "caption: ")
+
+    scan_file(prose, captions, "")
+    for letter in declared(root, "response-letter"):
+        path = os.path.join(root, letter)
+        if not os.path.exists(path):
+            print(f"error: response-letter declared in CLAUDE.md not found: {path}")
+            return 2
+        try:
+            scan_file(*load_manuscript(path), "letter: ")
+        except Unclosed as e:
+            print(f"error: the {e.what} opened at line {e.args[0]} of {path} is never closed.")
+            print("       Nothing after that line could be scanned, so no verdict is given.")
+            return 2
 
     verdicts = verdict_hits(prose, v_rx)
     over = ceiling is not None and len(verdicts) > ceiling
