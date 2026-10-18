@@ -16,7 +16,8 @@ class TestApprovalGrammar(unittest.TestCase):
     def test_not_approvals(self):
         for msg in ("approve design unlock", "please approve design sign", "> approve design sign",
                     "```\napprove design sign\n```", "I approve the design sign-off",
-                    "approve design sign\napprove design sign", "don't approve design sign yet", ""):
+                    "approve design sign\napprove design sign", "don't approve design sign yet", "approve design sign: not yet",
+                    "approve design sign:", ""):
             self.assertIsNone(tok.approval(msg), msg)
 
 class TestTokenRules(unittest.TestCase):

@@ -12,6 +12,10 @@ ending in one `.`; not inside a fenced block or a `>` quote; exactly one per mes
 tested: 2026-10-18, `claude -p "approve design sign"` in a scratch project wired with the seed
 settings fired this hook, and the payload key `prompt` carried the message (the token file appeared).
 
+Known limit: a prompt submitted by a nested `claude -p` fires UserPromptSubmit too, so this hook
+cannot tell it from the author's; the design-guard hook refuses Bash commands that run `claude`
+with an approval line.
+
 Hook Event: UserPromptSubmit
 """
 import json, os, sys

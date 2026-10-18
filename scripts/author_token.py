@@ -5,6 +5,10 @@ The author approves in chat; .claude/hooks/design-token.py (UserPromptSubmit) tu
 into this token, and `design sign|unlock` refuses without a fresh one. An unattended run has no
 author message, so it cannot sign or unlock. The approval grammar and the freshness rules are
 stated in .claude/rules/core.md rule 13; keep the two in step.
+
+Known limit: a prompt submitted by a nested `claude -p` fires UserPromptSubmit too, so the hook
+cannot tell it from the author's; the design-guard hook refuses Bash commands that run `claude`
+with an approval line.
 """
 from __future__ import annotations
 import datetime as dt, json, re
@@ -13,7 +17,7 @@ from typing import Optional, Tuple
 
 TOKEN_REL = Path(".claude") / "state" / "design_token.json"
 TTL = dt.timedelta(minutes=30)
-APPROVAL_RE = re.compile(r"^approve design (sign|unlock)(?:\s*:\s*(\S.*?))?\.?$", re.I)
+APPROVAL_RE = re.compile(r"^approve design (sign|unlock)(?:\s*(:)\s*(\S.*?)?)?\.?$", re.I)
 FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
 
 def _now(now: Optional[dt.datetime]) -> dt.datetime:
@@ -26,11 +30,13 @@ def approval(prompt: str) -> Optional[Tuple[str, Optional[str]]]:
             in_fence = not in_fence; continue
         m = None if in_fence else APPROVAL_RE.match(raw.strip())
         if m:
-            found.append((m.group(1).lower(), (m.group(2) or "").strip() or None))
+            found.append((m.group(1).lower(), (m.group(3) or "").strip() or None, bool(m.group(2))))
     if len(found) != 1:
         return None
-    op, reason = found[0]
+    op, reason, has_colon = found[0]
     if op == "unlock" and not reason:
+        return None
+    if op == "sign" and has_colon:
         return None
     return op, (reason if op == "unlock" else None)
 
