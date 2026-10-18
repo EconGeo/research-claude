@@ -113,6 +113,21 @@ class TestLedger(LedgerMixin, FixtureCase):
         self.assertEqual(self.ledger("close", "F-001", "--sha", sha)[0], 0)
         self.assertEqual(fl.blocking(self.t / fl.LEDGER_REL, "writer"), [])
 
+    def test_close_decline_transitions(self):
+        sha = init_repo(self.t)
+        self.add(finding="p", proposal=True); self.add(); self.add(); self.add(proposal=True)
+        self.assertEqual(self.ledger("close", "F-001", "--sha", sha)[0], 1)      # pending proposal
+        self.assertEqual(self.rows()[0]["status"], "proposal: pending")
+        self.assertEqual(self.ledger("decline", "F-002", "--reason", "x", "--by", "session")[0], 0)
+        self.assertEqual(self.ledger("close", "F-002", "--sha", sha)[0], 1)      # declined
+        self.assertEqual(self.ledger("close", "F-003", "--sha", sha)[0], 0)
+        self.assertEqual(self.ledger("decline", "F-003", "--reason", "x", "--by", "session")[0], 1)   # closed
+        self.assertEqual(self.ledger("close", "F-003", "--sha", sha)[0], 1)      # closed already
+        self.assertEqual(self.ledger("accept", "F-004", "--by", "author")[0], 0)
+        self.assertEqual(self.ledger("close", "F-004", "--sha", sha)[0], 0)      # accepted proposal
+        self.assertEqual(self.ledger("reject", "F-001", "--by", "author")[0], 0)
+        self.assertEqual(self.ledger("close", "F-001", "--sha", sha)[0], 1)      # rejected
+
     def test_accept_only_on_proposal(self):
         self.add(); self.assertEqual(self.ledger("accept", "F-001", "--by", "author")[0], 1)
 

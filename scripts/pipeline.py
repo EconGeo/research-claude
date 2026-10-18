@@ -792,6 +792,11 @@ def ledger_cmd(root: Path, a) -> int:
         if bool(a.sha) == bool(a.pending): print("ledger close: give exactly one of --sha SHA or --pending"); return 2
         row = known(a.id)
         if row is None: return 1
+        stt = row["status"]
+        if stt == "proposal: pending":
+            print(f"ledger close: {a.id} is a pending proposal — decide it first with ledger accept|reject"); return 1
+        if not (stt in ("open", "proposal: accepted") or (stt == "closed pending" and a.sha)):
+            print(f"ledger close: {a.id} has status {stt!r} — only open, accepted or (with --sha) closed-pending rows can be closed"); return 1
         if a.sha:
             if not re.match(r"^[0-9a-fA-F]{7,40}$", a.sha) or subprocess.run(
                     ["git", "cat-file", "-e", a.sha + "^{commit}"], cwd=root, capture_output=True).returncode != 0:
@@ -809,6 +814,8 @@ def ledger_cmd(root: Path, a) -> int:
         if op != "decline" and a.by == "session" and not a.reason: print(f"ledger {op}: --by session requires --reason"); return 2
         row = known(a.id)
         if row is None: return 1
+        if op == "decline" and row["status"] not in ("open", "proposal: accepted"):
+            print(f"ledger decline: {a.id} has status {row['status']!r} — only open or accepted rows can be declined"); return 1
         if op != "decline" and row["status"] != "proposal: pending":
             print(f"ledger {op}: {a.id} is not a pending proposal (status {row['status']})"); return 1
         status = {"decline": f"declined: {a.reason}", "accept": "proposal: accepted", "reject": "proposal: rejected"}[op]
