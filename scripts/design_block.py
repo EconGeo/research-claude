@@ -77,10 +77,16 @@ def _paths(block: str) -> List[Tuple[str, str]]:
     out: List[Tuple[str, str]] = []; stack: List[Tuple[int, str]] = []
     for ln in _normalise(block):
         indent = len(ln) - len(ln.lstrip(" ")); m = _KEY.match(ln)
-        while stack and stack[-1][0] >= indent:
+        item = ln.lstrip() == "-" or ln.lstrip().startswith("- ")
+        # YAML allows a block list at the same indent as its parent key; such an item belongs to
+        # that key, so only a strictly deeper stack entry is popped for a list item.
+        floor = indent + 1 if item else indent  # pop entries deeper than (list) or at (key) this indent
+        while stack and stack[-1][0] >= floor:
             stack.pop()
         parents = [k for _, k in stack]
-        if m:
+        if item:
+            out.append((".".join(parents), ln))
+        elif m:
             out.append((".".join(parents + [m.group(1)]), ln)); stack.append((indent, m.group(1)))
         else:
             out.append((".".join(parents), ln))

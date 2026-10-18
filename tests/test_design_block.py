@@ -82,5 +82,23 @@ class TestBlock(unittest.TestCase):
         (r / "CLAUDE.md").write_text("manuscript: m.qmd\n"); self.assertEqual(db.manuscript_path(r), (r / "m.qmd").resolve())
         self.assertIsNone(db.read_lock(r))
         db.write_lock(r, {"status": "signed", "hash": "abc"}); self.assertEqual(db.read_lock(r)["hash"], "abc")
+    def test_same_indent_block_list_stays_under_key(self):
+        same = BASE.replace('  sample: ["units observed before and after the rule"]',
+                            '  sample:\n  - "units observed before and after the rule"')
+        self.assertNotEqual(same, BASE)
+        new = same.replace('"units observed', '"units always observed')
+        old_b, new_b = db.design_block(same), db.design_block(new)
+        rows = db.amendment_rows(old_b, new_b, "d", "r")
+        self.assertEqual(len(rows), 1); self.assertEqual(rows[0]["field"], "sample")
+        self.assertTrue(db.needs_rerun(rows, old_b, new_b))
+    def test_deeper_block_list_stays_under_key(self):
+        deep = BASE.replace('  sample: ["units observed before and after the rule"]',
+                            '  sample:\n    - "units observed before and after the rule"')
+        self.assertNotEqual(deep, BASE)
+        new = deep.replace('"units observed', '"units always observed')
+        old_b, new_b = db.design_block(deep), db.design_block(new)
+        rows = db.amendment_rows(old_b, new_b, "d", "r")
+        self.assertEqual(len(rows), 1); self.assertEqual(rows[0]["field"], "sample")
+        self.assertTrue(db.needs_rerun(rows, old_b, new_b))
 
 if __name__ == "__main__": unittest.main()
