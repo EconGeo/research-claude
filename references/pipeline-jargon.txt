@@ -8,4 +8,5 @@ design lock
 \b[a-z]+-critic\b
 pipeline\.py
 \bINV-\d+\b
-\b(?:R|F|L)-\d{1,3}\b
+(?-i:\b(?:F|L)-0\d\d\b)
+\bruling R-\d{1,3}\b

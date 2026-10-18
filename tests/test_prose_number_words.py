@@ -94,11 +94,32 @@ class TestJargon(Words):
         self.assertEqual(rc, 0, out)
 
     def test_ids_fire_but_prose_does_not(self):
-        rc, out = self.retro("See R-12 for details.\n")
+        for ok in ("R-1 zoning districts", "an L-1 visa", "F-150", "R-squared",
+                   "F-statistic", "R-2000"):
+            rc, out = self.retro(f"We use {ok} here.\n")
+            self.assertNotIn("PIPELINE JARGON", out, ok)
+        for bad in ("see ruling R-12", "F-007", "L-012"):
+            rc, out = self.retro(f"We {bad} here.\n")
+            self.assertEqual(rc, 1, bad + out)
+            self.assertIn("PIPELINE JARGON", out)
+
+    def test_invalid_declared_pattern_is_exit_2(self):
+        rc, out = self.retro("Text.\n", claude="prose-jargon: foo(\n")
+        self.assertEqual(rc, 2, out)
+        self.assertIn("prose-jargon", out)
+        self.assertNotIn("Traceback", out)
+
+    def test_jargon_across_a_line_break(self):
+        rc, out = self.retro("The governing\np is small.\n")
         self.assertEqual(rc, 1, out)
-        rc, out = self.retro("The first-rate result in a well-known study, 8-year-old data.\n")
-        self.assertEqual(rc, 1, out)  # '8' literal only
-        self.assertNotIn("PIPELINE JARGON", out)
+        self.assertIn("PIPELINE JARGON", out)
+
+    def test_guard_does_not_bind_neighbouring_list_item(self):
+        g = '`r local({stopifnot("m" = b > 0); ""})`'
+        rc, out = self.retro(f"- Prices rose `r rc_num(b)`\n- Wages fell `r rc_num(c)`{g}\n")
+        self.assertEqual(rc, 1, out)
+        rc, out = self.retro(f"- Prices rose `r rc_num(b)`{g}\n- Plain item.\n")
+        self.assertEqual(rc, 0, out)
 
 
 class TestThreshold(Words):
@@ -113,6 +134,11 @@ class TestThreshold(Words):
             rc, out = mk('Result `r if (p <= 0.05) "x" else "y"`.\n')
             self.assertEqual(rc, 0, out)
             self.assertNotIn("WARN", out)
+
+
+    def test_sign_check_threshold_is_quiet(self):
+        rc, out = self.plain('Result `r if (b > 0) "rose" else "fell"`.\n')
+        self.assertNotIn("WARN", out)
 
 
 class TestContext(Words):

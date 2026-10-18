@@ -91,7 +91,7 @@ JARGON (the patterns in `.claude/references/pipeline-jargon.txt` plus any
 ALLOWLIST CONTEXT. The allowlist may carry a third column, `context`. When it is
 non-empty the row explains only occurrences whose surrounding text contains it; a word
 row's `literal` is the lower-case word and its context is the sentence. An inline `if`
-comparing against a numeric literal other than 0.10/0.05/0.01 prints a `WARN literal
+comparing against a numeric literal other than 0, 0.10, 0.05 or 0.01 prints a `WARN literal
 threshold` line; it never fails.
 
 PROVENANCE. Written for one project in 2026-09 and promoted here unchanged in
@@ -411,6 +411,9 @@ def verdict_rx(extra, strict=False):
     return re.compile(rf"\b(?:{words})\b", re.I)
 
 
+LIST_ITEM = re.compile(r"(?:[-*+]|\d+[.)])\s")
+
+
 def paragraphs(prose):
     """Consecutive prose lines joined into paragraphs, with the first line number."""
     para, start, prev = [], 0, None
@@ -418,7 +421,9 @@ def paragraphs(prose):
         s = line.strip()
         broken = prev is not None and lineno != prev + 1
         prev = lineno
-        if broken or not s or s.startswith(("#", ":::")):
+        # A list item or table row starts its own paragraph: a guard in one item must not
+        # bind its neighbours.
+        if broken or not s or s.startswith(("#", ":::", "|")) or LIST_ITEM.match(s):
             if para:
                 yield start, " ".join(para)
             para = []
@@ -458,8 +463,16 @@ def jargon_patterns(root):
     if ref.exists():
         pats = [l.strip() for l in ref.read_text(encoding="utf-8").splitlines()
                 if l.strip() and not l.lstrip().startswith("#")]
-    pats += tokens(" ".join(declared(root, "prose-jargon")))
-    return re.compile("|".join(f"(?:{p})" for p in pats), re.I) if pats else None
+    declared_toks = tokens(" ".join(declared(root, "prose-jargon")))
+    pats += declared_toks
+    out = []
+    for pat in pats:
+        try:
+            out.append(re.compile(pat, re.I))
+        except re.error as e:
+            where = "prose-jargon in CLAUDE.md" if pat in declared_toks else str(ref)
+            raise ValueError(f"error: {where} is not a valid pattern: {pat!r} ({e})")
+    return out
 
 
 def extra_nouns(root):
@@ -544,6 +557,11 @@ def main(argv):
             return 2
     if ceiling is None and retrofitted:
         ceiling = 0
+    try:
+        j_rx = jargon_patterns(root) if retrofitted else []
+    except ValueError as e:
+        print(e)
+        return 2
 
     # A key keeps no trailing comma: NUM ends a literal on a digit, so "1999,"
     # could never match, and its bare twin made it look stale. Normalise it and
@@ -634,19 +652,17 @@ def main(argv):
     stale = [k for k in allow if k not in hits and k not in used_words]
 
     jargon = []
-    j_rx = jargon_patterns(root) if retrofitted else None
-    if j_rx:
-        for lineno, line in prose:
-            for m in j_rx.finditer(INLINE.sub(" ", line)):
-                jargon.append((lineno, m.group(0)))
+    for rx in j_rx:
+        for lineno, para in paragraphs(prose):
+            jargon.extend((lineno, m.group(0)) for m in rx.finditer(INLINE.sub(" ", para)))
         for lineno, text in captions:
-            for m in j_rx.finditer(INLINE.sub(" ", text)):
-                jargon.append((lineno, "caption: " + m.group(0)))
+            jargon.extend((lineno, "caption: " + m.group(0))
+                          for m in rx.finditer(INLINE.sub(" ", text)))
 
     thresholds = []
     for lineno, line in prose:
         for m in THRESH.finditer(line):
-            if float(m.group(1)) not in (0.1, 0.05, 0.01):
+            if float(m.group(1)) not in (0.0, 0.1, 0.05, 0.01):
                 thresholds.append((m.group(1), lineno))
 
     def warn_thresholds():
