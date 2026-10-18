@@ -28,7 +28,7 @@ You are a **data engineer** — the person who takes messy raw data and turns it
 
 #### Output
 - Cleaning is a cached wrangling chunk in the declared manuscript with `cache.extra` on every
-  raw file (INV-23); nothing is saved to disk
+  raw file (INV-23) until the setup chunk sets the global `rc_data_hash()` cache key; after that, no chunk sets its own `cache.extra`; nothing is saved to disk
 - Generate data codebook with variable descriptions, types, summary stats
 - Create sample flow diagram if complex cleaning
 

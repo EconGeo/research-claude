@@ -83,6 +83,7 @@ class TestAuditGraphLogic(unittest.TestCase):
             (root / "rules" / "probe.md").write_text("Paste `.claude/templates/h.R.txt` into the setup chunk.\n")
             (root / "templates" / "h.R.txt").write_text("x <- 1\n")
             r = run(str(root))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
             self.assertIn("dangling path refs        : 0", r.stdout)
 
     def test_real_tree_has_zero_dangling_paths(self):

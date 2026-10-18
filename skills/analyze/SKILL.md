@@ -22,12 +22,14 @@ python3 .claude/scripts/pipeline.py manuscript
 python3 .claude/scripts/pipeline.py design status
 python3 .claude/scripts/pipeline.py pre coder
 ```
-**Design sign-off before the first estimate.** If the manuscript has a `design:` block that is not
+**Design sign-off before the first chunk.** If the manuscript has a `design:` block that is not
 signed (`design status` prints UNSIGNED), run the power and size explorations
 (`explorations/power.qmd`, `explorations/size.qmd`), copy their results into `design.checks`, show
 the author the block, and ask them to approve with the line `approve design sign` in their own
 message (core rule 13). Only after that message run `pipeline.py design sign --signer <author>`,
-then `pre coder`. No estimation chunk is dispatched before the block is signed. An unattended run
+then `pre coder`. Wrangling (Step 2) waits for signing too — `pre coder` fails on UNSIGNED — and
+no chunk is dispatched before the block is signed; the power and size explorations read the raw
+data directly. An unattended run
 cannot sign: it writes the request with `pipeline.py question add` and stops that line of work
 (core rule 16).
 
@@ -46,7 +48,7 @@ picks are recorded in the report itself, which is saved alongside the coder-crit
 
 ### Step 2: Wrangling — data-engineer, then its paired critic
 Read `.claude/rules/readable-code.md` before the first dispatch and name it in both creator
-prompts. Dispatch **data-engineer**: `build-*` chunks with `cache.extra`, manifest rows, `tbl-summary`
+prompts. Dispatch **data-engineer**: `build-*` chunks with `cache.extra` (until the setup chunk sets the global `rc_data_hash()` key; then none), manifest rows, `tbl-summary`
 chunk. Then `python3 .claude/scripts/pipeline.py log data-engineer` (standalone) and dispatch
 **coder-critic** on the manuscript. Before every coder-critic dispatch (this step and Step 3, each
 round), run `python3 .claude/scripts/pipeline.py critic-inputs` and name the log path it prints in

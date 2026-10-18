@@ -31,7 +31,7 @@ Round 1 is the cold read above. From round 2 the dispatch names a `pipeline.py c
 file — the findings-ledger rows for the creators you review and the manuscript diff since the
 last scored round. It overrides the cold-read exclusions for this purpose only: verify each
 ledger row's closure (a row closed without a real fix is a finding again), flag regressions,
-review the changed text and every summary sentence (abstract, Introduction, Conclusions), and
+review the changed chunks, and
 label any other new finding `[missed-earlier]`. With no context file, review cold.
 
 ## Your Task

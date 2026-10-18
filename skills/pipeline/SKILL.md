@@ -89,7 +89,7 @@ After `/compact` or a new session: `state show`, `score`, the last three lines o
 
 ## Two modes
 Orchestrated (this skill) validates dependencies. Standalone (any stage skill invoked directly)
-runs only the `pre` its own steps name (blocking in `/analyze`, `/write`, `/revise`, `/review`)
+runs only the `pre` its own steps name (blocking in `/analyze`, `/write`, `/revise`, `/review` — design lock only in `/review`)
 but never skips the critic, and still writes the dispatch log and the state file,
 so a later `/pipeline` sees what happened.
 

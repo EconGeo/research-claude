@@ -30,6 +30,8 @@ Helper functions used by more than one chunk are defined **here**, in the setup 
 
 ## 2. Wrangling chunk — `cache.extra` on every raw file it reads
 
+The chunk-level `cache.extra` below applies until the setup chunk sets the global `rc_data_hash()` cache key; after that, no chunk sets its own `cache.extra` (it would replace the global key; `.claude/rules/quarto-empirical.md`, "Design block and claim helpers").
+
 ```{r}
 #| label: build-panel
 #| cache: true

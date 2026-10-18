@@ -65,7 +65,7 @@ Extracted from `coder-critic.md`. Used by the coder-critic agent for code review
 - The dependency DAG documented in the setup chunk matches the `dependson` links?
 
 ### 6. Chunk Headers
-- Wrangling chunks carry `cache.extra` on every raw file; estimation/table/figure chunks carry `dependson`?
+- Wrangling chunks carry `cache.extra` on every raw file until the setup chunk sets the global `rc_data_hash()` cache key; after that, no chunk sets its own `cache.extra`; estimation/table/figure chunks carry `dependson`?
 - Every raw file read has a manifest row (INV-24)?
 
 ### 7. Console Output Hygiene
