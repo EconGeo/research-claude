@@ -89,3 +89,20 @@ echo '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/x.R"}}' \
 pipeline, where analysis lives in `.qmd` chunks rather than `scripts/R/*.R`. <!-- residue:prohibition -->
 They still work on the acquisition scripts under `scripts/acquire/`. Enable them
 with that scope in mind.
+
+## Git hooks
+
+The `git/` subdirectory holds **git** hooks, not Claude hooks. They are not in the table above, carry no
+`Hook Event:` line, and are never wired in `settings.json` (`check_install.sh` `hooks-wired` fails if
+a settings command names a file under it). `apply.sh --link` links the directory as one link
+(`.claude/hooks/git`) and sets `core.hooksPath = .claude/hooks/git` in the project repo; it leaves an
+existing `core.hooksPath` or hand-made `.git/hooks` alone and says so. `check_install.sh`
+`git-hooks-path` fails where the gate is not installed — notably a fresh worktree, which has the
+config but not the links (run `apply.sh --project-dir <worktree> --link`).
+
+- `git/pre-commit` runs `pipeline.py commit-check`: design lock, prose numbers, Quarto structure,
+  cold render after chunk-code changes, manuscript staleness (the commit that lands the
+  re-estimation passes with a warning), and the amendment table. Never bypass it with `--no-verify`.
+- `git/post-commit` runs `pipeline.py ledger settle`, closing ledger rows fixed during a stale window.
+
+Both exit 0 when the project does not link `pipeline.py`.

@@ -188,6 +188,22 @@ class TestHooksReadme(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(cr.crit_hooks_readme(ROOT), 0)
 
+    def _run_git(self, readme_extra=""):
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "hooks" / "git").mkdir(parents=True)
+            (root / "hooks" / "git" / "pre-commit").write_text("#!/bin/sh\n")
+            (root / "hooks" / "README.md").write_text(
+                "| Hook | Event | What it does |\n|---|---|---|\n" + readme_extra)
+            with contextlib.redirect_stdout(io.StringIO()):
+                return cr.crit_hooks_readme(root)
+
+    def test_git_hook_without_readme_row_passes(self):
+        self.assertEqual(self._run_git(), 0)
+
+    def test_git_hook_in_the_claude_hook_table_fails(self):
+        self.assertEqual(self._run_git("| `git/pre-commit` | PreToolUse | no |\n"), 1)
+
 
 class TestHooksWiredSource(unittest.TestCase):
     """hooks/README.md documents which hooks are wired directly vs. invoked indirectly (an

@@ -239,9 +239,13 @@ def crit_hooks_readme(root):
             hits.append(f"hooks/README.md: {name} row says '{event}', hook says '{m.group(1)}'")
         if event.lower().startswith("git"):
             hits.append(f"hooks/README.md: {name} is a git hook listed in the Claude hook table")
+    for g in re.findall(r"^\|\s*`(git/[^`]*)`", readme_text, re.M):
+        hits.append(f"hooks/README.md: table row for {g} — hooks/git/ holds git hooks, not Claude hooks; describe them in the 'Git hooks' section")
     documented = {n for n, _ in rows}
     hooks_dir = root / "hooks"
     if hooks_dir.is_dir():
+        # hooks/git/ holds git hooks (core.hooksPath), never Claude hooks: the glob below is
+        # deliberately top-level only, so nothing under hooks/git/ is expected in the table.
         for hook in sorted(hooks_dir.glob("*.py")) + sorted(hooks_dir.glob("*.sh")):
             if hook.name not in documented:
                 hits.append(f"hooks/{hook.name}: no row in hooks/README.md")

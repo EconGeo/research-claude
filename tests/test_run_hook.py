@@ -58,8 +58,9 @@ class TestWrapHooks(unittest.TestCase):
     def test_seed_settings_all_routed_and_valid_json(self):
         text = (ROOT / "seeds" / "settings.json").read_text()
         cmds = [h["command"] for v in json.loads(text)["hooks"].values() for g in v for h in g["hooks"]]
-        # 15 since b6f6c75: script-guard.py once, read-gate.py twice.
-        self.assertEqual(len(cmds), 15)
+        # 15 since b6f6c75: script-guard.py once, read-gate.py twice; 18 since the design-lock tasks
+        # (design-guard.py, design-token.py, stale-stages.py). hooks/git/ is never in the seed.
+        self.assertEqual(len(cmds), 18)
         for c in cmds:
             self.assertRegex(c, r'^"\$CLAUDE_PROJECT_DIR"/\.claude/run-hook\.sh [\w.-]+$')
 

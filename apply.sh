@@ -161,6 +161,18 @@ if [[ "$LINK_MODE" == true ]]; then
     link_items "$SCRIPT_DIR/$d" "$PROJECT_DIR/.claude/$d"
   done
 
+  # The pre-commit gate: hooks/git is linked above as ONE directory link (.claude/hooks/git), and
+  # git runs it through core.hooksPath. An existing hooksPath or hand-made .git/hooks is never
+  # overwritten — the gate is then NOT installed, and check_install's git-hooks-path says so.
+  if git -C "$PROJECT_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+    cur="$(git -C "$PROJECT_DIR" config --get core.hooksPath || true)"
+    gd="$(git -C "$PROJECT_DIR" rev-parse --git-dir)"; case "$gd" in /*) ;; *) gd="$PROJECT_DIR/$gd";; esac
+    own="$(ls "$gd/hooks" 2>/dev/null | grep -v '\.sample$' || true)"
+    if [[ -n "$cur" && "$cur" != ".claude/hooks/git" ]]; then echo "  WARN core.hooksPath is $cur — left alone; pre-commit gate NOT installed"
+    elif [[ -z "$cur" && -n "$own" ]]; then echo "  WARN .git/hooks has its own hooks ($own) — pre-commit gate NOT installed; merge by hand"
+    else git -C "$PROJECT_DIR" config core.hooksPath .claude/hooks/git; echo "  git hooks: core.hooksPath = .claude/hooks/git"; fi
+  fi
+
   # ai-audit ships two skills and two agents from a vendored tree — link those too.
   # No rules/ here: its rules/ai-disclosure.md was a stale fork of the one at
   # rules/ai-disclosure.md (already linked above) and was reconciled away, see

@@ -5,7 +5,7 @@ detached is only safe when it sits exactly where the project's lock says; anywhe
 re-points every paper at an unrecorded pipeline. CHECK_INSTALL_UNDER_TEST lets a mutated copy
 of the script be run against these tests to show each one red.
 """
-import os, pathlib, subprocess, tempfile, unittest
+import json, os, pathlib, subprocess, tempfile, unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SCRIPT = os.environ.get("CHECK_INSTALL_UNDER_TEST", str(ROOT / "scripts" / "check_install.sh"))
 
@@ -52,5 +52,37 @@ class TestBranchCriterion(unittest.TestCase):
         git(self.rc, "checkout", "-q", "-b", "canary"); self.lock(self.c2)
         self.assertTrue(self.branch_line().startswith("FAIL [branch]"), self.branch_line())
         self.assertTrue(self.branch_line({"RESEARCH_CLAUDE_ALLOW_BRANCH": "1"}).startswith("WARN [branch]"))
+
+class TestGitHooksPath(unittest.TestCase):
+    """Task 12: the pre-commit gate is installed only when core.hooksPath names the linked
+    directory AND that directory's pre-commit exists (a fresh worktree has the config, not the links)."""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(); t = pathlib.Path(self.tmp.name)
+        self.rc = t / "rc"; (self.rc / "agents").mkdir(parents=True); (self.rc / "agents" / "a.md").write_text("a\n")
+        (self.rc / "hooks" / "git").mkdir(parents=True); (self.rc / "hooks" / "git" / "pre-commit").write_text("#!/bin/sh\n")
+        os.chmod(self.rc / "hooks" / "git" / "pre-commit", 0o755)
+        (self.rc / "skills" / "s").mkdir(parents=True); (self.rc / "skills" / "s" / "SKILL.md").write_text("s\n")
+        self.p = t / "proj"; (self.p / ".claude" / "hooks").mkdir(parents=True); git(t, "init", "-q", str(self.p))
+        (self.p / ".claude" / "skills").mkdir(); os.symlink(self.rc / "skills" / "s", self.p / ".claude" / "skills" / "s")
+    def tearDown(self): self.tmp.cleanup()
+    def out(self):
+        return subprocess.run(["bash", SCRIPT, "--project-dir", str(self.p)], capture_output=True, text=True).stdout
+    def line(self, check=""):
+        return next((l for l in self.out().splitlines() if "[git-hooks-path]" in l), "")
+    def link(self): os.symlink(self.rc / "hooks" / "git", self.p / ".claude" / "hooks" / "git")
+
+    def test_unset_fails(self):
+        self.link(); self.assertTrue(self.line().startswith("FAIL"), self.line())
+    def test_other_path_fails(self):
+        self.link(); git(self.p, "config", "core.hooksPath", ".githooks"); self.assertTrue(self.line().startswith("FAIL"), self.line())
+    def test_missing_link_fails(self):
+        git(self.p, "config", "core.hooksPath", ".claude/hooks/git"); self.assertTrue(self.line().startswith("FAIL"), self.line())
+    def test_set_and_present_passes(self):
+        self.link(); git(self.p, "config", "core.hooksPath", ".claude/hooks/git"); self.assertTrue(self.line().startswith("PASS"), self.line())
+    def test_hooks_wired_fails_on_a_git_hook_command(self):
+        (self.p / ".claude" / "settings.json").write_text(json.dumps({"hooks": {"PreToolUse": [
+            {"hooks": [{"type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/git/pre-commit"}]}]}}))
+        l = next((x for x in self.out().splitlines() if "[hooks-wired]" in x), "")
+        self.assertTrue(l.startswith("FAIL") and "git hook" in l, l)
 
 if __name__ == "__main__": unittest.main()

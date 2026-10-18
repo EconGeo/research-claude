@@ -11,13 +11,14 @@ names the first component stage that is ready, treating a scored stage with no l
 completion as adopted work (see next_report).
 """
 from __future__ import annotations
-import argparse, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, re, subprocess, sys
+import argparse, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, re, shutil, subprocess, sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import registry_lib as rl
 import design_block as dsb
 import author_token as tok
+import qmd_chunks
 
 STATE_REL = Path("quality_reports") / "pipeline_state.json"
 LOG_REL = Path("quality_reports") / "agent_dispatch.jsonl"
@@ -900,6 +901,89 @@ def question_cmd(root: Path, a) -> int:
     import findings_ledger as fl
     fl.add_question(root / fl.QUESTIONS_REL, a.text, a.blocks); print("question: recorded"); return 0
 
+# ── cold render and the pre-commit check (spec §0.6, §7) ────────────────────
+COLD_REL = Path("quality_reports") / "cold_render.json"
+
+def render_cold(root: Path) -> int:
+    """Delete the knitr cache, render from nothing, and on success write the receipt commit-check reads."""
+    ms = declared_manuscript(root)
+    shutil.rmtree(ms.parent / f"{ms.stem}_cache", ignore_errors=True)
+    rc, out = run_render(root, ms)
+    if rc != 0:
+        print("render --cold: quarto failed\n" + "\n".join(out.strip().splitlines()[-15:])); return 1
+    (root / COLD_REL).parent.mkdir(parents=True, exist_ok=True)
+    (root / COLD_REL).write_text(json.dumps({"manuscript_sha256": sha256_file(ms), "at": now()}, indent=2) + "\n")
+    print(f"render --cold: ok, wrote {COLD_REL}"); return 0
+
+def _git(root: Path, *args: str) -> Tuple[int, str]:
+    p = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
+    return p.returncode, p.stdout
+
+def reestimation(root: Path) -> Tuple[bool, str]:
+    """True when the staged fingerprint differs from HEAD's in estimates, data or design (or HEAD has
+    none): this commit is the one that lands the re-estimation. Unreadable JSON is never one."""
+    rel = FINGERPRINT_REL.as_posix()
+    rc, staged = _git(root, "show", f":{rel}")
+    if rc != 0: return False, "no staged fingerprint"
+    rc, head = _git(root, "show", f"HEAD:{rel}")
+    if rc != 0: return True, "HEAD has no fingerprint"
+    try: new, old = json.loads(staged), json.loads(head)
+    except ValueError: return False, "fingerprint unreadable"
+    moved = [k for k in ("estimates_hash", "data_hash", "design_hash") if new.get(k) != old.get(k)]
+    return bool(moved), ("changed: " + ", ".join(moved)) if moved else "fingerprint unchanged"
+
+def chunk_code(text: str) -> List[str]:
+    """The R chunk bodies of a .qmd, prose removed, so a prose edit that shifts line numbers is not a code change."""
+    lines = text.split("\n"); out: List[str] = []; ext = qmd_chunks.extract(lines); inside = False
+    for raw, e in zip(lines, ext):
+        if qmd_chunks.FENCE_OPEN_R.match(raw): inside = True; out.append("<chunk>")
+        elif inside and qmd_chunks.FENCE_CLOSE.match(raw): inside = False
+        elif inside: out.append(e)
+    return out
+
+def commit_check(root: Path) -> int:
+    claude = root / "CLAUDE.md"
+    if not claude.exists(): print("commit-check: no CLAUDE.md — nothing declared"); return 0
+    hits = re.findall(r"^manuscript:\s*(\S+\.qmd)\s*$", claude.read_text(errors="ignore"), re.M)
+    if not hits: print("commit-check: no manuscript declared"); return 0
+    if len(hits) != 1: print("commit-check: FAIL — CLAUDE.md declares more than one manuscript"); return 1
+    rc, names = _git(root, "diff", "--cached", "--name-only")
+    if rc != 0: print("commit-check: FAIL — git diff --cached failed"); return 1
+    ms = root / hits[0]; ms_rel = ms.relative_to(root).as_posix(); fp_rel = FINGERPRINT_REL.as_posix()
+    staged = set(names.split("\n"))
+    if ms_rel not in staged and fp_rel not in staged: return 0
+    if not ms.exists(): print(f"commit-check: FAIL — declared manuscript {hits[0]} does not exist"); return 1
+    probs: List[str] = []; warns: List[str] = []
+    st, why = design_state(root, ms)
+    if st not in ("SIGNED", "NOT-RETROFITTED"): probs.append(f"design: {st} — {why}")
+    for rel in (ms_rel, fp_rel):
+        if (root / rel).exists() and _git(root, "diff", "--quiet", "--", rel)[0] == 1:
+            probs.append(f"unstaged changes to {rel} — stage {rel} (the check reads the working file)")
+    rc, out = run_script(root, "prose_number_check.py", ms_rel)
+    if rc != 0: probs.append("prose: prose_number_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip()))
+    rc, out = run_script(root, "quarto_structure_check.py", ms_rel)
+    if rc != 0: probs.append("structure: quarto_structure_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip()))
+    rc, head_text = _git(root, "show", f"HEAD:{ms_rel}")
+    changed = rc != 0 or chunk_code(head_text) != chunk_code(ms.read_text())
+    if changed:
+        try: sha = json.loads((root / COLD_REL).read_text()).get("manuscript_sha256")
+        except (OSError, ValueError): sha = None
+        if sha != sha256_file(ms):
+            probs.append("chunk code changed since HEAD and there is no cold render of these bytes — run `pipeline.py render --cold`")
+    try: stale = stale_components(root)
+    except (OSError, ValueError, KeyError) as e: stale = {}; probs.append(f"stale: pipeline_state.json unreadable ({e})")
+    if "manuscript" in stale:
+        re_est, re_why = reestimation(root)
+        if re_est: warns.append(f"WARN re-estimation commit — stale: {stale['manuscript']}; every later manuscript commit is refused until the manuscript is re-scored")
+        else: probs.append(stale["manuscript"])
+    for c, r in stale.items():
+        if c != "manuscript": warns.append(f"WARN stale: {c} — {r}")
+    if dsb.amendment_count(root) > 0 and "tbl-design-changes" not in chunk_labels(ms):
+        probs.append("design amendments are recorded but the manuscript has no chunk labelled tbl-design-changes")
+    for w in warns: print(w)
+    for p in probs: print("commit-check: " + p)
+    print("commit-check: " + ("FAIL" if probs else "ok")); return 1 if probs else 0
+
 # ── main ────────────────────────────────────────────────────────────────────
 def main() -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default=".")
@@ -915,6 +999,8 @@ def main() -> int:
     st.add_argument("--repository", help="record-deposit: the archive name (openICPSR, Dataverse, Zenodo, ...)")
     st.add_argument("--url", help="record-deposit: the deposit's resulting URL or DOI")
     st.add_argument("--deductions", type=float, help="record-score: the critic's unfloored deduction total")
+    sub.add_parser("commit-check")
+    sub.add_parser("render").add_argument("--cold", action="store_true", required=True)
     sub.add_parser("conflicts").add_argument("agents", nargs="+")
     sub.add_parser("registry").add_argument("op", choices=["check"])
     ds = sub.add_parser("design"); ds.add_argument("op", choices=["status", "sign", "unlock", "seed-amendment"])
@@ -940,6 +1026,8 @@ def main() -> int:
     if a.cmd == "dispatch-ok": return dispatch_ok(root, reg, a.critic, a.author_request)
     if a.cmd == "critic-context": return critic_context(root, reg, a.critic)
     if a.cmd == "stale": return stale_cmd(root)
+    if a.cmd == "commit-check": return commit_check(root)
+    if a.cmd == "render": return render_cold(root)
     if a.cmd == "design": return design_cmd(root, a)
     if a.cmd == "ledger": return ledger_cmd(root, a)
     if a.cmd == "ruling": return ruling_cmd(root, a)

@@ -1,0 +1,6 @@
+#!/bin/sh
+# research-claude pre-commit: the manuscript gates run on every commit, whatever made it (spec §7).
+# Installed by apply.sh as core.hooksPath = .claude/hooks/git. Never bypass with --no-verify.
+top=$(git rev-parse --show-toplevel) || exit 0
+[ -f "$top/.claude/scripts/pipeline.py" ] || exit 0
+exec python3 "$top/.claude/scripts/pipeline.py" --root "$top" commit-check

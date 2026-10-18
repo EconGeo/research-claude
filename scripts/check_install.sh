@@ -315,6 +315,15 @@ check_project() {
   if [[ "$cl" -le 60 ]]; then ok claude-md-size "$cl lines"
   else warn claude-md-size "CLAUDE.md is $cl lines (cap 60) — move dated status and history to a history file under the project docs folder"; fi
 
+  # The pre-commit gate is a git hook, installed by apply.sh as core.hooksPath. A hooksPath that names
+  # a missing directory runs no hook and the commit still succeeds — which is exactly what a fresh
+  # git worktree without the links gets, so the link must be checked, not just the config.
+  if git -C "$P" rev-parse --git-dir >/dev/null 2>&1; then
+    local hp; hp="$(git -C "$P" config --get core.hooksPath 2>/dev/null || true)"
+    if [[ "$hp" == ".claude/hooks/git" && -x "$P/.claude/hooks/git/pre-commit" ]]; then ok git-hooks-path ".claude/hooks/git"
+    else bad git-hooks-path "pre-commit gate not installed here — run apply.sh --project-dir <this checkout> --link"; fi
+  fi
+
   # ── 8. gitignore covers the linked dirs ───────────────────────────────────
   local gi_missing=() pat
   for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' '.claude/references/*' 'quality_reports/agent_dispatch.jsonl' '.claude/state/design_token.json'; do
@@ -353,8 +362,8 @@ check_project() {
       jq -e --arg h "$h" '[.hooks[]?[]?.hooks[]?.command // empty] | map(select(contains($h))) | length > 0' \
         "$sj" >/dev/null 2>&1 || hw_missing+=("$h")
     done
-    if jq -e '[.hooks[]?[]?.hooks[]?.command // empty] | map(select(contains("post-merge"))) | length > 0' \
-      "$sj" >/dev/null 2>&1; then hw_missing+=("post-merge.sh is a git hook, not a Claude hook"); fi
+    if jq -e '[.hooks[]?[]?.hooks[]?.command // empty] | map(select(contains("post-merge") or contains("hooks/git/"))) | length > 0' \
+      "$sj" >/dev/null 2>&1; then hw_missing+=("settings.json wires a git hook (post-merge / hooks/git/) as a Claude hook"); fi
     [[ ${#hw_missing[@]} -eq 0 ]] && ok hooks-wired || bad hooks-wired "${hw_missing[*]}"
   else warn hooks-wired "no settings.json or no jq"; fi
 
