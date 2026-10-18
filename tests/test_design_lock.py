@@ -49,7 +49,11 @@ class DesignCase(unittest.TestCase):
         for old, new, msg in (("    size:", "    sizz:", "checks.size missing"),
                               ("explorations/size.qmd", "explorations/nope.qmd", "does not exist"),
                               ("rejection_at_0.10: 0.104", "rejection_at_0.10: 0.164", "outside"),
-                              ("mde: 0.02", "mde: 0.05", "exceeds")):
+                              ("mde: 0.02", "mde: 0.05", "exceeds"),
+                              ("mde: 0.02", "mde: nan", "needs numeric"),
+                              ("mde: 0.02", "mde: -1", "positive"),
+                              ("rejection_at_0.10: 0.104", "rejection_at_0.10: nan", "needs a numeric"),
+                              ("target_effect: 0.03", "target_effect: inf", "needs numeric")):
             with self.subTest(msg=msg):
                 self.ms.write_text(BASE.replace(old, new)); self.approve("sign")
                 rc, out = run("design", "sign", "--signer", "a", root=self.t)
@@ -89,6 +93,17 @@ class DesignCase(unittest.TestCase):
         self.assertEqual(run(*args, root=self.t)[0], 0)
         self.assertEqual(dsb.amendment_count(self.t), 1)
         self.sign(); rc, out = run(*args, root=self.t); self.assertEqual(rc, 1); self.assertIn("first signing", out)
+    def test_corrupt_lock_fails_closed(self):
+        for bad in ("", "[]", "{not json"):
+            with self.subTest(bad=bad):
+                (self.t / dsb.LOCK_REL).parent.mkdir(exist_ok=True)
+                (self.t / dsb.LOCK_REL).write_text(bad)
+                rc, out = self.status(); self.assertEqual(rc, 1); self.assertIn("CHANGED", out); self.assertIn("unreadable", out)
+                rc, out = run("pre", "coder", root=self.t); self.assertEqual(rc, 1); self.assertIn("design-lock", out)
+                self.approve("sign"); rc, out = run("design", "sign", "--signer", "a", root=self.t)
+                self.assertEqual(rc, 1); self.assertNotIn("Traceback", out)
+                self.approve("unlock", "r"); rc, out = run("design", "unlock", "--reason", "r", root=self.t)
+                self.assertEqual(rc, 1); self.assertNotIn("Traceback", out)
     def test_pre_coder_blocks_unsigned(self):
         rc, out = run("pre", "coder", root=self.t); self.assertIn("design-lock", out); self.assertEqual(rc, 1)
 

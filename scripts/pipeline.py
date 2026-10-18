@@ -11,7 +11,7 @@ names the first component stage that is ready, treating a scored stage with no l
 completion as adopted work (see next_report).
 """
 from __future__ import annotations
-import argparse, datetime as dt, difflib, fnmatch, glob, hashlib, json, re, subprocess, sys
+import argparse, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, re, subprocess, sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -348,7 +348,12 @@ def critic_inputs(root: Path) -> int:
 
 
 def design_state(root: Path, ms: Path) -> Tuple[str, str]:
-    h = dsb.design_hash(ms.read_text()); lock = dsb.read_lock(root)
+    h = dsb.design_hash(ms.read_text())
+    try:
+        lock = dsb.read_lock(root)
+        if lock is not None and not isinstance(lock, dict): raise ValueError("not an object")
+    except (ValueError, OSError):
+        return "CHANGED", "design_lock.json unreadable — restore it from git or ask the author"
     if lock is None:
         return ("NOT-RETROFITTED", "no design: block and no lock") if h is None else \
                ("UNSIGNED", "design: block present, never signed — the author approves in chat (`approve design sign`)")
@@ -370,10 +375,12 @@ def design_check_problems(root: Path, text: str) -> List[str]:
         elif not f.startswith("explorations/"): probs.append(f"design.checks.{name}.file {f} is not under explorations/")
         elif not (root / f).is_file(): probs.append(f"design.checks.{name}.file {f} does not exist")
     mde, target = dsb.check_number(text, "power", "mde"), dsb.check_number(text, "power", "target_effect")
-    if mde is None or target is None: probs.append("design.checks.power needs numeric mde and target_effect")
+    if mde is None or target is None or not (math.isfinite(mde) and math.isfinite(target)):
+        probs.append("design.checks.power needs numeric mde and target_effect")
+    elif mde <= 0: probs.append(f"power: MDE {mde} must be positive")
     elif mde > abs(target): probs.append(f"power: MDE {mde} exceeds |target_effect| {abs(target)}")
     rej = dsb.check_number(text, "size", "rejection_at_0.10")
-    if rej is None: probs.append("design.checks.size needs a numeric rejection_at_0.10")
+    if rej is None or not math.isfinite(rej): probs.append("design.checks.size needs a numeric rejection_at_0.10")
     elif round(abs(rej - 0.10), 10) > 0.03: probs.append(f"size: rejection rate {rej} at the 10% level is outside 0.07–0.13")
     return probs
 
