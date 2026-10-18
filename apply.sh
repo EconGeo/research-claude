@@ -166,8 +166,10 @@ if [[ "$LINK_MODE" == true ]]; then
   # overwritten — the gate is then NOT installed, and check_install's git-hooks-path says so.
   if git -C "$PROJECT_DIR" rev-parse --git-dir >/dev/null 2>&1; then
     cur="$(git -C "$PROJECT_DIR" config --get core.hooksPath || true)"
-    gd="$(git -C "$PROJECT_DIR" rev-parse --git-dir)"; case "$gd" in /*) ;; *) gd="$PROJECT_DIR/$gd";; esac
-    own="$(ls "$gd/hooks" 2>/dev/null | grep -v '\.sample$' || true)"
+    # --git-path hooks, not <git-dir>/hooks: in a linked worktree the git-dir has no hooks/, the
+    # shared one lives in the main checkout, and core.hooksPath is written to that shared config.
+    gd="$(git -C "$PROJECT_DIR" rev-parse --git-path hooks)"; case "$gd" in /*) ;; *) gd="$PROJECT_DIR/$gd";; esac
+    own="$(ls "$gd" 2>/dev/null | grep -v '\.sample$' || true)"
     if [[ -n "$cur" && "$cur" != ".claude/hooks/git" ]]; then echo "  WARN core.hooksPath is $cur — left alone; pre-commit gate NOT installed"
     elif [[ -z "$cur" && -n "$own" ]]; then echo "  WARN .git/hooks has its own hooks ($own) — pre-commit gate NOT installed; merge by hand"
     else git -C "$PROJECT_DIR" config core.hooksPath .claude/hooks/git; echo "  git hooks: core.hooksPath = .claude/hooks/git"; fi

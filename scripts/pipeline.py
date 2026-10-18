@@ -936,7 +936,7 @@ def chunk_code(text: str) -> List[str]:
     """The R chunk bodies of a .qmd, prose removed, so a prose edit that shifts line numbers is not a code change."""
     lines = text.split("\n"); out: List[str] = []; ext = qmd_chunks.extract(lines); inside = False
     for raw, e in zip(lines, ext):
-        if qmd_chunks.FENCE_OPEN_R.match(raw): inside = True; out.append("<chunk>")
+        if qmd_chunks.FENCE_OPEN_R.match(raw): inside = True; out.append("<chunk>" + raw.strip())
         elif inside and qmd_chunks.FENCE_CLOSE.match(raw): inside = False
         elif inside: out.append(e)
     return out
@@ -947,10 +947,10 @@ def commit_check(root: Path) -> int:
     hits = re.findall(r"^manuscript:\s*(\S+\.qmd)\s*$", claude.read_text(errors="ignore"), re.M)
     if not hits: print("commit-check: no manuscript declared"); return 0
     if len(hits) != 1: print("commit-check: FAIL — CLAUDE.md declares more than one manuscript"); return 1
-    rc, names = _git(root, "diff", "--cached", "--name-only")
+    rc, names = _git(root, "diff", "--cached", "--name-only", "-z")
     if rc != 0: print("commit-check: FAIL — git diff --cached failed"); return 1
     ms = root / hits[0]; ms_rel = ms.relative_to(root).as_posix(); fp_rel = FINGERPRINT_REL.as_posix()
-    staged = set(names.split("\n"))
+    staged = set(names.split("\0"))
     if ms_rel not in staged and fp_rel not in staged: return 0
     if not ms.exists(): print(f"commit-check: FAIL — declared manuscript {hits[0]} does not exist"); return 1
     probs: List[str] = []; warns: List[str] = []

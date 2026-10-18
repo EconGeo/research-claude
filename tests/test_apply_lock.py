@@ -38,4 +38,18 @@ class TestLockIdempotence(unittest.TestCase):
         self.assertIn(f"commit={HEAD}\n", text)
         self.assertNotIn("0" * 40, text)
 
+class TestHooksPathInWorktree(unittest.TestCase):
+    """core.hooksPath is shared config: a linked worktree must see the MAIN checkout's .git/hooks."""
+    def test_main_checkouts_own_hook_blocks_install_from_a_worktree(self):
+        with tempfile.TemporaryDirectory() as t:
+            main = pathlib.Path(t) / "main"; wt = pathlib.Path(t) / "wt"
+            g = lambda *a, cwd=main: subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(cwd), *a], check=True, capture_output=True, text=True)
+            main.mkdir(); g("init", "-q", "-b", "main"); (main / "f").write_text("x"); g("add", "f"); g("commit", "-qm", "i")
+            hook = main / ".git" / "hooks" / "pre-commit"; hook.write_text("#!/bin/sh\nexit 0\n"); hook.chmod(0o755)
+            g("worktree", "add", "-q", str(wt))
+            out = subprocess.run(["bash", APPLY, "--project-dir", str(wt), "--link"], check=True, capture_output=True, text=True).stdout
+            self.assertIn("pre-commit gate NOT installed", out)
+            cfg = subprocess.run(["git", "-C", str(main), "config", "--get", "core.hooksPath"], capture_output=True, text=True)
+            self.assertEqual(cfg.stdout.strip(), "")
+
 if __name__ == "__main__": unittest.main()

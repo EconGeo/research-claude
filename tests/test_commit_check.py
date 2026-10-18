@@ -55,6 +55,20 @@ class TestCommitCheck(CommitCase):
         (self.t / "README.md").write_text("x\n"); self.stage("README.md")
         rc, out = self.cc(); self.assertEqual(rc, 0, out)
 
+    def test_unrelated_staged_file_with_stale_manuscript_passes(self):
+        self.stale_setup(); (self.t / "README.md").write_text("x\n"); self.stage("README.md")
+        rc, out = self.cc(); self.assertEqual(rc, 0, out)
+
+    def test_header_option_change_needs_cold_render(self):
+        self.ms().write_text(self.ms().read_text().replace("```{r}\n#| label: estimate-main", "```{r, cache=FALSE}\n#| label: estimate-main", 1))
+        self.stage(MS); rc, out = self.cc(); self.assertEqual(rc, 1); self.assertIn("cold render", out)
+
+    def test_non_ascii_manuscript_name(self):
+        new = self.t / "manuscrit_é.qmd"; new.write_text(self.ms().read_text()); self.ms().unlink()
+        (self.t / "CLAUDE.md").write_text("manuscript: manuscrit_é.qmd\n")
+        self.commit_plain("-A"); new.write_text(new.read_text() + "\nOne more plain sentence.\nSee @fig-nope.\n")
+        self.stage("manuscrit_é.qmd"); rc, out = self.cc(); self.assertEqual(rc, 1, out)
+
     def test_prose_only_passes(self):
         self.prose(); self.stage(MS)
         rc, out = self.cc(); self.assertEqual(rc, 0, out)
