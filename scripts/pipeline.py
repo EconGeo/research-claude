@@ -349,11 +349,13 @@ def critic_inputs(root: Path) -> int:
 
 def design_state(root: Path, ms: Path) -> Tuple[str, str]:
     h = dsb.design_hash(ms.read_text())
-    try:
-        lock = dsb.read_lock(root)
-        if lock is not None and not isinstance(lock, dict): raise ValueError("not an object")
-    except (ValueError, OSError):
-        return "CHANGED", "design_lock.json unreadable — restore it from git or ask the author"
+    bad = ("CHANGED", "design_lock.json unreadable — restore it from git or ask the author")
+    lock = None
+    if (root / dsb.LOCK_REL).exists():          # existence, not the parsed value, decides "a lock exists"
+        try: lock = dsb.read_lock(root)
+        except (ValueError, OSError): return bad
+        need = ("hash", "block") + (("reason",) if isinstance(lock, dict) and lock.get("status") == "unlocked" else ())
+        if not isinstance(lock, dict) or any(k not in lock for k in need): return bad
     if lock is None:
         return ("NOT-RETROFITTED", "no design: block and no lock") if h is None else \
                ("UNSIGNED", "design: block present, never signed — the author approves in chat (`approve design sign`)")
@@ -402,7 +404,8 @@ def design_cmd(root: Path, a) -> int:
         probs = design_check_problems(root, text)
         if probs: print("design sign: refused — " + "; ".join(probs)); return 1
         if st == "SIGNED": print("design sign: already signed and unchanged"); return 0
-        if st == "CHANGED": print("design sign: refused — the block changed without `design unlock`"); return 1
+        if st == "CHANGED":
+            print("design sign: refused — " + (why if "unreadable" in why else "the block changed without `design unlock`")); return 1
         lock = dsb.read_lock(root) or {}; rows: List[Dict[str, str]] = []
         if st == "UNLOCKED":
             rows = dsb.amendment_rows(lock["block"], new_block, now()[:10], lock["reason"])

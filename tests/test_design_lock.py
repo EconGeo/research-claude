@@ -94,14 +94,14 @@ class DesignCase(unittest.TestCase):
         self.assertEqual(dsb.amendment_count(self.t), 1)
         self.sign(); rc, out = run(*args, root=self.t); self.assertEqual(rc, 1); self.assertIn("first signing", out)
     def test_corrupt_lock_fails_closed(self):
-        for bad in ("", "[]", "{not json"):
+        for bad in ("", "[]", "{not json", "null", '{"status": "unlocked"}', '{"status": "signed", "hash": "x"}'):
             with self.subTest(bad=bad):
                 (self.t / dsb.LOCK_REL).parent.mkdir(exist_ok=True)
                 (self.t / dsb.LOCK_REL).write_text(bad)
                 rc, out = self.status(); self.assertEqual(rc, 1); self.assertIn("CHANGED", out); self.assertIn("unreadable", out)
                 rc, out = run("pre", "coder", root=self.t); self.assertEqual(rc, 1); self.assertIn("design-lock", out)
                 self.approve("sign"); rc, out = run("design", "sign", "--signer", "a", root=self.t)
-                self.assertEqual(rc, 1); self.assertNotIn("Traceback", out)
+                self.assertEqual(rc, 1); self.assertNotIn("Traceback", out); self.assertIn("unreadable", out)
                 self.approve("unlock", "r"); rc, out = run("design", "unlock", "--reason", "r", root=self.t)
                 self.assertEqual(rc, 1); self.assertNotIn("Traceback", out)
     def test_pre_coder_blocks_unsigned(self):
