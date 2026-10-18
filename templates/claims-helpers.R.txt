@@ -1,0 +1,113 @@
+# ---- claims helpers: paste into the setup chunk (cache: false), below the library() calls ----
+# Source of truth: research-claude templates/claims-helpers.R.txt. Do not edit here; re-paste.
+# Every result word in prose comes from these (or from an inline if, or sits in a sentence with a
+# stopifnot() guard), so the word changes when the model does.
+# Significance convention: * p <= 0.10, ** p <= 0.05, *** p <= 0.01.
+
+# Classes the fingerprint treats as fitted models. Extend below the paste, never by editing here.
+rc_model_classes <- c("lm", "glm", "fixest", "fixest_multi", "feols", "felm", "ivreg", "plm", "lm_robust")
+
+rc_design <- function(qmd) {
+  design_spec <- rmarkdown::yaml_front_matter(qmd)$design
+  if (is.null(design_spec)) stop("rc_design: no `design:` block in the front matter of ", qmd, call. = FALSE)
+  if (length(design_spec$hypotheses) == 0) stop("rc_design: design$hypotheses is empty", call. = FALSE)
+  has_spec <- vapply(design_spec$hypotheses, function(h) is.character(h$spec) && length(h$spec) == 1, logical(1))
+  if (!all(has_spec)) {
+    stop("rc_design: each hypothesis needs one `spec:` naming its model object: ",
+         paste(names(design_spec$hypotheses)[!has_spec], collapse = ", "), call. = FALSE)
+  }
+  design_spec
+}
+
+.rc_ok <- function(x, helper) {
+  if (is.null(x) || length(x) != 1 || !is.numeric(x) || !is.finite(x)) {
+    stop(sprintf("%s: value is %s, not one finite number - fix the model, do not type the word", helper,
+                 if (is.null(x)) "NULL" else paste(format(x), collapse = ", ")), call. = FALSE)
+  }
+  invisible(x)
+}
+
+rc_num <- function(x, digits = 2) {
+  .rc_ok(x, "rc_num")
+  formatC(x, format = "f", digits = digits, big.mark = ",")
+}
+
+rc_pct <- function(x, digits = 1) {
+  .rc_ok(x, "rc_pct")
+  paste0(formatC(100 * x, format = "f", digits = digits), "%")
+}
+
+rc_sig <- function(p) {
+  .rc_ok(p, "rc_sig")
+  if (p < 0 || p > 1) stop("rc_sig: p = ", p, " is not a probability", call. = FALSE)
+  if (p <= 0.01) return("statistically significant at the 1% level")
+  if (p <= 0.05) return("statistically significant at the 5% level")
+  if (p <= 0.10) return("statistically significant at the 10% level")
+  "not statistically significant"
+}
+
+rc_stars <- function(p) {
+  .rc_ok(p, "rc_stars")
+  if (p <= 0.01) return("***")
+  if (p <= 0.05) return("**")
+  if (p <= 0.10) return("*")
+  ""
+}
+
+rc_dir <- function(b, up, down) {
+  .rc_ok(b, "rc_dir")
+  switch(as.character(sign(b)), "1" = up, "-1" = down,
+         stop("rc_dir: estimate is exactly 0; no direction word applies", call. = FALSE))
+}
+
+rc_cmp <- function(a, b, more, less, same = NULL, tol = 0) {
+  .rc_ok(a, "rc_cmp"); .rc_ok(b, "rc_cmp")
+  if (abs(a - b) <= tol) {
+    if (is.null(same)) stop("rc_cmp: values equal within tol and no `same` word given", call. = FALSE)
+    return(same)
+  }
+  if (a > b) more else less
+}
+
+.rc_md5 <- function(txt) {
+  hash_file <- tempfile(); on.exit(unlink(hash_file))
+  writeLines(txt, hash_file); unname(tools::md5sum(hash_file))
+}
+
+rc_design_hash <- function(design_spec) .rc_md5(paste(deparse(design_spec), collapse = "\n"))
+
+rc_data_hash <- function(data_dirs = c("data/raw", "data/derived")) {
+  data_files <- sort(as.character(unlist(lapply(data_dirs[dir.exists(data_dirs)], list.files, recursive = TRUE, full.names = TRUE))))
+  .rc_md5(paste(data_files, unname(tools::md5sum(data_files)), collapse = "\n"))
+}
+
+# One line per fitted model: name, N, and every coefficient with its standard error.
+.rc_model_digest <- function(model_name, fit) {
+  if (inherits(fit, "fixest_multi")) {
+    parts <- as.list(fit)
+    return(paste(vapply(seq_along(parts), function(i) .rc_model_digest(paste0(model_name, "[[", i, "]]"), parts[[i]]), ""),
+                 collapse = "\n"))
+  }
+  coefs <- stats::coef(fit); std_errors <- sqrt(diag(as.matrix(stats::vcov(fit))))
+  paste(model_name, stats::nobs(fit), paste(names(coefs), signif(coefs, 10), signif(std_errors, 10), collapse = ";"))
+}
+
+rc_fingerprint <- function(design_spec = design, classes = rc_model_classes,
+                           path = "quality_reports/render_fingerprint.json") {
+  spec_names <- unique(vapply(design_spec$hypotheses, function(h) h$spec, ""))
+  absent <- spec_names[!vapply(spec_names, exists, logical(1), envir = globalenv(), inherits = FALSE)]
+  if (length(absent) > 0) stop("rc_fingerprint: hypothesis spec object(s) not found: ", paste(absent, collapse = ", "), call. = FALSE)
+  not_models <- spec_names[!vapply(spec_names, function(n) inherits(get(n, envir = globalenv()), classes), logical(1))]
+  if (length(not_models) > 0) {
+    stop("rc_fingerprint: spec object(s) not a fitted model of a class in rc_model_classes: ",
+         paste(not_models, collapse = ", "), call. = FALSE)
+  }
+  model_names <- Filter(function(n) inherits(get(n, envir = globalenv()), classes), sort(ls(globalenv())))
+  model_digests <- vapply(model_names, function(n) .rc_model_digest(n, get(n, envir = globalenv())), "")
+  dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
+  writeLines(sprintf('{\n  "estimates_hash": "%s",\n  "data_hash": "%s",\n  "design_hash": "%s",\n  "models": [%s]\n}',
+                     .rc_md5(model_digests), rc_data_hash(), rc_design_hash(design_spec),
+                     paste0('"', model_names, '"', collapse = ", ")), path)
+  invisible(path)
+}
+# ---- end claims helpers ----
