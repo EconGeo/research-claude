@@ -396,6 +396,70 @@ def critic_inputs(root: Path) -> int:
     print(" · ".join(summary)); print(f"critic-inputs: {log.relative_to(root)}"); return 0
 
 
+def _scored_component(reg, critic: str) -> Optional[str]:
+    for c, e in reg["components"].items():
+        if e.get("scored_by") == critic: return c
+    return None
+
+def dispatch_ok(root: Path, reg, critic: str, author_request: bool) -> int:
+    """Exit 1 (PASSED-UNCHANGED) only when the critic's component passed the commit gate, is not
+    stale, and the manuscript's bytes equal those the latest whole-component receipt scored.
+    Anything uncertain exits 0: this never prevents a needed review."""
+    try:
+        if author_request: return 0
+        comp = _scored_component(reg, critic)
+        if not comp or not state_path(root).exists(): return 0
+        entry = load_state(root)["components"].get(comp)
+        if not entry or entry.get("score") is None or entry["score"] < GATES["commit"][0]: return 0
+        ms = declared_manuscript(root)
+        if stale_reason(root, ms, comp, entry): return 0
+        rp = root / RECEIPTS_REL
+        if not rp.exists(): return 0
+        last = None
+        for ln in rp.read_text().splitlines():
+            try: r = json.loads(ln)
+            except ValueError: continue
+            if r.get("component") == comp and not r.get("scope"): last = r
+        if not last or last.get("manuscript_sha256") != sha256_file(ms): return 0
+    except Exception:
+        return 0
+    print(f"PASSED-UNCHANGED: {comp} scored {entry['score']:g} on these exact manuscript bytes "
+          f"— do not re-dispatch {critic} (pass --author-request if the author asked for a re-review)")
+    return 1
+
+def critic_context(root: Path, reg, critic: str) -> int:
+    """Round 2+ context for a critic: the ledger rows for the creators it reviews, and the
+    manuscript diff since the last scored round."""
+    import findings_ledger as fl
+    creators = [a for a, e in reg["agents"].items() if e.get("critic") == critic]
+    comp = _scored_component(reg, critic); ms = declared_manuscript(root); rel = ms.relative_to(root).as_posix()
+    parts = [f"# critic-context: {critic} at {now()}"]
+    cols = fl.LEDGER_COLS
+    lines = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
+    for r in fl.rows(root / fl.LEDGER_REL):
+        if r["creator"] in creators: lines.append("| " + " | ".join(r[c] for c in cols) + " |")
+    parts.append(f"## Findings ledger — creators: {', '.join(creators) or 'none'}\n" + "\n".join(lines))
+    head = None
+    try:
+        if comp and state_path(root).exists(): head = (load_state(root)["components"].get(comp) or {}).get("head")
+    except Exception: head = None
+    diff = None
+    if head:
+        try:
+            r = subprocess.run(["git", "diff", head, "--", rel], cwd=root, capture_output=True, text=True)
+            if r.returncode == 0: diff = r.stdout
+        except OSError: pass
+    parts.append(f"## Manuscript diff since the last scored round ({rel})\n" +
+                 (("```diff\n" + diff.rstrip() + "\n```" if diff.strip() else "no changes since the last scored round")
+                  if diff is not None else "no prior scored round"))
+    d = root / CRITIC_INPUTS_REL; d.mkdir(parents=True, exist_ok=True)
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d_%H%M%S")
+    f = d / f"{critic}_context_{stamp}.md"; n = 2
+    while f.exists(): f = d / f"{critic}_context_{stamp}_{n}.md"; n += 1
+    f.write_text("\n\n".join(parts) + "\n")
+    print(f"critic-context: {f.relative_to(root)}"); return 0
+
+
 def design_state(root: Path, ms: Path) -> Tuple[str, str]:
     h = dsb.design_hash(ms.read_text())
     bad = ("CHANGED", "design_lock.json unreadable — restore it from git or ask the author")
@@ -838,6 +902,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default=".")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("stale"); sub.add_parser("manuscript"); sub.add_parser("fresh"); sub.add_parser("next"); sub.add_parser("critic-inputs")
+    dk = sub.add_parser("dispatch-ok"); dk.add_argument("critic"); dk.add_argument("--author-request", action="store_true")
+    sub.add_parser("critic-context").add_argument("critic")
     for k in ("pre", "post"): sub.add_parser(k).add_argument("agent")
     sc = sub.add_parser("score"); sc.add_argument("--gate", choices=sorted(GATES))
     st = sub.add_parser("state"); st.add_argument("op", choices=["init", "validate", "show", "record-score", "record-verify-claims", "record-deposit", "strike", "set-blocked", "clear-blocked"])
@@ -868,6 +934,8 @@ def main() -> int:
     if a.cmd == "fresh":
         ok, why = is_fresh(root, declared_manuscript(root)); print(("fresh: " if ok else "STALE: ") + why); return 0 if ok else 1
     if a.cmd == "critic-inputs": return critic_inputs(root)
+    if a.cmd == "dispatch-ok": return dispatch_ok(root, reg, a.critic, a.author_request)
+    if a.cmd == "critic-context": return critic_context(root, reg, a.critic)
     if a.cmd == "stale": return stale_cmd(root)
     if a.cmd == "design": return design_cmd(root, a)
     if a.cmd == "ledger": return ledger_cmd(root, a)
