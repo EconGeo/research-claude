@@ -653,7 +653,10 @@ def main(argv):
 
     jargon = []
     for rx in j_rx:
-        for lineno, para in paragraphs(prose):
+        # paragraphs() drops heading and div-fence lines, so scan those one by one too.
+        chunks = list(paragraphs(prose)) + [
+            (n, l.strip()) for n, l in prose if l.strip().startswith(("#", ":::"))]
+        for lineno, para in chunks:
             jargon.extend((lineno, m.group(0)) for m in rx.finditer(INLINE.sub(" ", para)))
         for lineno, text in captions:
             jargon.extend((lineno, "caption: " + m.group(0))

@@ -103,6 +103,16 @@ class TestJargon(Words):
             self.assertEqual(rc, 1, bad + out)
             self.assertIn("PIPELINE JARGON", out)
 
+    def test_headings_and_div_lines_are_scanned(self):
+        for line in ("## The governing p result", '::: {.callout title="governing p"}'):
+            rc, out = self.retro(f"{line}\n\nText.\n")
+            self.assertEqual(rc, 1, line + out)
+            self.assertIn("PIPELINE JARGON", out)
+
+    def test_hyphenated_prose_is_not_jargon(self):
+        rc, out = self.retro("The first-rate result in a well-known study, 8-year-old data.\n")
+        self.assertNotIn("PIPELINE JARGON", out)
+
     def test_invalid_declared_pattern_is_exit_2(self):
         rc, out = self.retro("Text.\n", claude="prose-jargon: foo(\n")
         self.assertEqual(rc, 2, out)
