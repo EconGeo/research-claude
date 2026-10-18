@@ -20,6 +20,19 @@ class TestWire(unittest.TestCase):
         wgh.wire(s)
         self.assertEqual(wgh.wire(s), 0)
 
+    def test_widen_protect_files_matcher_to_bash(self):
+        s = {"hooks": {"PreToolUse": [{"matcher": "Edit|Write", "hooks": [
+            {"type": "command", "command": "x/run-hook.sh protect-files.sh"}]}]}}
+        self.assertEqual(wgh.widen(s), 1)
+        self.assertEqual(s["hooks"]["PreToolUse"][0]["matcher"], "Edit|Write|Bash")
+        self.assertEqual(wgh.widen(s), 0)
+
+    def test_wire_adds_design_guard_once(self):
+        s = {"hooks": {}}
+        wgh.wire(s)
+        cmds = [h["command"] for g in s["hooks"]["PreToolUse"] for h in g["hooks"]]
+        self.assertEqual(sum("design-guard.py" in c for c in cmds), 1)
+
     def test_git_hook_is_refused(self):
         code = ("import sys; sys.path.insert(0, %r); import wire_guard_hooks as w\n"
                 "w.WANTED.append(('PreToolUse', 'Bash', 'git/pre-commit'))\n"

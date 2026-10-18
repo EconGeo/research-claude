@@ -45,7 +45,7 @@ Before shipping a skill that depends on a hook, check that the hook is wired.
 | `post-edit-lint.sh` | PostToolUse (Edit/Write) | Advisory lint on edited scripts and `.qmd` files, emitted as `additionalContext` |
 | `lint-scripts.sh` | PostToolUse (via `post-edit-lint.sh`) / CLI | Lints acquisition scripts and a manuscript's `.qmd` R chunks against INV-14..19 |
 | `install-check.py` | SessionStart | Runs check_install.sh; silent when clean, injects the FAIL lines otherwise |
-| `protect-files.sh` | PreToolUse | Blocks Edit of, and Write over, protected paths (generated evidence, state, settings); a Write that creates one is allowed — critics return text and the session saves it |
+| `protect-files.sh` | PreToolUse | Blocks Edit of, and Write over, protected paths (generated evidence, state, settings, the design lock and record files), and shell writes to them (redirect, `tee`, `sed -i`, `cp`, `mv`, `rm`); a Write that creates one is allowed — critics return text and the session saves it |
 | `context-monitor.py` | PostToolUse | Progressive nudges at 40/55/65% (/tools learn), 80% (info), 90% (caution), once per session each |
 | `log-reminder.py` | Stop | Counts responses since the session log was last touched and nudges via `additionalContext`. Never blocks |
 | `verify-reminder.py` | PostToolUse (Write/Edit) | Reminds you to render before calling a task done, on `.qmd`/`.R` edits |
@@ -54,6 +54,7 @@ Before shipping a skill that depends on a hook, check that the hook is wired.
 | `critic-pairing.py` | Stop | Surfaces a creator that ran without its critic; blocks once per session per creator, then advisory |
 | `script-guard.py` | PreToolUse (Write/Bash) | Refuses creating a new R/Python/Julia script outside `explorations/`, `scripts/acquire/` and `.claude/` in a project that declares `manuscript:` (.claude/rules/quarto-empirical.md). Blocking |
 | `read-gate.py` | PostToolUse (Read/Edit/Write) + PreToolUse (Edit/Write/Bash) | Records which manuscript lines each agent has read; refuses an edit to the declared manuscript until that agent has read every line since the file last changed. Blocking |
+| `design-guard.py` | PreToolUse (Write/Edit/Bash) | Refuses an edit that changes a signed `design:` block, a Bash write to the manuscript while signed, `pipeline.py design sign\|unlock` without the author's fresh token, any write to the lock, token and record files, and a Bash `claude … approve design` (a nested session never submits an approval line). Blocking; fails open on internal error |
 | `design-token.py` | UserPromptSubmit | Turns the author's chat approval line into a one-time token for `pipeline.py design sign` or `unlock`; revokes an unused token on the next message. Never blocks |
 
 ## Getting the contract right

@@ -23,6 +23,12 @@ def run(tool_name, file_path):
     return p.returncode, p.stderr
 
 
+def run_bash(cmd):
+    p = subprocess.run([str(HOOK)], input=json.dumps({"tool_name": "Bash", "tool_input": {"command": cmd}}),
+                       capture_output=True, text=True)
+    return p.returncode, p.stderr
+
+
 class TestProtectFiles(unittest.TestCase):
     def assertBlocked(self, file_path):
         code, err = run("Edit", file_path)
@@ -90,6 +96,26 @@ class TestProtectFiles(unittest.TestCase):
             self.assertFalse(f.exists())
             code, _ = run("Edit", str(f))
             self.assertEqual(code, 2, "Edit of a protected path is blocked even when absent")
+
+    def test_bash_shell_writes_to_protected_files_blocked(self):
+        for cmd in ("echo x > quality_reports/pipeline_state.json", "rm quality_reports/design_lock.json",
+                    "cp a.json quality_reports/design_lock.json", "sed -i '' s/a/b/ .claude/state/design_token.json",
+                    "echo x | tee quality_reports/findings_ledger.md", "mv x quality_reports/rulings_log.md",
+                    "echo x >> quality_reports/reviews/writer-critic_2.md"):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 2, cmd)
+
+    def test_bash_reads_and_other_commands_allowed(self):
+        for cmd in ("cat quality_reports/pipeline_state.json", "grep x quality_reports/design_lock.json",
+                    "python3 .claude/scripts/pipeline.py status", "ls quality_reports && echo done > notes.txt",
+                    "jq . quality_reports/receipts.jsonl | head", "quarto render manuscript_p.qmd 2>&1 | tail -5"):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 0, f"{cmd}: {err}")
+
+    def test_new_record_files_protected_for_edit(self):
+        for n in ("design_lock.json", "design_token.json", "design_amendments.csv", "design_amendments.md",
+                  "render_fingerprint.json", "cold_render.json", "findings_ledger.md", "rulings_log.md"):
+            self.assertBlocked("/tmp/proj/quality_reports/" + n)
 
     def test_hook_is_wired_in_the_seed(self):
         seed = json.loads((ROOT / "seeds" / "settings.json").read_text())

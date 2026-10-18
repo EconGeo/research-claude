@@ -15,8 +15,10 @@ if [ "$TOOL" = "Edit" ] || [ "$TOOL" = "Write" ]; then
   FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 fi
 
-# No file path = not a file operation, allow
-if [ -z "$FILE" ]; then
+# Bash branch: a shell write (redirect, tee, sed -i, cp, mv, rm) that names a protected file is
+# refused; reads (cat, grep, jq) are not. The pattern list is defined below, so the branch runs
+# after it.
+if [ -z "$FILE" ] && [ "$TOOL" != "Bash" ]; then
   exit 0
 fi
 
@@ -48,7 +50,26 @@ PROTECTED_PATTERNS=(
   "desk_review.md"
   "referee_domain.md"
   "referee_methods.md"
+  "design_lock.json"
+  "design_token.json"
+  "design_amendments.csv"
+  "design_amendments.md"
+  "render_fingerprint.json"
+  "cold_render.json"
+  "findings_ledger.md"
+  "rulings_log.md"
 )
+
+if [ "$TOOL" = "Bash" ]; then
+  CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+  for PATTERN in "${PROTECTED_PATTERNS[@]}"; do
+    ERE=$(printf '%s' "$PATTERN" | sed -e 's/\./\\./g' -e 's/\*/.*/g')
+    if echo "$CMD" | grep -Eq "(>|>>|\btee\b|sed -i|\bcp\b|\bmv\b|\brm\b)[^;&|]*${ERE}"; then
+      echo "Protected file named in a shell write: $PATTERN" >&2; exit 2
+    fi
+  done
+  exit 0
+fi
 
 BASENAME=$(basename "$FILE")
 for PATTERN in "${PROTECTED_PATTERNS[@]}"; do
