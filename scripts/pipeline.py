@@ -597,6 +597,11 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
     if t == "design-lock":
         st, why = design_state(root, ctx.ms)
         return st in ("SIGNED", "NOT-RETROFITTED"), f"design-lock: {st} — {why}"
+    if t == "ledger-closed":
+        import findings_ledger as fl
+        b = fl.blocking(root / fl.LEDGER_REL, ctx.agent or "")
+        return not b, ("ledger-closed: no open findings" if not b else
+                       f"ledger-closed: {len(b)} open for {ctx.agent}: " + ", ".join(r["id"] for r in b[:5]))
     if t == "any_of":
         results = [(q, evaluate(q, ctx, post)) for q in pred["of"]]
         passed = any(ok for _, (ok, _d) in results)
@@ -611,6 +616,8 @@ def eval_preds(kind: str, agent: str, root: Path, reg) -> List[Tuple[bool, str]]
     preds = list(e["requires"] if kind == "pre" else e["produces"])
     if kind == "post" and rl.critic_of(reg, agent) and not any(p["type"] == "critic-ran" for p in preds):
         preds.append({"type": "critic-ran"})
+    if kind == "post" and rl.critic_of(reg, agent) and not any(p["type"] == "ledger-closed" for p in preds):
+        preds.append({"type": "ledger-closed"})
     out: List[Tuple[bool, str]] = []
     for p in preds:
         ok, desc = evaluate(p, ctx, post=(kind == "post"))
@@ -664,7 +671,7 @@ def next_report(root: Path, reg) -> int:
                     ".claude/skills/pipeline/references/adopt.md)" if newest is None
                     else f" (creator {newest_agent} completed at {newest})")
             info[c] = ("CLOSED", f"{entry.get('score')} by {entry.get('critic')} at {at}" + deduction_note(entry) + tail)
-            why = stale_reason(root, declared_manuscript(root), c, entry)
+            why = stale_reason(root, declared_manuscript(root), c, entry) if c in STALE_ON_CHANGE else None
             if why: info[c] = ("OPEN", why)
         elif newest is not None:
             scorer = reg["components"][c].get("scored_by")
@@ -746,6 +753,79 @@ def registry_check(root: Path) -> int:
     pa = rl.parse_agree(root); print(f"{pa} [registry-parse-agree]" + (" (PyYAML not importable)" if pa == "SKIP" else "")); rc |= pa == "FAIL"
     return int(rc)
 
+# ── finding ledger, rulings log, questions ──────────────────────────────────
+def ledger_cmd(root: Path, a) -> int:
+    import findings_ledger as fl
+    path = root / fl.LEDGER_REL; op = a.op
+    def need(*names):
+        miss = [n for n in names if not getattr(a, n)]
+        if miss: print(f"ledger {op}: requires " + ", ".join("--" + n for n in miss)); return False
+        return True
+    def known(fid):
+        if not fid or fid not in {r["id"] for r in fl.rows(path)}:
+            print(f"ledger {op}: no such finding {fid!r}"); return None
+        return next(r for r in fl.rows(path) if r["id"] == fid)
+    if op == "add":
+        if not need("creator", "report", "location", "finding"): return 2
+        fid = fl.add(path, a.creator, a.report, a.location, a.finding, "proposal: pending" if a.proposal else "open")
+        print(f"ledger: added {fid}"); return 0
+    if op == "show":
+        for r in fl.rows(path):
+            if a.creator and r["creator"] != a.creator: continue
+            if a.open and not fl.BLOCKING.match(r["status"]): continue
+            print(f"{r['id']}  {r['creator']}  {r['status']}  {r['location']}: {r['finding']}" + (f"  [guard: {r['guard']}]" if r["guard"] else ""))
+        return 0
+    if op == "settle":
+        r = subprocess.run(["git", "diff-tree", "--no-commit-id", "--name-only", "-r", "--relative", "HEAD"],
+                           cwd=root, capture_output=True, text=True)
+        head = git_head(root)
+        if r.returncode != 0 or not head: print("ledger settle: no git HEAD — nothing settled"); return 0
+        ms = declared_manuscript(root).relative_to(root).as_posix()
+        if ms not in r.stdout.split("\n"): print("ledger settle: HEAD did not touch the manuscript — nothing settled"); return 0
+        if "manuscript" in stale_components(root): print("ledger settle: manuscript still stale — nothing settled"); return 0
+        n = 0
+        for row in fl.rows(path):
+            if row["status"] == "closed pending": fl.set_status(path, row["id"], "closed " + head[:7]); n += 1
+        print(f"ledger settle: {n} row(s) closed at {head[:7]}"); return 0
+    if not a.id: print(f"ledger {op}: requires a finding id"); return 2
+    if op == "close":
+        if bool(a.sha) == bool(a.pending): print("ledger close: give exactly one of --sha SHA or --pending"); return 2
+        row = known(a.id)
+        if row is None: return 1
+        if a.sha:
+            if not re.match(r"^[0-9a-fA-F]{7,40}$", a.sha) or subprocess.run(
+                    ["git", "cat-file", "-e", a.sha + "^{commit}"], cwd=root, capture_output=True).returncode != 0:
+                print(f"ledger close: {a.sha} is not a commit in this repository"); return 1
+            full = subprocess.run(["git", "rev-parse", a.sha + "^{commit}"], cwd=root, capture_output=True, text=True).stdout.strip()
+            fl.set_status(path, a.id, "closed " + full[:7], a.guard)
+        else:
+            if "manuscript" not in stale_components(root):
+                print("ledger close --pending: refused — the manuscript score is not stale; close with --sha"); return 1
+            fl.set_status(path, a.id, "closed pending", a.guard)
+        print(f"ledger: {a.id} -> {fl.rows(path)[[r['id'] for r in fl.rows(path)].index(a.id)]['status']}"); return 0
+    if op in ("decline", "accept", "reject"):
+        if not a.by: print(f"ledger {op}: requires --by author|session"); return 2
+        if op == "decline" and not a.reason: print("ledger decline: requires --reason"); return 2
+        if op != "decline" and a.by == "session" and not a.reason: print(f"ledger {op}: --by session requires --reason"); return 2
+        row = known(a.id)
+        if row is None: return 1
+        if op != "decline" and row["status"] != "proposal: pending":
+            print(f"ledger {op}: {a.id} is not a pending proposal (status {row['status']})"); return 1
+        status = {"decline": f"declined: {a.reason}", "accept": "proposal: accepted", "reject": "proposal: rejected"}[op]
+        fl.set_status(path, a.id, status)
+        alt = {"decline": "fix it", "accept": "reject it", "reject": "accept it"}[op]
+        fl.add_ruling(root / fl.RULINGS_REL, a.by, f"{a.id} " + {"decline": "declined", "accept": "accepted", "reject": "rejected"}[op], alt, a.reason or "(none given)")
+        print(f"ledger: {a.id} {status}"); return 0
+    return 2
+
+def ruling_cmd(root: Path, a) -> int:
+    import findings_ledger as fl
+    fl.add_ruling(root / fl.RULINGS_REL, a.by, a.decision, a.alternative, a.reason); print("ruling: logged"); return 0
+
+def question_cmd(root: Path, a) -> int:
+    import findings_ledger as fl
+    fl.add_question(root / fl.QUESTIONS_REL, a.text, a.blocks); print("question: recorded"); return 0
+
 # ── main ────────────────────────────────────────────────────────────────────
 def main() -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default=".")
@@ -763,6 +843,16 @@ def main() -> int:
     sub.add_parser("registry").add_argument("op", choices=["check"])
     ds = sub.add_parser("design"); ds.add_argument("op", choices=["status", "sign", "unlock", "seed-amendment"])
     for flag in ("--signer", "--reason", "--date", "--field", "--old", "--new"): ds.add_argument(flag)
+    lp = sub.add_parser("ledger"); lp.add_argument("op", choices=["add", "close", "decline", "accept", "reject", "settle", "show"])
+    lp.add_argument("id", nargs="?")
+    for flag in ("--creator", "--report", "--location", "--finding", "--sha", "--guard", "--reason"): lp.add_argument(flag)
+    lp.add_argument("--by", choices=["author", "session"]); lp.add_argument("--proposal", action="store_true")
+    lp.add_argument("--pending", action="store_true"); lp.add_argument("--open", action="store_true")
+    rp = sub.add_parser("ruling"); rp.add_argument("op", choices=["add"]); rp.add_argument("--decision", required=True)
+    rp.add_argument("--alternative", required=True); rp.add_argument("--reason", required=True)
+    rp.add_argument("--by", choices=["author", "session"], default="session")
+    qp = sub.add_parser("question"); qp.add_argument("op", choices=["add"]); qp.add_argument("--text", required=True)
+    qp.add_argument("--blocks", required=True)
     lg = sub.add_parser("log"); lg.add_argument("agent"); lg.add_argument("--source", default="skill")
     a = ap.parse_args(); root = Path(a.root).resolve()
     if a.cmd == "registry": return registry_check(root)
@@ -773,6 +863,9 @@ def main() -> int:
     if a.cmd == "critic-inputs": return critic_inputs(root)
     if a.cmd == "stale": return stale_cmd(root)
     if a.cmd == "design": return design_cmd(root, a)
+    if a.cmd == "ledger": return ledger_cmd(root, a)
+    if a.cmd == "ruling": return ruling_cmd(root, a)
+    if a.cmd == "question": return question_cmd(root, a)
     if a.cmd in ("pre", "post"): return run_preds(a.cmd, a.agent, root, reg)
     if a.cmd == "next": return next_report(root, reg)
     if a.cmd == "log": append_log(root, a.agent, a.source); return 0

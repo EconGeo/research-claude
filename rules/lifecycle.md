@@ -96,6 +96,7 @@ renders; exit 0 once the log is written).
 | `chunk` | at least `min` chunks in the declared manuscript have a `#| label:` matching `label_glob` |
 | `no-source` | no `source()` call inside any chunk (INV-19b) |
 | `design-lock` | the `design:` block is signed and unchanged, or the manuscript has no `design:` block and no lock exists |
+| `ledger-closed` | no row in `quality_reports/findings_ledger.md` for the creator is `open`, `proposal: pending` or `proposal: accepted`; appended automatically to `post` for every agent with a critic, like `critic-ran`. No ledger file passes |
 | `any_of` | at least one of the listed predicates passes |
 
 ## State — `pipeline.py state <op>`

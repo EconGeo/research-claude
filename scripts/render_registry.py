@@ -23,6 +23,7 @@ def pred(p) -> str:
     elif t == "chunk":   s = f"≥{p['min']} chunk(s) labelled `{p['label_glob']}`"
     elif t == "no-source": s = "no `source()` call inside any chunk (INV-19)"
     elif t == "design-lock": s = "the manuscript's `design:` block is signed and unchanged (or the project has none yet)"
+    elif t == "ledger-closed": s = "no open finding-ledger row or undecided proposal for the creator"
     elif t == "any_of":  s = "any of: " + "; ".join(pred(q) for q in p["of"])
     else: s = t
     if p.get("producer"): s += f" — produced by `{p['producer']}`"

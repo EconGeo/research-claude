@@ -17,7 +17,10 @@ def main() -> int:
     p = subprocess.run([sys.executable, str(script), "--root", str(root), "stale"], capture_output=True, text=True, timeout=20)
     if p.returncode != 1:
         return 0
-    body = p.stdout.strip()
+    # exit 1 also means a config error (no `manuscript:` line); only STALE lines are a finding
+    body = "\n".join(ln for ln in p.stdout.splitlines() if ln.startswith("STALE ")).strip()
+    if not body:
+        return 0
     print(json.dumps({"systemMessage": "Stale review stages:\n" + body,
                       "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext":
                           "## Stale review stages\n\n```\n" + body + "\n```\n\nWhile the manuscript stage is stale, manuscript "
