@@ -296,6 +296,15 @@ AP_ALLOW = {
     "quality_reports/deposit_manifest_*.md":      "/submit deposit output — not gated (Phase 3.5)",
     "quality_reports/data_tags/*":                "/ztp-data-tag pass reports — records, not gated",
     "quality_reports/critic_inputs/*.log":        "pipeline.py critic-inputs log handed to writer-critic — gitignored session mechanics, not gated (L-005)",
+    "quality_reports/design_lock.json":           "design lock — written only by `pipeline.py design`",
+    "quality_reports/design_amendments.csv":      "design amendment record — rendered by `tbl-design-changes`",
+    "quality_reports/design_amendments.md":       "design amendment record — rendered by `tbl-design-changes`",
+    "quality_reports/render_fingerprint.json":    "results fingerprint — written by the manuscript's `fingerprint` chunk",
+    "quality_reports/cold_render.json":           "`pipeline.py render --cold` receipt",
+    "quality_reports/findings_ledger.md":         "finding ledger — `pipeline.py ledger`",
+    "quality_reports/rulings_log.md":             "rulings log — `pipeline.py ruling add`",
+    "quality_reports/questions_for_author.md":    "hard-stop questions — `pipeline.py question add`",
+    "quality_reports/critic_inputs/*.md":         "`pipeline.py critic-context` file — round 2+ context",
 }
 
 def _ap_expand(tok):
