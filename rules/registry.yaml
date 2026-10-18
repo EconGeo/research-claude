@@ -272,6 +272,7 @@ agents:
       - type: score
         component: strategy
         min: 80
+      - type: design-lock
     produces:
       - type: chunk
         label_glob: tbl-*
@@ -323,6 +324,7 @@ agents:
         min: 1
         producer: /analyze
       - type: render
+      - type: design-lock
     produces:
       - type: render
       - type: prose-check

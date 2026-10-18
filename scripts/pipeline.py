@@ -11,11 +11,13 @@ names the first component stage that is ready, treating a scored stage with no l
 completion as adopted work (see next_report).
 """
 from __future__ import annotations
-import argparse, datetime as dt, fnmatch, glob, hashlib, json, re, subprocess, sys
+import argparse, datetime as dt, difflib, fnmatch, glob, hashlib, json, re, subprocess, sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import registry_lib as rl
+import design_block as dsb
+import author_token as tok
 
 STATE_REL = Path("quality_reports") / "pipeline_state.json"
 LOG_REL = Path("quality_reports") / "agent_dispatch.jsonl"
@@ -344,6 +346,81 @@ def critic_inputs(root: Path) -> int:
     log.write_text("\n\n".join(parts) + "\n")
     print(" · ".join(summary)); print(f"critic-inputs: {log.relative_to(root)}"); return 0
 
+
+def design_state(root: Path, ms: Path) -> Tuple[str, str]:
+    h = dsb.design_hash(ms.read_text()); lock = dsb.read_lock(root)
+    if lock is None:
+        return ("NOT-RETROFITTED", "no design: block and no lock") if h is None else \
+               ("UNSIGNED", "design: block present, never signed — the author approves in chat (`approve design sign`)")
+    if h is None:
+        return "CHANGED", "design_lock.json exists but the manuscript has no design: block"
+    if lock.get("status") == "unlocked":
+        return "UNLOCKED", f"amendment open since {lock.get('unlocked_at')}: {lock.get('reason')}"
+    if h != lock.get("hash"):
+        return "CHANGED", "design: block differs from the signed lock — restore it, or the author approves `design unlock` in chat first"
+    return "SIGNED", f"signed {lock.get('signed_at')} by {lock.get('signer')}"
+
+def design_check_problems(root: Path, text: str) -> List[str]:
+    probs: List[str] = []
+    for name in ("power", "size"):
+        if not dsb.has_check(text, name):
+            probs.append(f"design.checks.{name} missing — run it in explorations/ and record the result"); continue
+        f = dsb.check_field(text, name, "file")
+        if not f: probs.append(f"design.checks.{name} names no file:")
+        elif not f.startswith("explorations/"): probs.append(f"design.checks.{name}.file {f} is not under explorations/")
+        elif not (root / f).is_file(): probs.append(f"design.checks.{name}.file {f} does not exist")
+    mde, target = dsb.check_number(text, "power", "mde"), dsb.check_number(text, "power", "target_effect")
+    if mde is None or target is None: probs.append("design.checks.power needs numeric mde and target_effect")
+    elif mde > abs(target): probs.append(f"power: MDE {mde} exceeds |target_effect| {abs(target)}")
+    rej = dsb.check_number(text, "size", "rejection_at_0.10")
+    if rej is None: probs.append("design.checks.size needs a numeric rejection_at_0.10")
+    elif round(abs(rej - 0.10), 10) > 0.03: probs.append(f"size: rejection rate {rej} at the 10% level is outside 0.07–0.13")
+    return probs
+
+def design_cmd(root: Path, a) -> int:
+    ms = declared_manuscript(root); text = ms.read_text(); st, why = design_state(root, ms)
+    if a.op == "status":
+        print(f"design: {st} — {why}"); return 0 if st in ("SIGNED", "NOT-RETROFITTED") else 1
+    if a.op == "seed-amendment":
+        if not all((a.date, a.field, a.old, a.new, a.reason)):
+            sys.exit("usage: design seed-amendment --date YYYY-MM-DD --field F --old O --new N --reason R")
+        if st != "UNSIGNED": print(f"design seed-amendment: refused — only before the first signing (status {st})"); return 1
+        dsb.append_amendments(root, [{"date": a.date, "field": a.field, "old": a.old, "new": a.new, "reason": a.reason}],
+                              heading=f"Amendment (seeded at retrofit) — {a.date}")
+        print("design: amendment seeded"); return 0
+    if a.op == "sign":
+        if not a.signer: sys.exit("usage: design sign --signer NAME")
+        new_block = dsb.design_block(text)
+        if new_block is None: print("design sign: no design: block in the manuscript front matter"); return 1
+        probs = design_check_problems(root, text)
+        if probs: print("design sign: refused — " + "; ".join(probs)); return 1
+        if st == "SIGNED": print("design sign: already signed and unchanged"); return 0
+        if st == "CHANGED": print("design sign: refused — the block changed without `design unlock`"); return 1
+        lock = dsb.read_lock(root) or {}; rows: List[Dict[str, str]] = []
+        if st == "UNLOCKED":
+            rows = dsb.amendment_rows(lock["block"], new_block, now()[:10], lock["reason"])
+            if dsb.needs_rerun(rows, lock["block"], new_block) and not dsb.checks_changed(rows):
+                print("design sign: refused — the amendment touches the inference rule, sample, treatment or an "
+                      "outcome; re-run the power and size explorations and record the new results in design.checks"); return 1
+        ok, msg = tok.consume(root, "sign", dsb.design_hash(text))
+        if not ok: print(f"design sign: refused — {msg}"); return 1
+        if rows:
+            diff = "\n".join(difflib.unified_diff(dsb._normalise(lock["block"]), dsb._normalise(new_block),
+                                                  "signed", "amended", lineterm="", n=0))
+            dsb.append_amendments(root, rows, heading=f"Amendment — {now()[:10]} (re-signed by {a.signer})", diff=diff)
+        dsb.write_lock(root, {"status": "signed", "hash": dsb.design_hash(text), "block": new_block,
+                              "signed_at": now(), "signer": a.signer, "approved_at": msg})
+        print("design: SIGNED" + (f" — {len(rows)} amendment row(s) recorded" if rows else "")); return 0
+    if a.op == "unlock":
+        if not a.reason: sys.exit("usage: design unlock --reason TEXT (the author's reason, verbatim)")
+        if st != "SIGNED": print(f"design unlock: refused — status is {st}"); return 1
+        ok, msg = tok.consume(root, "unlock", dsb.design_hash(text), reason=a.reason)
+        if not ok: print(f"design unlock: refused — {msg}"); return 1
+        lock = dsb.read_lock(root); lock.update({"status": "unlocked", "reason": a.reason, "unlocked_at": now()})
+        dsb.write_lock(root, lock)
+        print("design: UNLOCKED — edit the design: block, show it to the author, who approves `design sign` in chat"); return 0
+    return 2
+
 def producer_hint(pred: Dict[str, Any], ok: bool) -> str:
     """The `— run `/skill`` tail on a failing predicate. Shared by run_preds() and the
     `any_of` branch of evaluate(): `producer` is declared PER PREDICATE, and an any_of's
@@ -450,6 +527,9 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         hits = source_calls(ctx.ms)
         if hits: return False, f"no-source: source() at line(s) {', '.join(str(h) for h in hits)} (INV-19)"
         return True, "no-source: clean (INV-19)"
+    if t == "design-lock":
+        st, why = design_state(root, ctx.ms)
+        return st in ("SIGNED", "NOT-RETROFITTED"), f"design-lock: {st} — {why}"
     if t == "any_of":
         results = [(q, evaluate(q, ctx, post)) for q in pred["of"]]
         passed = any(ok for _, (ok, _d) in results)
@@ -612,6 +692,8 @@ def main() -> int:
     st.add_argument("--deductions", type=float, help="record-score: the critic's unfloored deduction total")
     sub.add_parser("conflicts").add_argument("agents", nargs="+")
     sub.add_parser("registry").add_argument("op", choices=["check"])
+    ds = sub.add_parser("design"); ds.add_argument("op", choices=["status", "sign", "unlock", "seed-amendment"])
+    for flag in ("--signer", "--reason", "--date", "--field", "--old", "--new"): ds.add_argument(flag)
     lg = sub.add_parser("log"); lg.add_argument("agent"); lg.add_argument("--source", default="skill")
     a = ap.parse_args(); root = Path(a.root).resolve()
     if a.cmd == "registry": return registry_check(root)
@@ -620,6 +702,7 @@ def main() -> int:
     if a.cmd == "fresh":
         ok, why = is_fresh(root, declared_manuscript(root)); print(("fresh: " if ok else "STALE: ") + why); return 0 if ok else 1
     if a.cmd == "critic-inputs": return critic_inputs(root)
+    if a.cmd == "design": return design_cmd(root, a)
     if a.cmd in ("pre", "post"): return run_preds(a.cmd, a.agent, root, reg)
     if a.cmd == "next": return next_report(root, reg)
     if a.cmd == "log": append_log(root, a.agent, a.source); return 0

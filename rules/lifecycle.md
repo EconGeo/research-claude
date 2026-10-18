@@ -94,6 +94,8 @@ renders; exit 0 once the log is written).
 | `critic-ran` | `quality_reports/agent_dispatch.jsonl` shows the paired critic completing after the creator's last completion, **and** `pipeline_state.json` carries a score for the creator's `COMPONENT` recorded after that same completion. An agent whose `COMPONENT` is `none` is held to the log half only. The three failures — critic never ran, critic ran but scored nothing, score predates the creator — are reported distinctly |
 | `prose-check` | `python3 .claude/scripts/prose_number_check.py <manuscript>` exits 0 |
 | `chunk` | at least `min` chunks in the declared manuscript have a `#| label:` matching `label_glob` |
+| `no-source` | no `source()` call inside any chunk (INV-19b) |
+| `design-lock` | the `design:` block is signed and unchanged, or the manuscript has no `design:` block and no lock exists |
 | `any_of` | at least one of the listed predicates passes |
 
 ## State — `pipeline.py state <op>`
