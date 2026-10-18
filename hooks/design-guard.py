@@ -9,6 +9,8 @@ Bash writes to the manuscript are refused while signed (use Edit, which this hoo
 A Bash command that invokes `claude` and contains the text `approve design` is refused: a nested
 `claude -p` would fire UserPromptSubmit and self-issue the token. The author approves in their own
 chat message; a session never submits an approval line.
+Known limit: the nested-claude and token checks are text matches; a command assembled from
+variables or fragments (`c=claude; $c -p ...`) evades them.
 Fails open on internal error.
 
 Hook Event: PreToolUse
@@ -35,7 +37,7 @@ def main() -> int:
     cmd = ti.get("command", "") if tool == "Bash" else ""
     if tool in ("Edit", "Write") and Path(ti.get("file_path", "")).name in PIPELINE_ONLY:
         deny(f"{Path(ti['file_path']).name} is written only by pipeline.py or the render."); return 0
-    if "design_token" in cmd:
+    if re.search(r"design_token\.json", cmd):
         deny("the author token is written only by the design-token hook."); return 0
     if cmd and CLAUDE_RE.search(cmd) and re.search(r"approve\s+design", cmd, re.I):
         deny("a session never submits an approval line (a nested claude would self-issue the author "

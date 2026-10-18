@@ -23,8 +23,10 @@ def run(tool_name, file_path):
     return p.returncode, p.stderr
 
 
-def run_bash(cmd):
-    p = subprocess.run([str(HOOK)], input=json.dumps({"tool_name": "Bash", "tool_input": {"command": cmd}}),
+def run_bash(cmd, cwd=None):
+    payload = {"tool_name": "Bash", "tool_input": {"command": cmd}}
+    if cwd: payload["cwd"] = cwd
+    p = subprocess.run([str(HOOK)], input=json.dumps(payload),
                        capture_output=True, text=True)
     return p.returncode, p.stderr
 
@@ -101,7 +103,8 @@ class TestProtectFiles(unittest.TestCase):
         for cmd in ("echo x > quality_reports/pipeline_state.json", "rm quality_reports/design_lock.json",
                     "cp a.json quality_reports/design_lock.json", "sed -i '' s/a/b/ .claude/state/design_token.json",
                     "echo x | tee quality_reports/findings_ledger.md", "mv x quality_reports/rulings_log.md",
-                    "echo x >> quality_reports/reviews/writer-critic_2.md"):
+                    "tee -a quality_reports/findings_ledger.md", "git rm quality_reports/rulings_log.md",
+                    "cp seeds/settings.json .claude/settings.json"):
             code, err = run_bash(cmd)
             self.assertEqual(code, 2, cmd)
 
@@ -111,6 +114,23 @@ class TestProtectFiles(unittest.TestCase):
                     "jq . quality_reports/receipts.jsonl | head", "quarto render manuscript_p.qmd 2>&1 | tail -5"):
             code, err = run_bash(cmd)
             self.assertEqual(code, 0, f"{cmd}: {err}")
+
+    def test_bash_names_without_writing_are_allowed(self):
+        for cmd in ('git commit -m "a -> settings.json"', 'git commit -m "x rm findings_ledger.md"',
+                    "cp .claude/settings.json /tmp/x", 'grep -n ">" .claude/settings.json'):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 0, f"{cmd}: {err}")
+
+    def test_bash_critic_report_create_allowed_overwrite_denied(self):
+        with tempfile.TemporaryDirectory() as d:
+            new = pathlib.Path(d, "explorer-critic_2026-10-18.md")
+            code, err = run_bash(f"cat > {new} <<EOF\nbody 'it's\nEOF", cwd=d)
+            self.assertEqual(code, 0, err)
+            new.write_text("x")
+            code, _ = run_bash(f"cat > {new} <<EOF\nbody\nEOF", cwd=d)
+            self.assertEqual(code, 2)
+            code, _ = run_bash("echo x >> explorer-critic_2026-10-18.md", cwd=d)
+            self.assertEqual(code, 2)
 
     def test_new_record_files_protected_for_edit(self):
         for n in ("design_lock.json", "design_token.json", "design_amendments.csv", "design_amendments.md",

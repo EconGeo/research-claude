@@ -61,13 +61,84 @@ PROTECTED_PATTERNS=(
 )
 
 if [ "$TOOL" = "Bash" ]; then
+  # Match write DESTINATIONS only (redirect targets, tee files, last arg of cp/mv/install, rm args,
+  # sed -i / perl -i files, git mv / git rm paths); quoted text and read-only arguments are never
+  # targets. A redirect/tee that CREATES a review-report file is allowed, as Write-create is above.
+  # Fails open on a parse error (hook convention).
   CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
-  for PATTERN in "${PROTECTED_PATTERNS[@]}"; do
-    ERE=$(printf '%s' "$PATTERN" | sed -e 's/\./\\./g' -e 's/\*/.*/g')
-    if echo "$CMD" | grep -Eq "(>|>>|\btee\b|sed -i|\bcp\b|\bmv\b|\brm\b)[^;&|]*${ERE}"; then
-      echo "Protected file named in a shell write: $PATTERN" >&2; exit 2
-    fi
-  done
+  CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
+  HIT=$(PF_CMD="$CMD" PF_CWD="$CWD" python3 - "${PROTECTED_PATTERNS[@]}" <<'PY' 2>/dev/null
+import fnmatch, os, re, shlex, sys
+pats = sys.argv[1:]
+KEEP = {"settings.json", "pipeline_state.json", "receipts.jsonl", "design_lock.json", "design_token.json",
+        "design_amendments.csv", "design_amendments.md", "render_fingerprint.json", "cold_render.json",
+        "findings_ledger.md", "rulings_log.md"}
+create_ok = [q for q in pats if q not in KEEP]
+cwd = os.environ.get("PF_CWD") or os.getcwd()
+SEP = {";", "&&", "||", "|", "&", "|&", ";;"}
+def segments(cmd):
+    segs, delim = [], None
+    for line in cmd.split("\n"):
+        if delim is not None:
+            if line.strip() == delim: delim = None
+            continue
+        m = re.search(r"<<-?\s*['\"]?(\w+)", line)
+        lex = shlex.shlex(line, posix=False, punctuation_chars=True)
+        lex.whitespace_split = True
+        lex.commenters = ""
+        cur = []
+        for tok in lex:
+            if tok in SEP:
+                segs.append(cur); cur = []
+            else:
+                cur.append(tok)
+        segs.append(cur)
+        if m: delim = m.group(1)
+    return segs
+def unq(a):
+    return a[1:-1] if len(a) >= 2 and a[0] == a[-1] and a[0] in "'\"" else a
+def nonopt(args):
+    return [unq(a) for a in args if not a.startswith("-") and unq(a) != ""]
+def targets(seg):
+    out = []
+    for i, tok in enumerate(seg):
+        if tok in (">", ">>", ">|") and i + 1 < len(seg):
+            out.append((unq(seg[i + 1]), True))
+    words, skip = [], False
+    for i, tok in enumerate(seg):
+        if skip: skip = False; continue
+        if tok in (">", ">>", ">|", "<", "<<", "<<<", ">&", "<&"): skip = True; continue
+        words.append(tok)
+    while words and re.match(r"^\w+=", words[0]): words.pop(0)
+    if not words: return out
+    c, args = os.path.basename(unq(words[0])), words[1:]
+    if c == "git" and args and unq(args[0]) in ("mv", "rm"):
+        out += [(a, False) for a in nonopt(args[1:])]
+    elif c == "tee": out += [(a, True) for a in nonopt(args)]
+    elif c in ("cp", "mv", "install"):
+        n = nonopt(args)
+        if len(n) >= 2: out.append((n[-1], False))
+    elif c == "rm": out += [(a, False) for a in nonopt(args)]
+    elif c in ("sed", "perl") and any(re.match(r"^-[A-Za-z]*i|^--in-place", a) for a in args):
+        out += [(a, False) for a in nonopt(args)]
+    return out
+try:
+    for seg in segments(os.environ["PF_CMD"]):
+        for path, creating in targets(seg):
+            base = os.path.basename(path)
+            for q in pats:
+                if fnmatch.fnmatchcase(base, q):
+                    full = path if os.path.isabs(path) else os.path.join(cwd, path)
+                    if creating and q in create_ok and not os.path.exists(full):
+                        continue
+                    print(q); sys.exit(0)
+except Exception:
+    pass
+PY
+)
+  if [ -n "$HIT" ]; then
+    echo "Protected file named in a shell write: $HIT" >&2; exit 2
+  fi
   exit 0
 fi
 

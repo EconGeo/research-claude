@@ -52,6 +52,10 @@ class TestDesignGuard(ProjectCase):
         self.assertTrue(self.denied(self.bash("sed -i '' 's/region/state/' manuscript_p.qmd")))
         self.assertFalse(self.denied(self.bash("grep cluster manuscript_p.qmd")))
 
+    def test_token_filename_not_substring(self):
+        self.assertFalse(self.denied(self.bash("python3 -m pytest -q tests/test_design_token.py")))
+        self.assertTrue(self.denied(self.bash("cat .claude/state/design_token.json")))
+
     def test_nested_claude_cannot_submit_an_approval(self):
         for cmd in ('claude -p "approve design sign"', 'claude -p "Approve Design unlock: x"',
                     'npx claude -p "approve design sign"', '/usr/local/bin/claude -p "approve design sign"',
