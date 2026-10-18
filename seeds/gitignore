@@ -50,6 +50,7 @@ __pycache__/
 
 # ── Local-only Claude state (machine-specific paths stay out of git) ─────────
 .claude/state/obsidian-config.md
+.claude/state/design_token.json
 
 # ── Editor / OS ──────────────────────────────────────────────────────────────
 .DS_Store

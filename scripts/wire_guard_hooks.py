@@ -18,7 +18,16 @@ WANTED = [
     ("PreToolUse", "Write|Edit|Bash", "script-guard.py"),
     ("PreToolUse", "Write|Edit|Bash", "read-gate.py"),
     ("PostToolUse", "Read|Edit|Write", "read-gate.py"),
+    ("UserPromptSubmit", None, "design-token.py"),
 ]
+
+
+def check_wanted() -> None:
+    if any(h.startswith("git/") for _, _, h in WANTED):
+        raise ValueError("hooks/git/ holds git hooks, not Claude hooks")
+
+
+check_wanted()
 
 
 def wire(settings: dict) -> int:
@@ -31,7 +40,7 @@ def wire(settings: dict) -> int:
             continue
         group = next((g for g in groups if g.get("matcher") == matcher), None)
         if group is None:
-            group = {"matcher": matcher, "hooks": []}
+            group = {"hooks": []} if matcher is None else {"matcher": matcher, "hooks": []}
             groups.append(group)
         group["hooks"].append({"type": "command", "command": CMD.format(hook), "timeout": 5})
         added += 1

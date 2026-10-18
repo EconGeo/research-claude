@@ -317,7 +317,7 @@ check_project() {
 
   # ── 8. gitignore covers the linked dirs ───────────────────────────────────
   local gi_missing=() pat
-  for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' '.claude/references/*' 'quality_reports/agent_dispatch.jsonl'; do
+  for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' '.claude/references/*' 'quality_reports/agent_dispatch.jsonl' '.claude/state/design_token.json'; do
     grep -qxF "$pat" "$P/.gitignore" 2>/dev/null || gi_missing+=("$pat")
   done
   [[ ${#gi_missing[@]} -eq 0 ]] && ok gitignore-covers || bad gitignore-covers "missing lines: ${gi_missing[*]}"

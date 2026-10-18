@@ -142,6 +142,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh design-token.py",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }
