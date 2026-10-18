@@ -13,6 +13,8 @@ from them.
 #| include: false
 library(here); library(tidyverse); library(fixest); library(modelsummary); library(kableExtra)
 set.seed(20240101L)                 # exactly once, here (INV-14)
+# tested: modelsummary 2.6.0 stars with p ≤ cutoff but its automatic note says p <
+options(modelsummary_stars_note = FALSE)
 
 # Paper-to-code naming map (established in the Pre-Code Report; never invented mid-chunk)
 #   Y_it     -> outcome        (data/raw/<file>.csv: <column>)
@@ -73,7 +75,8 @@ modelsummary(
   output   = "kableExtra",            # PDF; Word uses output = "flextable" (quarto-word.md)
   booktabs = TRUE,
   stars    = c("*" = 0.10, "**" = 0.05, "***" = 0.01),   # FALSE for AEA journals (INV-4)
-  notes    = "Standard errors clustered by unit in parentheses. Sample: 2000–2020.",
+  notes    = c("Standard errors clustered by unit in parentheses. Sample: 2000–2020.",
+               "* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01"),
   escape   = FALSE
 )
 ```

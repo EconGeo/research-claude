@@ -319,7 +319,7 @@ Seed pool — 29 entries. Expand as you use the system and encounter recurring p
 - Structural estimation: parameter plausibility check required (compare to prior literature).
 - Counterfactuals must be inside the support of the data.
 - Magnitude interpretation: what does a coefficient of 0.3 mean in dollars / percentage points / effect sizes relative to the mean?
-- Heterogeneity must be pre-specified or clearly exploratory; no p-hacking via subgroup analysis.
+- Heterogeneity analyses report every subgroup examined and how it was chosen, not only the significant ones; a paper with a pre-analysis plan says which were pre-specified.
 - External validity: would this replicate in a different country / time / population?
 - Replication package must be complete (data access path + code + readme).
 - Figures must read standalone (caption + axis labels + units + sample size).

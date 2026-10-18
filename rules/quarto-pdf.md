@@ -56,7 +56,14 @@ kbl(df, booktabs = TRUE, digits = 3, escape = FALSE) |>
 ```
 ````
 
-For regression tables, use `modelsummary` with `output = "kableExtra"`:
+For regression tables, use `modelsummary` with `output = "kableExtra"`. In the setup chunk:
+
+```r
+# tested: modelsummary 2.6.0 stars with p ≤ cutoff but its automatic note says p <
+options(modelsummary_stars_note = FALSE)
+```
+
+Then the table:
 
 ````markdown
 ```{r}
@@ -67,7 +74,8 @@ modelsummary(
   output   = "kableExtra",
   booktabs = TRUE,
   stars    = c("*" = 0.10, "**" = 0.05, "***" = 0.01),
-  notes    = "Robust standard errors in parentheses.",
+  notes    = c("Robust standard errors in parentheses.",
+               "* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01"),
   escape   = FALSE
 )
 ```

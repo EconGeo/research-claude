@@ -22,8 +22,8 @@ and the data source.
 **INV-3.** Booktabs three-line rules only. No `\hline`, no vertical rules.
 
 **INV-4.** Significance stars follow the journal profile. AEA journals: no stars,
-report standard errors and use confidence intervals. Default: stars with a note
-defining the thresholds.
+report standard errors and use confidence intervals. Default: `*` p ≤ 0.10,
+`**` p ≤ 0.05, `***` p ≤ 0.01, stated in the note.
 
 **INV-5.** Abstract is 150 words or fewer.
 
