@@ -389,9 +389,12 @@ def critic_inputs(root: Path) -> int:
     if why:
         parts.append(f"## check_render.py — skipped: {why}"); summary.append("check_render skipped")
     else:
-        crc, out = run_script(root, "check_render.py", str(pdf.relative_to(root)))
+        tex_log = pdf.with_suffix(".log")  # Quarto removes it after a successful render (tested)
+        extra = ["--latex-log", str(tex_log.relative_to(root))] if tex_log.exists() else []
+        crc, out = run_script(root, "check_render.py", str(pdf.relative_to(root)), *extra)
         parts.append(f"## check_render.py {pdf.name} — " + (f"skipped: {out}" if crc is None else f"exit {crc}\n{out.rstrip()}"))
         summary.append("check_render " + ("skipped" if crc is None else f"exit {crc}"))
+        parts.append("latex log: " + (f"passed {tex_log.name}" if extra else "absent"))
     log.write_text("\n\n".join(parts) + "\n")
     print(" · ".join(summary)); print(f"critic-inputs: {log.relative_to(root)}"); return 0
 

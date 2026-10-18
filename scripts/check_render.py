@@ -8,12 +8,16 @@ a column; a declared `keywords:` never reaches the page; a caption that types it
 PAGE, through `pdftotext`, and does what the authoring reference's post-render checklist asks
 a human to do by eye — which two projects showed nobody does.
 
-Usage: check_render.py <manuscript.pdf | rendered.txt> [--expect TEXT]... [--columns "Table N: a,b,c"]...
+Usage: check_render.py <manuscript.pdf | rendered.txt> [--expect TEXT]... [--columns "Table N: a,b,c"]... [--latex-log FILE]
   --expect   a phrase that must appear (keywords line, a mandated note phrase); whitespace and
              ligatures are normalised, so a line wrap is not a miss.
   --columns  a table's caption prefix and its column headers; reads the block of text below
              that caption (a caption below its own table, not above it, is not matched), up
              to the next "Table"/"Figure" caption, for each header.
+  --latex-log  the LaTeX log; each `Overfull \\hbox (Npt too wide)` with N > 1.0 is an OVERFULL
+             finding. A missing file is ignored (Quarto does not keep the log; see main()).
+Also flags NA_VALUE: a standalone NA, NaN, Inf or -Inf on the page (an R value that leaked
+into a table or sentence; "N/A", "NASA", "NA-only" are not).
 Exit 0 = clean. Exit 1 = findings, one per line as KIND: detail. Exit 2 = cannot run.
 """
 from __future__ import annotations
@@ -66,8 +70,16 @@ def load(path: Path) -> str:
     return path.read_text(errors="replace")
 
 
-def findings(text: str, expect: list[str], columns: list[str]) -> list[str]:
+OVERFULL = re.compile(r"Overfull \\hbox \((\d+(?:\.\d+)?)pt too wide\)")
+
+
+def findings(text: str, expect: list[str], columns: list[str], latex_log: str = "") -> list[str]:
     out = []
+    for m in re.finditer(r"(?<![\w./-])(-?Inf|NaN|NA)(?![\w/-])", text):
+        out.append(f"NA_VALUE: {m.group(1)} …{text[max(0, m.start() - 40):m.end() + 40]!r}")
+    for m in OVERFULL.finditer(latex_log):
+        if float(m.group(1)) > 1.0:
+            out.append(f"OVERFULL: {m.group(1)}pt")
     for m in re.finditer(r"\?@[\w:.-]+", text):
         out.append(f"UNRESOLVED: {m.group(0)}")
     for m in re.finditer(r"\\[A-Za-z]+\{", text):
@@ -104,8 +116,15 @@ def main() -> int:
     ap.add_argument("path", type=Path)
     ap.add_argument("--expect", action="append", default=[])
     ap.add_argument("--columns", action="append", default=[])
+    ap.add_argument("--latex-log", type=Path, default=None)
     a = ap.parse_args()
-    fs = findings(load(a.path), a.expect, a.columns)
+    # tested: 2026-10-18, `quarto render t.qmd` (format: pdf, a one-line body) leaves t.pdf and
+    # NO t.log — Quarto deletes the LaTeX log after a successful render, and `keep-tex: true`
+    # does not save it; `latex-clean: false` does (t.log and t.aux stay). So a project that has
+    # not set `latex-clean: false` has no log, which is not an error: pipeline.py critic_inputs
+    # then writes `latex log: absent`.
+    log = a.latex_log.read_text(errors="replace") if a.latex_log and a.latex_log.exists() else ""
+    fs = findings(load(a.path), a.expect, a.columns, log)
     for f in fs:
         print(f)
     print(f"check_render: {len(fs)} finding(s)")

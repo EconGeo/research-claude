@@ -788,6 +788,16 @@ class TestCriticInputs(FixtureCase):
         self.assertIn("## prose_number_check.py manuscript_fixture.qmd — exit 0", log)
         self.assertIn("## check_render.py", log)
 
+    def test_latex_log_is_passed_when_present_and_reported_absent_otherwise(self):
+        rc, out = run("critic-inputs", root=self.t); self.assertEqual(rc, 0, out)
+        self.assertIn("latex log: absent", self._log(out))
+        # Quarto deletes the LaTeX log unless `latex-clean: false` (tested 2026-10-18).
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text().replace("keep-tex: false", "latex-clean: false"))
+        rc, out = run("critic-inputs", root=self.t); self.assertEqual(rc, 0, out)
+        self.assertTrue((self.t / "manuscript_fixture.log").is_file())
+        self.assertIn("latex log: passed manuscript_fixture.log", self._log(out))
+
     def test_renders_even_when_the_output_is_fresh(self):
         """`render` the predicate skips a fresh manuscript; the critic counts WARNINGs, so this
         must not — a skipped render leaves nothing to count."""
