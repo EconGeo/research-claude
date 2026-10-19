@@ -28,6 +28,8 @@ class StaleCase(FixtureCase):
 
 class TestStaleness(StaleCase):
     def test_1_not_retrofitted_unaffected(self):
+        # FixtureCase signs the fixture's design; a paper not yet retrofitted has neither file.
+        (self.t / dsb.LOCK_REL).unlink(); (self.t / "quality_reports" / "render_fingerprint.json").unlink()
         self.score("manuscript", "writer-critic")
         rc, out = run("score", "--gate", "commit", root=self.t)
         self.assertNotIn("STALE", out)
@@ -59,6 +61,7 @@ class TestStaleness(StaleCase):
         self.assertEqual(run("stale", root=self.t)[0], 0)
 
     def test_5_lock_without_fingerprint_fails_gate(self):
+        (self.t / "quality_reports" / "render_fingerprint.json").unlink()   # FixtureCase's stub
         self.score("manuscript", "writer-critic")
         (self.t / "quality_reports").mkdir(exist_ok=True)
         (self.t / dsb.LOCK_REL).parent.mkdir(parents=True, exist_ok=True)

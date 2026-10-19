@@ -1,0 +1,82 @@
+---
+title: "Power: Minimum Detectable Effect of the Main Specification"
+format: html
+execute:
+  echo: true
+  message: false
+  warning: false
+---
+
+The design's main specification is a two-way fixed effects regression of `outcome` on
+`treated` with unit and year effects and standard errors clustered by unit. This exploration
+simulates the sampling distribution of that estimate under no effect and reports the minimum
+detectable effect (MDE) at 80% power for a two-sided 5% test. Its result is copied into the
+manuscript's `design.checks.power`.
+
+```{r}
+#| label: setup
+library(here)
+library(tidyverse)
+library(fixest)
+
+set.seed(20260908L)
+
+# Simulated draws. Small, so the fixture renders quickly; the Monte Carlo error of the MDE is
+# reported below.
+N_DRAWS <- 200L
+# The effect the design is built to detect: the synthetic panel's true effect
+# (data/raw/data_manifest.md: "true ATT 0.30").
+TARGET_EFFECT <- 0.30
+POWER <- 0.80
+TEST_LEVEL <- 0.05
+```
+
+```{r}
+#| label: null-draws
+panel <- read_csv(here("data/raw/panel.csv"), show_col_types = FALSE)
+
+# The unit and year structure without treatment, and the residuals around it, as the
+# estimating model sees them.
+fit_no_treatment <- feols(outcome ~ 1 | unit + year, data = panel)
+panel_null <- panel |>
+  mutate(fitted_null = fitted(fit_no_treatment), resid_null = resid(fit_no_treatment))
+stopifnot("one fitted value per row" = nrow(panel_null) == nrow(panel))
+
+# Each draw resamples whole units' residual paths (with replacement), so the within-unit
+# correlation that clustering by unit allows for is kept.
+unit_ids <- sort(unique(panel_null$unit))
+draw_estimate <- function(draw_id) {
+  donor_units <- sample(unit_ids, length(unit_ids), replace = TRUE)
+  donor_resid <- panel_null |>
+    select(donor = unit, year, resid_draw = resid_null)
+  panel_draw <- tibble(unit = unit_ids, donor = donor_units) |>
+    inner_join(panel_null, by = "unit", relationship = "one-to-many") |>
+    inner_join(donor_resid, by = c("donor", "year")) |>
+    mutate(outcome_draw = fitted_null + resid_draw)
+  stopifnot("each draw keeps every unit-year" = nrow(panel_draw) == nrow(panel_null))
+  fit_draw <- feols(outcome_draw ~ treated | unit + year, data = panel_draw, cluster = ~unit)
+  tibble(draw = draw_id, estimate = coef(fit_draw)[["treated"]], std_error = se(fit_draw)[["treated"]])
+}
+null_draws <- map(seq_len(N_DRAWS), draw_estimate) |> list_rbind()
+```
+
+```{r}
+#| label: mde
+null_sd <- sd(null_draws$estimate)
+mde_multiplier <- qnorm(1 - TEST_LEVEL / 2) + qnorm(POWER)
+mde <- mde_multiplier * null_sd
+# Monte Carlo standard error of a standard deviation estimated from N_DRAWS draws.
+mde_mc_se <- mde_multiplier * null_sd / sqrt(2 * (N_DRAWS - 1))
+mean_clustered_se <- mean(null_draws$std_error)
+```
+
+## Result
+
+Across `r N_DRAWS` null draws the estimate has standard deviation `r round(null_sd, 4)`
+(mean clustered standard error `r round(mean_clustered_se, 4)`). The MDE at
+`r round(100 * POWER)`% power for a two-sided `r round(100 * TEST_LEVEL)`% test is
+**`r round(mde, 3)`** (Monte Carlo SE `r round(mde_mc_se, 3)`), against a target effect of
+`r TARGET_EFFECT`.
+
+Recorded in the manuscript's `design.checks.power`: mde `r round(mde, 3)`, target_effect
+`r TARGET_EFFECT`, draws `r N_DRAWS`.

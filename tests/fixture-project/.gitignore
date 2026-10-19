@@ -76,3 +76,6 @@ __pycache__/
 # add a negation line for each one you keep. Example:
 # !.claude/skills/my-project-specific-skill/
 # !.claude/hooks/my-notify.sh
+
+# Exploration output (render explorations/*.qmd locally; the results live in design.checks).
+explorations/*.html
