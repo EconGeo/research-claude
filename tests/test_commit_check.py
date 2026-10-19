@@ -3,7 +3,6 @@ import hashlib, json, os, pathlib, stat, subprocess, sys, unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
 from test_pipeline import FixtureCase, run
-from test_design_block import BASE
 
 MS = "manuscript_fixture.qmd"
 FP = "quality_reports/render_fingerprint.json"
@@ -82,10 +81,10 @@ class TestCommitCheck(CommitCase):
         rc, out = self.cc(); self.assertEqual(rc, 0, out)
 
     def test_unsigned_design_blocks(self):
-        block = BASE.split("---\n")[1].split("title: \"T\"\n")[1]
-        self.edit("abstract: |", block + "abstract: |")
-        self.commit_plain(MS); self.prose(); self.stage(MS)
-        rc, out = self.cc(); self.assertEqual(rc, 1); self.assertIn("design", out)
+        # The fixture carries a design: block; FixtureCase signs it. Without the lock it is unsigned.
+        (self.t / "quality_reports" / "design_lock.json").unlink()
+        self.prose(); self.stage(MS)
+        rc, out = self.cc(); self.assertEqual(rc, 1, out); self.assertIn("design: UNSIGNED", out)
 
     def test_typed_literal_in_prose(self):
         self.prose("The effect is 0.4372 percent."); self.stage(MS)

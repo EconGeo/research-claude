@@ -50,8 +50,8 @@ run state-init            python3 "$RC/scripts/pipeline.py" --root "$T" state in
 # stands in for the author's chat approval, then `design sign`. Once a lock exists a score with no
 # fingerprint file is stale (fail closed), so a stub fingerprint stands in until the render below
 # writes the real one.
-run design-token          python3 -c "import sys, pathlib; sys.path.insert(0, '$RC/scripts'); import author_token, design_block
-root = pathlib.Path('$T'); author_token.issue(root, 'sign', None, design_block.design_hash((root / 'manuscript_fixture.qmd').read_text()))"
+run design-token          python3 -c "import sys, pathlib; sys.path.insert(0, sys.argv[1] + '/scripts'); import author_token, design_block
+root = pathlib.Path(sys.argv[2]); author_token.issue(root, 'sign', None, design_block.design_hash((root / 'manuscript_fixture.qmd').read_text()))" "$RC" "$T"
 run design-sign           python3 "$RC/scripts/pipeline.py" --root "$T" design sign --signer fixture
 run design-signed         bash -c "python3 '$RC/scripts/pipeline.py' --root '$T' design status | grep -q 'design: SIGNED'"
 run fingerprint-stub      bash -c "printf '{\"estimates_hash\": \"fixture\", \"data_hash\": \"fixture\", \"design_hash\": \"fixture\", \"models\": [\"m_main\"]}\n' > '$T/quality_reports/render_fingerprint.json'"

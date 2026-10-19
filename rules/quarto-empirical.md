@@ -124,7 +124,10 @@ No chunk sets its own `cache.extra`: a chunk-level value replaces the global key
 to it, so that chunk would survive a design or data change. `modelsummary_stars_note = FALSE`
 drops modelsummary's automatic star note — tested (modelsummary 2.6.0): it assigns stars with
 p ≤ cutoff, but its note says p < — so pass the legend `* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01` in
-the table's `notes` instead.
+the table's `notes` instead. The default PDF font has no `≤` glyph; the seeded
+`templates/quarto-preamble.tex` maps it with `\usepackage{newunicodechar}` and
+`\newunicodechar{≤}{\ensuremath{\leq}}` — a paper whose preamble was seeded before those lines
+existed adds them, or its legend prints a missing-character box.
 
 **The final chunk** writes the results fingerprint:
 

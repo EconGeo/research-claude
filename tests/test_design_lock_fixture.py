@@ -115,7 +115,8 @@ class TestResultWords(DefectCase):
                                   '`r local({stopifnot("rose" = beta_hat > 0); ""})`.')
         rc, out = self.prose(); self.assertEqual(rc, 0, out)
         self.scale_outcome(-1)
-        rc, out = self.render(); self.assertNotEqual(rc, 0, out); self.assertIn("rose", out)
+        rc, out = self.render(); self.assertNotEqual(rc, 0, out)
+        self.assertRegex(out, r"Error in eval\(quote\(\{ : rose")   # the guard's stopifnot label, not the source
 
     @render_test
     def test_na_estimate_stops_the_render(self):

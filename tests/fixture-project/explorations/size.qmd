@@ -34,7 +34,7 @@ panel <- read_csv(here("data/raw/panel.csv"), show_col_types = FALSE)
 # Never-treated units carry no effect, so any placebo "effect" among them is noise.
 never_treated <- panel |>
   group_by(unit) |>
-  filter(max(treated) == 0) |>
+  filter(!any(treated > 0)) |>
   ungroup()
 control_units <- sort(unique(never_treated$unit))
 stopifnot("never-treated units exist" = length(control_units) > 1)

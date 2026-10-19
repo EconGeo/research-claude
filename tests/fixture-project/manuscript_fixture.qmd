@@ -18,7 +18,7 @@ design:
   hypotheses:
     H1: {estimand: "ATT of adoption on the outcome", outcome: outcome, spec: m_main, direction: positive}
   checks:
-    power: {mde: 0.168, target_effect: 0.30, draws: 200, file: explorations/power.qmd}
+    power: {mde: 0.137, target_effect: 0.30, draws: 200, file: explorations/power.qmd}
     size: {rejection_at_0.10: 0.115, reps: 200, file: explorations/size.qmd}
 format:
   pdf:

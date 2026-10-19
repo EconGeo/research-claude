@@ -35,11 +35,12 @@ TEST_LEVEL <- 0.05
 #| label: null-draws
 panel <- read_csv(here("data/raw/panel.csv"), show_col_types = FALSE)
 
-# The unit and year structure without treatment, and the residuals around it, as the
-# estimating model sees them.
-fit_no_treatment <- feols(outcome ~ 1 | unit + year, data = panel)
+# The main specification, fit once. Its residuals carry no treatment effect, and removing the
+# estimated effect from its fitted values leaves the unit and year structure under no effect.
+fit_main <- feols(outcome ~ treated | unit + year, data = panel, cluster = ~unit)
+beta_main <- coef(fit_main)[["treated"]]
 panel_null <- panel |>
-  mutate(fitted_null = fitted(fit_no_treatment), resid_null = resid(fit_no_treatment))
+  mutate(fitted_null = fitted(fit_main) - beta_main * treated, resid_null = resid(fit_main))
 stopifnot("one fitted value per row" = nrow(panel_null) == nrow(panel))
 
 # Each draw resamples whole units' residual paths (with replacement), so the within-unit
