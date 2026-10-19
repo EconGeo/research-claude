@@ -94,4 +94,14 @@ class TestDesignGuard(ProjectCase):
                     "git add quality_reports/design_lock.json", 'claude -p "summarise the design"'):
             self.assertFalse(self.denied(self.bash(cmd)), cmd)
 
+    def test_bash_without_trigger_words_returns_before_any_read(self):
+        # The common case: no design/claude/token/write word in the command. The hook must answer
+        # without reading the manuscript or lock — shown by removing them and expecting no error.
+        self.sign(); self.ms.unlink(); (self.proj / db.LOCK_REL).write_text("{not json")
+        for cmd in ("ls -la", "git status", "python3 -m pytest -q tests", "quarto render paper.qmd 2>&1 | tail"):
+            p = self.bash(cmd); self.assertFalse(self.denied(p), cmd)
+        # and a command that could matter still goes through every check
+        self.ms.write_text(BASE); (self.proj / db.LOCK_REL).unlink(); self.sign()
+        self.assertTrue(self.denied(self.bash(f"sed -i '' 's/a/b/' {self.ms.name}")))
+
 if __name__ == "__main__": unittest.main()

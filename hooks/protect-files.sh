@@ -68,6 +68,11 @@ if [ "$TOOL" = "Bash" ]; then
   # regex scan of the whole command for destinations replaces the parse; it may refuse a command
   # that only reads. Fails open on any other internal error (hook convention).
   CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+  # No write form at all (redirect, tee, cp/mv/install/rm/dd, sed/perl -i, git mv/rm): nothing below
+  # can match, so the python scan is skipped — this branch runs on every Bash call.
+  if ! printf '%s' "$CMD" | grep -qE '>|\b(tee|cp|mv|install|rm|dd)\b|\b(sed|perl)\b|\bgit\s+(mv|rm)\b'; then
+    exit 0
+  fi
   CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
   # The scanner is read into a variable by a top-level heredoc, not run from a heredoc inside $( ):
   # macOS /bin/bash 3.2 counts quotes and parentheses inside a command substitution's heredoc and

@@ -101,8 +101,11 @@ existing `core.hooksPath` or hand-made `.git/hooks` alone and says so. `check_in
 config but not the links (run `apply.sh --project-dir <worktree> --link`).
 
 - `git/pre-commit` runs `pipeline.py commit-check`: design lock, prose numbers, Quarto structure,
-  cold render after chunk-code changes, manuscript staleness (the commit that lands the
-  re-estimation passes with a warning), and the amendment table. Never bypass it with `--no-verify`.
+  cold render after a model-chunk (`estimate-*`/`robustness-*`) code change, manuscript staleness
+  (the commit that lands the re-estimation passes with a warning), and the amendment table. Every
+  manuscript check reads the STAGED bytes, so a hunk-wise `git add -p` commit is checked on what it
+  commits. The hook exits 0 with a notice when the git client's PATH has no `python3`. Never
+  bypass it with `--no-verify`.
   In a paper whose manuscript has no `design:` block (NOT-RETROFITTED) the prose check and the
   cold-render receipt only WARN: they turn on at the retrofit. Design state, structure, staging
   and staleness hold for every paper.

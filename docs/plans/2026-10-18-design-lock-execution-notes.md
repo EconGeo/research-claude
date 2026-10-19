@@ -12,7 +12,13 @@ manuscript has a `design:` block; `check_install`'s two CLAUDE.md caps do the sa
 `apply.sh --link` appends the required `.gitignore` lines a project lacks, so `check_install --all`
 stays green after the re-link; a stale strategy or referee score no longer fails a creator's `pre`
 (only a stale manuscript score does) — `post`, `next` and the score gates still reopen the stage.
-Item 4's model-chunk narrowing is still the author's call.
+Item 4 closed the same day: the cold-render trigger and receipt cover model chunks only
+(`estimate-*`/`robustness-*`). The review's six deferred items closed with it: `rc_data_hash()` keys the
+cache on `data/raw` only; a `stopifnot()` guard binds its sentence only when its condition reads a value;
+the git hooks exit 0 with a notice when the client has no `python3`; design-guard and protect-files
+return before any file read for a Bash command with no trigger word or write form; commit-check reads
+the staged manuscript bytes (hunk-wise commits work); the pasted helpers carry `rc_helpers_version`
+and `check_install` fails `helpers-current` when a paper's paste differs from the template.
 
 1. **The pre-commit hook would block manuscript commits in 4 of 5 unretrofitted papers** (read-only run of the
    branch's `prose_number_check.py`; the new surface scans find true positives):

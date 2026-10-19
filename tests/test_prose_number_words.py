@@ -47,6 +47,16 @@ class TestRetrofittedWords(Words):
         rc, out = self.retro("Prices rose by `r rc_num(b)`.\n")
         self.assertEqual(rc, 1, out)
 
+    def test_trivial_guard_binds_nothing(self):
+        for g in ('`r local({stopifnot(TRUE); ""})`', '`r local({stopifnot("rose" = TRUE); ""})`',
+                  '`r local({stopifnot("rose" = 1 == 1); ""})`'):
+            rc, out = self.retro(f"Prices rose by `r rc_num(b)`{g}.\n")
+            self.assertEqual(rc, 1, g + out)
+        for g in ('`r local({stopifnot("rose" = coef(m)[2] > 0); ""})`', '`r local({stopifnot(rc_p(m) <= 0.05); ""})`',
+                  '`r local({stopifnot("x" = 0 < b); ""})`'):
+            rc, out = self.retro(f"Prices rose by `r rc_num(b)`{g}.\n")
+            self.assertEqual(rc, 0, g + out)
+
     def test_strict_lexicon(self):
         for sent in ("The effect is larger at `r rc_num(b)`.",
                      "The effect doubled to `r rc_num(b)`.",

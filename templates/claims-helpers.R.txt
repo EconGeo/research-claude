@@ -3,6 +3,8 @@
 # Every result word in prose comes from these (or from an inline if, or sits in a sentence with a
 # stopifnot() guard), so the word changes when the model does.
 # Significance convention: * p <= 0.10, ** p <= 0.05, *** p <= 0.01.
+# check_install compares the pasted block (this line to the end marker) with the template byte for byte.
+rc_helpers_version <- "2026-10-18.2"
 
 # Classes the fingerprint treats as fitted models. Extend below the paste, never by editing here.
 rc_model_classes <- c("lm", "glm", "fixest", "fixest_multi", "feols", "felm", "ivreg", "plm", "lm_robust")
@@ -101,7 +103,11 @@ rc_root <- function(start_dir = getwd()) {
 }
 
 # Files are listed by their path as given (relative to the root), so the hash is the same on any machine.
-rc_data_hash <- function(data_dirs = c("data/raw", "data/derived")) {
+# data/raw only: data/derived is rewritten by the manuscript's own wrangling chunks, so keying the
+# cache on it would invalidate every chunk once more after each rebuild (and forever, for a writer
+# that is not byte-deterministic). A derived change with unchanged raw data is a code change, which
+# the chunk cache and the estimates fingerprint already catch.
+rc_data_hash <- function(data_dirs = "data/raw") {
   dir_paths <- .rc_under_root(data_dirs)
   present <- dir.exists(dir_paths)
   relative_files <- lapply(dir_paths[present], list.files, recursive = TRUE)

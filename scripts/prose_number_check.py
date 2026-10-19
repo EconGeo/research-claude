@@ -84,7 +84,8 @@ extends the noun list. Once the manuscript carries a `design:` block (a RETROFIT
 paper) the count is enforced at 0 by default, the lexicon widens to direction,
 comparison, magnitude and universality words, and `prose-verdict-ceiling:` still
 overrides. Bind a word with `rc_sig`/`rc_stars`/`rc_dir`/`rc_cmp`, a raw inline `if`, or
-a `stopifnot()` guard in the sentence. A retrofitted paper also fails on PIPELINE
+a `stopifnot()` guard in the sentence whose condition reads a named value (`b > 0`,
+`rc_p(m) <= 0.05`; a constant such as `stopifnot(TRUE)` binds nothing). A retrofitted paper also fails on PIPELINE
 JARGON (the patterns in `.claude/references/pipeline-jargon.txt` plus any
 `prose-jargon:` line): not allowlistable.
 
@@ -436,8 +437,23 @@ def paragraphs(prose):
         yield start, " ".join(para)
 
 
+# A guard binds its sentence only if its condition reads a value: `stopifnot("claim" = b > 0)`,
+# `stopifnot(rc_p(m) <= 0.05)`. A constant (`stopifnot(TRUE)`, `stopifnot("x" = 1 == 1)`) binds
+# nothing and counts as an ordinary live span, so the sentence's words are still checked.
+_GUARD_COND = re.compile(r"stopifnot\(\s*(?:\"[^\"]*\"\s*=\s*|'[^']*'\s*=\s*)?(.*)", re.S)
+_NAMED_VALUE = re.compile(r"(?<![\w.])(?!TRUE\b|FALSE\b|T\b|F\b|NA\b|NULL\b|Inf\b|NaN\b)[A-Za-z.][\w.]*(?:\s*[\(\[$@]|\s*(?:[<>!=]=|[<>]|%in%|&&|\|\|))")
+_NAMED_ARG = re.compile(r"(?:[<>!=]=|[<>]|%in%)\s*(?!TRUE\b|FALSE\b|T\b|F\b|NA\b|NULL\b)[A-Za-z.][\w.]*")
+
+def guard_binds(span):
+    m = _GUARD_COND.search(span)
+    if not m:
+        return False
+    cond = m.group(1)
+    return bool(_NAMED_VALUE.search(cond) or _NAMED_ARG.search(cond))
+
+
 def _mark(m):
-    return GUARD if "stopifnot(" in m.group(0) else LIVE
+    return GUARD if guard_binds(m.group(0)) else LIVE
 
 
 def verdict_hits(prose, rx, guards=False):

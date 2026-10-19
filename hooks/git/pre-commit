@@ -3,4 +3,7 @@
 # Installed by apply.sh as core.hooksPath = .claude/hooks/git. Never bypass with --no-verify.
 top=$(git rev-parse --show-toplevel) || exit 0
 [ -f "$top/.claude/scripts/pipeline.py" ] || exit 0
+# Hooks fail open: a git client whose PATH has no python3 (an IDE's git pane, a GUI client) commits
+# with a notice instead of an opaque exit 127. check_install's git-hooks-path covers the install.
+command -v python3 >/dev/null 2>&1 || { echo "research-claude pre-commit: python3 not on this git client's PATH — commit-check skipped" >&2; exit 0; }
 exec python3 "$top/.claude/scripts/pipeline.py" --root "$top" commit-check

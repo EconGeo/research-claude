@@ -115,6 +115,10 @@ class TestProtectFiles(unittest.TestCase):
             code, err = run_bash(cmd)
             self.assertEqual(code, 0, f"{cmd}: {err}")
 
+    def test_bash_without_any_write_form_is_allowed_fast(self):
+        for cmd in ("python3 .claude/scripts/pipeline.py next", "ls quality_reports", "cat settings.json pipeline_state.json"):
+            code, err = run_bash(cmd); self.assertEqual(code, 0, f"{cmd}: {err}")
+
     def test_bash_names_without_writing_are_allowed(self):
         for cmd in ('git commit -m "a -> settings.json"', 'git commit -m "x rm findings_ledger.md"',
                     "cp .claude/settings.json /tmp/x", 'grep -n ">" .claude/settings.json'):

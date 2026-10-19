@@ -64,6 +64,11 @@ stopifnot("data hash is the same from the root and from a subdirectory" = identi
           "data hash covers <root>/data/raw" = hash_from_paper != rc_data_hash("no/such/dir"))
 writeLines("a,b\n1,9", file.path(project_root, "data", "raw", "x.csv"))
 stopifnot("data hash moves when <root>/data/raw changes" = hash_from_paper != rc_data_hash())
+hash_raw_only <- rc_data_hash()
+dir.create(file.path(project_root, "data", "derived"), recursive = TRUE)
+writeLines("rebuilt by the render", file.path(project_root, "data", "derived", "panel.csv"))
+stopifnot("data/derived (rewritten by the render) is not in the cache key" = identical(hash_raw_only, rc_data_hash()),
+          "the pasted block carries its version" = is.character(rc_helpers_version))
 setwd(file.path(project_root, "paper"))
 written <- rc_fingerprint()
 stopifnot("fingerprint lands at <root>/quality_reports" =

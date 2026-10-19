@@ -74,7 +74,8 @@ enforces; `[judgment]` marks one nothing checks.
 14. **Every result word is bound to the model:** helper output (`rc_sig`, `rc_stars`, `rc_dir`,
     `rc_cmp`, `rc_num`, `rc_pct`, pasted into the setup chunk from
     `.claude/templates/claims-helpers.R.txt`), a raw inline `if`, or a typed word in a sentence
-    that carries an inline `stopifnot()` result guard. Stars: `*` p ≤ 0.10, `**` p ≤ 0.05,
+    that carries an inline `stopifnot()` result guard whose condition reads a value
+    (`stopifnot(TRUE)` binds nothing). Stars: `*` p ≤ 0.10, `**` p ≤ 0.05,
     `***` p ≤ 0.01; "statistically significant" names its level. `[script: prose_number_check.py]`
 15. **A re-estimation reopens review mechanically.** Scores carry the results fingerprint; a
     strategy, manuscript or referee score earned under another one is stale, and manuscript

@@ -326,6 +326,29 @@ sys.exit(0 if d.design_block(open(sys.argv[2], encoding="utf-8", errors="ignore"
   local facts; facts="$(grep -nEi '(treat(ment|ed)|event)[^.]{0,40}(19|20)[0-9]{2}-[0-9]{2}(-[0-9]{2})?|^[[:space:]]*[-*]?[[:space:]]*\**H[0-9]+\**[[:space:]]*[:.)]' "$P/CLAUDE.md" 2>/dev/null || true)"
   [[ -z "$facts" ]] && ok claude-md-design-facts "none" || "$retro" claude-md-design-facts "design facts belong in the manuscript's design: block$tail_note: $(echo "$facts" | head -2 | tr '\n' ' ')"
 
+  # The claim helpers are PASTED into the setup chunk (core rule 1: nothing sourced), so a fix to
+  # templates/claims-helpers.R.txt reaches a paper only when it re-pastes. The block between the
+  # start and end markers must equal the template byte for byte; a paper with no block is not retrofitted.
+  if [[ "$decl" -eq 1 && -f "$P/$mf" && -f "$RC/templates/claims-helpers.R.txt" ]]; then
+    local hv; hv="$(python3 - "$P/$mf" "$RC/templates/claims-helpers.R.txt" <<'PY'
+import re, sys
+ms, tpl = open(sys.argv[1], encoding="utf-8", errors="ignore").read(), open(sys.argv[2], encoding="utf-8").read()
+block = re.compile(r"^# ---- claims helpers.*?^# ---- end claims helpers ----$", re.S | re.M)
+m = block.search(ms); t = block.search(tpl)
+if not m: print("absent")
+elif not t: print("template-unmarked")
+elif m.group(0) == t.group(0): print("current")
+else:
+    v = re.search(r'rc_helpers_version <- "([^"]+)"', m.group(0)); print("stale " + (v.group(1) if v else "(no version line)"))
+PY
+)"
+    case "$hv" in
+      current) ok helpers-current "pasted block equals the template" ;;
+      absent) [[ "$retro" == bad ]] && warn helpers-current "manuscript has a design: block but no pasted claims helpers (retrofit Task 17 Step 4)" || ok helpers-current "not retrofitted" ;;
+      *) bad helpers-current "pasted claims helpers differ from the template ($hv) — re-paste from .claude/templates/claims-helpers.R.txt" ;;
+    esac
+  fi
+
   # The pre-commit gate is a git hook, installed by apply.sh as core.hooksPath. A hooksPath that names
   # a missing directory runs no hook and the commit still succeeds — which is exactly what a fresh
   # git worktree without the links gets, so the link must be checked, not just the config.

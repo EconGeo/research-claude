@@ -127,4 +127,34 @@ class TestClaudeMdCaps(unittest.TestCase):
         l = self.line("claude-md-design-facts", "# P\nSee the 2024-10-01 session notes.\n", self.DESIGN)
         self.assertTrue(l.startswith("PASS"), l)
 
+class TestHelpersCurrent(unittest.TestCase):
+    """The pasted claim helpers must equal templates/claims-helpers.R.txt byte for byte."""
+    TPL = (ROOT / "templates" / "claims-helpers.R.txt").read_text()
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(); t = pathlib.Path(self.tmp.name)
+        self.rc = t / "rc"; (self.rc / "skills" / "s").mkdir(parents=True); (self.rc / "skills" / "s" / "SKILL.md").write_text("s\n")
+        (self.rc / "agents").mkdir(); (self.rc / "agents" / "a.md").write_text("a\n")
+        os.symlink(ROOT / "scripts", self.rc / "scripts"); os.symlink(ROOT / "templates", self.rc / "templates")
+        git(t, "init", "-q", "-b", "main", str(self.rc)); git(self.rc, "add", "-A"); git(self.rc, "commit", "-qm", "one")
+        self.p = t / "proj"; (self.p / ".claude" / "skills").mkdir(parents=True)
+        os.symlink(self.rc / "skills" / "s", self.p / ".claude" / "skills" / "s")
+        (self.p / "CLAUDE.md").write_text("manuscript: paper.qmd\n")
+    def tearDown(self): self.tmp.cleanup()
+    def line(self, manuscript):
+        (self.p / "paper.qmd").write_text(manuscript)
+        out = subprocess.run(["bash", SCRIPT, "--project-dir", str(self.p)], capture_output=True, text=True).stdout
+        return next((l for l in out.splitlines() if "[helpers-current]" in l), "")
+    def qmd(self, block, design=True):
+        fm = "---\ntitle: T\n" + ("design:\n  hypotheses:\n    H1: {spec: m1}\n" if design else "") + "---\n"
+        return fm + "\n```{r}\n#| label: setup\nlibrary(fixest)\n" + block + "\n```\n"
+    def test_current_passes(self):
+        self.assertTrue(self.line(self.qmd(self.TPL)).startswith("PASS"))
+    def test_stale_paste_fails_and_names_its_version(self):
+        old = self.TPL.replace('rc_helpers_version <- "', 'rc_helpers_version <- "2000-01-01.0').replace("rc_sig <- function(p) {", "rc_sig <- function(p) {  # edited")
+        l = self.line(self.qmd(old)); self.assertTrue(l.startswith("FAIL") and "2000-01-01.0" in l, l)
+    def test_not_retrofitted_without_block_passes(self):
+        self.assertTrue(self.line(self.qmd("x <- 1", design=False)).startswith("PASS"))
+    def test_design_block_without_helpers_warns(self):
+        self.assertTrue(self.line(self.qmd("x <- 1")).startswith("WARN"))
+
 if __name__ == "__main__": unittest.main()

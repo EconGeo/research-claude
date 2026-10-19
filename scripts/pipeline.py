@@ -11,7 +11,7 @@ names the first component stage that is ready, treating a scored stage with no l
 completion as adopted work (see next_report).
 """
 from __future__ import annotations
-import argparse, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, re, shutil, subprocess, sys
+import argparse, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, os, re, shutil, subprocess, sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -464,8 +464,8 @@ def critic_context(root: Path, reg, critic: str) -> int:
     print(f"critic-context: {f.relative_to(root)}"); return 0
 
 
-def design_state(root: Path, ms: Path) -> Tuple[str, str]:
-    h = dsb.design_hash(ms.read_text())
+def design_state(root: Path, ms: Path, text: Optional[str] = None) -> Tuple[str, str]:
+    h = dsb.design_hash(ms.read_text() if text is None else text)
     bad = ("CHANGED", "design_lock.json unreadable — restore it from git or ask the author")
     lock = None
     if (root / dsb.LOCK_REL).exists():          # existence, not the parsed value, decides "a lock exists"
@@ -940,17 +940,38 @@ def reestimation(root: Path) -> Tuple[bool, str]:
     moved = [k for k in ("estimates_hash", "data_hash", "design_hash") if new.get(k) != old.get(k)]
     return bool(moved), ("changed: " + ", ".join(moved)) if moved else "fingerprint unchanged"
 
-def chunk_code(text: str) -> List[str]:
-    """The R chunk bodies of a .qmd, prose removed, so a prose edit that shifts line numbers is not a code change."""
-    lines = text.split("\n"); out: List[str] = []; ext = qmd_chunks.extract(lines); inside = False
-    for raw, e in zip(lines, ext):
-        if qmd_chunks.FENCE_OPEN_R.match(raw): inside = True; out.append("<chunk>" + raw.strip())
-        elif inside and qmd_chunks.FENCE_CLOSE.match(raw): inside = False
-        elif inside: out.append(e)
+# The chunks a cold render exists for (spec §7, .claude/rules/quarto-empirical.md "model-chunk change"): the
+# estimation and robustness chunks named by .claude/skills/analyze/templates/chunk-structure.md. A
+# build-* or tbl-* edit is covered by the fingerprint (estimates that move make the scores stale)
+# and by the warm render the critic sees; only a model chunk can silently stop running under a
+# warm cache.
+MODEL_LABEL_RE = re.compile(r"^(?:estimate|robustness)-")
+_CHUNK_LABEL_RES = (re.compile(r"^#\|\s*label:\s*([A-Za-z0-9_-]+)"),
+                    re.compile(r'^```\{[a-zA-Z]+[^}\n]*?\blabel\s*=\s*["\']([A-Za-z0-9_-]+)["\']'),
+                    re.compile(r"^```\{[a-zA-Z]+[ \t]+([A-Za-z0-9_-]+)\s*[,}]"))
+
+def r_chunks(text: str) -> List[Tuple[Optional[str], List[str]]]:
+    """(label, lines) per R chunk: the header line, stripped, then the body verbatim."""
+    out: List[Tuple[Optional[str], List[str]]] = []; cur: Optional[List[str]] = None
+    for raw in text.split("\n"):
+        if cur is None:
+            if qmd_chunks.FENCE_OPEN_R.match(raw): cur = ["<chunk>" + raw.strip()]
+        elif qmd_chunks.FENCE_CLOSE.match(raw):
+            label = next((m.group(1) for ln in cur[1:3] + [cur[0][len("<chunk>"):]]
+                          for m in [next((r.match(ln) for r in _CHUNK_LABEL_RES if r.match(ln)), None)] if m), None)
+            out.append((label, cur)); cur = None
+        else: cur.append(raw)
     return out
 
+def chunk_code(text: str, model_only: bool = True) -> List[str]:
+    """The R chunk bodies of a .qmd, prose removed, so a prose edit that shifts line numbers is not a
+    code change. By default only the model chunks (MODEL_LABEL_RE)."""
+    return [ln for label, lines in r_chunks(text) if not model_only or (label and MODEL_LABEL_RE.match(label))
+            for ln in lines]
+
 def chunk_sha256(text: str) -> str:
-    """sha256 of chunk_code(text): the cold-render receipt binds the chunks, so a prose edit after it stands."""
+    """sha256 of the model-chunk code: the cold-render receipt binds those chunks, so a prose or
+    build-chunk edit after it stands."""
     return hashlib.sha256("\n".join(chunk_code(text)).encode("utf-8")).hexdigest()
 
 def commit_check(root: Path) -> int:
@@ -965,29 +986,43 @@ def commit_check(root: Path) -> int:
     staged = set(names.split("\0"))
     if ms_rel not in staged and fp_rel not in staged: return 0
     if not ms.exists(): print(f"commit-check: FAIL — declared manuscript {hits[0]} does not exist"); return 1
+    # Every manuscript check reads the STAGED manuscript (`git show :path`), never the working file:
+    # a hunk-wise `git add -p` commit is checked on what it commits. The staged bytes go to a
+    # sibling temp file so the linked scripts resolve the project root as usual.
+    rc, staged_text = _git(root, "show", f":{ms_rel}")
+    if rc != 0: staged_text = ms.read_text()
+    import tempfile
+    fd, tmp = tempfile.mkstemp(prefix=".commit-check-", suffix=".qmd", dir=ms.parent); os.close(fd)
+    try:
+        Path(tmp).write_text(staged_text)
+        return _commit_check_staged(root, ms, ms_rel, fp_rel, staged_text, Path(tmp))
+    finally:
+        Path(tmp).unlink(missing_ok=True)
+
+def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: str, tmp: Path) -> int:
+    tmp_rel = tmp.relative_to(root).as_posix()
     probs: List[str] = []; warns: List[str] = []
-    st, why = design_state(root, ms)
+    st, why = design_state(root, ms, text)
     if st not in ("SIGNED", "NOT-RETROFITTED"): probs.append(f"design: {st} — {why}")
     # A paper with no design: block is not retrofitted: the prose gate and the cold-render receipt
     # turn on at the retrofit (author ruling 2026-09-28: papers fix prose findings on their own
     # schedule), so here they warn. Design state, structure, staging and staleness hold for every paper.
     retrofitted = st != "NOT-RETROFITTED"
-    for rel in (ms_rel, fp_rel):
-        if (root / rel).exists() and _git(root, "diff", "--quiet", "--", rel)[0] == 1:
-            probs.append(f"unstaged changes to {rel} — stage {rel} (the check reads the working file)")
-    rc, out = run_script(root, "prose_number_check.py", ms_rel)
+    if (root / fp_rel).exists() and _git(root, "diff", "--quiet", "--", fp_rel)[0] == 1:
+        probs.append(f"unstaged changes to {fp_rel} — stage {fp_rel} (the render wrote it; it is committed with the manuscript)")
+    rc, out = run_script(root, "prose_number_check.py", tmp_rel)
     if rc != 0:
-        msg = "prose: prose_number_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip())
+        msg = "prose: prose_number_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip().replace(tmp.name, ms.name))
         (probs if retrofitted else warns).append(msg if retrofitted else "WARN (not retrofitted) " + msg)
-    rc, out = run_script(root, "quarto_structure_check.py", ms_rel)
-    if rc != 0: probs.append("structure: quarto_structure_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip()))
+    rc, out = run_script(root, "quarto_structure_check.py", tmp_rel)
+    if rc != 0: probs.append("structure: quarto_structure_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip().replace(tmp.name, ms.name)))
     rc, head_text = _git(root, "show", f"HEAD:{ms_rel}")
-    changed = rc != 0 or chunk_code(head_text) != chunk_code(ms.read_text())
+    changed = rc != 0 or chunk_code(head_text) != chunk_code(text)
     if changed and retrofitted:
         try: sha = json.loads((root / COLD_REL).read_text()).get("chunk_sha256")   # an old receipt has none: no match
         except (OSError, ValueError, AttributeError): sha = None
-        if not sha or sha != chunk_sha256(ms.read_text()):
-            probs.append("chunk code changed since HEAD and there is no cold render of this chunk code — run `pipeline.py render --cold`")
+        if not sha or sha != chunk_sha256(text):
+            probs.append("model-chunk code (estimate-* or robustness-*) changed since HEAD and there is no cold render of it — run `pipeline.py render --cold`")
     try: stale = stale_components(root)
     except (OSError, ValueError, KeyError) as e: stale = {}; probs.append(f"stale: pipeline_state.json unreadable ({e})")
     if "manuscript" in stale:
@@ -996,7 +1031,7 @@ def commit_check(root: Path) -> int:
         else: probs.append(stale["manuscript"])
     for c, r in stale.items():
         if c != "manuscript": warns.append(f"WARN stale: {c} — {r}")
-    if dsb.amendment_count(root) > 0 and "tbl-design-changes" not in chunk_labels(ms):
+    if dsb.amendment_count(root) > 0 and "tbl-design-changes" not in chunk_labels(tmp):
         probs.append("design amendments are recorded but the manuscript has no chunk labelled tbl-design-changes")
     for w in warns: print(w)
     for p in probs: print("commit-check: " + p)

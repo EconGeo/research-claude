@@ -110,7 +110,8 @@ entries and their files), and they are re-run on an amendment that touches the i
 the sample, the treatment or an outcome. A check chunk never goes in the manuscript (core rule 2).
 
 **The setup chunk** pastes the helpers from `.claude/templates/claims-helpers.R.txt` below the
-`library()` calls (pasted, never sourced) and then sets:
+`library()` calls (pasted, never sourced; `check_install` fails `helpers-current` when the pasted
+block differs from the template — re-paste, never edit in place) and then sets:
 
 ```r
 design <- rc_design("manuscript_<project>.qmd")
@@ -142,7 +143,8 @@ It writes `quality_reports/render_fingerprint.json` under the project root, whic
 with the manuscript. The root is `rc_root()`, the nearest directory at or above the working
 directory that holds `CLAUDE.md`: Quarto runs chunks in the manuscript's directory, so a manuscript
 in a subdirectory still writes the root's `quality_reports/`, and `rc_data_hash()` hashes the root's
-`data/raw` and `data/derived`. Relative path arguments to either resolve under the root.
+`data/raw` (not `data/derived`, which the render itself rewrites). Relative path arguments to either
+resolve under the root.
 `pipeline.py` compares that file with the fingerprint each score was earned under to decide which
 reviews a re-estimation reopens (core rule 15).
 
@@ -166,8 +168,9 @@ is helper output (`rc_sig`, `rc_stars`, `rc_dir`, `rc_cmp`, `rc_num`, `rc_pct`),
 
 **Run `pipeline.py render --cold` before committing a model-chunk change.** A warm cache can hide
 a chunk that no longer runs or an estimate that moved. The receipt binds the chunk code, not the
-file, so a prose-only edit after the cold render needs no second one. The pre-commit check
-requires the receipt once the manuscript carries a `design:` block; before the retrofit it warns.
+file — the model chunks only (`estimate-*`, `robustness-*`), so a prose or build-chunk edit after the
+cold render needs no second one. The pre-commit check requires the receipt once the manuscript
+carries a `design:` block; before the retrofit it warns.
 
 ---
 

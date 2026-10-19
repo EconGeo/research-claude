@@ -8,8 +8,10 @@ import pipeline
 MS = "manuscript_fixture.qmd"
 FP = "quality_reports/render_fingerprint.json"
 CR = "quality_reports/cold_render.json"
-CHUNK_OLD = "n_years <- n_distinct(panel$year)"
-CHUNK_NEW = "n_years <- n_distinct(panel$year) + 0L"
+CHUNK_OLD = "sampling_band      <- qnorm(0.975) * se_hat"        # in estimate-main: a model chunk
+CHUNK_NEW = "sampling_band      <- qnorm(0.975) * se_hat + 0"
+BUILD_OLD = "n_years <- n_distinct(panel$year)"                    # in build-panel: not a model chunk
+BUILD_NEW = "n_years <- n_distinct(panel$year) + 0L"
 
 
 def git(cwd, *a, check=True):
@@ -73,6 +75,14 @@ class TestCommitCheck(CommitCase):
         self.commit_plain("-A"); new.write_text(new.read_text() + "\nOne more plain sentence.\nSee @fig-nope.\n")
         self.stage("manuscrit_é.qmd"); rc, out = self.cc(); self.assertEqual(rc, 1, out)
 
+    def test_build_chunk_change_needs_no_cold_render(self):
+        # The cold render is for model chunks (estimate-*/robustness-*); a build-* edit is covered by
+        # the fingerprint and the warm render.
+        self.edit(BUILD_OLD, BUILD_NEW); self.stage(MS)
+        rc, out = self.cc(); self.assertEqual(rc, 0, out); self.assertNotIn("cold render", out)
+        self.edit(CHUNK_OLD, CHUNK_NEW); self.receipt(); self.edit(BUILD_NEW, BUILD_NEW + " + 0L"); self.stage(MS)
+        rc, out = self.cc(); self.assertEqual(rc, 0, out)       # a build edit after the cold render keeps the receipt
+
     def test_prose_only_passes(self):
         self.prose(); self.stage(MS)
         rc, out = self.cc(); self.assertEqual(rc, 0, out)
@@ -120,8 +130,8 @@ class TestCommitCheck(CommitCase):
         self.assertIn("WARN (not retrofitted) prose:", out); self.assertNotIn("commit-check: prose", out)
 
     def test_not_retrofitted_structure_and_staging_still_gate(self):
-        self.unretrofit(); self.prose(); self.stage(MS); self.prose("Another one.")
-        rc, out = self.cc(); self.assertEqual(rc, 1, out); self.assertIn("unstaged", out)
+        self.unretrofit(); self.prose("See @fig-nope.\n"); self.stage(MS)
+        rc, out = self.cc(); self.assertEqual(rc, 1, out); self.assertIn("structure", out)
 
     def test_unsigned_design_blocks(self):
         # The fixture carries a design: block; FixtureCase signs it. Without the lock it is unsigned.
@@ -168,9 +178,15 @@ class TestCommitCheck(CommitCase):
         rc, out = self.cc(); self.assertEqual(rc, 1)
         self.assertIn("stage quality_reports/render_fingerprint.json", out)
 
-    def test_unstaged_manuscript(self):
-        self.prose(); self.stage(MS); self.prose("Another one.")
-        rc, out = self.cc(); self.assertEqual(rc, 1); self.assertIn("stage " + MS, out)
+    def test_unstaged_manuscript_is_checked_on_the_staged_bytes(self):
+        # `git add -p`: the staged hunk is clean, the unstaged working file is not — the commit passes.
+        self.prose(); self.stage(MS); self.prose("The effect is 0.4372 percent.")
+        rc, out = self.cc(); self.assertEqual(rc, 0, out)
+        # and the other way round: a staged literal fails even when the working file is clean again
+        self.prose("The gap is 0.9191 percent."); self.stage(MS)
+        self.ms().write_text(self.ms().read_text().replace("The gap is 0.9191 percent.\n", ""))
+        rc, out = self.cc(); self.assertEqual(rc, 1, out); self.assertIn("0.9191", out); self.assertNotIn(".commit-check-", out)
+        self.assertFalse(list(self.t.glob(".commit-check-*")))
 
     def test_amendments_need_table_chunk(self):
         (self.t / "quality_reports" / "design_amendments.csv").write_text(

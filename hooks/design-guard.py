@@ -51,10 +51,16 @@ def deny(msg):
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse",
         "permissionDecision": "deny", "permissionDecisionReason": "design-guard: " + msg}}))
 
+# A Bash command that names none of these can trip no check below, so it returns before any
+# file is read (this hook runs on every Bash call; keep the common case to a regex).
+BASH_TRIGGER_RE = re.compile(r"design|claude|author_token|pipeline\.py|sed|perl|tee|cp|mv|>|\.qmd", re.I)
+
 def main() -> int:
     payload = json.load(sys.stdin); root = Path(os.environ.get("CLAUDE_PROJECT_DIR", "")).resolve()
     tool = payload.get("tool_name", ""); ti = payload.get("tool_input") or {}
     cmd = ti.get("command", "") if tool == "Bash" else ""
+    if tool == "Bash" and not BASH_TRIGGER_RE.search(cmd): return 0
+    if tool not in ("Bash", "Edit", "Write"): return 0
     if tool in ("Edit", "Write") and Path(ti.get("file_path", "")).name in PIPELINE_ONLY:
         deny(f"{Path(ti['file_path']).name} is written only by pipeline.py or the render."); return 0
     if re.search(r"design_token\.json", cmd):
@@ -70,19 +76,20 @@ def main() -> int:
         deny("a session never submits an approval line (a nested claude would self-issue the author "
              "token); the author approves in their own chat message."); return 0
     ms = db.manuscript_path(root)
-    text = ms.read_text() if ms and ms.exists() else ""
+    if not ms or not ms.exists(): return 0
     m = SIGN_RE.search(cmd)
     if m:
-        ok, why = tok.check(root, m.group(1), db.design_hash(text))
+        ok, why = tok.check(root, m.group(1), db.design_hash(ms.read_text()))
         if not ok: deny(f"`design {m.group(1)}` needs the author's approval in chat: {why}")
         return 0
-    lock = db.read_lock(root)
-    if not ms or not ms.exists() or not lock or lock.get("status") != "signed": return 0
     if tool == "Bash":
-        if re.search(INPLACE_RE.format(name=re.escape(ms.name)), cmd):
-            deny(f"the design is signed; edit {ms.name} with the Edit tool so the design block can be checked.")
-        return 0
-    if tool not in ("Edit", "Write") or Path(ti.get("file_path", "")).resolve() != ms: return 0
+        if not re.search(INPLACE_RE.format(name=re.escape(ms.name)), cmd): return 0
+    elif Path(ti.get("file_path", "")).resolve() != ms: return 0
+    lock = db.read_lock(root)                      # read only once the call can touch the manuscript
+    if not lock or lock.get("status") != "signed": return 0
+    if tool == "Bash":
+        deny(f"the design is signed; edit {ms.name} with the Edit tool so the design block can be checked."); return 0
+    text = ms.read_text()
     if tool == "Write": new = ti.get("content", "")
     else:
         old, rep = ti.get("old_string", ""), ti.get("new_string", "")
