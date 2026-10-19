@@ -17,7 +17,8 @@ Usage: check_render.py <manuscript.pdf | rendered.txt> [--expect TEXT]... [--col
   --latex-log  the LaTeX log; each `Overfull \\hbox (Npt too wide)` with N > 1.0 is an OVERFULL
              finding. A missing file is ignored (Quarto does not keep the log; see main()).
 Also flags NA_VALUE: a standalone NA, NaN, Inf or -Inf on the page (an R value that leaked
-into a table or sentence; "N/A", "NASA", "NA-only" are not).
+into a table or sentence; "N/A", "NASA", "NA-only" are not, nor is "Inf." as an abbreviation
+before a capitalised word, as in "Inf. Sci.").
 Exit 0 = clean. Exit 1 = findings, one per line as KIND: detail. Exit 2 = cannot run.
 """
 from __future__ import annotations
@@ -75,7 +76,7 @@ OVERFULL = re.compile(r"Overfull \\hbox \((\d+(?:\.\d+)?)pt too wide\)")
 
 def findings(text: str, expect: list[str], columns: list[str], latex_log: str = "") -> list[str]:
     out = []
-    for m in re.finditer(r"(?<![\w./-])(-?Inf|NaN|NA)(?![\w/-])", text):
+    for m in re.finditer(r"(?<![\w./-])(-Inf|Inf(?!\. ?[A-Z])|NaN|NA)(?![\w/-])", text):
         out.append(f"NA_VALUE: {m.group(1)} …{text[max(0, m.start() - 40):m.end() + 40]!r}")
     for m in OVERFULL.finditer(latex_log):
         if float(m.group(1)) > 1.0:

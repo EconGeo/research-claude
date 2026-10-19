@@ -33,6 +33,18 @@ class TestWire(unittest.TestCase):
         cmds = [h["command"] for g in s["hooks"]["PreToolUse"] for h in g["hooks"]]
         self.assertEqual(sum("design-guard.py" in c for c in cmds), 1)
 
+    def test_timeouts_come_from_the_seed(self):
+        import json
+        seed = json.loads((ROOT / "seeds" / "settings.json").read_text())["hooks"]
+        s = {"hooks": {}}
+        wgh.wire(s)
+        for event, _, hook in wgh.WANTED:
+            got = [h["timeout"] for g in s["hooks"][event] for h in g["hooks"] if hook in h["command"]]
+            want = [h["timeout"] for g in seed[event] for h in g["hooks"] if hook in h["command"]]
+            self.assertEqual(got, want, (event, hook))
+        stale = [h for g in s["hooks"]["SessionStart"] for h in g["hooks"] if "stale-stages.py" in h["command"]]
+        self.assertEqual(stale[0]["timeout"], 25)
+
     def test_git_hook_is_refused(self):
         code = ("import sys; sys.path.insert(0, %r); import wire_guard_hooks as w\n"
                 "w.WANTED.append(('PreToolUse', 'Bash', 'git/pre-commit'))\n"

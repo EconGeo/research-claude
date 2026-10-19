@@ -141,6 +141,16 @@ class TestCheckRender(unittest.TestCase):
             r = run(CLEAN + f"Table 2 reports {word} for the sample, with a cell | {word} |.\n")
             self.assertNotIn("NA_VALUE", r.stdout, word)
 
+    def test_inf_abbreviation_is_not_a_finding(self):
+        for text in ("Published in Inf. Sci. in 2020.", "See Inf.Sci. 12, and Inf. Process. Lett."):
+            r = run(CLEAN + text + "\n")
+            self.assertNotIn("NA_VALUE", r.stdout, text)
+        for tok in ("-Inf", "NaN", "NA"):
+            r = run(CLEAN + f"Published in Inf. Sci.; the cell is {tok} here.\n")
+            self.assertIn(f"NA_VALUE: {tok} ", r.stdout, tok)
+        for text in ("The ratio is Inf.\n", "The ratio is Inf.\nThe next line.\n"):
+            self.assertIn("NA_VALUE: Inf ", run(CLEAN + text).stdout, text)
+
     def test_overfull_box_from_latex_log(self):
         with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as f:
             f.write("Overfull \\hbox (12.5pt too wide) in paragraph at lines 5--6\n"

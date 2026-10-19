@@ -1,6 +1,11 @@
 # tests/r/test_claims_helpers.R — run: Rscript tests/r/test_claims_helpers.R <repo-root>
 repo_root <- commandArgs(trailingOnly = TRUE)[[1]]
 eval(parse(file.path(repo_root, "templates", "claims-helpers.R.txt")))  # test harness only; manuscripts paste
+repo_root <- normalizePath(repo_root)
+project_root <- tempfile("rc_project_"); dir.create(file.path(project_root, "paper"), recursive = TRUE)
+project_root <- normalizePath(project_root)
+writeLines("manuscript: paper/manuscript.qmd", file.path(project_root, "CLAUDE.md"))
+setwd(project_root)
 design_qmd <- tempfile(fileext = ".qmd")
 writeLines(c("---", "title: t", "design:", "  hypotheses:", "    H1: {outcome: mpg, spec: m_h1}", "---", "x"), design_qmd)
 design <- rc_design(design_qmd)
@@ -47,4 +52,32 @@ data_dir <- tempfile(); dir.create(data_dir); writeLines("a,b\n1,2", file.path(d
 hash_data <- rc_data_hash(data_dir); writeLines("a,b\n1,3", file.path(data_dir, "x.csv"))
 stopifnot("data hash moves with the data" = hash_data != rc_data_hash(data_dir))
 expect_error_matching(rc_design(tempfile()), "")
+
+# Quarto runs chunks in the manuscript's directory: defaults resolve under the CLAUDE.md root.
+dir.create(file.path(project_root, "data", "raw"), recursive = TRUE)
+writeLines("a,b\n1,2", file.path(project_root, "data", "raw", "x.csv"))
+setwd(file.path(project_root, "paper"))
+stopifnot("rc_root walks up to CLAUDE.md" = identical(rc_root(), project_root))
+hash_from_paper <- rc_data_hash()
+setwd(project_root)
+stopifnot("data hash is the same from the root and from a subdirectory" = identical(hash_from_paper, rc_data_hash()),
+          "data hash covers <root>/data/raw" = hash_from_paper != rc_data_hash("no/such/dir"))
+writeLines("a,b\n1,9", file.path(project_root, "data", "raw", "x.csv"))
+stopifnot("data hash moves when <root>/data/raw changes" = hash_from_paper != rc_data_hash())
+setwd(file.path(project_root, "paper"))
+written <- rc_fingerprint()
+stopifnot("fingerprint lands at <root>/quality_reports" =
+            identical(normalizePath(written), file.path(project_root, "quality_reports", "render_fingerprint.json")),
+          "no stray quality_reports beside the manuscript" = !dir.exists(file.path(project_root, "paper", "quality_reports")))
+rc_fingerprint(path = "quality_reports/other.json")
+stopifnot("a relative path argument resolves under the root" =
+            file.exists(file.path(project_root, "quality_reports", "other.json")))
+setwd(tempdir())
+lonely_dir <- tempfile("rc_no_root_"); dir.create(lonely_dir); setwd(lonely_dir)
+if (!file.exists(file.path(dirname(lonely_dir), "CLAUDE.md"))) expect_error_matching(rc_root(), "no CLAUDE.md")
+setwd(project_root)
+B_model <- lm(mpg ~ wt, data = mtcars); a_model <- lm(mpg ~ hp, data = mtcars)
+rc_fingerprint(path = fingerprint_path)
+stopifnot("model names sort by radix (locale-independent)" =
+            any(grepl('"models": \\["B_model", "a_model", "m_h1"', readLines(fingerprint_path))))
 cat("claims-helpers: OK\n")

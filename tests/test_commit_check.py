@@ -1,8 +1,9 @@
 """Task 12: `pipeline.py commit-check`, `render --cold`, and the git hooks that run them."""
 import hashlib, json, os, pathlib, stat, subprocess, sys, unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tests"))
+sys.path.insert(0, str(ROOT / "tests")); sys.path.insert(0, str(ROOT / "scripts"))
 from test_pipeline import FixtureCase, run
+import pipeline
 
 MS = "manuscript_fixture.qmd"
 FP = "quality_reports/render_fingerprint.json"
@@ -33,9 +34,13 @@ class CommitCase(FixtureCase):
     def fp(self, h, data="d"):
         p = self.t / FP; p.parent.mkdir(exist_ok=True)
         p.write_text(json.dumps({"estimates_hash": h, "data_hash": data, "design_hash": "x", "models": {}}))
-    def receipt(self, sha=None):
-        sha = sha or hashlib.sha256(self.ms().read_bytes()).hexdigest()
-        (self.t / CR).write_text(json.dumps({"manuscript_sha256": sha, "at": "now"}))
+    def receipt(self, sha=None, old_format=False):
+        if old_format:
+            rec = {"manuscript_sha256": hashlib.sha256(self.ms().read_bytes()).hexdigest(), "at": "now"}
+        else:
+            rec = {"manuscript_sha256": hashlib.sha256(self.ms().read_bytes()).hexdigest(),
+                   "chunk_sha256": sha or pipeline.chunk_sha256(self.ms().read_text()), "at": "now"}
+        (self.t / CR).write_text(json.dumps(rec))
     def score(self, comp, critic):
         rc, out = run("state", "record-score", comp, "90", "--critic", critic, "--report", "r.md", root=self.t)
         self.assertEqual(rc, 0, out)
@@ -79,6 +84,21 @@ class TestCommitCheck(CommitCase):
         self.assertEqual(self.cc()[0], 1)                     # a receipt for other bytes does not count
         self.receipt()
         rc, out = self.cc(); self.assertEqual(rc, 0, out)
+
+    def test_old_format_receipt_does_not_count(self):
+        self.edit(CHUNK_OLD, CHUNK_NEW); self.stage(MS)
+        self.receipt(old_format=True)
+        rc, out = self.cc(); self.assertEqual(rc, 1, out); self.assertIn("cold render", out)
+
+    def test_prose_edit_after_cold_render_still_passes(self):
+        self.edit(CHUNK_OLD, CHUNK_NEW); self.receipt()
+        self.prose("A sentence added after the cold render."); self.stage(MS)
+        rc, out = self.cc(); self.assertEqual(rc, 0, out)
+
+    def test_chunk_edit_after_cold_render_needs_another(self):
+        self.edit(CHUNK_OLD, CHUNK_NEW); self.receipt()
+        self.edit(CHUNK_NEW, CHUNK_NEW + " + 0L"); self.stage(MS)
+        rc, out = self.cc(); self.assertEqual(rc, 1, out); self.assertIn("cold render", out)
 
     def test_unsigned_design_blocks(self):
         # The fixture carries a design: block; FixtureCase signs it. Without the lock it is unsigned.
@@ -152,7 +172,21 @@ class TestRenderCold(CommitCase):
         self.assertFalse(cache.exists())
         rec = json.loads((self.t / CR).read_text())
         self.assertEqual(rec["manuscript_sha256"], hashlib.sha256(self.ms().read_bytes()).hexdigest())
+        self.assertEqual(rec["chunk_sha256"], pipeline.chunk_sha256(self.ms().read_text()))
         self.assertIn("at", rec)
+
+    def test_cold_receipt_survives_prose_edit_not_chunk_edit(self):
+        bindir = self.t / "mockbin"; bindir.mkdir()
+        q = bindir / "quarto"; q.write_text("#!/bin/sh\nexit 0\n"); q.chmod(0o755)
+        env = dict(os.environ, PATH=f"{bindir}:{os.environ['PATH']}")
+        self.edit(CHUNK_OLD, CHUNK_NEW)
+        p = subprocess.run([sys.executable, str(ROOT / "scripts" / "pipeline.py"), "--root", str(self.t), "render", "--cold"],
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.prose("Prose written after the cold render."); self.stage(MS)
+        rc, out = self.cc(); self.assertEqual(rc, 0, out)
+        self.edit(CHUNK_NEW, CHUNK_NEW + " + 0L"); self.stage(MS)
+        rc, out = self.cc(); self.assertEqual(rc, 1, out); self.assertIn("cold render", out)
 
     def test_failed_render_writes_no_receipt(self):
         bindir = self.t / "mockbin"; bindir.mkdir()

@@ -76,9 +76,40 @@ rc_cmp <- function(a, b, more, less, same = NULL, tol = 0) {
 
 rc_design_hash <- function(design_spec) .rc_md5(paste(deparse(design_spec), collapse = "\n"))
 
+# The project root: the nearest directory, from the working directory up, holding CLAUDE.md.
+# Quarto runs chunks in the manuscript's directory, which need not be the root.
+rc_root <- function(start_dir = getwd()) {
+  dir_now <- normalizePath(start_dir, mustWork = TRUE)
+  repeat {
+    if (file.exists(file.path(dir_now, "CLAUDE.md"))) return(dir_now)
+    parent_dir <- dirname(dir_now)
+    if (identical(parent_dir, dir_now)) {
+      stop("rc_root: no CLAUDE.md in ", start_dir, " or any directory above it - ",
+           "render from inside the project", call. = FALSE)
+    }
+    dir_now <- parent_dir
+  }
+}
+
+.rc_is_absolute <- function(paths) grepl("^(/|~|[A-Za-z]:[/\\\\])", paths)
+
+# A relative path resolves under rc_root(); an absolute one is used as given.
+.rc_under_root <- function(paths) {
+  relative <- !.rc_is_absolute(paths)
+  if (any(relative)) paths[relative] <- file.path(rc_root(), paths[relative])
+  path.expand(paths)
+}
+
+# Files are listed by their path as given (relative to the root), so the hash is the same on any machine.
 rc_data_hash <- function(data_dirs = c("data/raw", "data/derived")) {
-  data_files <- sort(as.character(unlist(lapply(data_dirs[dir.exists(data_dirs)], list.files, recursive = TRUE, full.names = TRUE))))
-  .rc_md5(paste(data_files, unname(tools::md5sum(data_files)), collapse = "\n"))
+  dir_paths <- .rc_under_root(data_dirs)
+  present <- dir.exists(dir_paths)
+  relative_files <- lapply(dir_paths[present], list.files, recursive = TRUE)
+  file_labels <- as.character(unlist(Map(file.path, data_dirs[present], relative_files), use.names = FALSE))
+  file_paths <- as.character(unlist(Map(file.path, dir_paths[present], relative_files), use.names = FALSE))
+  label_order <- order(file_labels, method = "radix")
+  file_labels <- file_labels[label_order]; file_paths <- file_paths[label_order]
+  .rc_md5(paste(file_labels, unname(tools::md5sum(file_paths)), collapse = "\n"))
 }
 
 # One line per fitted model: name, N, and every coefficient with its standard error.
@@ -102,8 +133,11 @@ rc_fingerprint <- function(design_spec = design, classes = rc_model_classes,
     stop("rc_fingerprint: spec object(s) not a fitted model of a class in rc_model_classes: ",
          paste(not_models, collapse = ", "), call. = FALSE)
   }
-  model_names <- Filter(function(n) inherits(get(n, envir = globalenv()), classes), sort(ls(globalenv())))
+  # radix: locale-independent, since the fingerprint is compared across machines
+  model_names <- Filter(function(n) inherits(get(n, envir = globalenv()), classes),
+                        sort(ls(globalenv()), method = "radix"))
   model_digests <- vapply(model_names, function(n) .rc_model_digest(n, get(n, envir = globalenv())), "")
+  path <- .rc_under_root(path)
   dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
   writeLines(sprintf('{\n  "estimates_hash": "%s",\n  "data_hash": "%s",\n  "design_hash": "%s",\n  "models": [%s]\n}',
                      .rc_md5(model_digests), rc_data_hash(), rc_design_hash(design_spec),

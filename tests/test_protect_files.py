@@ -132,6 +132,37 @@ class TestProtectFiles(unittest.TestCase):
             code, _ = run_bash("echo x >> explorer-critic_2026-10-18.md", cwd=d)
             self.assertEqual(code, 2)
 
+    def test_bash_ampersand_redirect_dd_and_here_string(self):
+        for cmd in ("echo x &> quality_reports/pipeline_state.json", "echo x &>> quality_reports/rulings_log.md",
+                    "make &>quality_reports/design_lock.json",
+                    "dd if=/dev/null of=quality_reports/design_lock.json", "dd of='quality_reports/cold_render.json' bs=1",
+                    "cat <<< x\necho y > quality_reports/pipeline_state.json",
+                    "tr a b <<< \"$x\" > .claude/settings.json"):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 2, cmd)
+        for cmd in ("dd if=quality_reports/design_lock.json of=/tmp/copy.json", "cat <<< x\necho y > notes.txt",
+                    "echo x &> build.log"):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 0, f"{cmd}: {err}")
+
+    def test_bash_unparseable_command_falls_back_to_a_scan(self):
+        """shlex fails on a quoted string that spans lines; that used to exit 0 (fail open)."""
+        for cmd in ('git commit -m "a\nb" && echo x > quality_reports/pipeline_state.json',
+                    'git commit -m "a\nb" && rm quality_reports/design_lock.json',
+                    'echo "a\nb" | tee quality_reports/findings_ledger.md',
+                    'git commit -m "a\nb" ; dd of=quality_reports/cold_render.json',
+                    'echo "a\nb" &>> quality_reports/rulings_log.md'):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 2, cmd)
+        for cmd in ('git commit -m "a\nb"', 'git commit -m "first\nsecond" && echo ok > notes.txt'):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 0, f"{cmd}: {err}")
+
+    def test_bash_unparseable_create_of_new_report_allowed(self):
+        with tempfile.TemporaryDirectory() as d:
+            code, err = run_bash('echo "a\nb" > explorer-critic_2026-10-18.md', cwd=d)
+            self.assertEqual(code, 0, err)
+
     def test_new_record_files_protected_for_edit(self):
         for n in ("design_lock.json", "design_token.json", "design_amendments.csv", "design_amendments.md",
                   "render_fingerprint.json", "cold_render.json", "findings_ledger.md", "rulings_log.md"):

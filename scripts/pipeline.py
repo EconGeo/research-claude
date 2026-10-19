@@ -835,6 +835,10 @@ def ledger_cmd(root: Path, a) -> int:
         return next(r for r in fl.rows(path) if r["id"] == fid)
     if op == "add":
         if not need("creator", "report", "location", "finding"): return 2
+        agents = sorted(load_reg(root).get("agents") or {})
+        if a.creator not in agents:
+            print(f"ledger add: unknown creator {a.creator!r} — valid creators (.claude/rules/registry.yaml agents): "
+                  + ", ".join(agents)); return 2
         fid = fl.add(path, a.creator, a.report, a.location, a.finding, "proposal: pending" if a.proposal else "open")
         print(f"ledger: added {fid}"); return 0
     if op == "show":
@@ -912,7 +916,8 @@ def render_cold(root: Path) -> int:
     if rc != 0:
         print("render --cold: quarto failed\n" + "\n".join(out.strip().splitlines()[-15:])); return 1
     (root / COLD_REL).parent.mkdir(parents=True, exist_ok=True)
-    (root / COLD_REL).write_text(json.dumps({"manuscript_sha256": sha256_file(ms), "at": now()}, indent=2) + "\n")
+    (root / COLD_REL).write_text(json.dumps({"manuscript_sha256": sha256_file(ms),
+                                             "chunk_sha256": chunk_sha256(ms.read_text()), "at": now()}, indent=2) + "\n")
     print(f"render --cold: ok, wrote {COLD_REL}"); return 0
 
 def _git(root: Path, *args: str) -> Tuple[int, str]:
@@ -941,6 +946,10 @@ def chunk_code(text: str) -> List[str]:
         elif inside: out.append(e)
     return out
 
+def chunk_sha256(text: str) -> str:
+    """sha256 of chunk_code(text): the cold-render receipt binds the chunks, so a prose edit after it stands."""
+    return hashlib.sha256("\n".join(chunk_code(text)).encode("utf-8")).hexdigest()
+
 def commit_check(root: Path) -> int:
     claude = root / "CLAUDE.md"
     if not claude.exists(): print("commit-check: no CLAUDE.md — nothing declared"); return 0
@@ -966,10 +975,10 @@ def commit_check(root: Path) -> int:
     rc, head_text = _git(root, "show", f"HEAD:{ms_rel}")
     changed = rc != 0 or chunk_code(head_text) != chunk_code(ms.read_text())
     if changed:
-        try: sha = json.loads((root / COLD_REL).read_text()).get("manuscript_sha256")
-        except (OSError, ValueError): sha = None
-        if sha != sha256_file(ms):
-            probs.append("chunk code changed since HEAD and there is no cold render of these bytes — run `pipeline.py render --cold`")
+        try: sha = json.loads((root / COLD_REL).read_text()).get("chunk_sha256")   # an old receipt has none: no match
+        except (OSError, ValueError, AttributeError): sha = None
+        if not sha or sha != chunk_sha256(ms.read_text()):
+            probs.append("chunk code changed since HEAD and there is no cold render of this chunk code — run `pipeline.py render --cold`")
     try: stale = stale_components(root)
     except (OSError, ValueError, KeyError) as e: stale = {}; probs.append(f"stale: pipeline_state.json unreadable ({e})")
     if "manuscript" in stale:

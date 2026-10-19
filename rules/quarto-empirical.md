@@ -138,8 +138,12 @@ existed adds them, or its legend prints a missing-character box.
 rc_fingerprint()
 ```
 
-It writes `quality_reports/render_fingerprint.json`, which is committed with the manuscript:
-`pipeline.py` compares it with the fingerprint each score was earned under to decide which
+It writes `quality_reports/render_fingerprint.json` under the project root, which is committed
+with the manuscript. The root is `rc_root()`, the nearest directory at or above the working
+directory that holds `CLAUDE.md`: Quarto runs chunks in the manuscript's directory, so a manuscript
+in a subdirectory still writes the root's `quality_reports/`, and `rc_data_hash()` hashes the root's
+`data/raw` and `data/derived`. Relative path arguments to either resolve under the root.
+`pipeline.py` compares that file with the fingerprint each score was earned under to decide which
 reviews a re-estimation reopens (core rule 15).
 
 **Design changes are disclosed in the paper.** Once `quality_reports/design_amendments.csv` has
@@ -161,7 +165,8 @@ is helper output (`rc_sig`, `rc_stars`, `rc_dir`, `rc_cmp`, `rc_num`, `rc_pct`),
 (`.claude/rules/readable-code.md` §5).
 
 **Run `pipeline.py render --cold` before committing a model-chunk change.** A warm cache can hide
-a chunk that no longer runs or an estimate that moved.
+a chunk that no longer runs or an estimate that moved. The receipt binds the chunk code, not the
+file, so a prose-only edit after the cold render needs no second one.
 
 ---
 

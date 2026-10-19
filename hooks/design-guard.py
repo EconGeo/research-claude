@@ -7,10 +7,16 @@ one-time token, issued by `.claude/hooks/design-token.py` from an approval line 
 message. The lock, the token and the record files are written only by pipeline.py or the render.
 Bash writes to the manuscript are refused while signed (use Edit, which this hook can evaluate).
 A Bash command that invokes `claude` and contains the text `approve design` is refused: a nested
-`claude -p` would fire UserPromptSubmit and self-issue the token. The author approves in their own
-chat message; a session never submits an approval line.
-Known limit: the nested-claude and token checks are text matches; a command assembled from
-variables or fragments (`c=claude; $c -p ...`) evades them.
+`claude -p` would fire UserPromptSubmit and self-issue the token. So is any `claude` fed its prompt
+by a `<` redirect, a heredoc or here-string, or a pipe (`cat f | claude -p`, `claude -p < f`),
+whatever the text: the prompt is then not on the command line to check. A Bash command that names
+`author_token` (the token module) is refused, and so is one that names `design_lock` beside an
+interpreter (python, perl, ruby, node, Rscript), which could write the lock directly. The author
+approves in their own chat message; a session never submits an approval line.
+Known limit: every Bash check here is a text match on the command. A command assembled from
+variables or fragments (`c=claude; $c -p ...`, a path built from pieces) evades it, and so does an
+indirect writer (a script file that does the write, run by name). The token's binding to the
+design hash and its one-message lifetime bound the damage.
 Fails open on internal error.
 
 Hook Event: PreToolUse
@@ -24,6 +30,20 @@ import design_block as db
 SIGN_RE = re.compile(r"pipeline\.py\b[^\n;&|]*\bdesign\s+(sign|unlock)\b")
 INPLACE_RE = r"(sed\s+-i|perl\s+-[a-z]*i|>>?|\btee\b|\bcp\b|\bmv\b)[^\n;&|]*{name}"
 CLAUDE_RE = re.compile(r"(?:^|[\s;&|(`/])claude(?=[\s;&|)`]|$)")
+INTERP_RE = re.compile(r"(?:^|[\s;&|(`/])(?:python[\d.]*|perl|ruby|node|Rscript)(?=[\s;&|)`]|$)")
+
+# `claude` as the command word of a pipeline stage: after env assignments and launch wrappers.
+CLAUDE_CMD_RE = re.compile(r"^[\s({`]*(?:\w+=\S*\s+)*(?:(?:npx|exec|command|env|nohup|time|sudo|xargs)"
+                           r"(?:\s+-\S+)*\s+)*(?:\S*/)?claude(?=[\s)`]|$)")
+
+def fed_claude(cmd: str) -> bool:
+    """A `claude` command word whose input is a `<` redirect, heredoc, here-string, or a pipe."""
+    for seg in re.split(r"\n|;|&&|\|\||(?<![|>])&(?![&>])", cmd):
+        parts = re.split(r"(?<!\|)\|(?!\|)", seg)
+        for i, part in enumerate(parts):
+            if CLAUDE_CMD_RE.search(part) and (i > 0 or "<" in part): return True
+    return False
+
 PIPELINE_ONLY = {"design_lock.json", "design_token.json", "design_amendments.csv", "design_amendments.md",
                  "render_fingerprint.json", "cold_render.json", "findings_ledger.md", "rulings_log.md"}
 
@@ -39,6 +59,13 @@ def main() -> int:
         deny(f"{Path(ti['file_path']).name} is written only by pipeline.py or the render."); return 0
     if re.search(r"design_token\.json", cmd):
         deny("the author token is written only by the design-token hook."); return 0
+    if re.search(r"\bauthor_token\b", cmd):
+        deny("the author token module is run only by the design-token hook and pipeline.py."); return 0
+    if cmd and fed_claude(cmd):
+        deny("a nested claude may not take its prompt from a file, heredoc, here-string or pipe "
+             "(the prompt could carry an approval line); pass the prompt as an argument."); return 0
+    if re.search(r"\bdesign_lock\b", cmd) and INTERP_RE.search(cmd):
+        deny("design_lock.json is written only by pipeline.py; an interpreter command may not name it."); return 0
     if cmd and CLAUDE_RE.search(cmd) and re.search(r"approve\s+design", cmd, re.I):
         deny("a session never submits an approval line (a nested claude would self-issue the author "
              "token); the author approves in their own chat message."); return 0

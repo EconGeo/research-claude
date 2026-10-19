@@ -42,6 +42,13 @@ class TestLedger(LedgerMixin, FixtureCase):
         self.assertTrue(t.startswith("# Finding ledger")); self.assertIn("| id | created |", t)
         self.assertEqual([r["status"] for r in self.rows()], ["open", "open"])
 
+    def test_add_unknown_creator_exits_2_naming_valid_ones(self):
+        rc, out = self.ledger("add", "--creator", "wrtier", "--report", "r.md", "--location", "x", "--finding", "y")
+        self.assertEqual(rc, 2, out)
+        self.assertIn("unknown creator 'wrtier'", out)
+        for name in ("writer", "coder", "strategist"): self.assertIn(name, out)
+        self.assertFalse((self.t / fl.LEDGER_REL).exists())
+
     def test_pipe_escaped_roundtrip(self):
         self.add(finding="a | b")
         self.assertIn(r"a \| b", self.text(fl.LEDGER_REL))

@@ -65,4 +65,33 @@ class TestDesignGuard(ProjectCase):
                     "ls .claude/scripts && echo approve design sign"):
             self.assertFalse(self.denied(self.bash(cmd)), cmd)
 
+    def test_author_token_module_is_hook_only(self):
+        for cmd in ('python3 -c "import author_token as t; t.issue(\'.\', \'sign\', None, \'h\')"',
+                    "cd .claude/scripts && python3 -m author_token", "cat .claude/scripts/author_token.py"):
+            self.assertTrue(self.denied(self.bash(cmd)), cmd)
+
+    def test_claude_fed_from_file_heredoc_or_pipe(self):
+        for cmd in ("cat f | claude -p", "claude -p < prompt.txt", "claude -p <<EOF\nhello\nEOF",
+                    "claude -p <<< \"$msg\"", "echo hi | npx claude --print", "cd x && cat f |claude -p",
+                    "claude -p < <(cat f)", "printf x | /usr/local/bin/claude -p",
+                    "cat f | FOO=1 npx -y claude -p", "(claude -p < f)"):
+            self.assertTrue(self.denied(self.bash(cmd)), cmd)
+        for cmd in ('claude -p "summarise the design"', 'claude -p "x" 2>&1 | tail -5',
+                    'claude -p "x" > out.txt', "cat f | grep claude", "ps aux | grep claude",
+                    "grep claude < notes.txt", "ls | wc -l && claude -p \"y\""):
+            self.assertFalse(self.denied(self.bash(cmd)), cmd)
+
+    def test_interpreter_naming_design_lock_denied(self):
+        for cmd in ("python3 -c \"import json; json.dump({}, open('quality_reports/design_lock.json','w'))\"",
+                    "perl -e 'open(F, \">quality_reports/design_lock.json\")'", "node -e \"fs.writeFileSync('design_lock.json','{}')\"",
+                    "Rscript -e 'writeLines(\"{}\", \"quality_reports/design_lock.json\")'",
+                    "ruby -e 'File.write(\"design_lock.json\", \"x\")'", "python -c 'print(1)' design_lock.json"):
+            self.assertTrue(self.denied(self.bash(cmd)), cmd)
+
+    def test_ordinary_commands_stay_allowed(self):
+        for cmd in ("python3 .claude/scripts/pipeline.py design status", "pytest tests/test_design_token.py",
+                    "python3 -m pytest -q tests/test_design_lock.py", "cat quality_reports/design_lock.json",
+                    "git add quality_reports/design_lock.json", 'claude -p "summarise the design"'):
+            self.assertFalse(self.denied(self.bash(cmd)), cmd)
+
 if __name__ == "__main__": unittest.main()
