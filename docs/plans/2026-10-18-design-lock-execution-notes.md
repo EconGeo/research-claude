@@ -6,6 +6,14 @@ Tasks 16 (merge, re-link, live evals) and 17 (paper retrofits) are not done: the
 
 ## Decisions for the author before Task 16 Step 4–5
 
+**Resolved on 2026-10-18 by the author's review fix (items 1–4 below no longer block the merge):**
+commit-check's prose check and cold-render receipt WARN for a NOT-RETROFITTED paper and FAIL once the
+manuscript has a `design:` block; `check_install`'s two CLAUDE.md caps do the same, and
+`apply.sh --link` appends the required `.gitignore` lines a project lacks, so `check_install --all`
+stays green after the re-link; a stale strategy or referee score no longer fails a creator's `pre`
+(only a stale manuscript score does) — `post`, `next` and the score gates still reopen the stage.
+Item 4's model-chunk narrowing is still the author's call.
+
 1. **The pre-commit hook would block manuscript commits in 4 of 5 unretrofitted papers** (read-only run of the
    branch's `prose_number_check.py`; the new surface scans find true positives):
 

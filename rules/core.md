@@ -78,7 +78,9 @@ enforces; `[judgment]` marks one nothing checks.
     `***` p ≤ 0.01; "statistically significant" names its level. `[script: prose_number_check.py]`
 15. **A re-estimation reopens review mechanically.** Scores carry the results fingerprint; a
     strategy, manuscript or referee score earned under another one is stale, and manuscript
-    commits are refused until it is re-scored (the re-estimation commit itself passes).
+    commits are refused until it is re-scored (the re-estimation commit itself passes). A stale
+    strategy or referee score reopens its own stage (`post`, `next`, score gates) and never
+    blocks the next creator's `pre`; only a stale manuscript score does.
     Findings live in `quality_reports/findings_ledger.md`. A passed, unchanged target is not
     re-reviewed. `[script: pipeline.py; hook: pre-commit, stale-stages]`
 16. **Unattended runs make rulings and continue.** Log each with `pipeline.py ruling add`

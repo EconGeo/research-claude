@@ -52,4 +52,33 @@ class TestHooksPathInWorktree(unittest.TestCase):
             cfg = subprocess.run(["git", "-C", str(main), "config", "--get", "core.hooksPath"], capture_output=True, text=True)
             self.assertEqual(cfg.stdout.strip(), "")
 
-if __name__ == "__main__": unittest.main()
+class TestGitignoreTopUp(unittest.TestCase):
+    """--link appends a required .gitignore line a project lacks (the seed is never overwritten),
+    append-only, and is idempotent."""
+    REQUIRED = ".claude/state/design_token.json"
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(); self.p = pathlib.Path(self.tmp.name)
+    def tearDown(self): self.tmp.cleanup()
+    def apply(self):
+        return subprocess.run(["bash", APPLY, "--project-dir", str(self.p), "--link"], check=True, capture_output=True, text=True).stdout
+
+    def test_fresh_project_gets_the_seed_and_nothing_appended(self):
+        out = self.apply(); gi = (self.p / ".gitignore").read_text()
+        self.assertIn(self.REQUIRED + "\n", gi); self.assertNotIn("appended by apply.sh", gi); self.assertNotIn("appended", out)
+
+    def test_existing_gitignore_is_topped_up_once(self):
+        (self.p / ".gitignore").write_text("*.pdf\n.claude/skills/*\n")   # an old project file, no trailing-newline issues
+        out = self.apply(); gi = (self.p / ".gitignore").read_text()
+        self.assertTrue(gi.startswith("*.pdf\n.claude/skills/*\n"), gi)
+        self.assertIn(self.REQUIRED + "\n", gi); self.assertIn("appended", out)
+        self.assertEqual(gi.count(".claude/skills/*"), 1)
+        again = self.apply()
+        self.assertEqual((self.p / ".gitignore").read_text(), gi); self.assertNotIn("appended", again)
+
+    def test_missing_final_newline_is_repaired_before_appending(self):
+        (self.p / ".gitignore").write_text("*.pdf")
+        self.apply(); gi = (self.p / ".gitignore").read_text()
+        self.assertTrue(gi.startswith("*.pdf\n"), gi); self.assertIn("\n" + self.REQUIRED + "\n", gi)
+
+if __name__ == "__main__":
+    unittest.main()

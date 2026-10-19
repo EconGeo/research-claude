@@ -166,7 +166,8 @@ is helper output (`rc_sig`, `rc_stars`, `rc_dir`, `rc_cmp`, `rc_num`, `rc_pct`),
 
 **Run `pipeline.py render --cold` before committing a model-chunk change.** A warm cache can hide
 a chunk that no longer runs or an estimate that moved. The receipt binds the chunk code, not the
-file, so a prose-only edit after the cold render needs no second one.
+file, so a prose-only edit after the cold render needs no second one. The pre-commit check
+requires the receipt once the manuscript carries a `design:` block; before the retrofit it warns.
 
 ---
 

@@ -580,9 +580,12 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
             val = st.get("components", {}).get(pred["component"], {}).get("score")
         ok = val is not None and val >= float(pred["min"])
         desc = f"{pred['component']} score ≥ {pred['min']} (have {val})"
+        # A stale score fails a `post` gate (the stage reopens) and a `pre` gate only for the
+        # manuscript component: a stale strategy or referee score reopens its own stage but never
+        # blocks the next creator (author ruling 2026-10-17).
         why = entry_stale(root, ctx.ms, st, pred["component"]) if pred["component"] != "overall" else None
-        if why: return False, desc + " — " + why
-        return ok, desc
+        if why and (post or pred["component"] == "manuscript"): return False, desc + " — " + why
+        return ok, desc + (f" ({why})" if why else "")
     if t == "score-if-scored":
         # A component that HAS been scored must clear `min`; one never scored is ignored.
         # A MISSING state file is not "never scored" — defaulting to {} here would make the
@@ -596,8 +599,8 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         if val is None:                                   # `is None`, never truthiness: 0.0 is a score
             return True, desc + " (never scored — not required yet)"
         why = entry_stale(root, ctx.ms, st, pred["component"])
-        if why: return False, desc + f" (have {val}) — " + why
-        return val >= float(pred["min"]), desc + f" (have {val})"
+        if why and (post or pred["component"] == "manuscript"): return False, desc + f" (have {val}) — " + why
+        return val >= float(pred["min"]), desc + f" (have {val})" + (f" ({why})" if why else "")
     if t == "fresh":
         ok, why = is_fresh(root, ctx.ms); return ok, f"fresh: {why}"
     if t == "render":
@@ -965,16 +968,22 @@ def commit_check(root: Path) -> int:
     probs: List[str] = []; warns: List[str] = []
     st, why = design_state(root, ms)
     if st not in ("SIGNED", "NOT-RETROFITTED"): probs.append(f"design: {st} — {why}")
+    # A paper with no design: block is not retrofitted: the prose gate and the cold-render receipt
+    # turn on at the retrofit (author ruling 2026-09-28: papers fix prose findings on their own
+    # schedule), so here they warn. Design state, structure, staging and staleness hold for every paper.
+    retrofitted = st != "NOT-RETROFITTED"
     for rel in (ms_rel, fp_rel):
         if (root / rel).exists() and _git(root, "diff", "--quiet", "--", rel)[0] == 1:
             probs.append(f"unstaged changes to {rel} — stage {rel} (the check reads the working file)")
     rc, out = run_script(root, "prose_number_check.py", ms_rel)
-    if rc != 0: probs.append("prose: prose_number_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip()))
+    if rc != 0:
+        msg = "prose: prose_number_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip())
+        (probs if retrofitted else warns).append(msg if retrofitted else "WARN (not retrofitted) " + msg)
     rc, out = run_script(root, "quarto_structure_check.py", ms_rel)
     if rc != 0: probs.append("structure: quarto_structure_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip()))
     rc, head_text = _git(root, "show", f"HEAD:{ms_rel}")
     changed = rc != 0 or chunk_code(head_text) != chunk_code(ms.read_text())
-    if changed:
+    if changed and retrofitted:
         try: sha = json.loads((root / COLD_REL).read_text()).get("chunk_sha256")   # an old receipt has none: no match
         except (OSError, ValueError, AttributeError): sha = None
         if not sha or sha != chunk_sha256(ms.read_text()):

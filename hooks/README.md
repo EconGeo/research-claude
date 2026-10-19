@@ -103,6 +103,9 @@ config but not the links (run `apply.sh --project-dir <worktree> --link`).
 - `git/pre-commit` runs `pipeline.py commit-check`: design lock, prose numbers, Quarto structure,
   cold render after chunk-code changes, manuscript staleness (the commit that lands the
   re-estimation passes with a warning), and the amendment table. Never bypass it with `--no-verify`.
+  In a paper whose manuscript has no `design:` block (NOT-RETROFITTED) the prose check and the
+  cold-render receipt only WARN: they turn on at the retrofit. Design state, structure, staging
+  and staleness hold for every paper.
 - `git/post-commit` runs `pipeline.py ledger settle`, closing ledger rows fixed during a stale window.
 
 Both exit 0 when the project does not link `pipeline.py`.

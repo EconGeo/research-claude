@@ -178,7 +178,8 @@ was taken as covering the new one.
 `pipeline.py ledger`; `post <creator>` refuses while a row for that creator is open or a
 proposal is undecided. The whole-manuscript re-review is enforced by the fingerprint:
 `record-score` stores the results fingerprint, and a strategy, manuscript or referee score
-earned under another one is STALE (`pipeline.py score`, `next`, `pre`, `post`, `stale`, and the
-pre-commit check). A fix made while review is stale is closed with `ledger close ID --pending`
+earned under another one is STALE (`pipeline.py score`, `next`, `post`, `stale`, the pre-commit
+check, and `pre` for the manuscript component only — a stale strategy or referee score is noted
+there, never blocking). A fix made while review is stale is closed with `ledger close ID --pending`
 and settles to the commit that ends the stale window. A decline or a proposal decision is a
 ruling and is logged (core rule 16).

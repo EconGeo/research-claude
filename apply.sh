@@ -254,6 +254,21 @@ fi
   copy_seed "$SCRIPT_DIR/seeds/ai-use-log.md" "$PROJECT_DIR/templates/ai-use-log.md"
 [[ -f "$SCRIPT_DIR/seeds/gitignore" ]] && \
   copy_seed "$SCRIPT_DIR/seeds/gitignore" "$PROJECT_DIR/.gitignore"
+# The seed is never overwritten, so a line the pipeline later came to REQUIRE (check_install's
+# gitignore-covers list) is appended to an existing project .gitignore when missing. Append-only:
+# nothing else in the file is touched.
+if [[ -f "$PROJECT_DIR/.gitignore" ]]; then
+  gi_added=()
+  for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' '.claude/references/*' 'quality_reports/agent_dispatch.jsonl' '.claude/state/design_token.json'; do
+    grep -qxF "$pat" "$PROJECT_DIR/.gitignore" || gi_added+=("$pat")
+  done
+  if [[ ${#gi_added[@]} -gt 0 ]]; then
+    { [[ -s "$PROJECT_DIR/.gitignore" && -n "$(tail -c1 "$PROJECT_DIR/.gitignore")" ]] && echo
+      echo "# required by the research-claude pipeline (appended by apply.sh)"
+      printf '%s\n' "${gi_added[@]}"; } >> "$PROJECT_DIR/.gitignore"
+    echo "  .gitignore: appended ${#gi_added[@]} required line(s): ${gi_added[*]}"
+  fi
+fi
 [[ -f "$SCRIPT_DIR/seeds/quarto-preamble.tex" ]] && \
   copy_seed "$SCRIPT_DIR/seeds/quarto-preamble.tex" "$PROJECT_DIR/templates/quarto-preamble.tex"
 # _quarto.yml wires the docx post-render repair (scripts/fix_docx_floats.py). An existing

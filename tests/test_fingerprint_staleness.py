@@ -49,6 +49,21 @@ class TestStaleness(StaleCase):
         rc, out = run("stale", root=self.t)
         self.assertEqual(rc, 1); self.assertRegex(out, r"STALE manuscript: ")
 
+    def test_2b_stale_strategy_reopens_its_stage_but_does_not_block_pre(self):
+        # Author ruling 2026-10-17: a stale strategy or referee score reopens its own stage; it never
+        # blocks the next creator. `pre coder` requires strategy ≥ 80 — stale, it still passes
+        # (noted); the `post` gate and `next` still reopen the stage.
+        self.fp("A"); self.score("strategy", "strategist-critic"); self.fp("B")
+        rc, out = run("pre", "coder", root=self.t)
+        self.assertNotIn("FAIL strategy score", out)
+        self.assertRegex(out, r"strategy score ≥ 80 \(have 90(?:\.0)?\) \(STALE")
+        rc, out = run("next", root=self.t)
+        self.assertRegex(out, r"OPEN\s+strategy .*older fingerprint")
+        # the manuscript component is the one whose staleness blocks `pre`
+        self.fp("A"); self.score("manuscript", "writer-critic"); self.fp("B")
+        rc, out = run("pre", "editor", root=self.t)
+        self.assertEqual(rc, 1); self.assertIn("STALE: manuscript", out)
+
     def test_3_code_score_not_stale(self):
         self.fp("A"); self.score("code", "coder-critic"); self.fp("B")
         self.assertEqual(run("stale", root=self.t)[1].strip(), "stale: none")

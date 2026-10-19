@@ -300,9 +300,9 @@ check_project() {
   fi
   # ── 7. Manuscript declared (D-8) ──────────────────────────────────────────
   # Every predicate, hook and skill resolves the manuscript through CLAUDE.md.
-  local decl; decl="$(grep -cE '^manuscript:\s*\S+\.qmd\s*$' "$P/CLAUDE.md" 2>/dev/null || true)"; decl="${decl:-0}"
+  local decl mf=""; decl="$(grep -cE '^manuscript:\s*\S+\.qmd\s*$' "$P/CLAUDE.md" 2>/dev/null || true)"; decl="${decl:-0}"
   if [[ "$decl" -eq 1 ]]; then
-    local mf; mf="$(sed -nE 's/^manuscript:[[:space:]]*([^[:space:]]+\.qmd)[[:space:]]*$/\1/p' "$P/CLAUDE.md")"
+    mf="$(sed -nE 's/^manuscript:[[:space:]]*([^[:space:]]+\.qmd)[[:space:]]*$/\1/p' "$P/CLAUDE.md")"
     [[ -f "$P/$mf" ]] && ok manuscript-declared "$mf" || bad manuscript-declared "CLAUDE.md declares $mf but it does not exist"
   elif [[ "$decl" -eq 0 ]]; then
     if [[ -n "$(find "$P" -maxdepth 2 -name '*.qmd' -not -path '*/talks/*' -not -path '*/explorations/*' -print -quit)" ]]; then
@@ -312,11 +312,19 @@ check_project() {
   # CLAUDE.md loads into every session; dated history in it gets asserted as current fact
   # (rules diet, docs/plans/2026-10-12_rule-diet.md). History belongs in the project's own docs history file.
   local cl; cl="$(wc -l < "$P/CLAUDE.md" 2>/dev/null | tr -d ' ')"; cl="${cl:-0}"
+  # Both CLAUDE.md caps FAIL once the paper is retrofitted (its manuscript carries a `design:`
+  # block, where the facts now live) and WARN before: the retrofit (Task 17 of the design-lock
+  # plan) is the step that moves them, and a re-link of an unretrofitted paper must stay green.
+  local retro=warn
+  if [[ "$decl" -eq 1 && -f "$P/$mf" ]] && python3 -c '
+import sys; sys.path.insert(0, sys.argv[1]); import design_block as d
+sys.exit(0 if d.design_block(open(sys.argv[2], encoding="utf-8", errors="ignore").read()) is not None else 1)' "$RC/scripts" "$P/$mf" 2>/dev/null; then retro=bad; fi
+  local tail_note=""; [[ "$retro" == warn ]] && tail_note=" (fails once the manuscript has a design: block)"
   if [[ "$cl" -le 60 ]]; then ok claude-md-size "$cl lines"
-  else bad claude-md-size "CLAUDE.md is $cl lines (cap 60) — move dated status and history to a history file under the project docs folder"; fi
+  else "$retro" claude-md-size "CLAUDE.md is $cl lines (cap 60) — move dated status and history to a history file under the project docs folder$tail_note"; fi
   # A dated treatment/event or a hypothesis line in CLAUDE.md is a second, unsigned copy of the design.
   local facts; facts="$(grep -nEi '(treat(ment|ed)|event)[^.]{0,40}(19|20)[0-9]{2}-[0-9]{2}(-[0-9]{2})?|^[[:space:]]*[-*]?[[:space:]]*\**H[0-9]+\**[[:space:]]*[:.)]' "$P/CLAUDE.md" 2>/dev/null || true)"
-  [[ -z "$facts" ]] && ok claude-md-design-facts "none" || bad claude-md-design-facts "design facts belong in the manuscript's design: block: $(echo "$facts" | head -2 | tr '\n' ' ')"
+  [[ -z "$facts" ]] && ok claude-md-design-facts "none" || "$retro" claude-md-design-facts "design facts belong in the manuscript's design: block$tail_note: $(echo "$facts" | head -2 | tr '\n' ' ')"
 
   # The pre-commit gate is a git hook, installed by apply.sh as core.hooksPath. A hooksPath that names
   # a missing directory runs no hook and the commit still succeeds — which is exactly what a fresh

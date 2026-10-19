@@ -100,6 +100,29 @@ class TestCommitCheck(CommitCase):
         self.edit(CHUNK_NEW, CHUNK_NEW + " + 0L"); self.stage(MS)
         rc, out = self.cc(); self.assertEqual(rc, 1, out); self.assertIn("cold render", out)
 
+    def unretrofit(self):
+        """A paper not yet retrofitted: no lock, no fingerprint, no `design:` block in the manuscript."""
+        import design_block as dsb
+        for rel in (dsb.LOCK_REL, FP): (self.t / rel).unlink(missing_ok=True)
+        text = self.ms().read_text(); lo, hi = dsb.design_span(text)
+        lines = text.split("\n"); del lines[lo - 1:hi]; self.ms().write_text("\n".join(lines))
+        self.commit_plain(MS, FP, msg="unretrofit")
+        self.assertIn("NOT-RETROFITTED", run("design", "status", root=self.t)[1])
+
+    def test_not_retrofitted_chunk_change_needs_no_cold_render(self):
+        self.unretrofit(); self.edit(CHUNK_OLD, CHUNK_NEW); self.stage(MS)
+        rc, out = self.cc(); self.assertEqual(rc, 0, out); self.assertNotIn("cold render", out)
+
+    def test_not_retrofitted_prose_literal_warns_only(self):
+        # Author ruling 2026-09-28: unretrofitted papers fix prose findings on their own schedule.
+        self.unretrofit(); self.prose("The effect is 0.4372 percent."); self.stage(MS)
+        rc, out = self.cc(); self.assertEqual(rc, 0, out)
+        self.assertIn("WARN (not retrofitted) prose:", out); self.assertNotIn("commit-check: prose", out)
+
+    def test_not_retrofitted_structure_and_staging_still_gate(self):
+        self.unretrofit(); self.prose(); self.stage(MS); self.prose("Another one.")
+        rc, out = self.cc(); self.assertEqual(rc, 1, out); self.assertIn("unstaged", out)
+
     def test_unsigned_design_blocks(self):
         # The fixture carries a design: block; FixtureCase signs it. Without the lock it is unsigned.
         (self.t / "quality_reports" / "design_lock.json").unlink()
