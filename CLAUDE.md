@@ -73,7 +73,11 @@ open items are user decisions outside this repo. On 2026-10-17 `docs/plans/2026-
 closed (merges `cbc652e`, `90a8500`): `core.md` is the one always-loaded pipeline rule, 19 rules load
 on demand, and script-guard expands shell variables. Its one author decision, read-gate tolerance
 for short chunk reads, turned out to be a hook bug (edits did not shift read ranges), fixed on
-`fix/read-gate-edit-shift`. **Nothing is open in this repo.**
+`fix/read-gate-edit-shift`. On 2026-10-23 `feat/design-lock-prose-binding` merged (`4a51071`; plan
+`docs/plans/2026-10-12-design-lock-and-prose-binding.md`, execution record
+`docs/plans/2026-10-18-design-lock-execution-notes.md`) and all six paper repos re-linked with the
+commit-check pre-commit gate installed, `check_install --all` PASS. **Open:** that plan's Task 16
+Steps 6–7 (live evals after the merge) and Task 17 (per-paper `design:` retrofits, author-gated).
 The earlier
 `docs/2026-09-10_final-cleanup-handoff.md` is history: every item it carried is closed.
 
