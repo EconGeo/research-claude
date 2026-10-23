@@ -102,6 +102,7 @@ echo "── registry (scripts/pipeline.py registry check) ──"
 py pipeline.py registry check    # prints PASS/FAIL for registry-complete, registry-authority, registry-rendered, weights-sum, registry-parse-agree
 
 echo "── seeds and shipped scripts ──"
+py check_single_manuscript.py    # core rule 1: no source( / readRDS of results in shipped R code
 if grep -rq 'quarto-preamble\.tex' "$RC/rules" && [[ ! -f "$RC/seeds/quarto-preamble.tex" ]]; then
   echo "FAIL [seeds-complete] rules require seeds/quarto-preamble.tex but seeds/ does not ship it"; fail=1
 else echo "PASS [seeds-complete]"; fi

@@ -79,6 +79,101 @@ link-citations: true
 
 ---
 
+## Design block and claim helpers
+
+The research design is declared once, in the manuscript's YAML front matter under `design:`, and
+signed by the author in chat (core rule 13). It carries no significance level and no verdict
+words: the inference rule says how standard errors are computed, and the conventional star
+levels (core rule 14) say what "statistically significant" means.
+
+```yaml
+design:
+  inference: {rule: cluster-robust, cluster: region, id: INF-1}
+  treatment:
+    definition: "…operational test…"
+    date: YYYY-MM-DD
+    source: {cite: key2024, page: 12, quote: "…"}
+  sample: ["…rule…", "…rule…"]
+  hypotheses:
+    H1: {estimand: "…", outcome: y, spec: m_h1, direction: negative}
+  checks:
+    power: {mde: 0.021, target_effect: 0.03, file: explorations/power.qmd}
+    size:  {rejection_at_0.10: 0.104, reps: 1000, file: explorations/size.qmd}
+```
+
+Each hypothesis names its model object on `spec:`; `rc_fingerprint()` stops when that object is
+missing.
+
+**Power and size checks** are `explorations/power.qmd` and `explorations/size.qmd`. Their results
+are copied into `design.checks` before signing (`pipeline.py design sign` refuses without both
+entries and their files), and they are re-run on an amendment that touches the inference rule,
+the sample, the treatment or an outcome. A check chunk never goes in the manuscript (core rule 2).
+
+**The setup chunk** pastes the helpers from `.claude/templates/claims-helpers.R.txt` below the
+`library()` calls (pasted, never sourced; `check_install` fails `helpers-current` when the pasted
+block differs from the template — re-paste, never edit in place) and then sets:
+
+```r
+design <- rc_design("manuscript_<project>.qmd")
+knitr::opts_chunk$set(cache.extra = list(rc_design_hash(design), rc_data_hash()))
+# tested: modelsummary 2.6.0 stars with p ≤ cutoff but its automatic note says p <
+options(modelsummary_stars_note = FALSE)
+```
+
+The global `cache.extra` makes a design amendment or a data change invalidate every model cache.
+No chunk sets its own `cache.extra`: a chunk-level value replaces the global key rather than adding
+to it, so that chunk would survive a design or data change. `modelsummary_stars_note = FALSE`
+drops modelsummary's automatic star note — tested (modelsummary 2.6.0): it assigns stars with
+p ≤ cutoff, but its note says p < — so pass the legend `* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01` in
+the table's `notes` instead. The default PDF font has no `≤` glyph; the seeded
+`templates/quarto-preamble.tex` maps it with `\usepackage{newunicodechar}` and
+`\newunicodechar{≤}{\ensuremath{\leq}}` — a paper whose preamble was seeded before those lines
+existed adds them, or its legend prints a missing-character box.
+
+**The final chunk** writes the results fingerprint:
+
+```r
+#| label: fingerprint
+#| cache: false
+#| include: false
+rc_fingerprint()
+```
+
+It writes `quality_reports/render_fingerprint.json` under the project root, which is committed
+with the manuscript. The root is `rc_root()`, the nearest directory at or above the working
+directory that holds `CLAUDE.md`: Quarto runs chunks in the manuscript's directory, so a manuscript
+in a subdirectory still writes the root's `quality_reports/`, and `rc_data_hash()` hashes the root's
+`data/raw` (not `data/derived`, which the render itself rewrites). Relative path arguments to either
+resolve under the root.
+`pipeline.py` compares that file with the fingerprint each score was earned under to decide which
+reviews a re-estimation reopens (core rule 15).
+
+**Design changes are disclosed in the paper.** Once `quality_reports/design_amendments.csv` has
+a row, the manuscript carries this chunk, cited in the prose with `@tbl-design-changes`; the
+author writes the prose around it:
+
+```r
+#| label: tbl-design-changes
+#| cache: false
+#| tbl-cap: "Changes to the research design"
+design_changes <- read.csv(here("quality_reports/design_amendments.csv"), stringsAsFactors = FALSE)
+knitr::kable(design_changes, col.names = c("Date", "Field", "Before", "After", "Reason"))
+```
+
+**Result words.** Every significance, direction, comparison or universality word beside a value
+is helper output (`rc_sig`, `rc_stars`, `rc_dir`, `rc_cmp`, `rc_num`, `rc_pct`), a raw inline
+`if`, or a typed word in a sentence that carries a result guard,
+`` `r local({stopifnot("<claim>" = <condition>); ""})` `` — inside the sentence it guards
+(`.claude/rules/readable-code.md` §5).
+
+**Run `pipeline.py render --cold` before committing a model-chunk change.** A warm cache can hide
+a chunk that no longer runs or an estimate that moved. The receipt binds the chunk code, not the
+file — the model chunks only (`estimate-*`, `robustness-*`), so a prose or build-chunk edit after the
+cold render needs no second one. The pre-commit check requires the receipt once the manuscript
+carries a `design:` block; before the retrofit it warns.
+
+---
+
 ## Cache Setup Patterns
 
 ### Setup Chunk — never cached
@@ -103,10 +198,13 @@ set.seed(20240101L)
 #             → figure-trends
 ```
 
-### Data / Wrangling Chunks — cache.extra required
+### Data / Wrangling Chunks — cache.extra required until the design block exists
 
 `cache.extra` forces cache invalidation when raw data files change.
-Without it, a changed raw file will not invalidate the cached panel.
+Without it, a changed raw file will not invalidate the cached panel. Once the setup chunk sets
+the global key (`rc_data_hash()`, above), every chunk is covered and this chunk-level form is
+deleted — a chunk-level `cache.extra` replaces the global key. The form below is for a manuscript
+that has no `design:` block yet.
 
 ```r
 #| label: build-panel
@@ -166,7 +264,8 @@ modelsummary(
   list("Baseline" = m1, "Controls" = m2, "Never-Treated" = m3),
   booktabs = TRUE,
   stars    = c("*" = 0.10, "**" = 0.05, "***" = 0.01),
-  notes    = "Clustered SEs at the unit level. Sample: 2000–2020."
+  notes    = c("Clustered SEs at the unit level. Sample: 2000–2020.",
+               "* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01")
 )
 ```
 
@@ -204,6 +303,9 @@ consistency. A hardcoded number is a gap in that proof.
 [ ] 3. python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd exits 0
 [ ] 4. python3 .claude/scripts/check_render.py <rendered .pdf> --expect "<each phrase the page must show>" exits 0
 ```
+
+A deliberate missing-value placeholder in a table is written "n.a." or "—", never "NA": item 4
+reports `NA`/`NaN`/`Inf` on the page as a failure.
 
 No script inventory. No registry coverage audit. No timestamp check.
 
@@ -316,7 +418,8 @@ Invoked when the reviewed artifact is `manuscript_<project>.qmd` and this rule i
 | `execute: cache: true` absent from YAML | −10 |
 | `set.seed()` absent from setup chunk | −5 |
 | Setup chunk has `cache: true` (must be `false`) | −5 |
-| Data/wrangling chunk missing `cache.extra` for external files | −5 per chunk |
+| Data/wrangling chunk missing `cache.extra` for external files (no global `rc_data_hash()` key) | −5 per chunk |
+| A chunk that sets its own `cache.extra` while the setup chunk sets the global key | −5 per chunk |
 | Estimation chunk missing `dependson` pointing to its data source | −5 per chunk |
 | Full dependency chain not documented in setup chunk | −3 |
 | Prose number hardcoded (not an inline `r` expression) | −10 per instance |

@@ -300,9 +300,9 @@ check_project() {
   fi
   # ── 7. Manuscript declared (D-8) ──────────────────────────────────────────
   # Every predicate, hook and skill resolves the manuscript through CLAUDE.md.
-  local decl; decl="$(grep -cE '^manuscript:\s*\S+\.qmd\s*$' "$P/CLAUDE.md" 2>/dev/null || true)"; decl="${decl:-0}"
+  local decl mf=""; decl="$(grep -cE '^manuscript:\s*\S+\.qmd\s*$' "$P/CLAUDE.md" 2>/dev/null || true)"; decl="${decl:-0}"
   if [[ "$decl" -eq 1 ]]; then
-    local mf; mf="$(sed -nE 's/^manuscript:[[:space:]]*([^[:space:]]+\.qmd)[[:space:]]*$/\1/p' "$P/CLAUDE.md")"
+    mf="$(sed -nE 's/^manuscript:[[:space:]]*([^[:space:]]+\.qmd)[[:space:]]*$/\1/p' "$P/CLAUDE.md")"
     [[ -f "$P/$mf" ]] && ok manuscript-declared "$mf" || bad manuscript-declared "CLAUDE.md declares $mf but it does not exist"
   elif [[ "$decl" -eq 0 ]]; then
     if [[ -n "$(find "$P" -maxdepth 2 -name '*.qmd' -not -path '*/talks/*' -not -path '*/explorations/*' -print -quit)" ]]; then
@@ -312,12 +312,55 @@ check_project() {
   # CLAUDE.md loads into every session; dated history in it gets asserted as current fact
   # (rules diet, docs/plans/2026-10-12_rule-diet.md). History belongs in the project's own docs history file.
   local cl; cl="$(wc -l < "$P/CLAUDE.md" 2>/dev/null | tr -d ' ')"; cl="${cl:-0}"
+  # Both CLAUDE.md caps FAIL once the paper is retrofitted (its manuscript carries a `design:`
+  # block, where the facts now live) and WARN before: the retrofit (Task 17 of the design-lock
+  # plan) is the step that moves them, and a re-link of an unretrofitted paper must stay green.
+  local retro=warn
+  if [[ "$decl" -eq 1 && -f "$P/$mf" ]] && python3 -c '
+import sys; sys.path.insert(0, sys.argv[1]); import design_block as d
+sys.exit(0 if d.design_block(open(sys.argv[2], encoding="utf-8", errors="ignore").read()) is not None else 1)' "$RC/scripts" "$P/$mf" 2>/dev/null; then retro=bad; fi
+  local tail_note=""; [[ "$retro" == warn ]] && tail_note=" (fails once the manuscript has a design: block)"
   if [[ "$cl" -le 60 ]]; then ok claude-md-size "$cl lines"
-  else warn claude-md-size "CLAUDE.md is $cl lines (cap 60) — move dated status and history to a history file under the project docs folder"; fi
+  else "$retro" claude-md-size "CLAUDE.md is $cl lines (cap 60) — move dated status and history to a history file under the project docs folder$tail_note"; fi
+  # A dated treatment/event or a hypothesis line in CLAUDE.md is a second, unsigned copy of the design.
+  local facts; facts="$(grep -nEi '(treat(ment|ed)|event)[^.]{0,40}(19|20)[0-9]{2}-[0-9]{2}(-[0-9]{2})?|^[[:space:]]*[-*]?[[:space:]]*\**H[0-9]+\**[[:space:]]*[:.)]' "$P/CLAUDE.md" 2>/dev/null || true)"
+  [[ -z "$facts" ]] && ok claude-md-design-facts "none" || "$retro" claude-md-design-facts "design facts belong in the manuscript's design: block$tail_note: $(echo "$facts" | head -2 | tr '\n' ' ')"
+
+  # The claim helpers are PASTED into the setup chunk (core rule 1: nothing sourced), so a fix to
+  # templates/claims-helpers.R.txt reaches a paper only when it re-pastes. The block between the
+  # start and end markers must equal the template byte for byte; a paper with no block is not retrofitted.
+  if [[ "$decl" -eq 1 && -f "$P/$mf" && -f "$RC/templates/claims-helpers.R.txt" ]]; then
+    local hv; hv="$(python3 - "$P/$mf" "$RC/templates/claims-helpers.R.txt" <<'PY'
+import re, sys
+ms, tpl = open(sys.argv[1], encoding="utf-8", errors="ignore").read(), open(sys.argv[2], encoding="utf-8").read()
+block = re.compile(r"^# ---- claims helpers.*?^# ---- end claims helpers ----$", re.S | re.M)
+m = block.search(ms); t = block.search(tpl)
+if not m: print("absent")
+elif not t: print("template-unmarked")
+elif m.group(0) == t.group(0): print("current")
+else:
+    v = re.search(r'rc_helpers_version <- "([^"]+)"', m.group(0)); print("stale " + (v.group(1) if v else "(no version line)"))
+PY
+)"
+    case "$hv" in
+      current) ok helpers-current "pasted block equals the template" ;;
+      absent) [[ "$retro" == bad ]] && warn helpers-current "manuscript has a design: block but no pasted claims helpers (retrofit Task 17 Step 4)" || ok helpers-current "not retrofitted" ;;
+      *) bad helpers-current "pasted claims helpers differ from the template ($hv) — re-paste from .claude/templates/claims-helpers.R.txt" ;;
+    esac
+  fi
+
+  # The pre-commit gate is a git hook, installed by apply.sh as core.hooksPath. A hooksPath that names
+  # a missing directory runs no hook and the commit still succeeds — which is exactly what a fresh
+  # git worktree without the links gets, so the link must be checked, not just the config.
+  if git -C "$P" rev-parse --git-dir >/dev/null 2>&1; then
+    local hp; hp="$(git -C "$P" config --get core.hooksPath 2>/dev/null || true)"
+    if [[ "$hp" == ".claude/hooks/git" && -x "$P/.claude/hooks/git/pre-commit" ]]; then ok git-hooks-path ".claude/hooks/git"
+    else bad git-hooks-path "pre-commit gate not installed here — run apply.sh --project-dir <this checkout> --link"; fi
+  fi
 
   # ── 8. gitignore covers the linked dirs ───────────────────────────────────
   local gi_missing=() pat
-  for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' '.claude/references/*' 'quality_reports/agent_dispatch.jsonl'; do
+  for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' '.claude/references/*' 'quality_reports/agent_dispatch.jsonl' '.claude/state/design_token.json'; do
     grep -qxF "$pat" "$P/.gitignore" 2>/dev/null || gi_missing+=("$pat")
   done
   [[ ${#gi_missing[@]} -eq 0 ]] && ok gitignore-covers || bad gitignore-covers "missing lines: ${gi_missing[*]}"
@@ -353,8 +396,8 @@ check_project() {
       jq -e --arg h "$h" '[.hooks[]?[]?.hooks[]?.command // empty] | map(select(contains($h))) | length > 0' \
         "$sj" >/dev/null 2>&1 || hw_missing+=("$h")
     done
-    if jq -e '[.hooks[]?[]?.hooks[]?.command // empty] | map(select(contains("post-merge"))) | length > 0' \
-      "$sj" >/dev/null 2>&1; then hw_missing+=("post-merge.sh is a git hook, not a Claude hook"); fi
+    if jq -e '[.hooks[]?[]?.hooks[]?.command // empty] | map(select(contains("post-merge") or contains("hooks/git/"))) | length > 0' \
+      "$sj" >/dev/null 2>&1; then hw_missing+=("settings.json wires a git hook (post-merge / hooks/git/) as a Claude hook"); fi
     [[ ${#hw_missing[@]} -eq 0 ]] && ok hooks-wired || bad hooks-wired "${hw_missing[*]}"
   else warn hooks-wired "no settings.json or no jq"; fi
 

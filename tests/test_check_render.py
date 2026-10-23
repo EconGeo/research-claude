@@ -130,6 +130,42 @@ class TestCheckRender(unittest.TestCase):
         r = run(text, "--columns", "Table 10: Alpha,Beta")
         self.assertIn("COLUMN: Table 10: Beta", r.stdout)
 
+    def test_na_nan_inf_on_the_page(self):
+        for tok in ("NA", "NaN", "Inf", "-Inf"):
+            r = run(CLEAN + f"The estimate is {tok} percent.\n")
+            self.assertEqual(1, r.returncode, tok)
+            self.assertIn(f"NA_VALUE: {tok} ", r.stdout)
+
+    def test_na_lookalikes_are_not_findings(self):
+        for word in ("NASA", "N/A", "NAICS", "NAR", "NA-only", "BNA", "Info", "\u2014"):
+            r = run(CLEAN + f"Table 2 reports {word} for the sample, with a cell | {word} |.\n")
+            self.assertNotIn("NA_VALUE", r.stdout, word)
+
+    def test_inf_abbreviation_is_not_a_finding(self):
+        for text in ("Published in Inf. Sci. in 2020.", "See Inf.Sci. 12, and Inf. Process. Lett."):
+            r = run(CLEAN + text + "\n")
+            self.assertNotIn("NA_VALUE", r.stdout, text)
+        for tok in ("-Inf", "NaN", "NA"):
+            r = run(CLEAN + f"Published in Inf. Sci.; the cell is {tok} here.\n")
+            self.assertIn(f"NA_VALUE: {tok} ", r.stdout, tok)
+        for text in ("The ratio is Inf.\n", "The ratio is Inf.\nThe next line.\n"):
+            self.assertIn("NA_VALUE: Inf ", run(CLEAN + text).stdout, text)
+
+    def test_overfull_box_from_latex_log(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as f:
+            f.write("Overfull \\hbox (12.5pt too wide) in paragraph at lines 5--6\n"
+                    "Overfull \\hbox (0.4pt too wide) in paragraph at lines 9--9\n")
+            log = f.name
+        r = run(CLEAN, "--latex-log", log)
+        self.assertEqual(1, r.returncode, r.stdout)
+        self.assertIn("OVERFULL: 12.5pt", r.stdout)
+        self.assertNotIn("0.4pt", r.stdout)
+        self.assertEqual(0, run(CLEAN).returncode)
+
+    def test_missing_latex_log_is_ignored(self):
+        r = run(CLEAN, "--latex-log", "/nonexistent.log")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+
     def test_missing_input_exits_2(self):
         r = subprocess.run([sys.executable, str(SCRIPT), "/nonexistent.pdf"], capture_output=True, text=True)
         self.assertEqual(2, r.returncode)

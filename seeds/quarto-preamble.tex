@@ -18,3 +18,8 @@
 \captionsetup{font=small, labelfont=bf, justification=justified}
 \interfootnotelinepenalty=10000
 \setlength{\footnotesep}{0.5cm}
+% The default text font (Latin Modern) has no ≤ glyph, so the star legend "* p ≤ 0.10, ..." in a
+% table note printed a missing-character box. Typeset ≤ as the math symbol instead.
+% tested: 2026-10-18, xelatex (TeX Live 2026) — without these lines pdftotext reads "p �"; with them "p ≤".
+\usepackage{newunicodechar}
+\newunicodechar{≤}{\ensuremath{\leq}}

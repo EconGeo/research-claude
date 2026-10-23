@@ -65,6 +65,8 @@ set_flextable_defaults(
 )
 PAGE_WIDTH <- 6.5
 options(modelsummary_factory_default = "flextable")
+# tested: modelsummary 2.6.0 stars with p ≤ cutoff but its automatic note says p <
+options(modelsummary_stars_note = FALSE)
 ```
 ````
 
@@ -78,6 +80,7 @@ modelsummary(
   models,
   output = "flextable",
   stars  = c("*" = 0.10, "**" = 0.05, "***" = 0.01),
+  notes  = "* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01",
   escape = FALSE
 ) |>
   fontsize(size = 9, part = "all") |>

@@ -47,7 +47,7 @@ journal — see `.claude/references/journal-profiles.md`.
 
 | Context | Convention |
 |---------|-----------|
-| **Working papers (default)** | Stars: `*` p < 0.10, `**` p < 0.05, `***` p < 0.01, declared in the note |
+| **Working papers (default)** | Stars: `*` p ≤ 0.10, `**` p ≤ 0.05, `***` p ≤ 0.01, declared in the note |
 | **AEA journals** (AER, AEJ:Applied, AEJ:Policy, AER:Insights) | No significance stars. Standard errors in parentheses; exact p-values or confidence intervals for key results. |
 | **All other journals** | Stars acceptable. Follow `.claude/references/journal-profiles.md`. |
 
@@ -60,7 +60,8 @@ modelsummary(
   stars = c("*" = 0.10, "**" = 0.05, "***" = 0.01),  # set FALSE for AEA journals
   coef_rename = c(treatment = "Treatment", log_income = "Log income"),
   gof_map = c("nobs", "r.squared", "adj.r.squared"),
-  notes = "Robust standard errors in parentheses. Clustered at the municipality level.",
+  notes = c("Robust standard errors in parentheses. Clustered at the municipality level.",
+            "* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01"),
   escape = FALSE
 )
 ```

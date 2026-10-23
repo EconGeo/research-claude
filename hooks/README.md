@@ -45,7 +45,7 @@ Before shipping a skill that depends on a hook, check that the hook is wired.
 | `post-edit-lint.sh` | PostToolUse (Edit/Write) | Advisory lint on edited scripts and `.qmd` files, emitted as `additionalContext` |
 | `lint-scripts.sh` | PostToolUse (via `post-edit-lint.sh`) / CLI | Lints acquisition scripts and a manuscript's `.qmd` R chunks against INV-14..19 |
 | `install-check.py` | SessionStart | Runs check_install.sh; silent when clean, injects the FAIL lines otherwise |
-| `protect-files.sh` | PreToolUse | Blocks Edit of, and Write over, protected paths (generated evidence, state, settings); a Write that creates one is allowed — critics return text and the session saves it |
+| `protect-files.sh` | PreToolUse | Blocks Edit of, and Write over, protected paths (generated evidence, state, settings, the design lock and record files), and shell writes to them (redirect, `tee`, `sed -i`, `cp`, `mv`, `rm`); a Write that creates one is allowed — critics return text and the session saves it |
 | `context-monitor.py` | PostToolUse | Progressive nudges at 40/55/65% (/tools learn), 80% (info), 90% (caution), once per session each |
 | `log-reminder.py` | Stop | Counts responses since the session log was last touched and nudges via `additionalContext`. Never blocks |
 | `verify-reminder.py` | PostToolUse (Write/Edit) | Reminds you to render before calling a task done, on `.qmd`/`.R` edits |
@@ -54,6 +54,9 @@ Before shipping a skill that depends on a hook, check that the hook is wired.
 | `critic-pairing.py` | Stop | Surfaces a creator that ran without its critic; blocks once per session per creator, then advisory |
 | `script-guard.py` | PreToolUse (Write/Bash) | Refuses creating a new R/Python/Julia script outside `explorations/`, `scripts/acquire/` and `.claude/` in a project that declares `manuscript:` (.claude/rules/quarto-empirical.md). Blocking |
 | `read-gate.py` | PostToolUse (Read/Edit/Write) + PreToolUse (Edit/Write/Bash) | Records which manuscript lines each agent has read; refuses an edit to the declared manuscript until that agent has read every line since the file last changed. Blocking |
+| `design-guard.py` | PreToolUse (Write/Edit/Bash) | Refuses an edit that changes a signed `design:` block, a Bash write to the manuscript while signed, `pipeline.py design sign\|unlock` without the author's fresh token, any write to the lock, token and record files, and a Bash `claude … approve design` (a nested session never submits an approval line). Blocking; fails open on internal error |
+| `design-token.py` | UserPromptSubmit | Turns the author's chat approval line into a one-time token for `pipeline.py design sign` or `unlock`; revokes an unused token on the next message. Never blocks |
+| `stale-stages.py` | SessionStart | Prints the strategy, manuscript or referee scores a re-estimation or design change made stale; silent otherwise |
 
 ## Getting the contract right
 
@@ -86,3 +89,26 @@ echo '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/x.R"}}' \
 pipeline, where analysis lives in `.qmd` chunks rather than `scripts/R/*.R`. <!-- residue:prohibition -->
 They still work on the acquisition scripts under `scripts/acquire/`. Enable them
 with that scope in mind.
+
+## Git hooks
+
+The `git/` subdirectory holds **git** hooks, not Claude hooks. They are not in the table above, carry no
+`Hook Event:` line, and are never wired in `settings.json` (`check_install.sh` `hooks-wired` fails if
+a settings command names a file under it). `apply.sh --link` links the directory as one link
+(`.claude/hooks/git`) and sets `core.hooksPath = .claude/hooks/git` in the project repo; it leaves an
+existing `core.hooksPath` or hand-made `.git/hooks` alone and says so. `check_install.sh`
+`git-hooks-path` fails where the gate is not installed — notably a fresh worktree, which has the
+config but not the links (run `apply.sh --project-dir <worktree> --link`).
+
+- `git/pre-commit` runs `pipeline.py commit-check`: design lock, prose numbers, Quarto structure,
+  cold render after a model-chunk (`estimate-*`/`robustness-*`) code change, manuscript staleness
+  (the commit that lands the re-estimation passes with a warning), and the amendment table. Every
+  manuscript check reads the STAGED bytes, so a hunk-wise `git add -p` commit is checked on what it
+  commits. The hook exits 0 with a notice when the git client's PATH has no `python3`. Never
+  bypass it with `--no-verify`.
+  In a paper whose manuscript has no `design:` block (NOT-RETROFITTED) the prose check and the
+  cold-render receipt only WARN: they turn on at the retrofit. Design state, structure, staging
+  and staleness hold for every paper.
+- `git/post-commit` runs `pipeline.py ledger settle`, closing ledger rows fixed during a stale window.
+
+Both exit 0 when the project does not link `pipeline.py`.

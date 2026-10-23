@@ -1,0 +1,70 @@
+---
+title: "Size: Placebo Adoption Years Under the Inference Rule"
+format: html
+execute:
+  echo: true
+  message: false
+  warning: false
+---
+
+The inference rule clusters standard errors by unit. This exploration checks that a test at the
+10% level rejects about 10% of the time when there is no effect. Each placebo permutation draws
+a fake adoption year and gives it to a random half of the never-treated units, so the true
+effect is zero by construction; the main specification is then estimated on the never-treated
+units alone. The rejection rate is copied into the manuscript's `design.checks.size`.
+
+```{r}
+#| label: setup
+library(here)
+library(tidyverse)
+library(fixest)
+
+set.seed(20260908L)
+
+# Placebo permutations. Small, so the fixture renders quickly; the Monte Carlo error of the
+# rejection rate is reported below.
+N_PERMUTATIONS <- 200L
+TEST_LEVEL <- 0.10
+```
+
+```{r}
+#| label: placebo-permutations
+panel <- read_csv(here("data/raw/panel.csv"), show_col_types = FALSE)
+
+# Never-treated units carry no effect, so any placebo "effect" among them is noise.
+never_treated <- panel |>
+  group_by(unit) |>
+  filter(!any(treated > 0)) |>
+  ungroup()
+control_units <- sort(unique(never_treated$unit))
+stopifnot("never-treated units exist" = length(control_units) > 1)
+
+# Placebo adoption years leave at least two pre-period and two post-period years.
+placebo_years <- seq(min(panel$year) + 2L, max(panel$year) - 1L)
+
+placebo_p_value <- function(permutation_id) {
+  placebo_units <- sample(control_units, length(control_units) %/% 2)
+  placebo_year <- sample(placebo_years, 1)
+  panel_placebo <- never_treated |>
+    mutate(placebo_treated = as.integer(unit %in% placebo_units & year >= placebo_year))
+  fit_placebo <- feols(outcome ~ placebo_treated | unit + year, data = panel_placebo, cluster = ~unit)
+  tibble(permutation = permutation_id, placebo_year = placebo_year,
+         p_value = pvalue(fit_placebo)[["placebo_treated"]])
+}
+placebo_results <- map(seq_len(N_PERMUTATIONS), placebo_p_value) |> list_rbind()
+```
+
+```{r}
+#| label: rejection-rate
+rejection_rate <- mean(placebo_results$p_value <= TEST_LEVEL)
+rejection_mc_se <- sqrt(TEST_LEVEL * (1 - TEST_LEVEL) / N_PERMUTATIONS)
+```
+
+## Result
+
+Across `r N_PERMUTATIONS` placebo permutations the clustered test rejects at the
+`r round(100 * TEST_LEVEL)`% level in **`r round(rejection_rate, 3)`** of them (Monte Carlo SE
+`r round(rejection_mc_se, 3)` around a nominal `r TEST_LEVEL`).
+
+Recorded in the manuscript's `design.checks.size`: rejection_at_0.10 `r round(rejection_rate, 3)`,
+reps `r N_PERMUTATIONS`.

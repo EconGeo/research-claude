@@ -161,6 +161,20 @@ if [[ "$LINK_MODE" == true ]]; then
     link_items "$SCRIPT_DIR/$d" "$PROJECT_DIR/.claude/$d"
   done
 
+  # The pre-commit gate: hooks/git is linked above as ONE directory link (.claude/hooks/git), and
+  # git runs it through core.hooksPath. An existing hooksPath or hand-made .git/hooks is never
+  # overwritten — the gate is then NOT installed, and check_install's git-hooks-path says so.
+  if git -C "$PROJECT_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+    cur="$(git -C "$PROJECT_DIR" config --get core.hooksPath || true)"
+    # --git-path hooks, not <git-dir>/hooks: in a linked worktree the git-dir has no hooks/, the
+    # shared one lives in the main checkout, and core.hooksPath is written to that shared config.
+    gd="$(git -C "$PROJECT_DIR" rev-parse --git-path hooks)"; case "$gd" in /*) ;; *) gd="$PROJECT_DIR/$gd";; esac
+    own="$(ls "$gd" 2>/dev/null | grep -v '\.sample$' || true)"
+    if [[ -n "$cur" && "$cur" != ".claude/hooks/git" ]]; then echo "  WARN core.hooksPath is $cur — left alone; pre-commit gate NOT installed"
+    elif [[ -z "$cur" && -n "$own" ]]; then echo "  WARN .git/hooks has its own hooks ($own) — pre-commit gate NOT installed; merge by hand"
+    else git -C "$PROJECT_DIR" config core.hooksPath .claude/hooks/git; echo "  git hooks: core.hooksPath = .claude/hooks/git"; fi
+  fi
+
   # ai-audit ships two skills and two agents from a vendored tree — link those too.
   # No rules/ here: its rules/ai-disclosure.md was a stale fork of the one at
   # rules/ai-disclosure.md (already linked above) and was reconciled away, see
@@ -240,6 +254,21 @@ fi
   copy_seed "$SCRIPT_DIR/seeds/ai-use-log.md" "$PROJECT_DIR/templates/ai-use-log.md"
 [[ -f "$SCRIPT_DIR/seeds/gitignore" ]] && \
   copy_seed "$SCRIPT_DIR/seeds/gitignore" "$PROJECT_DIR/.gitignore"
+# The seed is never overwritten, so a line the pipeline later came to REQUIRE (check_install's
+# gitignore-covers list) is appended to an existing project .gitignore when missing. Append-only:
+# nothing else in the file is touched.
+if [[ -f "$PROJECT_DIR/.gitignore" ]]; then
+  gi_added=()
+  for pat in '.claude/skills/*' '.claude/agents/*' '.claude/rules/*' '.claude/hooks/*' '.claude/scripts/*' '.claude/templates/*' '.claude/references/*' 'quality_reports/agent_dispatch.jsonl' '.claude/state/design_token.json'; do
+    grep -qxF "$pat" "$PROJECT_DIR/.gitignore" || gi_added+=("$pat")
+  done
+  if [[ ${#gi_added[@]} -gt 0 ]]; then
+    { [[ -s "$PROJECT_DIR/.gitignore" && -n "$(tail -c1 "$PROJECT_DIR/.gitignore")" ]] && echo
+      echo "# required by the research-claude pipeline (appended by apply.sh)"
+      printf '%s\n' "${gi_added[@]}"; } >> "$PROJECT_DIR/.gitignore"
+    echo "  .gitignore: appended ${#gi_added[@]} required line(s): ${gi_added[*]}"
+  fi
+fi
 [[ -f "$SCRIPT_DIR/seeds/quarto-preamble.tex" ]] && \
   copy_seed "$SCRIPT_DIR/seeds/quarto-preamble.tex" "$PROJECT_DIR/templates/quarto-preamble.tex"
 # _quarto.yml wires the docx post-render repair (scripts/fix_docx_floats.py). An existing

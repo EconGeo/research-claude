@@ -1,0 +1,7 @@
+#!/bin/sh
+# research-claude post-commit: close ledger rows fixed during a stale window against this commit (spec §0.6).
+top=$(git rev-parse --show-toplevel) || exit 0
+[ -f "$top/.claude/scripts/pipeline.py" ] || exit 0
+command -v python3 >/dev/null 2>&1 || exit 0
+python3 "$top/.claude/scripts/pipeline.py" --root "$top" ledger settle >/dev/null 2>&1
+exit 0

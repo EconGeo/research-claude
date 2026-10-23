@@ -49,12 +49,22 @@ in one is the same defect as a typed literal in a paragraph. Only three
 constructs are read, and only inside an executable chunk (an opener whose info
 string starts with `{`): a fence-line `fig.cap=`/`tbl.cap=` option, a `#|
 fig-cap:`/`tbl-cap:`/`*-subcap:` option line (not one computed with `!expr`), and
--- in an R chunk only -- a `caption=`/`title=` string literal. A display fence
+-- in an R chunk only -- a `caption=`, `title=`, `notes=`, `note=` or `general=`
+string literal. A display fence
 (bare ``` , ```r, ````markdown, or Quarto's unexecuted ```{{r}}) is not
 executable and yields no captions. Known limits, not read: a multi-line YAML
-caption (`#| fig-cap: |`); a YAML list-form `#| fig-subcap:`, whose items sit on
-the `#|   - "..."` lines below it; and a table note passed as `notes =` (as
-modelsummary takes it), which renders under the table but is not a caption.
+caption (`#| fig-cap: |`) and a YAML list-form `#| fig-subcap:`, whose items sit on
+the `#|   - "..."` lines below it.
+
+SURFACES BEYOND THE BODY. Applies to every paper. The YAML `title:`, `subtitle:`
+and `abstract:` values (a `|`/`>` block included) are prose: they render, and an
+inline `r` there is evaluated. Decimal literals inside `$...$`/`$$...$$` are
+scanned (`$\\beta_1$` and `$x_{it}$` carry no decimal and pass). Every
+`response-letter: <path>` line in the project's CLAUDE.md names a file scanned
+by the same rules, its hits labelled `letter:`; a declared letter that does not
+exist is exit 2. The star legend of the fixed convention (`p <= 0.10`, `p <=
+0.05`, `p <= 0.01`, written with `≤`, `<=` or `$\\le$`) is not a literal; a
+legend written with `<` is, and fails.
 
 SIGN GLUE. A `+`, `-` or minus sign typed immediately before an inline expression
 is not a literal to explain, it is a bug: the value already carries its own sign,
@@ -70,7 +80,20 @@ VERDICT WORDS. A typed word describing a result -- "significant", "outperforms",
 manuscript already carrying dozens is not red on day one; `prose-verdict-ceiling:
 N` in the project's CLAUDE.md makes a count above N fail, and
 `prose-verdict-words:` extends the lexicon the same way `prose-number-nouns:`
-extends the noun list.
+extends the noun list. Once the manuscript carries a `design:` block (a RETROFITTED
+paper) the count is enforced at 0 by default, the lexicon widens to direction,
+comparison, magnitude and universality words, and `prose-verdict-ceiling:` still
+overrides. Bind a word with `rc_sig`/`rc_stars`/`rc_dir`/`rc_cmp`, a raw inline `if`, or
+a `stopifnot()` guard in the sentence whose condition reads a named value (`b > 0`,
+`rc_p(m) <= 0.05`; a constant such as `stopifnot(TRUE)` binds nothing). A retrofitted paper also fails on PIPELINE
+JARGON (the patterns in `.claude/references/pipeline-jargon.txt` plus any
+`prose-jargon:` line): not allowlistable.
+
+ALLOWLIST CONTEXT. The allowlist may carry a third column, `context`. When it is
+non-empty the row explains only occurrences whose surrounding text contains it; a word
+row's `literal` is the lower-case word and its context is the sentence. An inline `if`
+comparing against a numeric literal other than 0, 0.10, 0.05 or 0.01 prints a `WARN literal
+threshold` line; it never fails.
 
 PROVENANCE. Written for one project in 2026-09 and promoted here unchanged in
 logic, with the manuscript and allowlist paths parameterized so any project can
@@ -96,6 +119,10 @@ prose-number-nouns pattern, or a prose-verdict-ceiling that is not a
 non-negative integer or is declared more than once.
 """
 import re, csv, sys, os, collections
+from pathlib import Path
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import design_block  # noqa: E402
 
 
 def project_root(qmd):
@@ -146,12 +173,13 @@ class CommentError(Unclosed):
 # Caption text is prose the reader sees, by the same logic that excludes HTML
 # comments: the test is whether it reaches the rendered page. Three places carry
 # it: a fence-line option, a #| option line, and an R string passed as caption=
-# or title= (flextable, modelsummary, gt, labs). Only those string literals are
-# admitted -- scanning every R string would re-import the code noise that
+# or title= or notes= (flextable, modelsummary, gt, labs). Only those string
+# literals are admitted -- scanning every R string would re-import the code noise that
 # excluding chunks exists to avoid.
 # Known limits, not read: a multi-line YAML caption (#| fig-cap: |), a YAML
-# list-form #| fig-subcap: (items on the lines below), and a table note passed
-# as notes = (modelsummary).
+# list-form #| fig-subcap: (items on the lines below). A table note passed as
+# notes=, note= or general= (modelsummary, gt, flextable) IS read: it renders under
+# the table like a caption.
 #
 # SCOPE (controller ruling): captions are read only inside an EXECUTABLE chunk
 # -- the opener's info string starts with `{` (`{r}`, `{python}`, ...), never a
@@ -164,7 +192,7 @@ class CommentError(Unclosed):
 # fence, which never opened as executable.
 FENCE_CAP = re.compile(r"""\b(?:fig|tbl)[.-]cap\s*=\s*(["'])(.*?)(?<!\\)\1""")
 OPT_CAP = re.compile(r"^#\|\s*(?:fig|tbl)-(?:cap|subcap)\s*:\s*(.+?)\s*$")
-R_CAP = re.compile(r"""\b(?:caption|title)\s*=\s*(["'])(.*?)(?<!\\)\1""")
+R_CAP = re.compile(r"""\b(?:caption|title|notes?|general)\s*=\s*(["'])(.*?)(?<!\\)\1""")
 ENGINE_R = re.compile(r"^\{r[\s,}]")
 
 
@@ -199,6 +227,12 @@ def chunk_captions(lineno, line, r_engine):
     return [(lineno, c.group(2)) for c in R_CAP.finditer(line)]
 
 
+# The YAML keys whose values render on the page. No other key is prose; `design:`
+# is data. A `|`/`>` value (optionally `|-`/`>-`) is a block of indented lines.
+YAML_TEXT = re.compile(r"^(title|subtitle|abstract):[ \t]*(.*)$")
+BLOCK_SCALAR = re.compile(r"^[|>][-+]?$")
+
+
 def load_manuscript(qmd):
     """Split the manuscript into prose lines and caption strings, in one pass.
 
@@ -227,6 +261,7 @@ def load_manuscript(qmd):
     fence, opened = None, 0
     fence_exec = fence_r = False
     in_yaml = in_comment = False
+    in_block = False
     comment_at = 0
     for i, line in enumerate(open(qmd, encoding="utf-8"), 1):
         if fence is not None:
@@ -251,6 +286,19 @@ def load_manuscript(qmd):
         if in_yaml:
             if s == "---":
                 in_yaml = False
+            elif in_block and (not s or line[0] in " \t"):
+                if s:
+                    prose.append((i, line))
+            else:
+                in_block = False
+                m = YAML_TEXT.match(line)
+                if m:
+                    value = m.group(2).strip()
+                    if BLOCK_SCALAR.match(value):
+                        in_block = True
+                    elif value:
+                        prose.append((i, value.strip("\"'")))
+                        in_block = True      # indented continuation lines of a plain scalar
             continue
         m = FENCE.match(line)
         if m:
@@ -274,6 +322,12 @@ def load_prose(qmd):
 
 # `r expr` (knitr) and `{r} expr` (Quarto's native form). Matching only the first
 # made the modern syntax a false positive: `{r} round(b, 3)` reported '3'.
+# The fixed significance legend (`p <= 0.10`, `p <= 0.05`, `p <= 0.01`) is the
+# convention, not a result. Written with `<` it stays a literal, which points the
+# author at the convention.
+STAR_LEGEND = re.compile(
+    r"\bp\s*(?:≤|<=|\$\\leq?\$)\s*0?\.(?:10?|05|01)\b"
+    r"|\$p\s*\\leq?\s*0?\.(?:10?|05|01)\$")
 INLINE = re.compile(r"`(?:r|\{r\})\s[^`]*`")
 MATH = re.compile(r"\$\$.*?\$\$|\$[^$\n]*\$", re.S)
 # A literal ends on a digit, so "Table 4," and "Table 4." key as '4'. The old
@@ -315,7 +369,15 @@ _VERDICT = (r"significant|significantly|insignificant|"
             r"outperform(?:s|ed|ing)?|underperform(?:s|ed|ing)?|"
             r"positive|negative|rises|rose|falls|fell|"
             r"monotonic(?:ally)?|stronger|weaker|null")
+# Retrofitted papers only: direction, comparison, magnitude and universality words.
+# Multi-word entries last.
+_VERDICT_STRICT = (r"increase[sd]?|decrease[sd]?|declin(?:e|es|ed|ing)|larger|smaller|higher|lower|"
+                   r"doubled|halved|tripled|exceed(?:s|ed)?|robust(?:ly)?|substantial(?:ly)?|modest(?:ly)?|"
+                   r"sizable|consistent(?:ly)?|every specification|all specifications")
 LIVE = "\x00"
+GUARD = "\x01"
+# An inline `if` whose comparison uses a numeric literal; the convention cutoffs are quiet.
+THRESH = re.compile(r"`(?:r|\{r\})\s[^`]*\bif\s*\([^)`]*[<>]=?\s*(-?(?:\d+\.?\d*|\.\d+))\s*\)")
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 
 
@@ -344,9 +406,13 @@ def tokens(extra):
     return [t for t in re.split(r"[|,\s]+", extra) if t]
 
 
-def verdict_rx(extra):
-    words = "|".join([_VERDICT, *tokens(extra)])
+def verdict_rx(extra, strict=False):
+    base = [_VERDICT, _VERDICT_STRICT] if strict else [_VERDICT]
+    words = "|".join([*base, *tokens(extra)])
     return re.compile(rf"\b(?:{words})\b", re.I)
+
+
+LIST_ITEM = re.compile(r"(?:[-*+]|\d+[.)])\s")
 
 
 def paragraphs(prose):
@@ -356,7 +422,9 @@ def paragraphs(prose):
         s = line.strip()
         broken = prev is not None and lineno != prev + 1
         prev = lineno
-        if broken or not s or s.startswith(("#", ":::")):
+        # A list item or table row starts its own paragraph: a guard in one item must not
+        # bind its neighbours.
+        if broken or not s or s.startswith(("#", ":::", "|")) or LIST_ITEM.match(s):
             if para:
                 yield start, " ".join(para)
             para = []
@@ -369,13 +437,57 @@ def paragraphs(prose):
         yield start, " ".join(para)
 
 
-def verdict_hits(prose, rx):
+# A guard binds its sentence only if its condition reads a value: `stopifnot("claim" = b > 0)`,
+# `stopifnot(rc_p(m) <= 0.05)`. A constant (`stopifnot(TRUE)`, `stopifnot("x" = 1 == 1)`) binds
+# nothing and counts as an ordinary live span, so the sentence's words are still checked.
+_GUARD_COND = re.compile(r"stopifnot\(\s*(?:\"[^\"]*\"\s*=\s*|'[^']*'\s*=\s*)?(.*)", re.S)
+_NAMED_VALUE = re.compile(r"(?<![\w.])(?!TRUE\b|FALSE\b|T\b|F\b|NA\b|NULL\b|Inf\b|NaN\b)[A-Za-z.][\w.]*(?:\s*[\(\[$@]|\s*(?:[<>!=]=|[<>]|%in%|&&|\|\|))")
+_NAMED_ARG = re.compile(r"(?:[<>!=]=|[<>]|%in%)\s*(?!TRUE\b|FALSE\b|T\b|F\b|NA\b|NULL\b)[A-Za-z.][\w.]*")
+
+def guard_binds(span):
+    m = _GUARD_COND.search(span)
+    if not m:
+        return False
+    cond = m.group(1)
+    return bool(_NAMED_VALUE.search(cond) or _NAMED_ARG.search(cond))
+
+
+def _mark(m):
+    return GUARD if guard_binds(m.group(0)) else LIVE
+
+
+def verdict_hits(prose, rx, guards=False):
+    """(line, word, sentence) per typed verdict word in a sentence with a live value.
+
+    With `guards`, a sentence carrying an inline `stopifnot(` span is bound: its words pass.
+    """
     out = []
     for start, text in paragraphs(prose):
-        for sentence in SENTENCE_END.split(INLINE.sub(LIVE, text)):
-            if LIVE in sentence:
-                shown = sentence.replace(LIVE, "`r …`")[:160]
+        for sentence in SENTENCE_END.split(INLINE.sub(_mark, text)):
+            if LIVE in sentence or GUARD in sentence:
+                if guards and GUARD in sentence:
+                    continue
+                shown = sentence.replace(LIVE, "`r …`").replace(GUARD, "`r …`")
                 out.extend((start, m.group(0).lower(), shown) for m in rx.finditer(sentence))
+    return out
+
+
+def jargon_patterns(root):
+    """Pipeline-internal vocabulary: the shipped list plus the project's `prose-jargon:`."""
+    ref = Path(os.path.realpath(__file__)).parent.parent / "references" / "pipeline-jargon.txt"
+    pats = []
+    if ref.exists():
+        pats = [l.strip() for l in ref.read_text(encoding="utf-8").splitlines()
+                if l.strip() and not l.lstrip().startswith("#")]
+    declared_toks = tokens(" ".join(declared(root, "prose-jargon")))
+    pats += declared_toks
+    out = []
+    for pat in pats:
+        try:
+            out.append(re.compile(pat, re.I))
+        except re.error as e:
+            where = "prose-jargon in CLAUDE.md" if pat in declared_toks else str(ref)
+            raise ValueError(f"error: {where} is not a valid pattern: {pat!r} ({e})")
     return out
 
 
@@ -436,7 +548,11 @@ def main(argv):
     note = f"  extra nouns: {extra}  (from {source})" if extra else ""
 
     try:
-        v_rx = verdict_rx("|".join(declared(root, "prose-verdict-words")))
+        retrofitted = design_block.design_block(open(qmd, encoding="utf-8").read()) is not None
+    except (OSError, UnicodeDecodeError):
+        retrofitted = False
+    try:
+        v_rx = verdict_rx("|".join(declared(root, "prose-verdict-words")), retrofitted)
     except re.error as e:
         print(f"error: prose-verdict-words in CLAUDE.md is not a valid pattern: {e}")
         return 2
@@ -455,17 +571,30 @@ def main(argv):
             print("error: prose-verdict-ceiling must be a non-negative integer, "
                   f"got {ceilings[0]!r}")
             return 2
+    if ceiling is None and retrofitted:
+        ceiling = 0
+    try:
+        j_rx = jargon_patterns(root) if retrofitted else []
+    except ValueError as e:
+        print(e)
+        return 2
 
     # A key keeps no trailing comma: NUM ends a literal on a digit, so "1999,"
     # could never match, and its bare twin made it look stale. Normalise it and
     # say so, so the file gets cleaned rather than silently reinterpreted.
-    allow, comma_keys = {}, []
+    allow, comma_keys, allow_ctx = {}, [], {}
     if os.path.exists(allow_path):
         for r in csv.DictReader(open(allow_path, encoding="utf-8")):
             key = r["literal"]
             if key.endswith(","):
                 comma_keys.append(key)
             allow.setdefault(key.rstrip(","), r["reason"])
+            allow_ctx.setdefault(key.rstrip(","), []).append(
+                (r.get("context") or "").strip() or None)
+
+    def explained(key, ctx):
+        """A row explains an occurrence when it has no context or its context occurs in ctx."""
+        return key in allow and any(c is None or c in ctx for c in allow_ctx[key])
     if comma_keys:
         note += ("\n" if note else "") + (
             "  note: allowlist keys with a trailing comma: "
@@ -483,6 +612,11 @@ def main(argv):
     hits = collections.OrderedDict()
 
     def scan(lineno, text, label):
+        text = STAR_LEGEND.sub(" ", text)
+        for mm in MATH.finditer(INLINE.sub(" ", text)):
+            for d in re.finditer(r"(?<![\w_^{])(\d+\.\d+)", mm.group(0)):
+                hits.setdefault(d.group(1), []).append(
+                    (lineno, label + "math: " + mm.group(0)[:110]))
         clean = MATH.sub(" ", INLINE.sub(" ", text))
         for m in NUM.finditer(clean):
             ctx = label + clean[max(0, m.start() - 55):m.end() + 55].strip().replace("\n", " ")
@@ -492,21 +626,72 @@ def main(argv):
             hits.setdefault(m.group(0).lower(), []).append((lineno, ctx))
 
     glued = []
-    for lineno, line in prose:
-        for m in SIGN_GLUE.finditer(line):
-            glued.append((lineno, line[max(0, m.start() - 55):m.end() + 55].strip()))
-        scan(lineno, line, "")
-    for lineno, text in captions:
-        scan(lineno, text, "caption: ")
 
-    verdicts = verdict_hits(prose, v_rx)
+    def scan_file(prose, captions, label):
+        for lineno, line in prose:
+            for m in SIGN_GLUE.finditer(line):
+                glued.append((lineno, label + line[max(0, m.start() - 55):m.end() + 55].strip()))
+            scan(lineno, line, label)
+        for lineno, text in captions:
+            scan(lineno, text, label + "caption: ")
+
+    scan_file(prose, captions, "")
+    for letter in declared(root, "response-letter"):
+        path = os.path.join(root, letter)
+        if not os.path.exists(path):
+            print(f"error: response-letter declared in CLAUDE.md not found: {path}")
+            return 2
+        try:
+            scan_file(*load_manuscript(path), "letter: ")
+        except Unclosed as e:
+            print(f"error: the {e.what} opened at line {e.args[0]} of {path} is never closed.")
+            print("       Nothing after that line could be scanned, so no verdict is given.")
+            return 2
+
+    verdicts = verdict_hits(prose, v_rx, guards=retrofitted)
+    used_words = set()
+    if retrofitted:
+        kept = []
+        for h in verdicts:
+            if explained(h[1], h[2]):
+                used_words.add(h[1])
+            else:
+                kept.append(h)
+        verdicts = kept
     over = ceiling is not None and len(verdicts) > ceiling
 
-    unexplained = {k: v for k, v in hits.items() if k not in allow}
-    stale = [k for k in allow if k not in hits]
+    unexplained = {}
+    for k, occ in hits.items():
+        left = [o for o in occ if not explained(k, o[1])]
+        if left:
+            unexplained[k] = left
+    stale = [k for k in allow if k not in hits and k not in used_words]
 
-    failed = bool(glued) or bool(unexplained) or over
-    mode = f"ceiling {ceiling}" if ceiling is not None else \
+    jargon = []
+    for rx in j_rx:
+        # paragraphs() drops heading and div-fence lines, so scan those one by one too.
+        chunks = list(paragraphs(prose)) + [
+            (n, l.strip()) for n, l in prose if l.strip().startswith(("#", ":::"))]
+        for lineno, para in chunks:
+            jargon.extend((lineno, m.group(0)) for m in rx.finditer(INLINE.sub(" ", para)))
+        for lineno, text in captions:
+            jargon.extend((lineno, "caption: " + m.group(0))
+                          for m in rx.finditer(INLINE.sub(" ", text)))
+
+    thresholds = []
+    for lineno, line in prose:
+        for m in THRESH.finditer(line):
+            if float(m.group(1)) not in (0.0, 0.1, 0.05, 0.01):
+                thresholds.append((m.group(1), lineno))
+
+    def warn_thresholds():
+        for n, lineno in thresholds:
+            print(f"WARN literal threshold {n} at line {lineno} — the convention is "
+                  "0.10/0.05/0.01; use rc_sig()")
+
+    failed = bool(glued) or bool(unexplained) or over or bool(jargon)
+    mode = f"ceiling {ceiling}" + (" (default, retrofitted)" if retrofitted and not ceilings else "") \
+        if ceiling is not None else \
         "advisory; declare prose-verdict-ceiling: N in CLAUDE.md to enforce"
 
     def verdict_count():
@@ -527,6 +712,7 @@ def main(argv):
             print("  note: allowlist entries no longer present in the prose:",
                   ", ".join(sorted(stale)))
         verdict_count()
+        warn_thresholds()
         return 0
 
     why = []
@@ -536,6 +722,8 @@ def main(argv):
         why.append(f"{len(glued)} signs typed beside a live value")
     if over:
         why.append(f"{len(verdicts)} verdict words over a ceiling of {ceiling}")
+    if jargon:
+        why.append(f"{len(jargon)} pipeline-jargon hits")
     print("PROSE NUMBER CHECK FAILED —", "; ".join(why))
     print(f"  manuscript: {qmd}")
     print(f"  allowlist:  {allow_path}")
@@ -574,10 +762,18 @@ def main(argv):
     if over:
         print("VERDICT WORDS ABOVE CEILING —", len(verdicts), ">", ceiling)
         for lineno, word, sentence in verdicts:
-            print(f"  line {lineno}: {word} — {sentence}")
+            print(f"  line {lineno}: {word} — {sentence[:160]}")
+        print()
+
+    if jargon:
+        print("PIPELINE JARGON —", len(jargon), "hits (not allowlistable)")
+        print("  Say it in the paper's own terms; pipeline vocabulary is not for readers.\n")
+        for lineno, word in jargon:
+            print(f"  line {lineno}: {word}")
         print()
 
     verdict_count()
+    warn_thresholds()
     return 1
 
 

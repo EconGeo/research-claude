@@ -11,15 +11,20 @@ names the first component stage that is ready, treating a scored stage with no l
 completion as adopted work (see next_report).
 """
 from __future__ import annotations
-import argparse, datetime as dt, fnmatch, glob, hashlib, json, re, subprocess, sys
+import argparse, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, os, re, shutil, subprocess, sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import registry_lib as rl
+import design_block as dsb
+import author_token as tok
+import qmd_chunks
 
 STATE_REL = Path("quality_reports") / "pipeline_state.json"
 LOG_REL = Path("quality_reports") / "agent_dispatch.jsonl"
 RECEIPTS_REL = Path("quality_reports") / "receipts.jsonl"
+FINGERPRINT_REL = Path("quality_reports") / "render_fingerprint.json"
+STALE_ON_CHANGE = {"strategy", "manuscript", "referees"}
 GATES = {"commit": (80, None), "pr": (90, None), "submission": (95, 80)}
 
 def now() -> str:
@@ -93,6 +98,53 @@ def append_receipt(root: Path, entry: Dict[str, Any]) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a") as f:
         f.write(json.dumps(entry) + "\n")
+
+# ── results fingerprint & staleness ─────────────────────────────────────────
+def read_fingerprint(root: Path) -> Optional[Dict[str, Any]]:
+    p = root / FINGERPRINT_REL
+    return json.loads(p.read_text()) if p.exists() else None
+
+def current_fingerprint(root: Path, ms: Path) -> Dict[str, Optional[str]]:
+    fp = read_fingerprint(root) or {}
+    return {"estimates": fp.get("estimates_hash"), "design": dsb.design_hash(ms.read_text())}
+
+def git_head(root: Path) -> Optional[str]:
+    try:
+        r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True)
+    except OSError:
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+def stale_reason(root: Path, ms: Path, comp: str, entry: Dict[str, Any]) -> Optional[str]:
+    """Why a strategy/manuscript/referees score no longer stands, or None.
+
+    Off for a paper that is not retrofitted: no lock file and no fingerprint file. A lock FILE
+    counts as locked even if corrupt (fail closed, as design_state does)."""
+    if comp not in STALE_ON_CHANGE or not entry: return None
+    cur = current_fingerprint(root, ms); locked = (root / dsb.LOCK_REL).exists()
+    if cur["estimates"] is None:
+        return ("no render_fingerprint.json — render the manuscript (its fingerprint chunk writes it)"
+                if locked else None)
+    fp = entry.get("fingerprint") or {}
+    if fp.get("estimates") != cur["estimates"] or fp.get("design") != cur["design"]:
+        clears = {"manuscript": "a whole-manuscript writer-critic round", "strategy": "a strategist-critic round",
+                  "referees": "a new referee round"}[comp]
+        return f"STALE: {comp} score earned under an older fingerprint — re-score with {clears}"
+    return None
+
+def stale_components(root: Path) -> Dict[str, str]:
+    if not state_path(root).exists(): return {}
+    ms = declared_manuscript(root); comps = (load_state(root).get("components") or {})
+    return {c: r for c, e in comps.items() if (r := stale_reason(root, ms, c, e))}
+
+def stale_cmd(root: Path) -> int:
+    bad = stale_components(root)
+    for c, r in bad.items(): print(f"STALE {c}: {r}")
+    if not bad: print("stale: none")
+    return 1 if bad else 0
+
+def entry_stale(root: Path, ms: Path, st: Dict[str, Any], comp: str) -> Optional[str]:
+    return stale_reason(root, ms, comp, (st.get("components") or {}).get(comp) or {})
 
 def validate_state(st: Dict[str, Any], reg: Dict[str, Any]) -> List[str]:
     p: List[str] = []
@@ -338,11 +390,163 @@ def critic_inputs(root: Path) -> int:
     if why:
         parts.append(f"## check_render.py — skipped: {why}"); summary.append("check_render skipped")
     else:
-        crc, out = run_script(root, "check_render.py", str(pdf.relative_to(root)))
+        tex_log = pdf.with_suffix(".log")  # Quarto removes it after a successful render (tested)
+        extra = ["--latex-log", str(tex_log.relative_to(root))] if tex_log.exists() else []
+        crc, out = run_script(root, "check_render.py", str(pdf.relative_to(root)), *extra)
         parts.append(f"## check_render.py {pdf.name} — " + (f"skipped: {out}" if crc is None else f"exit {crc}\n{out.rstrip()}"))
         summary.append("check_render " + ("skipped" if crc is None else f"exit {crc}"))
+        parts.append("latex log: " + (f"passed {tex_log.name}" if extra else "absent"))
     log.write_text("\n\n".join(parts) + "\n")
     print(" · ".join(summary)); print(f"critic-inputs: {log.relative_to(root)}"); return 0
+
+
+def _scored_component(reg, critic: str) -> Optional[str]:
+    for c, e in reg["components"].items():
+        if e.get("scored_by") == critic: return c
+    return None
+
+def dispatch_ok(root: Path, reg, critic: str, author_request: bool) -> int:
+    """Exit 1 (PASSED-UNCHANGED) only when the critic's component passed the commit gate, is not
+    stale, and the manuscript's bytes equal those the latest whole-component receipt scored.
+    Anything uncertain exits 0: this never prevents a needed review."""
+    try:
+        if author_request: return 0
+        comp = _scored_component(reg, critic)
+        if not comp or not state_path(root).exists(): return 0
+        entry = load_state(root)["components"].get(comp)
+        if not entry or entry.get("score") is None or entry["score"] < GATES["commit"][0]: return 0
+        ms = declared_manuscript(root)
+        if stale_reason(root, ms, comp, entry): return 0
+        rp = root / RECEIPTS_REL
+        if not rp.exists(): return 0
+        last = None
+        for ln in rp.read_text().splitlines():
+            try: r = json.loads(ln)
+            except ValueError: continue
+            if r.get("component") == comp and not r.get("scope"): last = r
+        if not last or last.get("manuscript_sha256") != sha256_file(ms): return 0
+    except Exception:
+        return 0
+    print(f"PASSED-UNCHANGED: {comp} scored {entry['score']:g} on these exact manuscript bytes "
+          f"— do not re-dispatch {critic} (pass --author-request if the author asked for a re-review)")
+    return 1
+
+def critic_context(root: Path, reg, critic: str) -> int:
+    """Round 2+ context for a critic: the ledger rows for the creators it reviews, and the
+    manuscript diff since the last scored round."""
+    import findings_ledger as fl
+    creators = [a for a, e in reg["agents"].items() if e.get("critic") == critic]
+    comp = _scored_component(reg, critic); ms = declared_manuscript(root); rel = ms.relative_to(root).as_posix()
+    parts = [f"# critic-context: {critic} at {now()}"]
+    cols = fl.LEDGER_COLS
+    lines = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
+    for r in fl.rows(root / fl.LEDGER_REL):
+        if r["creator"] in creators: lines.append("| " + " | ".join(r[c] for c in cols) + " |")
+    parts.append(f"## Findings ledger — creators: {', '.join(creators) or 'none'}\n" + "\n".join(lines))
+    head = None
+    try:
+        if comp and state_path(root).exists(): head = (load_state(root)["components"].get(comp) or {}).get("head")
+    except Exception: head = None
+    diff = None
+    if head:
+        try:
+            r = subprocess.run(["git", "diff", head, "--", rel], cwd=root, capture_output=True, text=True)
+            if r.returncode == 0: diff = r.stdout
+        except OSError: pass
+    parts.append(f"## Manuscript diff since the last scored round ({rel})\n" +
+                 (("```diff\n" + diff.rstrip() + "\n```" if diff.strip() else "no changes since the last scored round")
+                  if diff is not None else "no prior scored round"))
+    d = root / CRITIC_INPUTS_REL; d.mkdir(parents=True, exist_ok=True)
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d_%H%M%S")
+    f = d / f"{critic}_context_{stamp}.md"; n = 2
+    while f.exists(): f = d / f"{critic}_context_{stamp}_{n}.md"; n += 1
+    f.write_text("\n\n".join(parts) + "\n")
+    print(f"critic-context: {f.relative_to(root)}"); return 0
+
+
+def design_state(root: Path, ms: Path, text: Optional[str] = None) -> Tuple[str, str]:
+    h = dsb.design_hash(ms.read_text() if text is None else text)
+    bad = ("CHANGED", "design_lock.json unreadable — restore it from git or ask the author")
+    lock = None
+    if (root / dsb.LOCK_REL).exists():          # existence, not the parsed value, decides "a lock exists"
+        try: lock = dsb.read_lock(root)
+        except (ValueError, OSError): return bad
+        need = ("hash", "block") + (("reason",) if isinstance(lock, dict) and lock.get("status") == "unlocked" else ())
+        if not isinstance(lock, dict) or any(k not in lock for k in need): return bad
+    if lock is None:
+        return ("NOT-RETROFITTED", "no design: block and no lock") if h is None else \
+               ("UNSIGNED", "design: block present, never signed — the author approves in chat (`approve design sign`)")
+    if h is None:
+        return "CHANGED", "design_lock.json exists but the manuscript has no design: block"
+    if lock.get("status") == "unlocked":
+        return "UNLOCKED", f"amendment open since {lock.get('unlocked_at')}: {lock.get('reason')}"
+    if h != lock.get("hash"):
+        return "CHANGED", "design: block differs from the signed lock — restore it, or the author approves `design unlock` in chat first"
+    return "SIGNED", f"signed {lock.get('signed_at')} by {lock.get('signer')}"
+
+def design_check_problems(root: Path, text: str) -> List[str]:
+    probs: List[str] = []
+    for name in ("power", "size"):
+        if not dsb.has_check(text, name):
+            probs.append(f"design.checks.{name} missing — run it in explorations/ and record the result"); continue
+        f = dsb.check_field(text, name, "file")
+        if not f: probs.append(f"design.checks.{name} names no file:")
+        elif not f.startswith("explorations/"): probs.append(f"design.checks.{name}.file {f} is not under explorations/")
+        elif not (root / f).is_file(): probs.append(f"design.checks.{name}.file {f} does not exist")
+    mde, target = dsb.check_number(text, "power", "mde"), dsb.check_number(text, "power", "target_effect")
+    if mde is None or target is None or not (math.isfinite(mde) and math.isfinite(target)):
+        probs.append("design.checks.power needs numeric mde and target_effect")
+    elif mde <= 0: probs.append(f"power: MDE {mde} must be positive")
+    elif mde > abs(target): probs.append(f"power: MDE {mde} exceeds |target_effect| {abs(target)}")
+    rej = dsb.check_number(text, "size", "rejection_at_0.10")
+    if rej is None or not math.isfinite(rej): probs.append("design.checks.size needs a numeric rejection_at_0.10")
+    elif round(abs(rej - 0.10), 10) > 0.03: probs.append(f"size: rejection rate {rej} at the 10% level is outside 0.07–0.13")
+    return probs
+
+def design_cmd(root: Path, a) -> int:
+    ms = declared_manuscript(root); text = ms.read_text(); st, why = design_state(root, ms)
+    if a.op == "status":
+        print(f"design: {st} — {why}"); return 0 if st in ("SIGNED", "NOT-RETROFITTED") else 1
+    if a.op == "seed-amendment":
+        if not all((a.date, a.field, a.old, a.new, a.reason)):
+            sys.exit("usage: design seed-amendment --date YYYY-MM-DD --field F --old O --new N --reason R")
+        if st != "UNSIGNED": print(f"design seed-amendment: refused — only before the first signing (status {st})"); return 1
+        dsb.append_amendments(root, [{"date": a.date, "field": a.field, "old": a.old, "new": a.new, "reason": a.reason}],
+                              heading=f"Amendment (seeded at retrofit) — {a.date}")
+        print("design: amendment seeded"); return 0
+    if a.op == "sign":
+        if not a.signer: sys.exit("usage: design sign --signer NAME")
+        new_block = dsb.design_block(text)
+        if new_block is None: print("design sign: no design: block in the manuscript front matter"); return 1
+        probs = design_check_problems(root, text)
+        if probs: print("design sign: refused — " + "; ".join(probs)); return 1
+        if st == "SIGNED": print("design sign: already signed and unchanged"); return 0
+        if st == "CHANGED":
+            print("design sign: refused — " + (why if "unreadable" in why else "the block changed without `design unlock`")); return 1
+        lock = dsb.read_lock(root) or {}; rows: List[Dict[str, str]] = []
+        if st == "UNLOCKED":
+            rows = dsb.amendment_rows(lock["block"], new_block, now()[:10], lock["reason"])
+            if dsb.needs_rerun(rows, lock["block"], new_block) and not dsb.checks_changed(rows):
+                print("design sign: refused — the amendment touches the inference rule, sample, treatment or an "
+                      "outcome; re-run the power and size explorations and record the new results in design.checks"); return 1
+        ok, msg = tok.consume(root, "sign", dsb.design_hash(text))
+        if not ok: print(f"design sign: refused — {msg}"); return 1
+        if rows:
+            diff = "\n".join(difflib.unified_diff(dsb._normalise(lock["block"]), dsb._normalise(new_block),
+                                                  "signed", "amended", lineterm="", n=0))
+            dsb.append_amendments(root, rows, heading=f"Amendment — {now()[:10]} (re-signed by {a.signer})", diff=diff)
+        dsb.write_lock(root, {"status": "signed", "hash": dsb.design_hash(text), "block": new_block,
+                              "signed_at": now(), "signer": a.signer, "approved_at": msg})
+        print("design: SIGNED" + (f" — {len(rows)} amendment row(s) recorded" if rows else "")); return 0
+    if a.op == "unlock":
+        if not a.reason: sys.exit("usage: design unlock --reason TEXT (the author's reason, verbatim)")
+        if st != "SIGNED": print(f"design unlock: refused — status is {st}"); return 1
+        ok, msg = tok.consume(root, "unlock", dsb.design_hash(text), reason=a.reason)
+        if not ok: print(f"design unlock: refused — {msg}"); return 1
+        lock = dsb.read_lock(root); lock.update({"status": "unlocked", "reason": a.reason, "unlocked_at": now()})
+        dsb.write_lock(root, lock)
+        print("design: UNLOCKED — edit the design: block, show it to the author, who approves `design sign` in chat"); return 0
+    return 2
 
 def producer_hint(pred: Dict[str, Any], ok: bool) -> str:
     """The `— run `/skill`` tail on a failing predicate. Shared by run_preds() and the
@@ -375,7 +579,13 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         else:
             val = st.get("components", {}).get(pred["component"], {}).get("score")
         ok = val is not None and val >= float(pred["min"])
-        return ok, f"{pred['component']} score ≥ {pred['min']} (have {val})"
+        desc = f"{pred['component']} score ≥ {pred['min']} (have {val})"
+        # A stale score fails a `post` gate (the stage reopens) and a `pre` gate only for the
+        # manuscript component: a stale strategy or referee score reopens its own stage but never
+        # blocks the next creator (author ruling 2026-10-17).
+        why = entry_stale(root, ctx.ms, st, pred["component"]) if pred["component"] != "overall" else None
+        if why and (post or pred["component"] == "manuscript"): return False, desc + " — " + why
+        return ok, desc + (f" ({why})" if why else "")
     if t == "score-if-scored":
         # A component that HAS been scored must clear `min`; one never scored is ignored.
         # A MISSING state file is not "never scored" — defaulting to {} here would make the
@@ -388,7 +598,9 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         val = st.get("components", {}).get(pred["component"], {}).get("score")
         if val is None:                                   # `is None`, never truthiness: 0.0 is a score
             return True, desc + " (never scored — not required yet)"
-        return val >= float(pred["min"]), desc + f" (have {val})"
+        why = entry_stale(root, ctx.ms, st, pred["component"])
+        if why and (post or pred["component"] == "manuscript"): return False, desc + f" (have {val}) — " + why
+        return val >= float(pred["min"]), desc + f" (have {val})" + (f" ({why})" if why else "")
     if t == "fresh":
         ok, why = is_fresh(root, ctx.ms); return ok, f"fresh: {why}"
     if t == "render":
@@ -433,6 +645,9 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         report = ((st.get("components") or {}).get(comp) or {}).get("report")
         if report and not (root / report).is_file():
             return False, ran + f", but its recorded report {report} no longer exists on disk"
+        why = stale_reason(root, ctx.ms, comp, (st.get("components") or {}).get(comp) or {})
+        if why is not None:
+            return False, ran + " — " + why
         return True, ran + f", {comp} scored at {at} (creator {a}, critic {c})"
     if t == "prose-check":
         rc, out = run_script(root, "prose_number_check.py", str(ctx.ms.relative_to(root)))
@@ -450,6 +665,14 @@ def evaluate(pred: Dict[str, Any], ctx: Ctx, post: bool = False) -> Tuple[bool, 
         hits = source_calls(ctx.ms)
         if hits: return False, f"no-source: source() at line(s) {', '.join(str(h) for h in hits)} (INV-19)"
         return True, "no-source: clean (INV-19)"
+    if t == "design-lock":
+        st, why = design_state(root, ctx.ms)
+        return st in ("SIGNED", "NOT-RETROFITTED"), f"design-lock: {st} — {why}"
+    if t == "ledger-closed":
+        import findings_ledger as fl
+        b = fl.blocking(root / fl.LEDGER_REL, ctx.agent or "")
+        return not b, ("ledger-closed: no open findings" if not b else
+                       f"ledger-closed: {len(b)} open for {ctx.agent}: " + ", ".join(r["id"] for r in b[:5]))
     if t == "any_of":
         results = [(q, evaluate(q, ctx, post)) for q in pred["of"]]
         passed = any(ok for _, (ok, _d) in results)
@@ -464,6 +687,8 @@ def eval_preds(kind: str, agent: str, root: Path, reg) -> List[Tuple[bool, str]]
     preds = list(e["requires"] if kind == "pre" else e["produces"])
     if kind == "post" and rl.critic_of(reg, agent) and not any(p["type"] == "critic-ran" for p in preds):
         preds.append({"type": "critic-ran"})
+    if kind == "post" and rl.critic_of(reg, agent) and not any(p["type"] == "ledger-closed" for p in preds):
+        preds.append({"type": "ledger-closed"})
     out: List[Tuple[bool, str]] = []
     for p in preds:
         ok, desc = evaluate(p, ctx, post=(kind == "post"))
@@ -517,6 +742,8 @@ def next_report(root: Path, reg) -> int:
                     ".claude/skills/pipeline/references/adopt.md)" if newest is None
                     else f" (creator {newest_agent} completed at {newest})")
             info[c] = ("CLOSED", f"{entry.get('score')} by {entry.get('critic')} at {at}" + deduction_note(entry) + tail)
+            why = stale_reason(root, declared_manuscript(root), c, entry) if c in STALE_ON_CHANGE else None
+            if why: info[c] = ("OPEN", why)
         elif newest is not None:
             scorer = reg["components"][c].get("scored_by")
             d = f"{newest_agent} completed at {newest}; no {c} score after it — dispatch {scorer} and record-score"
@@ -597,11 +824,226 @@ def registry_check(root: Path) -> int:
     pa = rl.parse_agree(root); print(f"{pa} [registry-parse-agree]" + (" (PyYAML not importable)" if pa == "SKIP" else "")); rc |= pa == "FAIL"
     return int(rc)
 
+# ── finding ledger, rulings log, questions ──────────────────────────────────
+def ledger_cmd(root: Path, a) -> int:
+    import findings_ledger as fl
+    path = root / fl.LEDGER_REL; op = a.op
+    def need(*names):
+        miss = [n for n in names if not getattr(a, n)]
+        if miss: print(f"ledger {op}: requires " + ", ".join("--" + n for n in miss)); return False
+        return True
+    def known(fid):
+        if not fid or fid not in {r["id"] for r in fl.rows(path)}:
+            print(f"ledger {op}: no such finding {fid!r}"); return None
+        return next(r for r in fl.rows(path) if r["id"] == fid)
+    if op == "add":
+        if not need("creator", "report", "location", "finding"): return 2
+        agents = sorted(load_reg(root).get("agents") or {})
+        if a.creator not in agents:
+            print(f"ledger add: unknown creator {a.creator!r} — valid creators (.claude/rules/registry.yaml agents): "
+                  + ", ".join(agents)); return 2
+        fid = fl.add(path, a.creator, a.report, a.location, a.finding, "proposal: pending" if a.proposal else "open")
+        print(f"ledger: added {fid}"); return 0
+    if op == "show":
+        for r in fl.rows(path):
+            if a.creator and r["creator"] != a.creator: continue
+            if a.open and not fl.BLOCKING.match(r["status"]): continue
+            print(f"{r['id']}  {r['creator']}  {r['status']}  {r['location']}: {r['finding']}" + (f"  [guard: {r['guard']}]" if r["guard"] else ""))
+        return 0
+    if op == "settle":
+        r = subprocess.run(["git", "diff-tree", "--no-commit-id", "--name-only", "-r", "--relative", "HEAD"],
+                           cwd=root, capture_output=True, text=True)
+        head = git_head(root)
+        if r.returncode != 0 or not head: print("ledger settle: no git HEAD — nothing settled"); return 0
+        ms = declared_manuscript(root).relative_to(root).as_posix()
+        if ms not in r.stdout.split("\n"): print("ledger settle: HEAD did not touch the manuscript — nothing settled"); return 0
+        if "manuscript" in stale_components(root): print("ledger settle: manuscript still stale — nothing settled"); return 0
+        n = 0
+        for row in fl.rows(path):
+            if row["status"] == "closed pending": fl.set_status(path, row["id"], "closed " + head[:7]); n += 1
+        print(f"ledger settle: {n} row(s) closed at {head[:7]}"); return 0
+    if not a.id: print(f"ledger {op}: requires a finding id"); return 2
+    if op == "close":
+        if bool(a.sha) == bool(a.pending): print("ledger close: give exactly one of --sha SHA or --pending"); return 2
+        row = known(a.id)
+        if row is None: return 1
+        stt = row["status"]
+        if stt == "proposal: pending":
+            print(f"ledger close: {a.id} is a pending proposal — decide it first with ledger accept|reject"); return 1
+        if not (stt in ("open", "proposal: accepted") or (stt == "closed pending" and a.sha)):
+            print(f"ledger close: {a.id} has status {stt!r} — only open, accepted or (with --sha) closed-pending rows can be closed"); return 1
+        if a.sha:
+            if not re.match(r"^[0-9a-fA-F]{7,40}$", a.sha) or subprocess.run(
+                    ["git", "cat-file", "-e", a.sha + "^{commit}"], cwd=root, capture_output=True).returncode != 0:
+                print(f"ledger close: {a.sha} is not a commit in this repository"); return 1
+            full = subprocess.run(["git", "rev-parse", a.sha + "^{commit}"], cwd=root, capture_output=True, text=True).stdout.strip()
+            fl.set_status(path, a.id, "closed " + full[:7], a.guard)
+        else:
+            if "manuscript" not in stale_components(root):
+                print("ledger close --pending: refused — the manuscript score is not stale; close with --sha"); return 1
+            fl.set_status(path, a.id, "closed pending", a.guard)
+        print(f"ledger: {a.id} -> {fl.rows(path)[[r['id'] for r in fl.rows(path)].index(a.id)]['status']}"); return 0
+    if op in ("decline", "accept", "reject"):
+        if not a.by: print(f"ledger {op}: requires --by author|session"); return 2
+        if op == "decline" and not a.reason: print("ledger decline: requires --reason"); return 2
+        if op != "decline" and a.by == "session" and not a.reason: print(f"ledger {op}: --by session requires --reason"); return 2
+        row = known(a.id)
+        if row is None: return 1
+        if op == "decline" and row["status"] not in ("open", "proposal: accepted"):
+            print(f"ledger decline: {a.id} has status {row['status']!r} — only open or accepted rows can be declined"); return 1
+        if op != "decline" and row["status"] != "proposal: pending":
+            print(f"ledger {op}: {a.id} is not a pending proposal (status {row['status']})"); return 1
+        status = {"decline": f"declined: {a.reason}", "accept": "proposal: accepted", "reject": "proposal: rejected"}[op]
+        fl.set_status(path, a.id, status)
+        alt = {"decline": "fix it", "accept": "reject it", "reject": "accept it"}[op]
+        fl.add_ruling(root / fl.RULINGS_REL, a.by, f"{a.id} " + {"decline": "declined", "accept": "accepted", "reject": "rejected"}[op], alt, a.reason or "(none given)")
+        print(f"ledger: {a.id} {status}"); return 0
+    return 2
+
+def ruling_cmd(root: Path, a) -> int:
+    import findings_ledger as fl
+    fl.add_ruling(root / fl.RULINGS_REL, a.by, a.decision, a.alternative, a.reason); print("ruling: logged"); return 0
+
+def question_cmd(root: Path, a) -> int:
+    import findings_ledger as fl
+    fl.add_question(root / fl.QUESTIONS_REL, a.text, a.blocks); print("question: recorded"); return 0
+
+# ── cold render and the pre-commit check (spec §0.6, §7) ────────────────────
+COLD_REL = Path("quality_reports") / "cold_render.json"
+
+def render_cold(root: Path) -> int:
+    """Delete the knitr cache, render from nothing, and on success write the receipt commit-check reads."""
+    ms = declared_manuscript(root)
+    shutil.rmtree(ms.parent / f"{ms.stem}_cache", ignore_errors=True)
+    rc, out = run_render(root, ms)
+    if rc != 0:
+        print("render --cold: quarto failed\n" + "\n".join(out.strip().splitlines()[-15:])); return 1
+    (root / COLD_REL).parent.mkdir(parents=True, exist_ok=True)
+    (root / COLD_REL).write_text(json.dumps({"manuscript_sha256": sha256_file(ms),
+                                             "chunk_sha256": chunk_sha256(ms.read_text()), "at": now()}, indent=2) + "\n")
+    print(f"render --cold: ok, wrote {COLD_REL}"); return 0
+
+def _git(root: Path, *args: str) -> Tuple[int, str]:
+    p = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
+    return p.returncode, p.stdout
+
+def reestimation(root: Path) -> Tuple[bool, str]:
+    """True when the staged fingerprint differs from HEAD's in estimates, data or design (or HEAD has
+    none): this commit is the one that lands the re-estimation. Unreadable JSON is never one."""
+    rel = FINGERPRINT_REL.as_posix()
+    rc, staged = _git(root, "show", f":{rel}")
+    if rc != 0: return False, "no staged fingerprint"
+    rc, head = _git(root, "show", f"HEAD:{rel}")
+    if rc != 0: return True, "HEAD has no fingerprint"
+    try: new, old = json.loads(staged), json.loads(head)
+    except ValueError: return False, "fingerprint unreadable"
+    moved = [k for k in ("estimates_hash", "data_hash", "design_hash") if new.get(k) != old.get(k)]
+    return bool(moved), ("changed: " + ", ".join(moved)) if moved else "fingerprint unchanged"
+
+# The chunks a cold render exists for (spec §7, .claude/rules/quarto-empirical.md "model-chunk change"): the
+# estimation and robustness chunks named by .claude/skills/analyze/templates/chunk-structure.md. A
+# build-* or tbl-* edit is covered by the fingerprint (estimates that move make the scores stale)
+# and by the warm render the critic sees; only a model chunk can silently stop running under a
+# warm cache.
+MODEL_LABEL_RE = re.compile(r"^(?:estimate|robustness)-")
+_CHUNK_LABEL_RES = (re.compile(r"^#\|\s*label:\s*([A-Za-z0-9_-]+)"),
+                    re.compile(r'^```\{[a-zA-Z]+[^}\n]*?\blabel\s*=\s*["\']([A-Za-z0-9_-]+)["\']'),
+                    re.compile(r"^```\{[a-zA-Z]+[ \t]+([A-Za-z0-9_-]+)\s*[,}]"))
+
+def r_chunks(text: str) -> List[Tuple[Optional[str], List[str]]]:
+    """(label, lines) per R chunk: the header line, stripped, then the body verbatim."""
+    out: List[Tuple[Optional[str], List[str]]] = []; cur: Optional[List[str]] = None
+    for raw in text.split("\n"):
+        if cur is None:
+            if qmd_chunks.FENCE_OPEN_R.match(raw): cur = ["<chunk>" + raw.strip()]
+        elif qmd_chunks.FENCE_CLOSE.match(raw):
+            label = next((m.group(1) for ln in cur[1:3] + [cur[0][len("<chunk>"):]]
+                          for m in [next((r.match(ln) for r in _CHUNK_LABEL_RES if r.match(ln)), None)] if m), None)
+            out.append((label, cur)); cur = None
+        else: cur.append(raw)
+    return out
+
+def chunk_code(text: str, model_only: bool = True) -> List[str]:
+    """The R chunk bodies of a .qmd, prose removed, so a prose edit that shifts line numbers is not a
+    code change. By default only the model chunks (MODEL_LABEL_RE)."""
+    return [ln for label, lines in r_chunks(text) if not model_only or (label and MODEL_LABEL_RE.match(label))
+            for ln in lines]
+
+def chunk_sha256(text: str) -> str:
+    """sha256 of the model-chunk code: the cold-render receipt binds those chunks, so a prose or
+    build-chunk edit after it stands."""
+    return hashlib.sha256("\n".join(chunk_code(text)).encode("utf-8")).hexdigest()
+
+def commit_check(root: Path) -> int:
+    claude = root / "CLAUDE.md"
+    if not claude.exists(): print("commit-check: no CLAUDE.md — nothing declared"); return 0
+    hits = re.findall(r"^manuscript:\s*(\S+\.qmd)\s*$", claude.read_text(errors="ignore"), re.M)
+    if not hits: print("commit-check: no manuscript declared"); return 0
+    if len(hits) != 1: print("commit-check: FAIL — CLAUDE.md declares more than one manuscript"); return 1
+    rc, names = _git(root, "diff", "--cached", "--name-only", "-z")
+    if rc != 0: print("commit-check: FAIL — git diff --cached failed"); return 1
+    ms = root / hits[0]; ms_rel = ms.relative_to(root).as_posix(); fp_rel = FINGERPRINT_REL.as_posix()
+    staged = set(names.split("\0"))
+    if ms_rel not in staged and fp_rel not in staged: return 0
+    if not ms.exists(): print(f"commit-check: FAIL — declared manuscript {hits[0]} does not exist"); return 1
+    # Every manuscript check reads the STAGED manuscript (`git show :path`), never the working file:
+    # a hunk-wise `git add -p` commit is checked on what it commits. The staged bytes go to a
+    # sibling temp file so the linked scripts resolve the project root as usual.
+    rc, staged_text = _git(root, "show", f":{ms_rel}")
+    if rc != 0: staged_text = ms.read_text()
+    import tempfile
+    fd, tmp = tempfile.mkstemp(prefix=".commit-check-", suffix=".qmd", dir=ms.parent); os.close(fd)
+    try:
+        Path(tmp).write_text(staged_text)
+        return _commit_check_staged(root, ms, ms_rel, fp_rel, staged_text, Path(tmp))
+    finally:
+        Path(tmp).unlink(missing_ok=True)
+
+def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: str, tmp: Path) -> int:
+    tmp_rel = tmp.relative_to(root).as_posix()
+    probs: List[str] = []; warns: List[str] = []
+    st, why = design_state(root, ms, text)
+    if st not in ("SIGNED", "NOT-RETROFITTED"): probs.append(f"design: {st} — {why}")
+    # A paper with no design: block is not retrofitted: the prose gate and the cold-render receipt
+    # turn on at the retrofit (author ruling 2026-09-28: papers fix prose findings on their own
+    # schedule), so here they warn. Design state, structure, staging and staleness hold for every paper.
+    retrofitted = st != "NOT-RETROFITTED"
+    if (root / fp_rel).exists() and _git(root, "diff", "--quiet", "--", fp_rel)[0] == 1:
+        probs.append(f"unstaged changes to {fp_rel} — stage {fp_rel} (the render wrote it; it is committed with the manuscript)")
+    rc, out = run_script(root, "prose_number_check.py", tmp_rel)
+    if rc != 0:
+        msg = "prose: prose_number_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip().replace(tmp.name, ms.name))
+        (probs if retrofitted else warns).append(msg if retrofitted else "WARN (not retrofitted) " + msg)
+    rc, out = run_script(root, "quarto_structure_check.py", tmp_rel)
+    if rc != 0: probs.append("structure: quarto_structure_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip().replace(tmp.name, ms.name)))
+    rc, head_text = _git(root, "show", f"HEAD:{ms_rel}")
+    changed = rc != 0 or chunk_code(head_text) != chunk_code(text)
+    if changed and retrofitted:
+        try: sha = json.loads((root / COLD_REL).read_text()).get("chunk_sha256")   # an old receipt has none: no match
+        except (OSError, ValueError, AttributeError): sha = None
+        if not sha or sha != chunk_sha256(text):
+            probs.append("model-chunk code (estimate-* or robustness-*) changed since HEAD and there is no cold render of it — run `pipeline.py render --cold`")
+    try: stale = stale_components(root)
+    except (OSError, ValueError, KeyError) as e: stale = {}; probs.append(f"stale: pipeline_state.json unreadable ({e})")
+    if "manuscript" in stale:
+        re_est, re_why = reestimation(root)
+        if re_est: warns.append(f"WARN re-estimation commit — stale: {stale['manuscript']}; every later manuscript commit is refused until the manuscript is re-scored")
+        else: probs.append(stale["manuscript"])
+    for c, r in stale.items():
+        if c != "manuscript": warns.append(f"WARN stale: {c} — {r}")
+    if dsb.amendment_count(root) > 0 and "tbl-design-changes" not in chunk_labels(tmp):
+        probs.append("design amendments are recorded but the manuscript has no chunk labelled tbl-design-changes")
+    for w in warns: print(w)
+    for p in probs: print("commit-check: " + p)
+    print("commit-check: " + ("FAIL" if probs else "ok")); return 1 if probs else 0
+
 # ── main ────────────────────────────────────────────────────────────────────
 def main() -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default=".")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("manuscript"); sub.add_parser("fresh"); sub.add_parser("next"); sub.add_parser("critic-inputs")
+    sub.add_parser("stale"); sub.add_parser("manuscript"); sub.add_parser("fresh"); sub.add_parser("next"); sub.add_parser("critic-inputs")
+    dk = sub.add_parser("dispatch-ok"); dk.add_argument("critic"); dk.add_argument("--author-request", action="store_true")
+    sub.add_parser("critic-context").add_argument("critic")
     for k in ("pre", "post"): sub.add_parser(k).add_argument("agent")
     sc = sub.add_parser("score"); sc.add_argument("--gate", choices=sorted(GATES))
     st = sub.add_parser("state"); st.add_argument("op", choices=["init", "validate", "show", "record-score", "record-verify-claims", "record-deposit", "strike", "set-blocked", "clear-blocked"])
@@ -610,8 +1052,22 @@ def main() -> int:
     st.add_argument("--repository", help="record-deposit: the archive name (openICPSR, Dataverse, Zenodo, ...)")
     st.add_argument("--url", help="record-deposit: the deposit's resulting URL or DOI")
     st.add_argument("--deductions", type=float, help="record-score: the critic's unfloored deduction total")
+    sub.add_parser("commit-check")
+    sub.add_parser("render").add_argument("--cold", action="store_true", required=True)
     sub.add_parser("conflicts").add_argument("agents", nargs="+")
     sub.add_parser("registry").add_argument("op", choices=["check"])
+    ds = sub.add_parser("design"); ds.add_argument("op", choices=["status", "sign", "unlock", "seed-amendment"])
+    for flag in ("--signer", "--reason", "--date", "--field", "--old", "--new"): ds.add_argument(flag)
+    lp = sub.add_parser("ledger"); lp.add_argument("op", choices=["add", "close", "decline", "accept", "reject", "settle", "show"])
+    lp.add_argument("id", nargs="?")
+    for flag in ("--creator", "--report", "--location", "--finding", "--sha", "--guard", "--reason"): lp.add_argument(flag)
+    lp.add_argument("--by", choices=["author", "session"]); lp.add_argument("--proposal", action="store_true")
+    lp.add_argument("--pending", action="store_true"); lp.add_argument("--open", action="store_true")
+    rp = sub.add_parser("ruling"); rp.add_argument("op", choices=["add"]); rp.add_argument("--decision", required=True)
+    rp.add_argument("--alternative", required=True); rp.add_argument("--reason", required=True)
+    rp.add_argument("--by", choices=["author", "session"], default="session")
+    qp = sub.add_parser("question"); qp.add_argument("op", choices=["add"]); qp.add_argument("--text", required=True)
+    qp.add_argument("--blocks", required=True)
     lg = sub.add_parser("log"); lg.add_argument("agent"); lg.add_argument("--source", default="skill")
     a = ap.parse_args(); root = Path(a.root).resolve()
     if a.cmd == "registry": return registry_check(root)
@@ -620,6 +1076,15 @@ def main() -> int:
     if a.cmd == "fresh":
         ok, why = is_fresh(root, declared_manuscript(root)); print(("fresh: " if ok else "STALE: ") + why); return 0 if ok else 1
     if a.cmd == "critic-inputs": return critic_inputs(root)
+    if a.cmd == "dispatch-ok": return dispatch_ok(root, reg, a.critic, a.author_request)
+    if a.cmd == "critic-context": return critic_context(root, reg, a.critic)
+    if a.cmd == "stale": return stale_cmd(root)
+    if a.cmd == "commit-check": return commit_check(root)
+    if a.cmd == "render": return render_cold(root)
+    if a.cmd == "design": return design_cmd(root, a)
+    if a.cmd == "ledger": return ledger_cmd(root, a)
+    if a.cmd == "ruling": return ruling_cmd(root, a)
+    if a.cmd == "question": return question_cmd(root, a)
     if a.cmd in ("pre", "post"): return run_preds(a.cmd, a.agent, root, reg)
     if a.cmd == "next": return next_report(root, reg)
     if a.cmd == "log": append_log(root, a.agent, a.source); return 0
@@ -637,6 +1102,8 @@ def main() -> int:
         print(f"overall={ov if ov is not None else 'n/a'}")
         if a.gate:
             need, per = GATES[a.gate]; ok = ov is not None and ov >= need and (per is None or all(e["score"] >= per for e in stt["components"].values()))
+            for c, why in stale_components(root).items():
+                ok = False; print(f"gate {a.gate}: {why}")
             if a.gate == "submission":
                 # Phase 3.1: /submit final could pass at >= 95 with `/verify-claims` never having
                 # run — a scored 95 says nothing about hallucinated citations or numbers, which
@@ -691,7 +1158,9 @@ def main() -> int:
                 if abs(score - max(0.0, 100.0 - a.deductions)) > 0.05:
                     print(f"record-score: score {score:g} does not match --deductions {a.deductions:g} "
                           f"(expected {max(0.0, 100.0 - a.deductions):g} = max(0, 100 − deductions))"); return 1
-            entry = {"score": score, "critic": a.critic, "report": a.report, "at": now()}
+            ms = declared_manuscript(root)
+            entry = {"score": score, "critic": a.critic, "report": a.report, "at": now(),
+                     "fingerprint": current_fingerprint(root, ms), "head": git_head(root)}
             if a.deductions is not None: entry["deductions"] = a.deductions
             if a.scope and a.scope.startswith("section:"):
                 stt["sections"][a.scope.split(":", 1)[1]] = entry
@@ -700,10 +1169,10 @@ def main() -> int:
             # Bind this verdict to the exact bytes it scored — both the manuscript and the
             # report file, at this instant, so the receipt is tied to what was actually
             # reviewed and not to whatever those files happen to contain later.
-            ms = declared_manuscript(root)
             receipt = {"at": entry["at"], "agent": a.critic, "component": comp, "score": score,
                        "report": a.report, "manuscript": str(ms.relative_to(root)),
-                       "manuscript_sha256": sha256_file(ms), "report_sha256": sha256_file(root / a.report)}
+                       "manuscript_sha256": sha256_file(ms), "report_sha256": sha256_file(root / a.report),
+                       "fingerprint": entry["fingerprint"], "head": entry["head"]}
             if a.scope: receipt["scope"] = a.scope
             # save_state first, append_receipt second: a receipt should never exist for a
             # score that was never actually recorded, e.g. if save_state were to fail.

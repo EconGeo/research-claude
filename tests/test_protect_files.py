@@ -23,6 +23,14 @@ def run(tool_name, file_path):
     return p.returncode, p.stderr
 
 
+def run_bash(cmd, cwd=None):
+    payload = {"tool_name": "Bash", "tool_input": {"command": cmd}}
+    if cwd: payload["cwd"] = cwd
+    p = subprocess.run([str(HOOK)], input=json.dumps(payload),
+                       capture_output=True, text=True)
+    return p.returncode, p.stderr
+
+
 class TestProtectFiles(unittest.TestCase):
     def assertBlocked(self, file_path):
         code, err = run("Edit", file_path)
@@ -90,6 +98,79 @@ class TestProtectFiles(unittest.TestCase):
             self.assertFalse(f.exists())
             code, _ = run("Edit", str(f))
             self.assertEqual(code, 2, "Edit of a protected path is blocked even when absent")
+
+    def test_bash_shell_writes_to_protected_files_blocked(self):
+        for cmd in ("echo x > quality_reports/pipeline_state.json", "rm quality_reports/design_lock.json",
+                    "cp a.json quality_reports/design_lock.json", "sed -i '' s/a/b/ .claude/state/design_token.json",
+                    "echo x | tee quality_reports/findings_ledger.md", "mv x quality_reports/rulings_log.md",
+                    "tee -a quality_reports/findings_ledger.md", "git rm quality_reports/rulings_log.md",
+                    "cp seeds/settings.json .claude/settings.json"):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 2, cmd)
+
+    def test_bash_reads_and_other_commands_allowed(self):
+        for cmd in ("cat quality_reports/pipeline_state.json", "grep x quality_reports/design_lock.json",
+                    "python3 .claude/scripts/pipeline.py status", "ls quality_reports && echo done > notes.txt",
+                    "jq . quality_reports/receipts.jsonl | head", "quarto render manuscript_p.qmd 2>&1 | tail -5"):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 0, f"{cmd}: {err}")
+
+    def test_bash_without_any_write_form_is_allowed_fast(self):
+        for cmd in ("python3 .claude/scripts/pipeline.py next", "ls quality_reports", "cat settings.json pipeline_state.json"):
+            code, err = run_bash(cmd); self.assertEqual(code, 0, f"{cmd}: {err}")
+
+    def test_bash_names_without_writing_are_allowed(self):
+        for cmd in ('git commit -m "a -> settings.json"', 'git commit -m "x rm findings_ledger.md"',
+                    "cp .claude/settings.json /tmp/x", 'grep -n ">" .claude/settings.json'):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 0, f"{cmd}: {err}")
+
+    def test_bash_critic_report_create_allowed_overwrite_denied(self):
+        with tempfile.TemporaryDirectory() as d:
+            new = pathlib.Path(d, "explorer-critic_2026-10-18.md")
+            code, err = run_bash(f"cat > {new} <<EOF\nbody 'it's\nEOF", cwd=d)
+            self.assertEqual(code, 0, err)
+            new.write_text("x")
+            code, _ = run_bash(f"cat > {new} <<EOF\nbody\nEOF", cwd=d)
+            self.assertEqual(code, 2)
+            code, _ = run_bash("echo x >> explorer-critic_2026-10-18.md", cwd=d)
+            self.assertEqual(code, 2)
+
+    def test_bash_ampersand_redirect_dd_and_here_string(self):
+        for cmd in ("echo x &> quality_reports/pipeline_state.json", "echo x &>> quality_reports/rulings_log.md",
+                    "make &>quality_reports/design_lock.json",
+                    "dd if=/dev/null of=quality_reports/design_lock.json", "dd of='quality_reports/cold_render.json' bs=1",
+                    "cat <<< x\necho y > quality_reports/pipeline_state.json",
+                    "tr a b <<< \"$x\" > .claude/settings.json"):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 2, cmd)
+        for cmd in ("dd if=quality_reports/design_lock.json of=/tmp/copy.json", "cat <<< x\necho y > notes.txt",
+                    "echo x &> build.log"):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 0, f"{cmd}: {err}")
+
+    def test_bash_unparseable_command_falls_back_to_a_scan(self):
+        """shlex fails on a quoted string that spans lines; that used to exit 0 (fail open)."""
+        for cmd in ('git commit -m "a\nb" && echo x > quality_reports/pipeline_state.json',
+                    'git commit -m "a\nb" && rm quality_reports/design_lock.json',
+                    'echo "a\nb" | tee quality_reports/findings_ledger.md',
+                    'git commit -m "a\nb" ; dd of=quality_reports/cold_render.json',
+                    'echo "a\nb" &>> quality_reports/rulings_log.md'):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 2, cmd)
+        for cmd in ('git commit -m "a\nb"', 'git commit -m "first\nsecond" && echo ok > notes.txt'):
+            code, err = run_bash(cmd)
+            self.assertEqual(code, 0, f"{cmd}: {err}")
+
+    def test_bash_unparseable_create_of_new_report_allowed(self):
+        with tempfile.TemporaryDirectory() as d:
+            code, err = run_bash('echo "a\nb" > explorer-critic_2026-10-18.md', cwd=d)
+            self.assertEqual(code, 0, err)
+
+    def test_new_record_files_protected_for_edit(self):
+        for n in ("design_lock.json", "design_token.json", "design_amendments.csv", "design_amendments.md",
+                  "render_fingerprint.json", "cold_render.json", "findings_ledger.md", "rulings_log.md"):
+            self.assertBlocked("/tmp/proj/quality_reports/" + n)
 
     def test_hook_is_wired_in_the_seed(self):
         seed = json.loads((ROOT / "seeds" / "settings.json").read_text())

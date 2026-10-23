@@ -6,6 +6,22 @@ def run(*args, root):
     p = subprocess.run([sys.executable, str(PIPE), "--root", str(root), *args], capture_output=True, text=True)
     return p.returncode, p.stdout + p.stderr
 
+def sign_fixture_design(case, root):
+    """Sign the fixture's `design:` block the way the author would: a test token stands in for the
+    chat approval, then `design sign`. The lock depends on the block, so it is generated here and
+    never committed. Once a lock exists, a score recorded with no fingerprint file is stale (fail
+    closed), so a stub fingerprint goes beside it; the staleness tests rewrite it."""
+    if str(ROOT / "scripts") not in sys.path: sys.path.insert(0, str(ROOT / "scripts"))
+    import author_token, design_block
+    ms_text = (root / "manuscript_fixture.qmd").read_text()
+    author_token.issue(root, "sign", None, design_block.design_hash(ms_text))
+    rc, out = run("design", "sign", "--signer", "fixture", root=root)
+    case.assertEqual(rc, 0, out)
+    fp = root / "quality_reports" / "render_fingerprint.json"
+    fp.parent.mkdir(parents=True, exist_ok=True)
+    fp.write_text(json.dumps({"estimates_hash": "fixture", "data_hash": "fixture",
+                              "design_hash": "fixture", "models": ["m_main"]}, indent=2) + "\n")
+
 class FixtureCase(unittest.TestCase):
     def setUp(self):
         self.t = pathlib.Path(tempfile.mkdtemp())
@@ -19,6 +35,7 @@ class FixtureCase(unittest.TestCase):
         # the report every FixtureCase test that isn't specifically testing that refusal passes
         # via `--report r.md`.
         (self.t / "r.md").write_text("stub report\n")
+        sign_fixture_design(self, self.t)
     def tearDown(self): shutil.rmtree(self.t)
     def log(self, agent): self.assertEqual(run("log", agent, root=self.t)[0], 0)
 
@@ -787,6 +804,16 @@ class TestCriticInputs(FixtureCase):
         self.assertIn("## quarto render manuscript_fixture.qmd — exit 0", log)
         self.assertIn("## prose_number_check.py manuscript_fixture.qmd — exit 0", log)
         self.assertIn("## check_render.py", log)
+
+    def test_latex_log_is_passed_when_present_and_reported_absent_otherwise(self):
+        rc, out = run("critic-inputs", root=self.t); self.assertEqual(rc, 0, out)
+        self.assertIn("latex log: absent", self._log(out))
+        # Quarto deletes the LaTeX log unless `latex-clean: false` (tested 2026-10-18).
+        ms = self.t / "manuscript_fixture.qmd"
+        ms.write_text(ms.read_text().replace("keep-tex: false", "latex-clean: false"))
+        rc, out = run("critic-inputs", root=self.t); self.assertEqual(rc, 0, out)
+        self.assertTrue((self.t / "manuscript_fixture.log").is_file())
+        self.assertIn("latex log: passed manuscript_fixture.log", self._log(out))
 
     def test_renders_even_when_the_output_is_fresh(self):
         """`render` the predicate skips a fresh manuscript; the critic counts WARNINGs, so this

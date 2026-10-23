@@ -74,6 +74,18 @@ class TestAuditGraphLogic(unittest.TestCase):
             self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
             self.assertIn("dangling path refs        : 1", r.stdout)
 
+    def test_r_txt_template_resolves(self):
+        # A pasted-not-sourced R template ships as `.R.txt`; PATH_RE stopped at `.R` and
+        # reported the truncated stem as dangling.
+        with tempfile.TemporaryDirectory() as t:
+            root = pathlib.Path(t)
+            (root / "rules").mkdir(); (root / "templates").mkdir()
+            (root / "rules" / "probe.md").write_text("Paste `.claude/templates/h.R.txt` into the setup chunk.\n")
+            (root / "templates" / "h.R.txt").write_text("x <- 1\n")
+            r = run(str(root))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertIn("dangling path refs        : 0", r.stdout)
+
     def test_real_tree_has_zero_dangling_paths(self):
         r = run(str(ROOT))
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)

@@ -1,0 +1,12 @@
+# Pipeline-internal vocabulary that must never reach a manuscript (spec §5). One regex per line.
+governing p
+wording band
+rival reading
+verdict class(es)?
+finding ledger
+design lock
+\b[a-z]+-critic\b
+pipeline\.py
+\bINV-\d+\b
+(?-i:\b(?:F|L)-0\d\d\b)
+\bruling R-\d{1,3}\b

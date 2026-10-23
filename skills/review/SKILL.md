@@ -38,6 +38,14 @@ Read `.claude/rules/agents.md` before the first dispatch.
 
 ## Mode Details
 
+**Before any dispatch on the declared manuscript,** run `python3 .claude/scripts/pipeline.py pre
+writer`: a `design-lock: CHANGED` or `UNLOCKED` FAIL is **blocking** — it stops the skill and is
+reported. Its other FAIL lines are reported, not blocking: a review scores work below the gate,
+and adoption reviews unscored work. Before each critic dispatch run `pipeline.py dispatch-ok
+<critic>` (`PASSED-UNCHANGED`: no dispatch unless the author asked) and, from round 2,
+`critic-context <critic>`, naming its file in the prompt; after saving each report, one `ledger
+add` row per finding (`.claude/rules/agents.md` §3, §6).
+
 **Every route that dispatches writer-critic** (Comprehensive, `--proofread`, `--all`) first runs
 `python3 .claude/scripts/pipeline.py critic-inputs` and names the log path it prints in the
 writer-critic dispatch prompt. writer-critic has no Bash; it scores Render (category 6) from that
@@ -115,6 +123,11 @@ All outputs land in `quality_reports/peer_review_<manuscript-stem>/`:
 
 Log the referee assignments (dispositions + pet peeves) in the editorial decision so the
 user can re-run with different combinations.
+
+**Referee requests are proposals:** a request to add an analysis or change the design is a
+`ledger add --proposal` row; nothing is built until `ledger accept`. An unattended accept or reject
+is a ruling (core rule 16); a proposal touching `design:` is a hard stop until the author approves
+`design unlock` in chat.
 
 ### R&R Second Round (`--peer --r2 [journal]`)
 

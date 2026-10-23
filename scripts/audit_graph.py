@@ -40,7 +40,7 @@ SHIP = ["agents","skills","rules","references","hooks","templates","scripts"]
 # .claude/-prefixed one are both still seen — that is the detection check_paths.py's own
 # lookbehind gives up. A tail match inside a longer directory name is not: zotpilot-skills/
 # and master_supporting_docs/ are not references to skills/ or docs/.
-PATH_RE  = re.compile(r'(?<![A-Za-z0-9_.-])(?:templates|references|scripts|agents|skills|rules|hooks|docs)/[A-Za-z0-9_./-]+\.(?:md|py|sh|json|R|qmd|tex|bib)')
+PATH_RE  = re.compile(r'(?<![A-Za-z0-9_.-])(?:templates|references|scripts|agents|skills|rules|hooks|docs)/[A-Za-z0-9_./-]+\.(?:md|py|sh|json|R\.txt|R|qmd|tex|bib)')
 AGENT_RE = re.compile(r'\b([a-z][a-z-]*-critic|librarian|orchestrator|guide-writer|coder|writer|explorer|strategist|theorist|storyteller|verifier|editor|data-engineer|domain-referee|methods-referee)\b', re.I)  # <!-- residue:prohibition -->
 SKILL_RE = re.compile(r'(?<![A-Za-z0-9_/-])/([a-z][a-z0-9-]{2,})\b')
 MARK     = re.compile(r'<!-- residue:(prohibition|historical) -->\s*$')

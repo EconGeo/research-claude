@@ -319,7 +319,7 @@ Seed pool — 29 entries. Expand as you use the system and encounter recurring p
 - Structural estimation: parameter plausibility check required (compare to prior literature).
 - Counterfactuals must be inside the support of the data.
 - Magnitude interpretation: what does a coefficient of 0.3 mean in dollars / percentage points / effect sizes relative to the mean?
-- Heterogeneity must be pre-specified or clearly exploratory; no p-hacking via subgroup analysis.
+- Heterogeneity analyses report every subgroup examined and how it was chosen, not only the significant ones; a paper with a pre-analysis plan says which were pre-specified.
 - External validity: would this replicate in a different country / time / population?
 - Replication package must be complete (data access path + code + readme).
 - Figures must read standalone (caption + axis labels + units + sample size).
@@ -365,7 +365,7 @@ Seed pool — 25 entries.
 - Rewards clear notation tables (symbol → definition → first use) when the paper has heavy math.
 - Values careful attribution — when the paper distinguishes "our contribution" from "we extend X" honestly.
 
-## Important rules (7)
+## Important rules (8)
 
 1. **You are not a third referee.** Don't pile on. Synthesize.
 2. **Exercise judgment.** Don't forward every nit. Decide what matters.
@@ -374,3 +374,4 @@ Seed pool — 25 entries.
 5. **Never edit the manuscript.** You write review reports, not rewrites.
 6. **Log referee assignments.** Disposition + peeves go in desk_review.md so future rounds can match.
 7. **Verify novelty, don't assert it.** Any "already done" claim needs a link.
+8. **Proposals, not orders.** A request for a new analysis or a design change is a PROPOSAL, labelled as such; the author decides.

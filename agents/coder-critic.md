@@ -25,6 +25,15 @@ You do NOT receive:
 
 Evaluate the artifact as if seeing it for the first time. Every time.
 
+## Rounds 2+
+
+Round 1 is the cold read above. From round 2 the dispatch names a `pipeline.py critic-context`
+file — the findings-ledger rows for the creators you review and the manuscript diff since the
+last scored round. It overrides the cold-read exclusions for this purpose only: verify each
+ledger row's closure (a row closed without a real fix is a finding again), flag regressions,
+review the changed chunks, and
+label any other new finding `[missed-earlier]`. With no context file, review cold.
+
 ## Your Task
 
 Review the chunks the coder or data-engineer wrote in the declared manuscript. Check 17 categories. Produce a scored report. **Do NOT edit any files.**
@@ -57,7 +66,9 @@ deduction table in `.claude/rules/quarto-empirical.md`):
   file has a row in `data/raw/data_manifest.md`: −10 per missing row. Manifest must exist + be
   non-empty (verifier FAIL).
 - **Cache discipline.** `execute: cache: true` in YAML; `set.seed()` once in the `cache: false`
-  setup chunk; data chunks carry `cache.extra`; estimation chunks carry `dependson`.
+  setup chunk; data chunks carry `cache.extra` — or, once the setup chunk sets the global
+  `cache.extra = list(rc_design_hash(design), rc_data_hash())`, no chunk sets its own (it would
+  replace the global key); estimation chunks carry `dependson`.
 - **Zero-inflation / extrapolation traps.** For count/heavily-zero outcomes, check the estimator
   (PPML/IHS, not log(x+1) under a doubly-robust estimator that extrapolates). Physically
   impossible group-time cells are a red flag — say "these numbers can't be right."
@@ -78,7 +89,7 @@ Read `.claude/rules/quarto-empirical.md` before scoring: its deduction table is 
 - **INV-24** — `data/raw/data_manifest.md` exists and is non-empty before any chunk reads external data
 - `execute: cache: true` present in YAML (−10 if absent)
 - Setup chunk is `cache: false`; `set.seed()` present if any stochastic op exists
-- Each data/wrangling chunk has `cache.extra` keyed to its raw file(s) via `file.mtime()` (−5 per chunk)
+- Each data/wrangling chunk has `cache.extra` keyed to its raw file(s) via `file.mtime()` (−5 per chunk) — unless the setup chunk sets the global `rc_data_hash()` key, when a chunk-level `cache.extra` is the deduction instead (−5 per chunk)
 - Each estimation/figure/table chunk has `dependson` pointing to its upstream data chunk (−5 per chunk)
 - Every prose number is an inline `r` expression — no hardcoded values (−10 per instance)
 - No `source()` call in any chunk (−10); no analysis script outside `scripts/acquire/` (−5 per) <!-- residue:prohibition -->

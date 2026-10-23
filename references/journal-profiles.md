@@ -24,7 +24,7 @@ Each journal profile includes a **Referee pool** that weights which dispositions
 
 ### Table Format Convention
 
-**Default:** All journals use standard economics table conventions — significance stars (`*` p<0.10, `**` p<0.05, `***` p<0.01), standard errors in parentheses, booktabs formatting. This default applies unless a journal profile below includes a **Table format** override.
+**Default:** All journals use standard economics table conventions — significance stars (`*` p ≤ 0.10, `**` p ≤ 0.05, `***` p ≤ 0.01), standard errors in parentheses, booktabs formatting. This default applies unless a journal profile below includes a **Table format** override.
 
 **Exception — AEA journals** (AER, AEJ:Applied, AEJ:Policy, AER:Insights): No significance stars. Report standard errors in parentheses; use exact p-values or confidence intervals for key results. See the [AEA Style Guide](https://www.aeaweb.org/journals/aeri/style-guide) and `.claude/skills/analyze/references/table-standards.md` for implementation details.
 
@@ -409,7 +409,7 @@ Each journal profile includes a **Referee pool** that weights which dispositions
 
 **Referee pool:** CREDIBILITY (high), MEASUREMENT (high), POLICY (high), STRUCTURAL (medium), THEORY (low), SKEPTIC (low)
 
-**Table format:** Standard significance stars (* p<0.10, ** p<0.05, *** p<0.01). SE in parentheses. Include observation counts, R², and SE-clustering specification in all regression tables.
+**Table format:** Standard significance stars (* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01). SE in parentheses. Include observation counts, R², and SE-clustering specification in all regression tables.
 
 ### Journal of Real Estate Finance and Economics (JREFE)
 
@@ -427,7 +427,7 @@ Each journal profile includes a **Referee pool** that weights which dispositions
 
 **Referee pool:** CREDIBILITY (high), STRUCTURAL (high), MEASUREMENT (medium), POLICY (medium), THEORY (medium), SKEPTIC (low)
 
-**Table format:** Standard significance stars (* p<0.10, ** p<0.05, *** p<0.01). SE in parentheses. Include observation counts, R², and SE-clustering specification in all regression tables.
+**Table format:** Standard significance stars (* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01). SE in parentheses. Include observation counts, R², and SE-clustering specification in all regression tables.
 
 ### Journal of Housing Economics (JHousE)
 
@@ -445,7 +445,7 @@ Each journal profile includes a **Referee pool** that weights which dispositions
 
 **Referee pool:** POLICY (high), MEASUREMENT (high), CREDIBILITY (medium), STRUCTURAL (low), THEORY (low), SKEPTIC (low)
 
-**Table format:** Standard significance stars (* p<0.10, ** p<0.05, *** p<0.01). SE in parentheses. Include observation counts, R², and SE-clustering specification in all regression tables.
+**Table format:** Standard significance stars (* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01). SE in parentheses. Include observation counts, R², and SE-clustering specification in all regression tables.
 
 ### Journal of Real Estate Research (JRER)
 

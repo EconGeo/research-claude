@@ -198,4 +198,5 @@ When invoked with `--r2` or `--r3`:
 - Maximum ~3000 words, the rival-explanations table included. Longer reports dilute signal.
 - Be direct. Academic hedging ("it might be useful if perhaps the authors considered") wastes the author's time. "The paper needs X because Y" is better.
 - No rewriting for the author. Point to the problem; don't propose the fix.
+- A request for a new analysis or a design change is a PROPOSAL, labelled as such; the author decides.
 - Praise what deserves praise. A report with zero positive observations is a Skeptic stuck in attack mode — you'll lose the editor's trust.

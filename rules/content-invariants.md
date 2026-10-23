@@ -22,8 +22,8 @@ and the data source.
 **INV-3.** Booktabs three-line rules only. No `\hline`, no vertical rules.
 
 **INV-4.** Significance stars follow the journal profile. AEA journals: no stars,
-report standard errors and use confidence intervals. Default: stars with a note
-defining the thresholds.
+report standard errors and use confidence intervals. Default: `*` p ≤ 0.10,
+`**` p ≤ 0.05, `***` p ≤ 0.01, stated in the note.
 
 **INV-5.** Abstract is 150 words or fewer.
 
@@ -44,9 +44,11 @@ block carries its own APA `csl:`. Never raw `\citet{}` / `\citep{}` in prose <!-
 project supplies a preamble; Quarto's default needs no intervention.
 
 **INV-11.** **Every number in prose is an inline `` `r ` `` expression evaluated
-against a live object. Never a typed literal.** This is the load-bearing one. A
-hardcoded value survives a clean render, survives review, and is how a paper ends up
-describing a coefficient as significant beside a table showing p = 0.759.
+against a live object. Never a typed literal — and every significance, direction,
+comparison or universality word beside a value is helper output, a raw inline `if`, or
+sits in a sentence with a `stopifnot()` result guard (rule 14 of core.md).** This is the
+load-bearing one. A hardcoded value survives a clean render, survives review, and is how a
+paper ends up describing a coefficient as significant beside a table showing p = 0.759.
 
 **INV-12.** No titles inside ggplot/matplotlib figures. Titles go in `#| fig-cap:`.
 Panel labels ("Panel A: …") inside multi-panel figures are fine.
@@ -72,7 +74,9 @@ vectorized operations.
 
 **INV-18.** Code writes nothing outside the render's own `_cache/` and `_files/`
 directories. No chunk writes a file by hand; acquisition scripts write only to
-`data/raw/`.
+`data/raw/`. The one exception is the `fingerprint` chunk: `rc_fingerprint()` writes
+`quality_reports/render_fingerprint.json`, which `pipeline.py` reads to decide which reviews
+a re-estimation reopens.
 
 **INV-19.** No prohibited functions: `setwd()` / `os.chdir()` / `cd()`,
 `rm(list = ls())`, `install.packages()` in scripts, `attach()` / `detach()`.
@@ -122,7 +126,7 @@ kept rather than reused so older reports and reviews still resolve.
 
 | Invariant | Enforced by |
 |---|---|
-| INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required; verifier check 4b; also fails on a sign typed beside an inline value (not allowlistable) and on an unclosed fence (exit 2); scans captions in chunk options and R caption= or title= strings; counts verdict words beside live values, enforced when prose-verdict-ceiling: is declared |
+| INV-11 | `python3 .claude/scripts/prose_number_check.py manuscript_<project>.qmd` — exit 0 required; verifier check 4b; also fails on a sign typed beside an inline value (not allowlistable) and on an unclosed fence (exit 2); scans captions in chunk options and R caption= or title= strings; counts verdict words beside live values, enforced when prose-verdict-ceiling: is declared; once the manuscript has a `design:` block the verdict ceiling defaults to 0 (a word beside a value must be helper output, a raw inline `if`, or guarded) |
 | INV-14, INV-16, INV-19a (`setwd()`/`rm(list=ls())`/`install.packages()`/`attach()`) | lint hook (`.claude/hooks/lint-scripts.sh`, `scripts/acquire/` scripts) — advisory only (always exit 0), tested to actually fire on each of these + `coder-critic` (chunk-level: `set.seed()`, cache setup) + verifier check 4c (mandatory FAIL) |
 | INV-15 (packages loaded in the setup chunk) | **The lint hook does not check this**, despite being named for it: its one relevant rule is "`library()` call after line 30", which is noise on any real manuscript (the setup chunk itself can run past line 30) rather than a check for "outside the setup chunk". `reviewer-judgment` only: `coder-critic`; verifier check 4c (mandatory FAIL) |
 | INV-19b (`source()` inside a chunk) | `pipeline.py`'s `no-source` predicate on `coder.produces` — blocking, fails `post coder`; also flagged advisory by the lint hook; `coder-critic` |

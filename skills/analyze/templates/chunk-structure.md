@@ -13,6 +13,8 @@ from them.
 #| include: false
 library(here); library(tidyverse); library(fixest); library(modelsummary); library(kableExtra)
 set.seed(20240101L)                 # exactly once, here (INV-14)
+# tested: modelsummary 2.6.0 stars with p ≤ cutoff but its automatic note says p <
+options(modelsummary_stars_note = FALSE)
 
 # Paper-to-code naming map (established in the Pre-Code Report; never invented mid-chunk)
 #   Y_it     -> outcome        (data/raw/<file>.csv: <column>)
@@ -29,6 +31,8 @@ Helper functions used by more than one chunk are defined **here**, in the setup 
 `functions/` directory and never `source()`d (INV-19, −10).
 
 ## 2. Wrangling chunk — `cache.extra` on every raw file it reads
+
+The chunk-level `cache.extra` below applies until the setup chunk sets the global `rc_data_hash()` cache key; after that, no chunk sets its own `cache.extra` (it would replace the global key; `.claude/rules/quarto-empirical.md`, "Design block and claim helpers").
 
 ```{r}
 #| label: build-panel
@@ -71,7 +75,8 @@ modelsummary(
   output   = "kableExtra",            # PDF; Word uses output = "flextable" (quarto-word.md)
   booktabs = TRUE,
   stars    = c("*" = 0.10, "**" = 0.05, "***" = 0.01),   # FALSE for AEA journals (INV-4)
-  notes    = "Standard errors clustered by unit in parentheses. Sample: 2000–2020.",
+  notes    = c("Standard errors clustered by unit in parentheses. Sample: 2000–2020.",
+               "* p ≤ 0.10, ** p ≤ 0.05, *** p ≤ 0.01"),
   escape   = FALSE
 )
 ```

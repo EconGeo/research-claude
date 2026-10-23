@@ -27,6 +27,8 @@ Read `.claude/rules/agents.md` before the first dispatch.
    Step 5 reads the sections it revises. **Do not Read the manuscript in this session** — not
    in full and not to check whether a referee's premise holds. Checking a FATAL premise is the
    re-estimation Step 2 escalates to the user, not something this step does first
+5. Run `python3 .claude/scripts/pipeline.py pre writer` (and `pre coder` before any coder
+   dispatch in Step 5). This is a **blocking** step: a FAIL stops the skill and is reported
 
 ### Step 2: Classify severity, then route
 
@@ -63,6 +65,15 @@ tracker's action item.
 | **DISAGREE** | → User (mandatory) | **Option gate** (read `.claude/rules/option-gates.md` first): 3–5 response strategies (evidence-led, partial concession, reframing, scope clarification, decline with citation), pick one, then draft; flag for review |
 | **MINOR** | → Writer agent | Draft fix directly |
 
+**A request to add an analysis or change the design is a proposal.** Record each NEW ANALYSIS
+comment, and any comment that would change the design, with `python3 .claude/scripts/pipeline.py
+ledger add --proposal --creator <coder|writer> --report <referee report> --location <comment id>
+--finding "<request>"`. Nothing is built until `ledger accept <ID> --by author` (or, unattended,
+`--by session --reason "<why>"`). An unattended accept or reject is a ruling, which the ledger
+command logs (core rule 16). A proposal that touches the `design:` block is a hard stop: write it
+with `pipeline.py question add` and build nothing until the author approves `design unlock` in
+chat (core rule 13).
+
 ### Step 4: Build Tracking Document
 Fill `.claude/skills/revise/templates/response-tracker.md` and save it to
 `quality_reports/referee_response_tracker.md` with:
@@ -70,8 +81,14 @@ Fill `.claude/skills/revise/templates/response-tracker.md` and save it to
 - Action items by priority (HIGH: new analysis, MEDIUM: clarification, FLAGGED: disagreements, LOW: minor)
 
 ### Step 5: Dispatch Agents
+Before every critic dispatch, run `python3 .claude/scripts/pipeline.py dispatch-ok <critic>`:
+`PASSED-UNCHANGED` (exit 1) means no dispatch unless the author asked (`--author-request`). From
+round 2, run `python3 .claude/scripts/pipeline.py critic-context <critic>` and name the file it
+prints in the prompt (`.claude/rules/agents.md` §3). After saving each critic report, add one
+ledger row per finding with `python3 .claude/scripts/pipeline.py ledger add --creator <creator>
+--report <report path> --location <where> --finding "<finding>"`.
 - CLARIFICATION/REWRITE → dispatch writer; run `python3 .claude/scripts/pipeline.py critic-inputs`; dispatch writer-critic naming the log path it prints (it has no Bash and scores Render from that log — `.claude/rules/agents.md` §2); record the score
-- NEW ANALYSIS → after user approval dispatch coder, then coder-critic; record the score. Then dispatch writer, run `critic-inputs`, and dispatch writer-critic with its log path for the affected section; record the score.
+- NEW ANALYSIS → after user approval (its proposal row accepted) dispatch coder, then coder-critic; record the score. Then dispatch writer, run `critic-inputs`, and dispatch writer-critic with its log path for the affected section; record the score.
   - `code`: `python3 .claude/scripts/pipeline.py state record-score code <score> --critic coder-critic --deductions <total> --report <path>`
   - `manuscript`: `python3 .claude/scripts/pipeline.py state record-score manuscript <score> --critic writer-critic --deductions <total> --report <path> --scope section:<name>`
 - DISAGREE → draft diplomatic response, flag prominently for user

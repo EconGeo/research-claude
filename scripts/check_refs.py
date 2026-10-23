@@ -239,9 +239,13 @@ def crit_hooks_readme(root):
             hits.append(f"hooks/README.md: {name} row says '{event}', hook says '{m.group(1)}'")
         if event.lower().startswith("git"):
             hits.append(f"hooks/README.md: {name} is a git hook listed in the Claude hook table")
+    for g in re.findall(r"^\|\s*`(git/[^`]*)`", readme_text, re.M):
+        hits.append(f"hooks/README.md: table row for {g} — hooks/git/ holds git hooks, not Claude hooks; describe them in the 'Git hooks' section")
     documented = {n for n, _ in rows}
     hooks_dir = root / "hooks"
     if hooks_dir.is_dir():
+        # hooks/git/ holds git hooks (core.hooksPath), never Claude hooks: the glob below is
+        # deliberately top-level only, so nothing under hooks/git/ is expected in the table.
         for hook in sorted(hooks_dir.glob("*.py")) + sorted(hooks_dir.glob("*.sh")):
             if hook.name not in documented:
                 hits.append(f"hooks/{hook.name}: no row in hooks/README.md")
@@ -296,6 +300,15 @@ AP_ALLOW = {
     "quality_reports/deposit_manifest_*.md":      "/submit deposit output — not gated (Phase 3.5)",
     "quality_reports/data_tags/*":                "/ztp-data-tag pass reports — records, not gated",
     "quality_reports/critic_inputs/*.log":        "pipeline.py critic-inputs log handed to writer-critic — gitignored session mechanics, not gated (L-005)",
+    "quality_reports/design_lock.json":           "design lock — written only by `pipeline.py design`",
+    "quality_reports/design_amendments.csv":      "design amendment record — rendered by `tbl-design-changes`",
+    "quality_reports/design_amendments.md":       "design amendment record — rendered by `tbl-design-changes`",
+    "quality_reports/render_fingerprint.json":    "results fingerprint — written by the manuscript's `fingerprint` chunk",
+    "quality_reports/cold_render.json":           "`pipeline.py render --cold` receipt",
+    "quality_reports/findings_ledger.md":         "finding ledger — `pipeline.py ledger`",
+    "quality_reports/rulings_log.md":             "rulings log — `pipeline.py ruling add`",
+    "quality_reports/questions_for_author.md":    "hard-stop questions — `pipeline.py question add`",
+    "quality_reports/critic_inputs/*.md":         "`pipeline.py critic-context` file — round 2+ context",
 }
 
 def _ap_expand(tok):

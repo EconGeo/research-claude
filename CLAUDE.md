@@ -4,6 +4,9 @@ This repo **is** the research pipeline. It is the single edit surface: every pap
 project under `~/Research` links to this working copy per item, so a change here
 reaches all of them immediately.
 
+**Pipeline core rules, loaded here too** — a session redesigning the pipeline carries the
+rules the papers run under: @rules/core.md
+
 **Two consequences to keep in mind while working here.**
 
 1. **An edit to `agents/`, `skills/`, `rules/` or `hooks/` is live in every paper the

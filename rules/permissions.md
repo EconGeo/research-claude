@@ -162,6 +162,7 @@ read; this file exists so the registry is readable in a linked project.
 - **ROLE:** creator (agent) · **PARALLEL_GROUP:** execution
 - **REQUIRES:** 
   - strategy score ≥ 80
+  - the manuscript's `design:` block is signed and unchanged (or the project has none yet)
 - **PRODUCES:**
   - ≥1 chunk(s) labelled `tbl-*`
   - ≥1 chunk(s) labelled `fig-*`
@@ -195,6 +196,7 @@ read; this file exists so the registry is readable in a linked project.
   - code score ≥ 80
   - ≥1 chunk(s) labelled `tbl-*` — produced by `/analyze`
   - `quarto render` exit 0
+  - the manuscript's `design:` block is signed and unchanged (or the project has none yet)
 - **PRODUCES:**
   - `quarto render` exit 0
   - `prose_number_check.py` exit 0

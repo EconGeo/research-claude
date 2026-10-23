@@ -90,6 +90,11 @@ the `ESCALATION_TARGET` declared for the creator in the registry. `pipeline.py s
   every rewrite of one, so a second round saved to the first round's name stalls the loop.
 - **Each round is a fresh foreground `Agent` dispatch** (§4), never `SendMessage` to the
   earlier agent — the round's result is what the critic re-scores.
+- Round 1 is a cold read. From round 2, the dispatching skill runs `pipeline.py critic-context
+  <critic>` and names the file in the prompt: the critic verifies each ledger row's closure,
+  flags regressions, reviews changed text and every summary sentence, and labels any other new
+  finding `[missed-earlier]`. Before any dispatch the skill runs `pipeline.py dispatch-ok
+  <critic>`; `PASSED-UNCHANGED` means no dispatch unless the author asked.
 - Escalation is logged in the research journal with the strike count.
 - Escalating to the user requires a specific question: "strategist-critic requires X, which
   contradicts Y — which takes priority?", never "they disagree".
@@ -169,8 +174,12 @@ passes each scored the section they touched, while the abstract and conclusions 
 qualifiers a full review had already flagged — and a model audit of the pre-redesign version
 was taken as covering the new one.
 
-**The finding ledger.** When a plan is written from critic reports, every finding gets one
-row naming its plan item; at closing, each row names the line or commit that resolves it or
-the stated reason it is not acted on. No row is blank, and a fresh-context agent that has not
-seen the plan checks the ledger against the reports and the final manuscript before re-scoring.
-A finding never leaves the record by being omitted from the next plan.
+**The finding ledger** is `quality_reports/findings_ledger.md`, written only through
+`pipeline.py ledger`; `post <creator>` refuses while a row for that creator is open or a
+proposal is undecided. The whole-manuscript re-review is enforced by the fingerprint:
+`record-score` stores the results fingerprint, and a strategy, manuscript or referee score
+earned under another one is STALE (`pipeline.py score`, `next`, `post`, `stale`, the pre-commit
+check, and `pre` for the manuscript component only — a stale strategy or referee score is noted
+there, never blocking). A fix made while review is stale is closed with `ledger close ID --pending`
+and settles to the commit that ends the stale window. A decline or a proposal decision is a
+ruling and is logged (core rule 16).

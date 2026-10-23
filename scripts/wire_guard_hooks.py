@@ -7,18 +7,45 @@ settings.json is project-owned and copy_seed never overwrites it, so a hook adde
 reaches new projects only. These two guards are enforcement, not taste: a guard that is linked
 but unwired enforces nothing (hooks/README.md, "A hook that is installed but unwired is not a
 dormant feature"). This adds the entries a project lacks and leaves every other key alone.
-Idempotent: a hook already named anywhere in the file is not added twice. Prints the number of
-entries added.
+Idempotent: a hook already named anywhere in the file is not added twice. Also widens the protect-files matcher to cover Bash. Prints the number of
+entries added or changed. Each hook is wired with the timeout the seed (`seeds/settings.json`) gives
+it (5 seconds when the seed names none or cannot be read), so a wired project matches a new one.
 """
 import json, sys
 from pathlib import Path
 
 CMD = '"$CLAUDE_PROJECT_DIR"/.claude/run-hook.sh {}'
+SEED = Path(__file__).resolve().parent.parent / "seeds" / "settings.json"
+DEFAULT_TIMEOUT = 5
 WANTED = [
     ("PreToolUse", "Write|Edit|Bash", "script-guard.py"),
     ("PreToolUse", "Write|Edit|Bash", "read-gate.py"),
+    ("PreToolUse", "Write|Edit|Bash", "design-guard.py"),
     ("PostToolUse", "Read|Edit|Write", "read-gate.py"),
+    ("UserPromptSubmit", None, "design-token.py"),
+    ("SessionStart", None, "stale-stages.py"),
 ]
+
+
+def check_wanted() -> None:
+    if any(h.startswith("git/") for _, _, h in WANTED):
+        raise ValueError("hooks/git/ holds git hooks, not Claude hooks")
+
+
+check_wanted()
+
+
+def seed_timeout(event: str, hook: str) -> int:
+    """The timeout the seed wires `hook` with under `event`; DEFAULT_TIMEOUT when it has none."""
+    try:
+        groups = json.loads(SEED.read_text()).get("hooks", {}).get(event, [])
+    except (OSError, ValueError):
+        return DEFAULT_TIMEOUT
+    for g in groups:
+        for h in g.get("hooks", []):
+            if hook in h.get("command", "") and isinstance(h.get("timeout"), int):
+                return h["timeout"]
+    return DEFAULT_TIMEOUT
 
 
 def wire(settings: dict) -> int:
@@ -31,17 +58,29 @@ def wire(settings: dict) -> int:
             continue
         group = next((g for g in groups if g.get("matcher") == matcher), None)
         if group is None:
-            group = {"matcher": matcher, "hooks": []}
+            group = {"hooks": []} if matcher is None else {"matcher": matcher, "hooks": []}
             groups.append(group)
-        group["hooks"].append({"type": "command", "command": CMD.format(hook), "timeout": 5})
+        group["hooks"].append({"type": "command", "command": CMD.format(hook),
+                               "timeout": seed_timeout(event, hook)})
         added += 1
     return added
+
+
+def widen(settings: dict) -> int:
+    """An `Edit|Write` group holding protect-files.sh becomes `Edit|Write|Bash` (shell writes)."""
+    changed = 0
+    for g in settings.get("hooks", {}).get("PreToolUse", []):
+        if g.get("matcher") == "Edit|Write" and any(
+                "protect-files.sh" in h.get("command", "") for h in g.get("hooks", [])):
+            g["matcher"] = "Edit|Write|Bash"
+            changed += 1
+    return changed
 
 
 if __name__ == "__main__":
     path = Path(sys.argv[1])
     data = json.loads(path.read_text())
-    n = wire(data)
+    n = wire(data) + widen(data)
     if n:
         path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
     print(n)
