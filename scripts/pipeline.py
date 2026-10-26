@@ -1039,15 +1039,24 @@ def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: s
     print("commit-check: " + ("FAIL" if probs else "ok")); return 1 if probs else 0
 
 def sources_docx(root: Path) -> int:
-    """The sourced Word build: `<stem>_sourced.docx`, with each tagged claim's source paragraph as
-    a Word comment (.claude/scripts/source_comments.lua). The plain `<stem>.docx` is never touched.
-    Prints the source-check warnings and the output path; returns quarto's exit code."""
+    """The sourced Word build: `<stem>_sourced.docx` beside the manuscript, with each tagged claim's
+    source paragraph as a Word comment (.claude/scripts/source_comments.lua). The plain
+    `<stem>.docx` is never touched. Prints the source-check warnings, then the output path when
+    quarto succeeded; returns quarto's exit code.
+
+    Quarto runs from the manuscript's own directory: `--output` takes a bare file name, and from the
+    project root a manuscript in a subdirectory would put it in the root instead (tested 2026-10-26,
+    Quarto 1.9.37; project filters and post-render still apply from there)."""
     ms = declared_manuscript(root)
-    out_name = f"{ms.stem}_sourced.docx"
-    cmd = ["quarto", "render", str(ms.relative_to(root)), "--to", "docx",
-           "-M", "source-comments:true", "--output", out_name]
+    out_path = ms.parent / f"{ms.stem}_sourced.docx"
+    cmd = ["quarto", "render", ms.name, "--to", "docx",
+           "-M", "source-comments:true", "--output", out_path.name]
     # Quarto's log is captured so the post-render source check's warnings are not printed twice.
-    done = subprocess.run(cmd, cwd=root, capture_output=True, text=True)
+    try:
+        done = subprocess.run(cmd, cwd=ms.parent, capture_output=True, text=True)
+    except FileNotFoundError:
+        print("sources docx: quarto is not on PATH")
+        return 1
     if done.returncode != 0:
         tail = (done.stdout + done.stderr).strip().splitlines()[-15:]
         print(f"sources docx: quarto exited {done.returncode}\n" + "\n".join(tail))
@@ -1057,7 +1066,8 @@ def sources_docx(root: Path) -> int:
             print(line)
     except Exception as err:  # warn only: the check never changes the exit code
         print(f"source-check: internal error: {err}")
-    print(ms.parent / out_name)
+    if done.returncode == 0:
+        print(out_path)
     return done.returncode
 
 # ── main ────────────────────────────────────────────────────────────────────

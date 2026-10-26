@@ -4,6 +4,7 @@ Each render is slow, so setUpClass builds one tiny fixture project and renders i
 the tests only read the files those renders left behind.
 """
 import csv
+import html
 import os
 import re
 import shutil
@@ -26,6 +27,11 @@ SOURCE_TEXT = (
 SENTENCE = "The Firm shall disclose the fee in writing."
 OK_CLAIM = "Paper wording of the disclosure rule."
 BAD_CLAIM = "A claim the source does not support."
+# Characters markdown, TeX, HTML or citeproc would act on, all of which must reach Word as written.
+ODD_PARAGRAPH = (r"Costs *not* $5 or $x$ at C:\path\file, 2^10^ and ~sub~ for @smith2020 <b>x</b>"
+                 r" `code` \textbf{y} [z]{.u} -- \"q\". The odd sentence is here. Tail <i> & ends.")
+ODD_SENTENCE = "The odd sentence is here."
+ODD_CLAIM = "Paper wording of the odd rule."
 MANUSCRIPT = f"""---
 title: Fixture
 format:
@@ -35,23 +41,28 @@ format:
 
 Opening text. [{OK_CLAIM}]{{.src ref="ok" id="c1"}} Middle text.
 [{BAD_CLAIM}]{{.src ref="bad" id="c2"}} Closing text.
+[{ODD_CLAIM}]{{.src ref="odd" id="c3"}} End.
 """
 REGISTRY_ROWS = [
     {"id": "ok", "file": "sources/a.txt", "label": "Lbl", "page": "3", "sentence": SENTENCE,
      "cleanup": "", "ocr": "FALSE"},
     {"id": "bad", "file": "sources/a.txt", "label": "Lbl", "page": "3",
      "sentence": "This sentence is absent from the file.", "cleanup": "", "ocr": "FALSE"},
+    {"id": "odd", "file": "sources/odd.txt", "label": "Odd", "page": "1", "sentence": ODD_SENTENCE,
+     "cleanup": "", "ocr": "FALSE"},
 ]
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 
 
-def make_project(root, scripts_link=True):
-    """A paper project: the seed _quarto.yml, CLAUDE.md, manuscript, one source, the registry."""
+def make_project(root, scripts_link=True, manuscript="paper.qmd"):
+    """A paper project: the seed _quarto.yml, CLAUDE.md, manuscript, two sources, the registry."""
     shutil.copy(ROOT / "seeds" / "_quarto.yml", root / "_quarto.yml")
-    (root / "CLAUDE.md").write_text("manuscript: paper.qmd\n")
-    (root / "paper.qmd").write_text(MANUSCRIPT)
+    (root / "CLAUDE.md").write_text(f"manuscript: {manuscript}\n")
+    (root / manuscript).parent.mkdir(parents=True, exist_ok=True)
+    (root / manuscript).write_text(MANUSCRIPT)
     (root / "sources").mkdir()
     (root / "sources" / "a.txt").write_text(SOURCE_TEXT)
+    (root / "sources" / "odd.txt").write_text("Intro line.\n\n" + ODD_PARAGRAPH + "\n")
     (root / "quality_reports").mkdir()
     with open(root / "quality_reports" / "sources.csv", "w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=list(REGISTRY_ROWS[0]))
@@ -90,13 +101,22 @@ def comments(path):
     for match in re.finditer(r"<w:comment [^>]*>.*?</w:comment>", xml, re.S):
         raw = match.group(0)
         author = re.search(r'w:author="([^"]*)"', raw).group(1)
-        text = "".join(re.findall(r"<w:t[^>]*>([^<]*)</w:t>", raw))
+        text = run_text(raw)
         found.append((author, text, raw))
     return found
 
 
+def run_text(xml):
+    return html.unescape("".join(re.findall(r"<w:t[^>]*>([^<]*)</w:t>", xml)))
+
+
+def underlined_text(raw):
+    runs = re.findall(r"<w:r>(?:(?!</w:r>).)*<w:u w:val=\"single\" />(?:(?!</w:r>).)*</w:r>", raw, re.S)
+    return "".join(run_text(r) for r in runs)
+
+
 def document_text(path):
-    return "".join(re.findall(r"<w:t[^>]*>([^<]*)</w:t>", docx_part(path, "word/document.xml")))
+    return run_text(docx_part(path, "word/document.xml"))
 
 
 @unittest.skipUnless(HAVE_TOOLS, "quarto or pdftotext missing")
@@ -130,14 +150,39 @@ class SourceCommentsRender(unittest.TestCase):
         cls.partial_root = base / "partial"
         cls.partial_root.mkdir()
         partial_json = ('{"c1": {"state": "UNREVIEWED", "label": "Lbl", "page": "3", "ocr": true,'
-                        ' "paragraph": "Text [' + SENTENCE + ']{.underline} more.", "reason": "x"},'
+                        ' "paragraph": "Text [' + SENTENCE + ']{.underline} more.", "reason": "x",'
+                        ' "before": "Text ", "sentence": "' + SENTENCE + '", "after": " more."},'
                         ' "design": {"state": "APPROVED", "label": "Act", "page": "9", "ocr": false,'
-                        ' "paragraph": "The [treatment quote]{.underline} here.", "reason": ""}}')
+                        ' "paragraph": "The [treatment quote]{.underline} here.", "reason": "",'
+                        ' "before": "The ", "sentence": "treatment quote", "after": " here."}}')
         make_fake_check_project(cls.partial_root, partial_json)
         with open(cls.partial_root / "paper.qmd", "a") as fh:
             fh.write("\nThe [treatment definition]{.src-design} is stated here.\n")
         cls.partial = quarto(cls.partial_root, "--to", "docx", "-M", "source-comments:true",
                              "--output", "paper_sourced.docx")
+
+        # A manuscript in a subdirectory, as two real papers declare it; pandoc's working
+        # directory is then paper/, not the project.
+        cls.sub_root = base / "subdir"
+        cls.sub_root.mkdir()
+        make_project(cls.sub_root, manuscript="paper/manuscript.qmd")
+        cls.sub_plain = subprocess.run(["quarto", "render", "paper/manuscript.qmd", "--to", "docx"],
+                                       cwd=cls.sub_root, capture_output=True, text=True)
+        cls.sub_plain_docx = cls.sub_root / "paper" / "manuscript.docx"
+        cls.sub_plain_mtime = (cls.sub_plain_docx.stat().st_mtime_ns
+                               if cls.sub_plain_docx.exists() else None)
+        time.sleep(1.1)
+        cls.sub_sourced = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "pipeline.py"), "--root", str(cls.sub_root),
+             "sources", "docx"], capture_output=True, text=True)
+        cls.sub_sourced_docx = cls.sub_root / "paper" / "manuscript_sourced.docx"
+
+        # A .qmd that is not the declared manuscript: its tags are checked from its own text.
+        (cls.sub_root / "other.qmd").write_text(
+            f"---\ntitle: Other\n---\n\nSee [{OK_CLAIM}]{{.src ref=\"ok\" id=\"c9\"}} here.\n")
+        cls.other = subprocess.run(["quarto", "render", "other.qmd", "--to", "docx", "-M",
+                                    "source-comments:true"], cwd=cls.sub_root,
+                                   capture_output=True, text=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -155,10 +200,7 @@ class SourceCommentsRender(unittest.TestCase):
         self.assertEqual(author, "Source check")
         self.assertIn("UNREVIEWED: ", text)
         self.assertIn("Before the sentence. " + SENTENCE + " After it.", text)
-        underlined = re.findall(r"<w:r>(?:(?!</w:r>).)*<w:u w:val=\"single\" />(?:(?!</w:r>).)*</w:r>",
-                                raw, re.S)
-        underlined_text = "".join("".join(re.findall(r"<w:t[^>]*>([^<]*)</w:t>", r)) for r in underlined)
-        self.assertEqual(underlined_text, SENTENCE)
+        self.assertEqual(underlined_text(raw), SENTENCE)
         body = docx_part(self.sourced_docx, "word/document.xml")
         self.assertRegex(body, r"commentRangeStart w:id=\"(\d+)\".*" + re.escape(OK_CLAIM)
                          + r".*commentRangeEnd w:id=\"\1\"")
@@ -166,7 +208,7 @@ class SourceCommentsRender(unittest.TestCase):
     def test_sourced_build_prints_warnings_and_path(self):
         out = self.sourced.stdout
         self.assertIn("source-check: FAILED c2 (bad)", out)
-        self.assertIn("source-check: 1 claims not yet reviewed", out)
+        self.assertIn("source-check: 2 claims not yet reviewed", out)
         self.assertEqual(out.strip().splitlines()[-1], str(self.sourced_docx.resolve()))
 
     def test_failed_claim_comment_has_no_source_text(self):
@@ -203,7 +245,7 @@ class SourceCommentsRender(unittest.TestCase):
     def test_unavailable_check_never_errors_and_shows_no_source(self):
         self.assertEqual(self.broken.returncode, 0, self.broken.stderr)
         found = comments(self.broken_root / "paper_sourced.docx")
-        self.assertEqual(len(found), 2)
+        self.assertEqual(len(found), 3)
         for author, text, _ in found:
             self.assertEqual(author, "Source check")
             self.assertEqual(text, "SOURCE CHECK FAILED: source check unavailable")
@@ -211,7 +253,7 @@ class SourceCommentsRender(unittest.TestCase):
     def test_id_missing_from_results(self):
         self.assertEqual(self.partial.returncode, 0, self.partial.stderr)
         docx = self.partial_root / "paper_sourced.docx"
-        _, text, _ = self.comment_for(docx, "no check result")
+        _, text, _ = self.comment_for(docx, "no check result for c2")
         self.assertEqual(text, "SOURCE CHECK FAILED: no check result for c2")
         _, text, _ = self.comment_for(docx, "Lbl, p. 3.")
         self.assertTrue(text.startswith("Lbl, p. 3. [OCR] UNREVIEWED: Text "), text)
@@ -223,6 +265,38 @@ class SourceCommentsRender(unittest.TestCase):
         body = docx_part(docx, "word/document.xml")
         self.assertRegex(body, r"commentRangeStart w:id=\"(\d+)\".*treatment definition"
                          r".*commentRangeEnd w:id=\"\1\"")
+
+    def test_source_text_is_never_parsed_as_markdown(self):
+        _, text, raw = self.comment_for(self.sourced_docx, "Odd, p. 1.")
+        self.assertEqual(text, "Odd, p. 1. UNREVIEWED: " + ODD_PARAGRAPH)
+        self.assertEqual(underlined_text(raw), ODD_SENTENCE)
+
+    def test_subdirectory_manuscript(self):
+        self.assertEqual(self.sub_plain.returncode, 0, self.sub_plain.stderr)
+        self.assertEqual(self.sub_sourced.returncode, 0, self.sub_sourced.stdout + self.sub_sourced.stderr)
+        self.assertTrue(self.sub_sourced_docx.exists())
+        self.assertFalse((self.sub_root / "manuscript_sourced.docx").exists())
+        self.assertEqual(self.sub_plain_docx.stat().st_mtime_ns, self.sub_plain_mtime)
+        self.assertEqual(self.sub_sourced.stdout.strip().splitlines()[-1],
+                         str(self.sub_sourced_docx.resolve()))
+        _, text, raw = self.comment_for(self.sub_sourced_docx, "Lbl, p. 3.")
+        self.assertIn("Before the sentence. " + SENTENCE + " After it.", text)
+        self.assertEqual(underlined_text(raw), SENTENCE)
+        self.assertNotIn("unavailable", " ".join(c[1] for c in comments(self.sub_sourced_docx)))
+
+    def test_rendered_file_is_checked_not_the_declared_one(self):
+        self.assertEqual(self.other.returncode, 0, self.other.stderr)
+        found = comments(self.sub_root / "other.docx")
+        self.assertEqual(len(found), 1)
+        self.assertTrue(found[0][1].startswith("Lbl, p. 3. UNREVIEWED: Before the sentence."), found[0][1])
+
+    def test_failed_quarto_prints_no_path(self):
+        env = dict(os.environ, PATH="/nonexistent")
+        done = subprocess.run([sys.executable, str(ROOT / "scripts" / "pipeline.py"), "--root",
+                               str(self.root), "sources", "docx"], capture_output=True, text=True,
+                              env=env)
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stdout.strip(), "sources docx: quarto is not on PATH")
 
 
 if __name__ == "__main__":

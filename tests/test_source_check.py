@@ -256,8 +256,11 @@ class Cli(unittest.TestCase):
         self.assertEqual(r.returncode, 0)
         data = json.loads(r.stdout)
         self.assertEqual(set(data), {"t1", "t2"})
-        keys = {"state", "label", "page", "ocr", "paragraph", "reason"}
+        keys = {"state", "label", "page", "ocr", "paragraph", "reason", "before", "sentence", "after"}
         self.assertEqual(set(data["t1"]), keys)
+        self.assertEqual(set(data["t2"]), keys)
+        self.assertEqual((data["t1"]["before"], data["t1"]["sentence"], data["t1"]["after"]), ("", SENT, ""))
+        self.assertEqual((data["t2"]["before"], data["t2"]["sentence"], data["t2"]["after"]), (None, None, None))
         self.assertEqual(data["t1"]["state"], "UNREVIEWED")
         self.assertIs(data["t1"]["ocr"], True)
         self.assertIn("[" + SENT + "]{.underline}", data["t1"]["paragraph"])

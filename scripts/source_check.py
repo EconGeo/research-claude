@@ -56,7 +56,9 @@ def _hits(text: str, sent: str) -> List[Tuple[int, str, int]]:
     return [(n, para, m.start()) for n, para in enumerate(_paragraphs(text))
             for m in re.finditer(rf"(?<!\w){re.escape(sent)}(?!\w)", para)]
 
-def find_paragraph(text: str, sentence: str) -> Tuple[str, Optional[str], str]:
+def find_parts(text: str, sentence: str) -> Tuple[str, Optional[Tuple[str, str, str]], str]:
+    """(status, (before, sentence, after), reason): the matched paragraph as plain text split
+    around the sentence, all exactly as normalised from the file; None unless status is "ok"."""
     sent = normalise(sentence)
     if not sent:
         return "not-found", None, "empty sentence"
@@ -67,7 +69,15 @@ def find_paragraph(text: str, sentence: str) -> Tuple[str, Optional[str], str]:
         n = len({h[0] for h in hits}); k = n if n > 1 else len(hits)
         return "ambiguous", None, f"ambiguous: {k} paragraphs" if n > 1 else f"ambiguous: {k} places in one paragraph"
     _, para, i = hits[0]
-    return "ok", f"{para[:i]}[{sent}]{{.underline}}{para[i + len(sent):]}", ""
+    return "ok", (para[:i], sent, para[i + len(sent):]), ""
+
+def underline_markup(parts: Tuple[str, str, str]) -> str:
+    before, sent, after = parts
+    return f"{before}[{sent}]{{.underline}}{after}"
+
+def find_paragraph(text: str, sentence: str) -> Tuple[str, Optional[str], str]:
+    status, parts, reason = find_parts(text, sentence)
+    return status, underline_markup(parts) if parts else None, reason
 
 
 # --- registry, tags, approvals and states -------------------------------------------------------
@@ -104,6 +114,7 @@ class Result(NamedTuple):
     label: str
     page: str
     ocr: bool
+    parts: Optional[Tuple[str, str, str]] = None  # (before, sentence, after), plain text
 
 
 def claim_sha256(claim: str) -> str:
@@ -206,15 +217,16 @@ def _check_tag(root: Path, tag: Tag, registry: Dict[str, Dict[str, str]],
         text = clean(extract_text(path), rules)
     except (ValueError, OSError, subprocess.SubprocessError, UnicodeDecodeError) as err:
         return Result(tag, FAILED, None, f"cannot read source: {err}", label, page, ocr)
-    status, paragraph, reason = find_paragraph(text, wanted)
+    status, parts, reason = find_parts(text, wanted)
     if status != "ok":
         return Result(tag, FAILED, None, reason, label, page, ocr)
+    paragraph = underline_markup(parts)
     approval = approvals.get(tag.tag_id)
     if approval is None:
         reason = "no approval recorded"
         if approvals_error:
             reason += f" ({approvals_error})"
-        return Result(tag, UNREVIEWED, paragraph, reason, label, page, ocr)
+        return Result(tag, UNREVIEWED, paragraph, reason, label, page, ocr, parts)
     changed = []
     if approval.get("claim_sha256") != claim_sha256(tag.claim):
         changed.append("claim")
@@ -222,8 +234,8 @@ def _check_tag(root: Path, tag: Tag, registry: Dict[str, Dict[str, str]],
         changed.append("file")
     if changed:
         return Result(tag, NEEDS_REVIEW, paragraph,
-                      "changed since approval: " + " and ".join(changed), label, page, ocr)
-    return Result(tag, APPROVED, paragraph, "", label, page, ocr)
+                      "changed since approval: " + " and ".join(changed), label, page, ocr, parts)
+    return Result(tag, APPROVED, paragraph, "", label, page, ocr, parts)
 
 
 def check(root: Path, qmd_text: str) -> List[Result]:
@@ -277,8 +289,10 @@ def declared_manuscript(root: Path) -> Optional[Path]:
 def results_as_json(results: List[Result]) -> str:
     data = {}
     for r in results:
+        before, sentence, after = r.parts if r.parts else (None, None, None)
         data[r.tag.tag_id] = {"state": r.state, "label": r.label, "page": r.page,
-                              "ocr": r.ocr, "paragraph": r.paragraph, "reason": r.reason}
+                              "ocr": r.ocr, "paragraph": r.paragraph, "reason": r.reason,
+                              "before": before, "sentence": sentence, "after": after}
     return json.dumps(data, ensure_ascii=False, indent=2)
 
 

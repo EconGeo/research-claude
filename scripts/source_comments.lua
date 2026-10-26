@@ -6,29 +6,31 @@ Off unless the render sets `source-comments: true` (pipeline.py sources docx pas
 -M source-comments:true) and the output is docx. Otherwise the document is returned untouched,
 so the plain build and every PDF render are unchanged.
 
-When on, it runs `python3 .claude/scripts/source_check.py --json` once and replaces each
-[claim]{.src ref="R" id="I"} span with
-  [<label>, p. <page>. [OCR] <STATE>: <paragraph>]{.comment-start id="N" author="Source check"}
-  claim
-  []{.comment-end id="N"}
-The state prefix is left out when the claim is APPROVED. A FAILED or NOT ON THIS MACHINE claim
-gets "SOURCE CHECK <STATE>: <reason>" and never source text. A claim with no result gets
-"SOURCE CHECK FAILED: no check result for <id>". If the check cannot be run or prints no JSON,
-every claim gets "SOURCE CHECK FAILED: source check unavailable". The filter never fails the
-render. The design quote (result id "design") anchors on the first [...]{.src-design} span, and
-is skipped when the manuscript has none.
+When on, it runs `python3 <project>/.claude/scripts/source_check.py <this .qmd> --root <project>
+--json` once and replaces each [claim]{.src ref="R" id="I"} span with a comment-start span
+(identifier N, author "Source check"), the claim, and a comment-end span (identifier N).
+The comment reads "<label>, p. <page>. [OCR] <STATE>: <before><sentence><after>", with the
+sentence underlined; the state is left out when the claim is APPROVED and [OCR] when the source
+is not OCR text. A FAILED or NOT ON THIS MACHINE claim gets "SOURCE CHECK <STATE>: <reason>"
+and never source text. A claim with no result gets "SOURCE CHECK FAILED: no check result for
+<id>". If the check cannot be run or prints no JSON, every claim gets "SOURCE CHECK FAILED:
+source check unavailable". The filter never fails the render. The design quote (result id
+"design") anchors on the first [...]{.src-design} span, and is skipped when there is none.
+
+Source text is never parsed as markdown: before, sentence and after are plain strings from the
+check, turned into Str and Space inlines only, so characters such as * $ \ ^ ~ @ < ` reach Word
+as they are in the file. Pandoc reads id="I" on a span as its identifier, so the tag id is
+span.identifier, and the comment spans carry their number the same way.
 
 -- tested: 2026-10-26, Quarto 1.9.37 / pandoc 3.8.3: a project-level `filters:` in _quarto.yml
    applies to `quarto render x.qmd --to docx` (a probe filter ran on that command).
 -- tested: 2026-10-26, Quarto 1.9.37: `quarto render x.qmd --to docx --output y.docx
-   -M source-comments:true` writes y.docx and leaves x.docx alone (x.docx mtime unchanged); the
-   filter sees meta["source-comments"] as the boolean true, and pandoc.pipe runs in the
-   project directory, so the relative script path resolves.
-Pandoc reads id="I" on a span as its identifier, not as a key-value attribute, so the tag id
-is span.identifier, and the comment spans carry their number the same way.
-The comment text is read as markdown without the smart extension, so source punctuation stays
-as the check returned it (no curled quotes, no non-breaking space after "p.").
-
+   -M source-comments:true` writes y.docx and leaves x.docx alone (x.docx mtime unchanged), and
+   the filter sees meta["source-comments"] as the boolean true.
+-- tested: 2026-10-26, Quarto 1.9.37: the filter's working directory is the manuscript's own
+   directory (sub/ for `quarto render sub/m.qmd`), not the project; quarto.project.directory and
+   QUARTO_PROJECT_DIR both give the project; PANDOC_STATE.input_files[1] is a temporary .md,
+   while quarto.doc.input_file is the absolute path of the .qmd being rendered.
 -- tested: 2026-10-26, pandoc 3.8.3: pandoc.json.decode returns nil (no error) for empty or
    non-JSON text, and JSON null decodes to a userdata, not nil.
 ]]
@@ -38,8 +40,42 @@ local FAILED = "FAILED"
 local NOT_HERE = "NOT ON THIS MACHINE"
 local APPROVED = "APPROVED"
 
+local function text_or_empty(value)
+  if type(value) == "string" then
+    return value
+  end
+  return ""
+end
+
+local function project_root()
+  if quarto ~= nil and quarto.project ~= nil and type(quarto.project.directory) == "string" then
+    return quarto.project.directory
+  end
+  local from_env = os.getenv("QUARTO_PROJECT_DIR")
+  if from_env ~= nil and from_env ~= "" then
+    return from_env
+  end
+  return pandoc.system.get_working_directory()
+end
+
+local function input_file()
+  if quarto ~= nil and quarto.doc ~= nil and type(quarto.doc.input_file) == "string" then
+    return quarto.doc.input_file
+  end
+  return nil
+end
+
 local function run_check()
-  local ok, out = pcall(pandoc.pipe, "python3", {".claude/scripts/source_check.py", "--json"}, "")
+  local root = project_root()
+  local args = {root .. "/.claude/scripts/source_check.py"}
+  local manuscript = input_file()
+  if manuscript ~= nil then
+    table.insert(args, manuscript)
+  end
+  table.insert(args, "--root")
+  table.insert(args, root)
+  table.insert(args, "--json")
+  local ok, out = pcall(pandoc.pipe, "python3", args, "")
   if not ok or type(out) ~= "string" then
     return nil
   end
@@ -50,15 +86,30 @@ local function run_check()
   return results
 end
 
-local function text_or_empty(value)
-  if type(value) == "string" then
-    return value
+local function plain_inlines(text)
+  local out = pandoc.Inlines({})
+  if text == "" then
+    return out
   end
-  return ""
+  if text:match("^%s") then
+    out:insert(pandoc.Space())
+  end
+  local first = true
+  for word in text:gmatch("%S+") do
+    if not first then
+      out:insert(pandoc.Space())
+    end
+    out:insert(pandoc.Str(word))
+    first = false
+  end
+  if text:match("%s$") and not first then
+    out:insert(pandoc.Space())
+  end
+  return out
 end
 
 local function failure_text(state, reason)
-  return pandoc.Inlines("SOURCE CHECK " .. state .. ": " .. reason)
+  return plain_inlines("SOURCE CHECK " .. state .. ": " .. reason)
 end
 
 local function comment_content(result, tag_id)
@@ -66,11 +117,11 @@ local function comment_content(result, tag_id)
     return failure_text(FAILED, "no check result for " .. tag_id)
   end
   local state = text_or_empty(result.state)
-  local paragraph = result.paragraph
-  if state == FAILED or state == NOT_HERE or type(paragraph) ~= "string" then
-    if state == "" then
-      state = FAILED
-    end
+  if state == "" then
+    state = FAILED
+  end
+  local sentence = result.sentence
+  if state == FAILED or state == NOT_HERE or type(sentence) ~= "string" then
     return failure_text(state, text_or_empty(result.reason))
   end
   local header = text_or_empty(result.label)
@@ -85,11 +136,11 @@ local function comment_content(result, tag_id)
   if state ~= APPROVED then
     header = header .. state .. ": "
   end
-  local blocks = pandoc.read(header .. paragraph, "markdown-smart").blocks
-  if #blocks == 0 or blocks[1].content == nil then
-    return failure_text(FAILED, "source paragraph could not be shown")
-  end
-  return blocks[1].content
+  local out = plain_inlines(header)
+  out:extend(plain_inlines(text_or_empty(result.before)))
+  out:insert(pandoc.Underline(plain_inlines(sentence)))
+  out:extend(plain_inlines(text_or_empty(result.after)))
+  return out
 end
 
 local function wrap(span, content, number)
