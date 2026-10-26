@@ -11,7 +11,7 @@ names the first component stage that is ready, treating a scored stage with no l
 completion as adopted work (see next_report).
 """
 from __future__ import annotations
-import argparse, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, os, re, shutil, subprocess, sys
+import argparse, csv, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, os, re, shutil, subprocess, sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -1070,6 +1070,38 @@ def sources_docx(root: Path) -> int:
         print(out_path)
     return done.returncode
 
+def sources_approve(root: Path, ids: List[str]) -> int:
+    """Record the author's approval of tagged claims: one quality_reports/source_approvals.csv row
+    per id, with the claim and source file as they stand now. Runs only with a fresh `sources`
+    token from the author's line `approve sources: <id>[, <id>…]` whose ids are these ids (any
+    order). Refuses, writing nothing and leaving the token unspent, on an id the manuscript does
+    not tag or one whose claim is FAILED or NOT ON THIS MACHINE."""
+    ids = list(dict.fromkeys(ids))
+    ok, why = tok.check(root, "sources", None, reason=",".join(ids))
+    if not ok: print(f"sources approve: refused — {why}"); return 1
+    results = {r.tag.tag_id: r for r in source_check.check(root, declared_manuscript(root).read_text(encoding="utf-8"))}
+    unknown = [i for i in ids if i not in results]
+    if unknown: print("sources approve: refused — the manuscript tags no claim with id " + ", ".join(unknown)); return 1
+    blocked = [f"{i} ({results[i].state}: {results[i].reason})" for i in ids
+               if results[i].state in (source_check.FAILED, source_check.NOT_HERE)]
+    if blocked: print("sources approve: refused — " + "; ".join(blocked)); return 1
+    registry, _ = source_check._read_rows(root / source_check.REGISTRY_REL, "id")
+    files = {row["id"]: row.get("file") or "" for row in registry}
+    ok, why = tok.consume(root, "sources", None, reason=",".join(ids))
+    if not ok: print(f"sources approve: refused — {why}"); return 1
+    path = root / source_check.APPROVALS_REL
+    new_file = not path.exists()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    stamp = now()
+    with open(path, "a", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=source_check.APPROVAL_COLS)
+        if new_file: w.writeheader()
+        for i in ids:
+            r = results[i]
+            w.writerow({"tag_id": i, "ref": r.tag.ref, "claim_sha256": source_check.claim_sha256(r.tag.claim),
+                        "file_sha256": source_check._file_sha256(root / files[r.tag.ref]), "approved_at": stamp})
+    print(f"sources approve: {len(ids)} claim(s) approved — " + ", ".join(ids)); return 0
+
 # ── main ────────────────────────────────────────────────────────────────────
 def main() -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default=".")
@@ -1089,7 +1121,8 @@ def main() -> int:
     sub.add_parser("render").add_argument("--cold", action="store_true", required=True)
     sub.add_parser("conflicts").add_argument("agents", nargs="+")
     sub.add_parser("registry").add_argument("op", choices=["check"])
-    sub.add_parser("sources").add_argument("op", choices=["docx"])
+    sp = sub.add_parser("sources"); sp.add_argument("op", choices=["docx", "approve"])
+    sp.add_argument("ids", nargs="*", help="approve: the tag ids the author approved")
     ds = sub.add_parser("design"); ds.add_argument("op", choices=["status", "sign", "unlock", "seed-amendment"])
     for flag in ("--signer", "--reason", "--date", "--field", "--old", "--new"): ds.add_argument(flag)
     lp = sub.add_parser("ledger"); lp.add_argument("op", choices=["add", "close", "decline", "accept", "reject", "settle", "show"])
@@ -1105,7 +1138,12 @@ def main() -> int:
     lg = sub.add_parser("log"); lg.add_argument("agent"); lg.add_argument("--source", default="skill")
     a = ap.parse_args(); root = Path(a.root).resolve()
     if a.cmd == "registry": return registry_check(root)
-    if a.cmd == "sources": return sources_docx(root)
+    if a.cmd == "sources":
+        if a.op == "docx":
+            if a.ids: sys.exit("usage: sources docx (takes no ids)")
+            return sources_docx(root)
+        if not a.ids: sys.exit("usage: sources approve <id> [<id> ...]")
+        return sources_approve(root, a.ids)
     reg = load_reg(root)
     if a.cmd == "manuscript": print(declared_manuscript(root).relative_to(root)); return 0
     if a.cmd == "fresh":

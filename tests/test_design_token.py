@@ -19,6 +19,16 @@ class TestApprovalGrammar(unittest.TestCase):
                     "approve design sign\napprove design sign", "don't approve design sign yet", "approve design sign: not yet",
                     "approve design sign:", ""):
             self.assertIsNone(tok.approval(msg), msg)
+    def test_approval_sources_line(self):
+        self.assertEqual(tok.approval("approve sources: t2, t1"), ("sources", "t2,t1"))
+        self.assertEqual(tok.approval("Read them.\n  Approve Sources: a,b ,design.  \n"), ("sources", "a,b,design"))
+        self.assertEqual(tok.approval("approve sources: t1"), ("sources", "t1"))
+    def test_sources_needs_ids(self):
+        for msg in ("approve sources", "approve sources:", "approve sources: ", "approve sources: ,",
+                    "approve sources: a,,b", "approve sources: all of them", "> approve sources: t1",
+                    "```\napprove sources: t1\n```", "please approve sources: t1",
+                    "approve sources: t1\napprove design sign", "approve sources t1"):
+            self.assertIsNone(tok.approval(msg), msg)
 
 class TestTokenRules(unittest.TestCase):
     def setUp(self): self.r = pathlib.Path(tempfile.mkdtemp())
@@ -36,6 +46,13 @@ class TestTokenRules(unittest.TestCase):
         self.assertIn("different design block", tok.check(self.r, "unlock", "other", reason="why", now=T0)[1])
         self.assertIn("reason", tok.check(self.r, "unlock", "h", reason="not why", now=T0)[1])
         self.assertTrue(tok.check(self.r, "unlock", "h", reason="why", now=T0)[0])
+    def test_sources_ids_set_equality(self):
+        tok.issue(self.r, "sources", "t1,t2", None, now=T0)
+        self.assertTrue(tok.check(self.r, "sources", None, reason="t2,t1", now=T0)[0])
+        self.assertIn("t1,t2", tok.check(self.r, "sources", None, reason="t1", now=T0)[1])
+        self.assertFalse(tok.check(self.r, "sign", None, now=T0)[0])     # a sources token is not a design token
+    def test_sources_missing_names_the_line(self):
+        self.assertIn("approve sources:", tok.check(self.r, "sources", None, reason="t1")[1])
     def test_missing(self):
         ok, why = tok.check(self.r, "sign", "h"); self.assertFalse(ok); self.assertIn("no author token", why)
 
@@ -50,6 +67,11 @@ class TestHook(ProjectCase):
         out = self.prompt("approve design sign")
         self.assertEqual(self.token()["op"], "sign"); self.assertEqual(self.token()["design_hash"], dsb.design_hash(BASE))
         self.assertIn("design-token", out)
+    def test_issues_sources_token(self):
+        out = self.prompt("approve sources: t1, design")
+        t = self.token()
+        self.assertEqual((t["op"], t["reason"], t["design_hash"]), ("sources", "t1,design", None))
+        self.assertIn("t1, design", out)
     def test_next_message_revokes_unused(self):
         self.prompt("approve design sign"); self.prompt("actually, wait")
         self.assertIsNone(self.token())

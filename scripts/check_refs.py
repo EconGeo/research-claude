@@ -309,6 +309,7 @@ AP_ALLOW = {
     "quality_reports/rulings_log.md":             "rulings log — `pipeline.py ruling add`",
     "quality_reports/questions_for_author.md":    "hard-stop questions — `pipeline.py question add`",
     "quality_reports/critic_inputs/*.md":         "`pipeline.py critic-context` file — round 2+ context",
+    "quality_reports/source_approvals.csv":       "author's claim approvals — written only by `pipeline.py sources approve`",
 }
 
 def _ap_expand(tok):

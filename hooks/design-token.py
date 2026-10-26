@@ -3,8 +3,10 @@
 
 Spec §0.3. A line `approve design sign` or `approve design unlock: <reason>` in the author's own
 message issues .claude/state/design_token.json for the design block as it stands now; any other
-message revokes an unused token. `pipeline.py design sign|unlock` spends it. Never blocks a
-prompt. Fails open on internal error.
+message revokes an unused token. `pipeline.py design sign|unlock` spends it. A line
+`approve sources: <id>[, <id>…]` issues the same file as a `sources` token for those ids (no design
+hash), which `pipeline.py sources approve <id>…` spends. Never blocks a prompt. Fails open on
+internal error.
 
 Approval grammar (.claude/rules/core.md rule 13): a whole line, trimmed, case-insensitive, optionally
 ending in one `.`; not inside a fenced block or a `>` quote; exactly one per message.
@@ -33,6 +35,13 @@ def main() -> int:
     if found is None:
         tok.revoke_unused(root); return 0
     op, reason = found
+    if op == "sources":
+        tok.issue(root, "sources", reason, None)
+        ids = ", ".join(tok.source_ids(reason))
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext":
+            f"design-token: the author approved sources {ids} in this message. The token is good for one "
+            f"`pipeline.py sources approve` this turn, with exactly these ids: {ids}."}}))
+        return 0
     ms = dsb.manuscript_path(root)
     tok.issue(root, op, reason, dsb.design_hash(ms.read_text()) if ms and ms.exists() else None)
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext":

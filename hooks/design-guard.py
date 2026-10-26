@@ -4,10 +4,12 @@
 Spec §4, §0.3. Once quality_reports/design_lock.json says `signed`, no agent edit may change the
 manuscript's `design:` front-matter block. `design sign|unlock` run only with the author's
 one-time token, issued by `.claude/hooks/design-token.py` from an approval line in the author's own chat
-message. The lock, the token and the record files are written only by pipeline.py or the render.
+message. The lock, the token and the record files (including quality_reports/source_approvals.csv,
+written by `pipeline.py sources approve` with an `approve sources:` token) are written only by
+pipeline.py or the render.
 Bash writes to the manuscript are refused while signed (use Edit, which this hook can evaluate).
-A Bash command that invokes `claude` and contains the text `approve design` is refused: a nested
-`claude -p` would fire UserPromptSubmit and self-issue the token. So is any `claude` fed its prompt
+A Bash command that invokes `claude` and contains the text `approve design` or `approve sources` is
+refused: a nested `claude -p` would fire UserPromptSubmit and self-issue the token. So is any `claude` fed its prompt
 by a `<` redirect, a heredoc or here-string, or a pipe (`cat f | claude -p`, `claude -p < f`),
 whatever the text: the prompt is then not on the command line to check. A Bash command that names
 `author_token` (the token module) is refused, and so is one that names `design_lock` beside an
@@ -45,6 +47,7 @@ def fed_claude(cmd: str) -> bool:
     return False
 
 PIPELINE_ONLY = {"design_lock.json", "design_token.json", "design_amendments.csv", "design_amendments.md",
+                 "source_approvals.csv",
                  "render_fingerprint.json", "cold_render.json", "findings_ledger.md", "rulings_log.md"}
 
 def deny(msg):
@@ -72,7 +75,7 @@ def main() -> int:
              "(the prompt could carry an approval line); pass the prompt as an argument."); return 0
     if re.search(r"\bdesign_lock\b", cmd) and INTERP_RE.search(cmd):
         deny("design_lock.json is written only by pipeline.py; an interpreter command may not name it."); return 0
-    if cmd and CLAUDE_RE.search(cmd) and re.search(r"approve\s+design", cmd, re.I):
+    if cmd and CLAUDE_RE.search(cmd) and re.search(r"approve\s+(design|sources)", cmd, re.I):
         deny("a session never submits an approval line (a nested claude would self-issue the author "
              "token); the author approves in their own chat message."); return 0
     ms = db.manuscript_path(root)

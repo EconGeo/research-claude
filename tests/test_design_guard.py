@@ -65,6 +65,16 @@ class TestDesignGuard(ProjectCase):
                     "ls .claude/scripts && echo approve design sign"):
             self.assertFalse(self.denied(self.bash(cmd)), cmd)
 
+    def test_guard_refuses_nested_approve_sources(self):
+        for cmd in ('claude -p "approve sources: t1"', 'claude -p "Approve  Sources: t1, t2"',
+                    'cd x && npx claude --print "approve sources: design"'):
+            self.assertTrue(self.denied(self.bash(cmd)), cmd)
+        for cmd in ('claude -p "summarise the sources"', "echo approve sources: t1"):
+            self.assertFalse(self.denied(self.bash(cmd)), cmd)
+    def test_source_approvals_are_pipeline_only(self):
+        self.assertTrue(self.denied(self.write(self.proj / "quality_reports/source_approvals.csv")))
+        self.assertFalse(self.denied(self.write(self.proj / "quality_reports/sources.csv")))
+
     def test_author_token_module_is_hook_only(self):
         for cmd in ('python3 -c "import author_token as t; t.issue(\'.\', \'sign\', None, \'h\')"',
                     "cd .claude/scripts && python3 -m author_token", "cat .claude/scripts/author_token.py"):
