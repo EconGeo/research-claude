@@ -177,6 +177,39 @@ rendered without it: `python3 .claude/scripts/fix_docx_floats.py <file>.docx`.
 
 ---
 
+## Source comments
+
+A claim about the outside world (a finding, number, date or fact from a source) is tagged in the
+manuscript: `[claim]{.src ref="<registry id>" id="<tag id>"}`. Brackets inside the claim are fine
+(citations, emphasis). Tag every such claim, and tag when unsure; in the final message list any
+untagged outside-world claim you noticed.
+
+- **Registry** `quality_reports/sources.csv`, columns `id,file,label,page,sentence,cleanup,ocr`.
+  `file` is relative to the project root; `sentence` is the source's own supporting sentence typed
+  exactly as it appears there (it must occur verbatim, word-bounded, in exactly one paragraph, after
+  normalising quotes, whitespace and ligatures and joining line-end hyphenation); `cleanup` is
+  `;`-separated rule names (currently `trailing-line-numbers`); `ocr` is `true`/`false`.
+- **Design treatment quote:** registry id `design:<cite>`; tag id `design`; see `quarto-empirical.md`.
+- **Approvals** `quality_reports/source_approvals.csv`, columns
+  `tag_id,ref,claim_sha256,file_sha256,approved_at`. Written only by
+  `python3 .claude/scripts/pipeline.py sources approve <id>…`, which needs a fresh token from the
+  author's own line `approve sources: <id>[, <id>…]` (grammar and freshness: core rule 13; the ids
+  must equal the command's). Never write the file by hand.
+- **Five states:** APPROVED; UNREVIEWED; NEEDS REVIEW (claim text or source file changed since
+  approval); FAILED (no registry entry, sentence not found verbatim or ambiguous, unreadable source,
+  malformed tag); NOT ON THIS MACHINE (source file missing).
+- **Offer.** Before building a Word draft for the author, ask once: plain, or with source comments
+  (`python3 .claude/scripts/pipeline.py sources docx`)? The sourced build writes
+  `<manuscript stem>_sourced.docx` beside the manuscript and never overwrites the plain `.docx`. In
+  it, each tag carries a comment by "Source check": `<label>, p. <page>. [OCR] <STATE>: ` then the
+  source paragraph with the sentence underlined; FAILED and NOT ON THIS MACHINE comments give the
+  reason and no source text. The filter `source_comments.lua` acts only with
+  `-M source-comments:true` on docx output.
+- **Warnings, never blocking:** every render (`source_check.py`), `pipeline.py commit-check` (WARN
+  lines) and `pipeline.py critic-inputs` (its own log section).
+
+---
+
 ## What the writer-critic checks (Word format mode)
 
 Format-specific only. General-architecture checks (`source()`, hardcoded numbers,
