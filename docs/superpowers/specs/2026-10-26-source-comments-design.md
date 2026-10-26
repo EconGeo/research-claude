@@ -165,7 +165,10 @@ and `/write` where it renders).
   is never treated as an internal error.
 - No timeouts on live evals (repo CLAUDE.md).
 
-## 8. Calls made after the builder check (Claude's calls, for the author to check)
+## 8. Calls made after the builder check
+
+Author decisions 2026-10-26: items 1, 2 and 5 approved as written; item 3 replaced by the
+author's ruling below; item 4 pending the author's answer.
 
 1. **Approval is per tagged claim, not per entry.** Each tag carries its own id
    (`[...]{.src ref="nwmls-form21-2023" id="c1"}`), and approvals are recorded per tag id with
@@ -176,12 +179,12 @@ and `/write` where it renders).
    entry), NOT ON THIS MACHINE (file missing). The comment header shows the state. Warnings list
    FAILED and NEEDS REVIEW individually; UNREVIEWED and NOT ON THIS MACHINE are one summary line
    each ("4 claims not yet reviewed"), to keep the warning stream short.
-3. **Source files are committed to the paper repo.** NAR_settlement already tracks 278 files under
-   `data/raw/legal/` despite the seeded `data/raw/**` ignore, so committing primary sources is
-   existing practice. The seeded `.gitignore` gains an exception for the sources folder; the
-   existing papers get it by hand where needed. The global "never stage `data/raw/`" rule needs a
-   matching carve-out for this folder, or sources move outside `data/raw/` (builder picks one and
-   says which).
+3. **Source files are committed to the paper repo** (author ruling 2026-10-26: "approve and stage
+   data/raw from now on if it is under the GH size limit. If there are huge data files, keep them
+   off GH"). Files under 100 MB (GitHub's enforced per-file limit) are committed; larger ones stay
+   off GitHub. The global CLAUDE.md commit rule now says this. The seeded `.gitignore`, which
+   ignores `data/raw/**`, changes to ignore only files that must stay off GitHub; existing papers
+   get the matching edit by hand.
 4. **`design.treatment.source.quote` is out of scope for this build.** Adding a file field would
    change the design hash and force every signed paper to re-sign. Future work: point the quote at
    a registry entry from outside the `design:` block.
