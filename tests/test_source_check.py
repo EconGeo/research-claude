@@ -30,6 +30,10 @@ class ExtractMatch(unittest.TestCase):
         s = "shall disclose the fee"
         para = sc.find_paragraph("Intro.\n\nThe Firm shall disclose the fee in writing.", s)[1]
         self.assertEqual(para.count("[" + sc.normalise(s) + "]{.underline}"), 1)
+    def test_word_boundaries(self):
+        self.assertEqual(sc.find_paragraph("Intro.\n\nYou must pay the fees now.", "pay the fee")[:2], ("not-found", None))
+        self.assertEqual(sc.find_paragraph("Intro.\n\nThe casino fee is high.", "no fee")[:2], ("not-found", None))
+        self.assertEqual(sc.find_paragraph("Intro.\n\nYou must pay the fee. Now.", "pay the fee")[0], "ok")
     def test_unknown_cleanup_rule(self):
         with self.assertRaises(ValueError): sc.clean("x", ["nope"])
 

@@ -51,7 +51,7 @@ def _paragraphs(text: str) -> List[str]:
 
 def _hits(text: str, sent: str) -> List[Tuple[int, str, int]]:
     return [(n, para, m.start()) for n, para in enumerate(_paragraphs(text))
-            for m in re.finditer(re.escape(sent), para)]
+            for m in re.finditer(rf"(?<!\w){re.escape(sent)}(?!\w)", para)]
 
 def find_paragraph(text: str, sentence: str) -> Tuple[str, Optional[str], str]:
     sent = normalise(sentence)
