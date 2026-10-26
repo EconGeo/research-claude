@@ -19,6 +19,7 @@ import registry_lib as rl
 import design_block as dsb
 import author_token as tok
 import qmd_chunks
+import source_check
 
 STATE_REL = Path("quality_reports") / "pipeline_state.json"
 LOG_REL = Path("quality_reports") / "agent_dispatch.jsonl"
@@ -1037,6 +1038,28 @@ def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: s
     for p in probs: print("commit-check: " + p)
     print("commit-check: " + ("FAIL" if probs else "ok")); return 1 if probs else 0
 
+def sources_docx(root: Path) -> int:
+    """The sourced Word build: `<stem>_sourced.docx`, with each tagged claim's source paragraph as
+    a Word comment (.claude/scripts/source_comments.lua). The plain `<stem>.docx` is never touched.
+    Prints the source-check warnings and the output path; returns quarto's exit code."""
+    ms = declared_manuscript(root)
+    out_name = f"{ms.stem}_sourced.docx"
+    cmd = ["quarto", "render", str(ms.relative_to(root)), "--to", "docx",
+           "-M", "source-comments:true", "--output", out_name]
+    # Quarto's log is captured so the post-render source check's warnings are not printed twice.
+    done = subprocess.run(cmd, cwd=root, capture_output=True, text=True)
+    if done.returncode != 0:
+        tail = (done.stdout + done.stderr).strip().splitlines()[-15:]
+        print(f"sources docx: quarto exited {done.returncode}\n" + "\n".join(tail))
+    try:
+        results = source_check.check(root, ms.read_text(encoding="utf-8"))
+        for line in source_check.warning_lines(results):
+            print(line)
+    except Exception as err:  # warn only: the check never changes the exit code
+        print(f"source-check: internal error: {err}")
+    print(ms.parent / out_name)
+    return done.returncode
+
 # ── main ────────────────────────────────────────────────────────────────────
 def main() -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default=".")
@@ -1056,6 +1079,7 @@ def main() -> int:
     sub.add_parser("render").add_argument("--cold", action="store_true", required=True)
     sub.add_parser("conflicts").add_argument("agents", nargs="+")
     sub.add_parser("registry").add_argument("op", choices=["check"])
+    sub.add_parser("sources").add_argument("op", choices=["docx"])
     ds = sub.add_parser("design"); ds.add_argument("op", choices=["status", "sign", "unlock", "seed-amendment"])
     for flag in ("--signer", "--reason", "--date", "--field", "--old", "--new"): ds.add_argument(flag)
     lp = sub.add_parser("ledger"); lp.add_argument("op", choices=["add", "close", "decline", "accept", "reject", "settle", "show"])
@@ -1071,6 +1095,7 @@ def main() -> int:
     lg = sub.add_parser("log"); lg.add_argument("agent"); lg.add_argument("--source", default="skill")
     a = ap.parse_args(); root = Path(a.root).resolve()
     if a.cmd == "registry": return registry_check(root)
+    if a.cmd == "sources": return sources_docx(root)
     reg = load_reg(root)
     if a.cmd == "manuscript": print(declared_manuscript(root).relative_to(root)); return 0
     if a.cmd == "fresh":
