@@ -275,4 +275,47 @@ class TestGitHooks(CommitCase):
         self.assertIn("closed " + sha, out)
 
 
+class TestCommitCheckSourcesAndSize(CommitCase):
+    """Source-check lines are warnings; a staged file of 100 MB or more is the one refusal."""
+    def link_source_check(self):
+        os.symlink(ROOT / "scripts" / "source_check.py", self.t / ".claude" / "scripts" / "source_check.py")
+
+    def staged_file(self, name, nbytes):
+        path = self.t / name; path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "wb") as fh: fh.truncate(nbytes)
+        self.stage(name)
+
+    def test_commit_check_warns_on_failed_source(self):
+        self.link_source_check()
+        self.prose('A claim [about a rule]{.src ref="nope" id="t9"} appears here.')
+        self.stage(MS); rc, out = self.cc()
+        self.assertEqual(rc, 0, out)
+        self.assertIn("WARN source-check: FAILED", out)
+
+    def test_commit_check_refuses_101mb_staged_file(self):
+        self.staged_file("extra/big.bin", 101 * 1048576)
+        rc, out = self.cc()
+        self.assertEqual(rc, 1, out)
+        self.assertIn("staged file extra/big.bin is 101.0 MB", out)
+        self.assertIn("GitHub refuses files over 100 MB", out)
+
+    def test_commit_check_refuses_big_file_staged_beside_manuscript(self):
+        self.staged_file("extra/big.bin", 101 * 1048576)
+        self.prose(); self.stage(MS); rc, out = self.cc()
+        self.assertEqual(rc, 1, out)
+        self.assertIn("staged file extra/big.bin is 101.0 MB", out)
+
+    def test_commit_check_allows_99mb_staged_file(self):
+        self.staged_file("extra/ok.bin", 99 * 1048576)
+        rc, out = self.cc()
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn("staged file", out)
+
+    def test_limit_is_exactly_104857600_bytes(self):
+        self.staged_file("extra/edge.bin", 104857599)
+        self.assertEqual(self.cc()[0], 0)
+        self.staged_file("extra/edge2.bin", 104857600)
+        rc, out = self.cc(); self.assertEqual(rc, 1, out); self.assertIn("edge2.bin", out)
+
+
 if __name__ == "__main__": unittest.main()

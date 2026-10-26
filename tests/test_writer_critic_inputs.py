@@ -56,5 +56,28 @@ class TestEveryDispatchSiteRunsCriticInputs(unittest.TestCase):
                 self.assertIn(rel, self.SITES, f"{rel} dispatches writer-critic without being a known critic-inputs site")
 
 
+class TestCriticInputsSourceSection(unittest.TestCase):
+    def test_critic_inputs_has_source_section(self):
+        import sys, tempfile, shutil, os, io, contextlib
+        from unittest import mock
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import pipeline
+        tmp = pathlib.Path(tempfile.mkdtemp())
+        try:
+            (tmp / "CLAUDE.md").write_text("manuscript: paper.qmd\n")
+            (tmp / "paper.qmd").write_text('A claim [about a rule]{.src ref="nope" id="t9"} here.\n')
+            (tmp / ".claude").mkdir()
+            (tmp / ".claude" / "scripts").symlink_to(ROOT / "scripts")
+            buf = io.StringIO()
+            with mock.patch.object(pipeline, "run_render", return_value=(0, "ok\n")), contextlib.redirect_stdout(buf):
+                self.assertEqual(pipeline.critic_inputs(tmp), 0)
+            log = next((tmp / "quality_reports" / "critic_inputs").glob("*.log")).read_text()
+            self.assertRegex(log, r"## source_check\.py \d+ ms — exit 0\n")
+            self.assertIn("source-check: FAILED t9", log)
+            self.assertRegex(buf.getvalue(), r"source-check [1-9]\d* warnings")
+        finally:
+            shutil.rmtree(tmp)
+
+
 if __name__ == "__main__":
     unittest.main()

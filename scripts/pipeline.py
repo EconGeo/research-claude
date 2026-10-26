@@ -11,7 +11,7 @@ names the first component stage that is ready, treating a scored stage with no l
 completion as adopted work (see next_report).
 """
 from __future__ import annotations
-import argparse, csv, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, os, re, shutil, subprocess, sys
+import argparse, csv, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -381,6 +381,16 @@ def critic_inputs(root: Path) -> int:
     prc, out = run_script(root, "prose_number_check.py", rel)
     parts.append(f"## prose_number_check.py {rel} — " + (f"skipped: {out}" if prc is None else f"exit {prc}\n{out.rstrip()}"))
     summary.append("prose-check " + ("skipped" if prc is None else f"exit {prc}"))
+    started = time.monotonic()
+    src_rc, out = run_script(root, "source_check.py", rel, "--root", str(root))
+    elapsed_ms = round((time.monotonic() - started) * 1000)
+    if src_rc is None:
+        parts.append(f"## source_check.py — skipped: {out}")
+        summary.append("source-check skipped")
+    else:
+        parts.append(f"## source_check.py {elapsed_ms} ms — exit {src_rc}\n{out.rstrip()}")
+        n_warnings = sum(1 for line in out.splitlines() if line.startswith("source-check:"))
+        summary.append(f"source-check {n_warnings} warnings")
     pdf = ms.with_suffix(".pdf")
     if rrc != 0:
         why = "render failed — any PDF on disk predates this run"
@@ -984,8 +994,12 @@ def commit_check(root: Path) -> int:
     rc, names = _git(root, "diff", "--cached", "--name-only", "-z")
     if rc != 0: print("commit-check: FAIL — git diff --cached failed"); return 1
     ms = root / hits[0]; ms_rel = ms.relative_to(root).as_posix(); fp_rel = FINGERPRINT_REL.as_posix()
-    staged = set(names.split("\0"))
-    if ms_rel not in staged and fp_rel not in staged: return 0
+    staged = set(names.split("\0")) - {""}
+    oversize = _oversize_staged(root, sorted(staged))
+    if ms_rel not in staged and fp_rel not in staged:
+        for p in oversize: print("commit-check: " + p)
+        if oversize: print("commit-check: FAIL")
+        return 1 if oversize else 0
     if not ms.exists(): print(f"commit-check: FAIL — declared manuscript {hits[0]} does not exist"); return 1
     # Every manuscript check reads the STAGED manuscript (`git show :path`), never the working file:
     # a hunk-wise `git add -p` commit is checked on what it commits. The staged bytes go to a
@@ -996,13 +1010,28 @@ def commit_check(root: Path) -> int:
     fd, tmp = tempfile.mkstemp(prefix=".commit-check-", suffix=".qmd", dir=ms.parent); os.close(fd)
     try:
         Path(tmp).write_text(staged_text)
-        return _commit_check_staged(root, ms, ms_rel, fp_rel, staged_text, Path(tmp))
+        return _commit_check_staged(root, ms, ms_rel, fp_rel, staged_text, Path(tmp), oversize)
     finally:
         Path(tmp).unlink(missing_ok=True)
 
-def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: str, tmp: Path) -> int:
+GITHUB_FILE_LIMIT = 104_857_600   # GitHub refuses a file of 100 MB or more
+
+def _oversize_staged(root: Path, staged: List[str]) -> List[str]:
+    """One problem per staged file at or over GitHub's 100 MB limit. The size is the index blob's
+    (`git cat-file -s :path`); a path that is not in the index (a deletion) is skipped."""
+    problems: List[str] = []
+    for path in staged:
+        rc, size_text = _git(root, "cat-file", "-s", f":{path}")
+        if rc != 0 or not size_text.strip().isdigit(): continue
+        size = int(size_text.strip())
+        if size >= GITHUB_FILE_LIMIT:
+            problems.append(f"staged file {path} is {size / 1048576:.1f} MB — GitHub refuses files over 100 MB; unstage it and keep it off GitHub")
+    return problems
+
+def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: str, tmp: Path,
+                         oversize: Optional[List[str]] = None) -> int:
     tmp_rel = tmp.relative_to(root).as_posix()
-    probs: List[str] = []; warns: List[str] = []
+    probs: List[str] = list(oversize or []); warns: List[str] = []
     st, why = design_state(root, ms, text)
     if st not in ("SIGNED", "NOT-RETROFITTED"): probs.append(f"design: {st} — {why}")
     # A paper with no design: block is not retrofitted: the prose gate and the cold-render receipt
@@ -1017,6 +1046,10 @@ def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: s
         (probs if retrofitted else warns).append(msg if retrofitted else "WARN (not retrofitted) " + msg)
     rc, out = run_script(root, "quarto_structure_check.py", tmp_rel)
     if rc != 0: probs.append("structure: quarto_structure_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip().replace(tmp.name, ms.name)))
+    rc, out = run_script(root, "source_check.py", tmp_rel, "--root", str(root))
+    if rc is not None:   # warn only; a check that did not start prints nothing
+        for line in out.replace(tmp.name, ms.name).splitlines():
+            if line.startswith("source-check:"): warns.append("WARN " + line)
     rc, head_text = _git(root, "show", f"HEAD:{ms_rel}")
     changed = rc != 0 or chunk_code(head_text) != chunk_code(text)
     if changed and retrofitted:
