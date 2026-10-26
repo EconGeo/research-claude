@@ -132,13 +132,14 @@ def scan_tags(qmd_text: str) -> List[Tag]:
             break
         end = _closing_bracket(qmd_text, start)
         if end == -1:
-            break
+            pos = start + 1
+            continue
         attrs = _ATTRS.match(qmd_text, end + 1)
         if attrs and _SRC_CLASS.search(attrs.group(1)):
             ref = _REF.search(attrs.group(1))
             tag_id = _ID.search(attrs.group(1))
-            if ref and tag_id:
-                tags.append(Tag(tag_id.group(1), ref.group(1), qmd_text[start + 1:end]))
+            tags.append(Tag(tag_id.group(1) if tag_id else "", ref.group(1) if ref else "",
+                            qmd_text[start + 1:end]))
             pos = attrs.end()
         else:
             pos = start + 1
@@ -149,11 +150,22 @@ def scan_tags(qmd_text: str) -> List[Tag]:
     return tags
 
 
-def _read_rows(path: Path) -> List[Dict[str, str]]:
+def _read_rows(path: Path, required: str) -> Tuple[List[Dict[str, str]], str]:
+    """Rows of a CSV and an error message; the error is empty when the file reads cleanly.
+
+    A missing file is not an error (no rows). A file without the required column,
+    or one that is not UTF-8 CSV, gives no rows and a message.
+    """
     if not path.is_file():
-        return []
-    with open(path, newline="", encoding="utf-8") as fh:
-        return list(csv.DictReader(fh))
+        return [], ""
+    try:
+        with open(path, newline="", encoding="utf-8") as fh:
+            reader = csv.DictReader(fh)
+            if required not in (reader.fieldnames or []):
+                return [], f"{path.name} has no '{required}' column"
+            return list(reader), ""
+    except (csv.Error, UnicodeDecodeError, OSError) as err:
+        return [], f"{path.name} cannot be read: {err}"
 
 
 def _file_sha256(path: Path) -> str:
@@ -161,28 +173,48 @@ def _file_sha256(path: Path) -> str:
 
 
 def _check_tag(root: Path, tag: Tag, registry: Dict[str, Dict[str, str]],
-               approvals: Dict[str, Dict[str, str]]) -> Result:
+               approvals: Dict[str, Dict[str, str]], registry_error: str,
+               approvals_error: str) -> Result:
+    if registry_error:
+        return Result(tag, FAILED, None, registry_error, "", "", False)
+    if not tag.tag_id:
+        return Result(tag, FAILED, None, "tag missing id", "", "", False)
+    if not tag.ref:
+        return Result(tag, FAILED, None, "tag missing ref", "", "", False)
     entry = registry.get(tag.ref)
     if entry is None:
         return Result(tag, FAILED, None, f"no registry entry for {tag.ref}", "", "", False)
-    label = entry.get("label", "")
-    page = entry.get("page", "")
-    ocr = entry.get("ocr", "").strip().lower() == "true"
-    path = root / entry.get("file", "")
-    if not path.is_file():
-        return Result(tag, NOT_HERE, None, f"source file not on this machine: {entry.get('file', '')}",
+    label = entry.get("label") or ""
+    page = entry.get("page") or ""
+    ocr = (entry.get("ocr") or "").strip().lower() == "true"
+    file_name = entry.get("file") or ""
+    path = root / file_name
+    if not file_name or not path.is_file():
+        return Result(tag, NOT_HERE, None, f"source file not on this machine: {file_name}",
                       label, page, ocr)
-    rules = [r.strip() for r in entry.get("cleanup", "").split(";") if r.strip()]
+    # The design quote is itself the source text. Any other claim is the paper's own wording,
+    # so what must appear in the source is the registry's sentence.
+    if tag.tag_id == "design":
+        wanted = tag.claim
+    else:
+        wanted = entry.get("sentence") or ""
+        if not wanted.strip():
+            return Result(tag, FAILED, None, f"registry entry {tag.ref} has no sentence",
+                          label, page, ocr)
+    rules = [r.strip() for r in (entry.get("cleanup") or "").split(";") if r.strip()]
     try:
         text = clean(extract_text(path), rules)
     except (ValueError, OSError, subprocess.SubprocessError, UnicodeDecodeError) as err:
         return Result(tag, FAILED, None, f"cannot read source: {err}", label, page, ocr)
-    status, paragraph, reason = find_paragraph(text, tag.claim)
+    status, paragraph, reason = find_paragraph(text, wanted)
     if status != "ok":
         return Result(tag, FAILED, None, reason, label, page, ocr)
     approval = approvals.get(tag.tag_id)
     if approval is None:
-        return Result(tag, UNREVIEWED, paragraph, "no approval recorded", label, page, ocr)
+        reason = "no approval recorded"
+        if approvals_error:
+            reason += f" ({approvals_error})"
+        return Result(tag, UNREVIEWED, paragraph, reason, label, page, ocr)
     changed = []
     if approval.get("claim_sha256") != claim_sha256(tag.claim):
         changed.append("claim")
@@ -196,11 +228,20 @@ def _check_tag(root: Path, tag: Tag, registry: Dict[str, Dict[str, str]],
 
 def check(root: Path, qmd_text: str) -> List[Result]:
     root = Path(root)
-    registry = {row["id"]: row for row in _read_rows(root / REGISTRY_REL)}
+    registry_rows, registry_error = _read_rows(root / REGISTRY_REL, "id")
+    approval_rows, approvals_error = _read_rows(root / APPROVALS_REL, "tag_id")
+    registry = {}
+    for row in registry_rows:
+        registry[row["id"]] = row
     approvals = {}
-    for row in _read_rows(root / APPROVALS_REL):
+    for row in approval_rows:
         approvals[row["tag_id"]] = row  # the last row for a tag wins
-    return [_check_tag(root, tag, registry, approvals) for tag in scan_tags(qmd_text)]
+    if approvals_error:
+        approvals_error = "approvals could not be read: " + approvals_error
+    if registry_error:
+        registry_error = "registry unusable: " + registry_error
+    return [_check_tag(root, tag, registry, approvals, registry_error, approvals_error)
+            for tag in scan_tags(qmd_text)]
 
 
 def warning_lines(results: List[Result]) -> List[str]:

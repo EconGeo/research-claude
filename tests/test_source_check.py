@@ -41,6 +41,7 @@ REG_COLS = ["id", "file", "label", "page", "sentence", "cleanup", "ocr"]
 APP_COLS = ["tag_id", "ref", "claim_sha256", "file_sha256", "approved_at"]
 SRC_TEXT = "Intro.\n\nThe Firm shall disclose the fee in writing.\n\nOther text here."
 SENT = "The Firm shall disclose the fee in writing."
+CLAIM = "Paper wording of the disclosure rule."
 
 def write_csv(path, cols, rows):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -68,7 +69,7 @@ class States(unittest.TestCase):
     def registry(self, rows):
         write_csv(self.root / "quality_reports" / "sources.csv", REG_COLS, rows)
     def reg_row(self, id_, file="sources/a.txt"):
-        return {"id": id_, "file": file, "label": "Lbl", "page": "3", "sentence": "",
+        return {"id": id_, "file": file, "label": "Lbl", "page": "3", "sentence": SENT,
                 "cleanup": "", "ocr": "FALSE"}
     def approve(self, rows):
         write_csv(self.root / "quality_reports" / "source_approvals.csv", APP_COLS, rows)
@@ -76,13 +77,14 @@ class States(unittest.TestCase):
         return {"tag_id": tag_id, "ref": ref, "claim_sha256": sc.claim_sha256(claim),
                 "file_sha256": sha(file_path), "approved_at": "2026-10-26"}
     def test_each_state(self):
-        qmd = "\n".join([tag(SENT, "ok", "t1"), tag(SENT, "ok", "t2"),
-                         tag("Never said this.", "ok", "t3"),
-                         tag(SENT, "missing", "t4"), tag(SENT, "nope", "t5"),
-                         tag(SENT, "ok", "t6")])
-        self.registry([self.reg_row("ok"), self.reg_row("missing", "sources/gone.txt")])
-        self.approve([self.approval("t1", "ok", SENT, self.src),
-                      dict(self.approval("t6", "ok", SENT, self.src), claim_sha256="0" * 64)])
+        qmd = "\n".join([tag(CLAIM, "ok", "t1"), tag(CLAIM, "ok", "t2"),
+                         tag(CLAIM, "bad", "t3"),
+                         tag(CLAIM, "missing", "t4"), tag(CLAIM, "nope", "t5"),
+                         tag(CLAIM, "ok", "t6")])
+        bad = dict(self.reg_row("bad"), sentence="Never said this.")
+        self.registry([self.reg_row("ok"), bad, self.reg_row("missing", "sources/gone.txt")])
+        self.approve([self.approval("t1", "ok", CLAIM, self.src),
+                      dict(self.approval("t6", "ok", CLAIM, self.src), claim_sha256="0" * 64)])
         got = {r.tag.tag_id: r for r in sc.check(self.root, qmd)}
         self.assertEqual(got["t1"].state, "APPROVED")
         self.assertEqual(got["t2"].state, "UNREVIEWED")
@@ -98,26 +100,26 @@ class States(unittest.TestCase):
         self.assertFalse(got["t1"].ocr)
     def test_claim_change_needs_review(self):
         self.registry([self.reg_row("ok")])
-        self.approve([self.approval("c1", "ok", SENT, self.src),
+        self.approve([self.approval("c1", "ok", CLAIM, self.src),
                       self.approval("c2", "ok", "Intro.", self.src)])
-        qmd = tag("The Firm shall disclose the fee in writing", "ok", "c1") + "\n" + tag("Intro.", "ok", "c2")
+        qmd = tag("Paper wording of the disclosure rule", "ok", "c1") + "\n" + tag("Intro.", "ok", "c2")
         got = {r.tag.tag_id: r for r in sc.check(self.root, qmd)}
         self.assertEqual(got["c1"].state, "NEEDS REVIEW")
         self.assertIn("claim", got["c1"].reason)
         self.assertEqual(got["c2"].state, "APPROVED")
     def test_file_change_needs_review(self):
         self.registry([self.reg_row("ok")])
-        self.approve([self.approval("c1", "ok", SENT, self.src)])
+        self.approve([self.approval("c1", "ok", CLAIM, self.src)])
         with open(self.src, "ab") as fh:
             fh.write(b" ")
-        got = sc.check(self.root, tag(SENT, "ok", "c1"))
+        got = sc.check(self.root, tag(CLAIM, "ok", "c1"))
         self.assertEqual(got[0].state, "NEEDS REVIEW")
         self.assertIn("file", got[0].reason)
     def test_last_approval_row_wins_and_attr_order(self):
         self.registry([self.reg_row("ok")])
-        old = dict(self.approval("c1", "ok", SENT, self.src), claim_sha256="0" * 64)
-        self.approve([old, self.approval("c1", "ok", SENT, self.src)])
-        qmd = "[" + SENT + "]{#x .src id=\"c1\" ref=\"ok\"}"
+        old = dict(self.approval("c1", "ok", CLAIM, self.src), claim_sha256="0" * 64)
+        self.approve([old, self.approval("c1", "ok", CLAIM, self.src)])
+        qmd = "[" + CLAIM + "]{#x .src id=\"c1\" ref=\"ok\"}"
         self.assertEqual(sc.check(self.root, qmd)[0].state, "APPROVED")
     def test_tag_with_citation(self):
         qmd = tag("*NWMLS* rule [@nwmls2022]", "x", "c1")
@@ -140,5 +142,78 @@ class States(unittest.TestCase):
         self.assertIn("3 claims not yet reviewed", lines[1])
         self.assertIn("2 sources not on this machine", lines[2])
         self.assertEqual(sc.warning_lines([res("APPROVED", 0)]), [])
+
+    def test_registry_sentence_is_matched_not_claim(self):
+        self.registry([self.reg_row("ok")])
+        self.assertEqual(sc.check(self.root, tag(CLAIM, "ok", "a"))[0].state, "UNREVIEWED")
+        self.assertEqual(sc.check(self.root, tag(SENT, "ok", "b"))[0].state, "UNREVIEWED")
+        bad = dict(self.reg_row("bad"), sentence="Not in the source at all.")
+        self.registry([bad])
+        r = sc.check(self.root, tag(SENT, "bad", "c"))[0]
+        self.assertEqual(r.state, "FAILED")
+        self.assertIsNone(r.paragraph)
+    def test_empty_sentence_fails(self):
+        self.registry([dict(self.reg_row("ok"), sentence="")])
+        r = sc.check(self.root, tag(CLAIM, "ok", "a"))[0]
+        self.assertEqual((r.state, r.reason), ("FAILED", "registry entry ok has no sentence"))
+    def test_design_tag_through_check(self):
+        qmd = ('---\ndesign:\n  treatment:\n    source: {cite: k24, page: 2, '
+               'quote: "disclose the fee"}\n---\n\nBody.\n')
+        self.registry([dict(self.reg_row("design:k24"), sentence="")])
+        r = sc.check(self.root, qmd)[0]
+        self.assertEqual((r.tag.tag_id, r.state), ("design", "UNREVIEWED"))
+        self.assertIn("[disclose the fee]{.underline}", r.paragraph)
+    def test_unbalanced_bracket_does_not_hide_tags(self):
+        qmd = 'see [unclosed here\n\n' + tag("Claim.", "a", "b")
+        self.assertEqual(sc.scan_tags(qmd), [sc.Tag("b", "a", "Claim.")])
+    def test_tag_missing_id_or_ref_fails(self):
+        qmd = '[Claim.]{.src ref="a"} [Other.]{.src id="z"}'
+        self.registry([self.reg_row("a")])
+        got = sc.check(self.root, qmd)
+        self.assertEqual([r.state for r in got], ["FAILED", "FAILED"])
+        self.assertEqual(got[0].reason, "tag missing id")
+        self.assertEqual(got[1].reason, "tag missing ref")
+        self.assertEqual(len(sc.warning_lines(got)), 2)
+    def test_unreadable_source_fails_with_error(self):
+        bad_rule = dict(self.reg_row("rule"), cleanup="nope")
+        binary = self.root / "sources" / "b.txt"
+        binary.write_bytes(b"\xff\xfe\x00bad")
+        bad_text = dict(self.reg_row("bin", "sources/b.txt"))
+        self.registry([bad_rule, bad_text])
+        got = sc.check(self.root, tag(CLAIM, "rule", "a") + tag(CLAIM, "bin", "b"))
+        self.assertEqual([r.state for r in got], ["FAILED", "FAILED"])
+        self.assertIn("unknown cleanup rule: nope", got[0].reason)
+        self.assertTrue(got[1].reason.startswith("cannot read source"))
+        self.assertIsNone(got[0].paragraph)
+    def test_ocr_true_and_multi_cleanup(self):
+        (self.root / "sources" / "n.txt").write_text("Intro.\n\nThe Firm shall disclose the fee in writing. 206\n")
+        row = dict(self.reg_row("n", "sources/n.txt"), ocr="True", cleanup="trailing-line-numbers; trailing-line-numbers")
+        self.registry([row])
+        r = sc.check(self.root, tag(CLAIM, "n", "a"))[0]
+        self.assertTrue(r.ocr)
+        self.assertEqual(r.state, "UNREVIEWED")
+        self.assertNotIn("206", r.paragraph)
+    def test_malformed_registry_fails_every_tag(self):
+        path = self.root / "quality_reports" / "sources.csv"
+        path.parent.mkdir()
+        path.write_text("name,file\nok,sources/a.txt\n")
+        got = sc.check(self.root, tag(CLAIM, "ok", "a") + tag(CLAIM, "ok", "b"))
+        self.assertEqual([r.state for r in got], ["FAILED", "FAILED"])
+        self.assertIn("registry", got[0].reason)
+        path.write_bytes(b"id,file\n\xff\xfe,x\n")
+        self.assertIn("registry", sc.check(self.root, tag(CLAIM, "ok", "a"))[0].reason)
+    def test_short_registry_row_does_not_raise(self):
+        path = self.root / "quality_reports" / "sources.csv"
+        path.parent.mkdir()
+        path.write_text("id,file,label,page,sentence,cleanup,ocr\nok,sources/a.txt\n")
+        r = sc.check(self.root, tag(CLAIM, "ok", "a"))[0]
+        self.assertEqual(r.state, "FAILED")
+    def test_malformed_approvals_stay_unreviewed(self):
+        self.registry([self.reg_row("ok")])
+        path = self.root / "quality_reports" / "source_approvals.csv"
+        path.write_text("who,when\nx,y\n")
+        r = sc.check(self.root, tag(CLAIM, "ok", "a"))[0]
+        self.assertEqual(r.state, "UNREVIEWED")
+        self.assertIn("approvals", r.reason)
 
 if __name__ == "__main__": unittest.main()
