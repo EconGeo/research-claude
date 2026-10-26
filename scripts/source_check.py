@@ -4,7 +4,7 @@
 Text that is not in the file is never returned: no match or more than one match gives paragraph None.
 """
 from __future__ import annotations
-import csv, hashlib, re, subprocess, sys, unicodedata
+import argparse, csv, hashlib, json, re, subprocess, sys, unicodedata
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Tuple
@@ -256,3 +256,55 @@ def warning_lines(results: List[Result]) -> List[str]:
     if absent:
         lines.append(f"source-check: {absent} sources not on this machine")
     return lines
+
+
+# --- command line ---------------------------------------------------------------------------------
+
+_MANUSCRIPT_LINE = re.compile(r"^manuscript:\s*(\S+\.qmd)\s*$", re.M)
+
+
+def declared_manuscript(root: Path) -> Optional[Path]:
+    """The one manuscript named in <root>/CLAUDE.md, or None (same rule as pipeline.py)."""
+    claude = root / "CLAUDE.md"
+    if not claude.is_file():
+        return None
+    hits = _MANUSCRIPT_LINE.findall(claude.read_text(encoding="utf-8"))
+    if len(hits) != 1:
+        return None
+    return root / hits[0]
+
+
+def results_as_json(results: List[Result]) -> str:
+    data = {}
+    for r in results:
+        data[r.tag.tag_id] = {"state": r.state, "label": r.label, "page": r.page,
+                              "ocr": r.ocr, "paragraph": r.paragraph, "reason": r.reason}
+    return json.dumps(data, ensure_ascii=False, indent=2)
+
+
+def main(argv: List[str]) -> int:
+    parser = argparse.ArgumentParser(description="Check tagged claims against local source files.")
+    parser.add_argument("manuscript", nargs="?", help="manuscript .qmd (default: declared in CLAUDE.md)")
+    parser.add_argument("--root", default=".", help="project root (default: current directory)")
+    parser.add_argument("--json", action="store_true", help="print results as JSON keyed by tag id")
+    args = parser.parse_args(argv)
+    try:
+        root = Path(args.root)
+        manuscript = root / args.manuscript if args.manuscript else declared_manuscript(root)
+        if manuscript is None or not manuscript.is_file():
+            return 0
+        results = check(root, manuscript.read_text(encoding="utf-8"))
+        if args.json:
+            print(results_as_json(results))
+        else:
+            for line in warning_lines(results):
+                print(line)
+    except Exception as err:  # fail open: a broken check must never break a render
+        print(f"source-check: internal error: {err}")
+    return 0
+
+
+if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    sys.exit(main(sys.argv[1:]))

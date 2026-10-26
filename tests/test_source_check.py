@@ -216,4 +216,72 @@ class States(unittest.TestCase):
         self.assertEqual(r.state, "UNREVIEWED")
         self.assertIn("approvals", r.reason)
 
+import json, subprocess
+SCRIPT = ROOT / "scripts" / "source_check.py"
+
+class Cli(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = pathlib.Path(self.tmp.name)
+        (self.root / "CLAUDE.md").write_text("manuscript: paper.qmd\n")
+        src = self.root / "sources" / "a.txt"
+        src.parent.mkdir()
+        src.write_text(SRC_TEXT)
+        row = {"id": "ok", "file": "sources/a.txt", "label": "Lbl", "page": "3",
+               "sentence": SENT, "cleanup": "", "ocr": "TRUE"}
+        write_csv(self.root / "quality_reports" / "sources.csv", REG_COLS, [row])
+        (self.root / "paper.qmd").write_text(tag(CLAIM, "ok", "t1") + " " + tag(CLAIM, "nope", "t2") + "\n")
+    def tearDown(self):
+        self.tmp.cleanup()
+    def run_cli(self, *args, env=None):
+        return subprocess.run([sys.executable, str(SCRIPT), *args], cwd=self.root,
+                              capture_output=True, text=True, encoding="utf-8", env=env)
+    def test_default_prints_warnings_exit0(self):
+        r = self.run_cli()
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("source-check: FAILED t2 (nope)", r.stdout)
+        self.assertIn("1 claims not yet reviewed", r.stdout)
+    def test_post_render_mode_exit0(self):
+        import os
+        r = self.run_cli(env=dict(os.environ, QUARTO_PROJECT_OUTPUT_FILES="paper.docx"))
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("source-check: FAILED t2", r.stdout)
+    def test_explicit_manuscript_and_root(self):
+        r = subprocess.run([sys.executable, str(SCRIPT), "paper.qmd", "--root", str(self.root)],
+                           cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("FAILED t2", r.stdout)
+    def test_json_shape(self):
+        r = self.run_cli("--json")
+        self.assertEqual(r.returncode, 0)
+        data = json.loads(r.stdout)
+        self.assertEqual(set(data), {"t1", "t2"})
+        keys = {"state", "label", "page", "ocr", "paragraph", "reason"}
+        self.assertEqual(set(data["t1"]), keys)
+        self.assertEqual(data["t1"]["state"], "UNREVIEWED")
+        self.assertIs(data["t1"]["ocr"], True)
+        self.assertIn("[" + SENT + "]{.underline}", data["t1"]["paragraph"])
+        self.assertIsNone(data["t2"]["paragraph"])
+    def test_no_manuscript_silent(self):
+        (self.root / "CLAUDE.md").write_text("nothing declared\n")
+        for args in ([], ["--json"]):
+            r = self.run_cli(*args)
+            self.assertEqual((r.returncode, r.stdout), (0, ""))
+        (self.root / "CLAUDE.md").write_text("manuscript: a.qmd\nmanuscript: b.qmd\n")
+        self.assertEqual(self.run_cli().stdout, "")
+        (self.root / "CLAUDE.md").write_text("manuscript: gone.qmd\n")
+        self.assertEqual(self.run_cli().stdout, "")
+        (self.root / "CLAUDE.md").unlink()
+        self.assertEqual(self.run_cli().stdout, "")
+    def test_internal_error_fails_open(self):
+        (self.root / "paper.qmd").write_bytes(b"\xff\xfe not utf-8")
+        r = self.run_cli()
+        self.assertEqual(r.returncode, 0)
+        self.assertTrue(r.stdout.startswith("source-check: internal error: "))
+    def test_unreadable_sources_csv_fails_open(self):
+        (self.root / "quality_reports" / "sources.csv").write_bytes(b"\xff\xfe\x00bad")
+        r = self.run_cli()
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("source-check:", r.stdout)
+
 if __name__ == "__main__": unittest.main()
