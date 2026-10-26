@@ -147,8 +147,7 @@ and `/write` where it renders).
 ## 6. Integration points already in the pipeline
 
 - `design.treatment.source: {cite, page, quote}` (core rule 13). Its `quote` is typed and judged by
-  strategist-critic; nothing checks it against a file. The same verbatim check should cover it
-  once the quote has a local file.
+  strategist-critic; nothing checks it against a file. This build covers it (§8 item 4).
 - `prose_number_check.py`'s allowlist lets "an institutional fact" stay a literal with a reason.
   Those rows are claims that should carry a source tag; the warning may name allowlisted
   institutional facts with no tag.
@@ -168,7 +167,7 @@ and `/write` where it renders).
 ## 8. Calls made after the builder check
 
 Author decisions 2026-10-26: items 1, 2 and 5 approved as written; item 3 replaced by the
-author's ruling below; item 4 pending the author's answer.
+author's ruling below; item 4 brought into scope by the author.
 
 1. **Approval is per tagged claim, not per entry.** Each tag carries its own id
    (`[...]{.src ref="nwmls-form21-2023" id="c1"}`), and approvals are recorded per tag id with
@@ -185,9 +184,12 @@ author's ruling below; item 4 pending the author's answer.
    off GitHub. The global CLAUDE.md commit rule now says this. The seeded `.gitignore`, which
    ignores `data/raw/**`, changes to ignore only files that must stay off GitHub; existing papers
    get the matching edit by hand.
-4. **`design.treatment.source.quote` is out of scope for this build.** Adding a file field would
-   change the design hash and force every signed paper to re-sign. Future work: point the quote at
-   a registry entry from outside the `design:` block.
+4. **`design.treatment.source.quote` is in scope** (author decision 2026-10-26). The `design:`
+   block is not changed: the source registry carries an entry for the design quote (keyed to the
+   block's `treatment.source.cite`), and the check compares `quote` verbatim with that file,
+   exactly as for a tagged claim. In the Word build the quote's comment goes on the treatment
+   definition where the manuscript states it. No paper has a `design:` block yet (checked
+   2026-10-26), so nothing needs re-signing.
 5. **The render-time check is added to all seven existing papers' `_quarto.yml`** (each already
    runs `fix_docx_floats.py` post-render; Quarto's `post-render:` takes a list), one local commit
    per paper, plus the seed. Without it, existing papers would get only the commit and critic
