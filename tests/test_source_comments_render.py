@@ -42,6 +42,7 @@ format:
 Opening text. [{OK_CLAIM}]{{.src ref="ok" id="c1"}} Middle text.
 [{BAD_CLAIM}]{{.src ref="bad" id="c2"}} Closing text.
 [{ODD_CLAIM}]{{.src ref="odd" id="c3"}} End.
+[Dup one.]{{.src ref="ok" id="c4"}} and [Dup two.]{{.src ref="ok" id="c4"}} again.
 """
 REGISTRY_ROWS = [
     {"id": "ok", "file": "sources/a.txt", "label": "Lbl", "page": "3", "sentence": SENTENCE,
@@ -82,6 +83,11 @@ def make_fake_check_project(root, check_output):
         (scripts / name).symlink_to(ROOT / "scripts" / name)
     fake = "import sys\nsys.stdout.write(" + repr(check_output) + ")\n"
     (scripts / "source_check.py").write_text(fake)
+
+
+def filter_args(root):
+    """The filter as `pipeline.py sources docx` supplies it; the seed `_quarto.yml` never names it."""
+    return ["--lua-filter", str(root / ".claude" / "scripts" / "source_comments.lua")]
 
 
 def quarto(root, *args):
@@ -145,7 +151,7 @@ class SourceCommentsRender(unittest.TestCase):
         cls.broken_root.mkdir()
         make_fake_check_project(cls.broken_root, "source-check: internal error: boom\n")
         cls.broken = quarto(cls.broken_root, "--to", "docx", "-M", "source-comments:true",
-                            "--output", "paper_sourced.docx")
+                            "--output", "paper_sourced.docx", *filter_args(cls.broken_root))
 
         cls.partial_root = base / "partial"
         cls.partial_root.mkdir()
@@ -158,8 +164,9 @@ class SourceCommentsRender(unittest.TestCase):
         make_fake_check_project(cls.partial_root, partial_json)
         with open(cls.partial_root / "paper.qmd", "a") as fh:
             fh.write("\nThe [treatment definition]{.src-design} is stated here.\n")
+            fh.write("\n[Reserved claim.]{.src ref=\"ok\" id=\"design\"} uses the reserved id.\n")
         cls.partial = quarto(cls.partial_root, "--to", "docx", "-M", "source-comments:true",
-                             "--output", "paper_sourced.docx")
+                             "--output", "paper_sourced.docx", *filter_args(cls.partial_root))
 
         # A manuscript in a subdirectory, as two real papers declare it; pandoc's working
         # directory is then paper/, not the project.
@@ -181,8 +188,18 @@ class SourceCommentsRender(unittest.TestCase):
         (cls.sub_root / "other.qmd").write_text(
             f"---\ntitle: Other\n---\n\nSee [{OK_CLAIM}]{{.src ref=\"ok\" id=\"c9\"}} here.\n")
         cls.other = subprocess.run(["quarto", "render", "other.qmd", "--to", "docx", "-M",
-                                    "source-comments:true"], cwd=cls.sub_root,
-                                   capture_output=True, text=True)
+                                    "source-comments:true", *filter_args(cls.sub_root)],
+                                   cwd=cls.sub_root, capture_output=True, text=True)
+
+        # Final review finding 6: the seed `_quarto.yml` with none of this feature's scripts linked
+        # (a paper on an old link set): the plain render must still succeed.
+        cls.bare_root = base / "bare"
+        cls.bare_root.mkdir()
+        make_project(cls.bare_root, scripts_link=False)
+        (cls.bare_root / ".claude" / "scripts").mkdir()
+        (cls.bare_root / ".claude" / "scripts" / "fix_docx_floats.py").symlink_to(
+            ROOT / "scripts" / "fix_docx_floats.py")
+        cls.bare = quarto(cls.bare_root, "--to", "docx")
 
     @classmethod
     def tearDownClass(cls):
@@ -212,7 +229,7 @@ class SourceCommentsRender(unittest.TestCase):
         self.assertEqual(out.strip().splitlines()[-1], str(self.sourced_docx.resolve()))
 
     def test_failed_claim_comment_has_no_source_text(self):
-        author, text, _ = self.comment_for(self.sourced_docx, "SOURCE CHECK")
+        author, text, _ = self.comment_for(self.sourced_docx, "registry sentence not found")
         self.assertEqual(author, "Source check")
         self.assertTrue(text.startswith("SOURCE CHECK FAILED"), text)
         for source_words in ("Intro line", "Before the sentence", "shall disclose", "After it",
@@ -245,7 +262,7 @@ class SourceCommentsRender(unittest.TestCase):
     def test_unavailable_check_never_errors_and_shows_no_source(self):
         self.assertEqual(self.broken.returncode, 0, self.broken.stderr)
         found = comments(self.broken_root / "paper_sourced.docx")
-        self.assertEqual(len(found), 3)
+        self.assertEqual(len(found), 5)
         for author, text, _ in found:
             self.assertEqual(author, "Source check")
             self.assertEqual(text, "SOURCE CHECK FAILED: source check unavailable")
@@ -290,6 +307,62 @@ class SourceCommentsRender(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertTrue(found[0][1].startswith("Lbl, p. 3. UNREVIEWED: Before the sentence."), found[0][1])
 
+    # Final review finding 4: repeated ids and the reserved id never show another claim's source.
+    def test_duplicate_ids_get_failed_comments(self):
+        found = [c for c in comments(self.sourced_docx) if "duplicate tag id c4" in c[1]]
+        self.assertEqual([c[1] for c in found], ["SOURCE CHECK FAILED: duplicate tag id c4"] * 2)
+
+    def test_src_tag_with_reserved_id_gets_failed_comment(self):
+        docx = self.partial_root / "paper_sourced.docx"
+        _, text, _ = self.comment_for(docx, "reserved")
+        self.assertEqual(text, "SOURCE CHECK FAILED: tag id design is reserved")
+        body = docx_part(docx, "word/document.xml")
+        self.assertRegex(body, r"commentRangeStart w:id=\"(\d+)\".*Reserved claim\."
+                         r".*commentRangeEnd w:id=\"\1\"")
+
+    # Final review finding 6: the plain build never needs the filter or source_check.py.
+    def test_seed_names_neither_filter_nor_check(self):
+        seed = (ROOT / "seeds" / "_quarto.yml").read_text()
+        self.assertNotIn("source_comments", seed)
+        self.assertNotIn("source_check", seed)
+        self.assertNotIn("filters:", seed)
+        self.assertIn("post-render: python3 .claude/scripts/fix_docx_floats.py", seed)
+
+    def test_plain_render_without_feature_scripts(self):
+        self.assertEqual(self.bare.returncode, 0, self.bare.stdout + self.bare.stderr)
+        self.assertTrue((self.bare_root / "paper.docx").exists())
+        self.assertEqual(comments(self.bare_root / "paper.docx"), [])
+
+    def test_plain_render_prints_source_warnings(self):
+        log = self.plain.stdout + self.plain.stderr
+        self.assertIn("source-check: FAILED c2 (bad)", log)
+
+    # Final review finding 7: a sourced build whose comments went missing says so.
+    def test_sourced_build_counts_comments(self):
+        self.assertNotIn("comments", self.sourced.stdout.lower().replace("source comments", ""))
+
+    def test_comment_count_mismatch_warns(self):
+        import contextlib
+        import io
+        from unittest import mock
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import pipeline
+        with tempfile.TemporaryDirectory() as tmp:
+            proj = Path(tmp)
+            make_project(proj)
+            plain = self.plain_docx
+
+            def fake_run(cmd, cwd=None, **kwargs):
+                shutil.copy(plain, Path(cwd) / "paper_sourced.docx")
+                return subprocess.CompletedProcess(cmd, 0, "", "")
+
+            buf = io.StringIO()
+            with mock.patch.object(pipeline.subprocess, "run", fake_run), contextlib.redirect_stdout(buf):
+                rc = pipeline.sources_docx(proj)
+        out = buf.getvalue()
+        self.assertEqual(rc, 0, out)
+        self.assertIn("sources docx: WARNING paper_sourced.docx has 0 comments; expected 5", out)
+
     def test_failed_quarto_prints_no_path(self):
         env = dict(os.environ, PATH="/nonexistent")
         done = subprocess.run([sys.executable, str(ROOT / "scripts" / "pipeline.py"), "--root",
@@ -297,6 +370,37 @@ class SourceCommentsRender(unittest.TestCase):
                               env=env)
         self.assertEqual(done.returncode, 1)
         self.assertEqual(done.stdout.strip(), "sources docx: quarto is not on PATH")
+
+
+class FixDocxFloatsSourceCheck(unittest.TestCase):
+    """Render-time warnings come from fix_docx_floats.py (the seed's one post-render step): it runs
+    source_check.py when that is linked beside it, prints its lines, and keeps its own exit code."""
+
+    def run_post_render(self, check_source=None):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            scripts = root / ".claude" / "scripts"
+            scripts.mkdir(parents=True)
+            (scripts / "fix_docx_floats.py").symlink_to(ROOT / "scripts" / "fix_docx_floats.py")
+            if check_source is not None:
+                (scripts / "source_check.py").write_text(check_source)
+            env = dict(os.environ, QUARTO_PROJECT_OUTPUT_FILES="")
+            return subprocess.run([sys.executable, ".claude/scripts/fix_docx_floats.py"], cwd=root,
+                                  capture_output=True, text=True, env=env)
+
+    def test_no_source_check_linked(self):
+        done = self.run_post_render()
+        self.assertEqual((done.returncode, done.stdout), (0, ""), done.stderr)
+
+    def test_warnings_printed(self):
+        done = self.run_post_render("print('source-check: FAILED c1 (r): why')\n")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("source-check: FAILED c1 (r): why", done.stdout)
+
+    def test_broken_check_never_changes_exit(self):
+        for source in ("import sys\nsys.exit(3)\n", "raise RuntimeError('boom')\n", "this is not python\n"):
+            done = self.run_post_render(source)
+            self.assertEqual(done.returncode, 0, source + done.stderr)
 
 
 if __name__ == "__main__":

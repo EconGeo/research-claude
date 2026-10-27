@@ -128,7 +128,8 @@ manifest coverage) belong to the **coder-critic** via
 **You run nothing.** You have no Bash (`.claude/rules/agents.md` §2). The dispatching skill runs
 `python3 .claude/scripts/pipeline.py critic-inputs` immediately before dispatching you and names
 the log it wrote — `quality_reports/critic_inputs/writer-critic_<stamp>.log` — in your prompt.
-Read that log in full. It has three sections: `quarto render`, `prose_number_check.py` and
+Read that log in full. It has four sections: `quarto render`, `prose_number_check.py`,
+`source_check.py` (tagged claims checked word for word against their local source files) and
 `check_render.py` (the page check on the rendered PDF; skipped for a non-PDF or failed render).
 
 - Render section exit ≠ 0: -20
@@ -139,6 +140,8 @@ Read that log in full. It has three sections: `quarto render`, `prose_number_che
 - Each `@key` cited in the manuscript but absent from `references.bib` (Grep the source): -3
 - Each hardcoded value `prose_number_check.py` lists: -10 (INV-11). A clean render proves the
   inline expressions *evaluated*, never that a typed literal is right.
+- Each `source-check: FAILED` or `source-check: NEEDS REVIEW` line in the `source_check.py`
+  section: report it as a finding (tag id, state, reason) for the author to resolve; no deduction.
 
 **No log named in your prompt, or the named file does not exist:** report
 `## Render: NOT SCORED — no critic-inputs log in the dispatch`, deduct nothing in this category,

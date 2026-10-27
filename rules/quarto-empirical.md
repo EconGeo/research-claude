@@ -103,7 +103,7 @@ design:
 
 The treatment quote is checked verbatim against a registry entry with id `design:<cite>`
 (`quality_reports/sources.csv`, see `quarto-word.md` "Source comments"); `source:` must be the flow
-form above. The sourced Word build puts its comment on a `[…]{.src-design}` span where the
+form above (a quote in another form is FAILED, with that reason). The sourced Word build puts its comment on a `[…]{.src-design}` span where the
 manuscript states the treatment (without the span, no comment); the author approves it with tag id
 `design`.
 

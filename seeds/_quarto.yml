@@ -1,15 +1,6 @@
 project:
   type: default
   # Quarto's docx float wrapper violates the Word schema (Word reports "unreadable
-  # content" and offers to recover); fix_docx_floats.py repairs every rendered .docx in place.
-  # source_check.py then prints a warning for each tagged claim its source does not support
-  # (it never fails the render). Both are shared pipeline code — see
-  # .claude/rules/quarto-word.md, "Post-render repair".
-  post-render:
-    - python3 .claude/scripts/fix_docx_floats.py
-    - python3 .claude/scripts/source_check.py
-
-# Off unless the render sets source-comments: true (pipeline.py sources docx does);
-# then each tagged claim gets a Word comment with its source paragraph.
-filters:
-  - .claude/scripts/source_comments.lua
+  # content" and offers to recover); this repairs every rendered .docx in place.
+  # The script is shared pipeline code — see .claude/rules/quarto-word.md, "Post-render repair".
+  post-render: python3 .claude/scripts/fix_docx_floats.py

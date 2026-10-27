@@ -2,19 +2,20 @@
 source_comments.lua — the sourced Word build: each tagged claim gets a Word comment showing its
 source paragraph, with the supporting sentence underlined.
 
-Off unless the render sets `source-comments: true` (pipeline.py sources docx passes
--M source-comments:true) and the output is docx. Otherwise the document is returned untouched,
-so the plain build and every PDF render are unchanged.
+Applied only by `pipeline.py sources docx`, which passes `--lua-filter <this file>` and
+-M source-comments:true; no project `_quarto.yml` names it, so a plain render never depends on
+it. Even when applied it is off unless `source-comments` is true and the output is docx.
 
-When on, it runs `python3 <project>/.claude/scripts/source_check.py <this .qmd> --root <project>
+When on, it runs `python3 <dir of this filter>/source_check.py <this .qmd> --root <project>
 --json` once and replaces each [claim]{.src ref="R" id="I"} span with a comment-start span
 (identifier N, author "Source check"), the claim, and a comment-end span (identifier N).
 The comment reads "<label>, p. <page>. [OCR] <STATE>: <before><sentence><after>", with the
 sentence underlined; the state is left out when the claim is APPROVED and [OCR] when the source
 is not OCR text. A FAILED or NOT ON THIS MACHINE claim gets "SOURCE CHECK <STATE>: <reason>"
 and never source text. A claim with no result gets "SOURCE CHECK FAILED: no check result for
-<id>". If the check cannot be run or prints no JSON, every claim gets "SOURCE CHECK FAILED:
-source check unavailable". The filter never fails the render. The design quote (result id
+<id>". A `.src` span with id "design" (reserved for the design block's quote) gets "SOURCE CHECK
+FAILED: tag id design is reserved". If the check cannot be run or prints no JSON, every claim
+gets "SOURCE CHECK FAILED: source check unavailable". The filter never fails the render. The design quote (result id
 "design") anchors on the first [...]{.src-design} span, and is skipped when there is none.
 
 Source text is never parsed as markdown: before, sentence and after are plain strings from the
@@ -22,8 +23,13 @@ check, turned into Str and Space inlines only, so characters such as * $ \ ^ ~ @
 as they are in the file. Pandoc reads id="I" on a span as its identifier, so the tag id is
 span.identifier, and the comment spans carry their number the same way.
 
--- tested: 2026-10-26, Quarto 1.9.37 / pandoc 3.8.3: a project-level `filters:` in _quarto.yml
-   applies to `quarto render x.qmd --to docx` (a probe filter ran on that command).
+-- tested: 2026-10-26, Quarto 1.9.37 / pandoc 3.8.3, scratch project whose _quarto.yml has only a
+   post-render step: `quarto render sub/m.qmd --to docx -M source-comments:true --output
+   m_sourced.docx --lua-filter /abs/probe.lua` (run from sub/) exits 0, the probe ran with
+   meta["source-comments"] == true and FORMAT docx, quarto.project.directory and
+   quarto.doc.input_file were set, and the post-render step still ran; the same render without
+   `--lua-filter` did not run the probe. PANDOC_SCRIPT_FILE is the path as passed (an absolute
+   path through a symlinked directory stays unresolved).
 -- tested: 2026-10-26, Quarto 1.9.37: `quarto render x.qmd --to docx --output y.docx
    -M source-comments:true` writes y.docx and leaves x.docx alone (x.docx mtime unchanged), and
    the filter sees meta["source-comments"] as the boolean true.
@@ -65,9 +71,16 @@ local function input_file()
   return nil
 end
 
+local function check_script(root)
+  if type(PANDOC_SCRIPT_FILE) == "string" and PANDOC_SCRIPT_FILE ~= "" then
+    return pandoc.path.join({pandoc.path.directory(PANDOC_SCRIPT_FILE), "source_check.py"})
+  end
+  return root .. "/.claude/scripts/source_check.py"
+end
+
 local function run_check()
   local root = project_root()
-  local args = {root .. "/.claude/scripts/source_check.py"}
+  local args = {check_script(root)}
   local manuscript = input_file()
   if manuscript ~= nil then
     table.insert(args, manuscript)
@@ -164,7 +177,9 @@ function Pandoc(doc)
   local function on_span(span)
     local content
     if span.classes:includes("src") then
-      if results == nil then
+      if span.identifier == "design" then
+        content = failure_text(FAILED, "tag id design is reserved")
+      elseif results == nil then
         content = failure_text(FAILED, "source check unavailable")
       else
         local tag_id = span.identifier

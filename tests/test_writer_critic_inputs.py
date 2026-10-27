@@ -33,6 +33,12 @@ class TestRenderIsScoredFromTheLog(unittest.TestCase):
         self.assertNotRegex(s, r"Run\s+`python3", "a Bash-less critic cannot run a script")
         self.assertNotIn("Does `quarto render", s)
 
+    def test_render_category_names_the_source_check_section(self):
+        s = section(read(EIGHT), 6)
+        self.assertNotIn("three sections", s)
+        self.assertIn("`source_check.py`", s)
+        self.assertRegex(s, r"(?s)source-check: FAILED.*NEEDS REVIEW.*finding")
+
     def test_report_format_allows_not_scored(self):
         self.assertIn("## Render: [PASS/WARNINGS/FAIL/NOT SCORED]", read(EIGHT))
 
@@ -72,7 +78,7 @@ class TestCriticInputsSourceSection(unittest.TestCase):
             with mock.patch.object(pipeline, "run_render", return_value=(0, "ok\n")), contextlib.redirect_stdout(buf):
                 self.assertEqual(pipeline.critic_inputs(tmp), 0)
             log = next((tmp / "quality_reports" / "critic_inputs").glob("*.log")).read_text()
-            self.assertRegex(log, r"## source_check\.py \d+ ms — exit 0\n")
+            self.assertIn("## source_check.py paper.qmd — exit 0\n", log)
             self.assertIn("source-check: FAILED t9", log)
             self.assertRegex(buf.getvalue(), r"source-check [1-9]\d* warnings")
         finally:

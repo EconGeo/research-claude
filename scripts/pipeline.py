@@ -11,7 +11,7 @@ names the first component stage that is ready, treating a scored stage with no l
 completion as adopted work (see next_report).
 """
 from __future__ import annotations
-import argparse, csv, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, os, re, shutil, subprocess, sys, time
+import argparse, csv, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, os, re, shutil, subprocess, sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -381,14 +381,12 @@ def critic_inputs(root: Path) -> int:
     prc, out = run_script(root, "prose_number_check.py", rel)
     parts.append(f"## prose_number_check.py {rel} — " + (f"skipped: {out}" if prc is None else f"exit {prc}\n{out.rstrip()}"))
     summary.append("prose-check " + ("skipped" if prc is None else f"exit {prc}"))
-    started = time.monotonic()
     src_rc, out = run_script(root, "source_check.py", rel, "--root", str(root))
-    elapsed_ms = round((time.monotonic() - started) * 1000)
     if src_rc is None:
-        parts.append(f"## source_check.py — skipped: {out}")
+        parts.append(f"## source_check.py {rel} — skipped: {out}")
         summary.append("source-check skipped")
     else:
-        parts.append(f"## source_check.py {elapsed_ms} ms — exit {src_rc}\n{out.rstrip()}")
+        parts.append(f"## source_check.py {rel} — exit {src_rc}\n{out.rstrip()}")
         n_warnings = sum(1 for line in out.splitlines() if line.startswith("source-check:"))
         summary.append(f"source-check {n_warnings} warnings")
     pdf = ms.with_suffix(".pdf")
@@ -1071,19 +1069,44 @@ def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: s
     for p in probs: print("commit-check: " + p)
     print("commit-check: " + ("FAIL" if probs else "ok")); return 1 if probs else 0
 
+SOURCE_FILTER = Path(__file__).resolve().parent / "source_comments.lua"
+_SRC_DESIGN_ANCHOR = re.compile(r"\]\{[^{}]*(?<![\w-])\.src-design(?![\w-])[^{}]*\}")
+
+def expected_comment_count(results: List[Any], qmd_text: str) -> int:
+    """Comments the filter writes: one per `.src` tag, plus the design quote's when the
+    manuscript has a `[…]{.src-design}` anchor for it."""
+    tags = sum(1 for r in results if not r.tag.from_block)
+    has_design = any(r.tag.from_block for r in results)
+    return tags + (1 if has_design and _SRC_DESIGN_ANCHOR.search(qmd_text) else 0)
+
+def docx_comment_count(path: Path) -> int:
+    import zipfile
+    with zipfile.ZipFile(path) as zf:
+        if "word/comments.xml" not in zf.namelist():
+            return 0
+        return zf.read("word/comments.xml").decode("utf-8").count("<w:comment ")
+
 def sources_docx(root: Path) -> int:
     """The sourced Word build: `<stem>_sourced.docx` beside the manuscript, with each tagged claim's
-    source paragraph as a Word comment (.claude/scripts/source_comments.lua). The plain
-    `<stem>.docx` is never touched. Prints the source-check warnings, then the output path when
-    quarto succeeded; returns quarto's exit code.
+    source paragraph as a Word comment. The plain `<stem>.docx` is never touched. Prints the
+    source-check warnings, a WARNING if the docx has fewer or more comments than tags, then the
+    output path when quarto succeeded; returns quarto's exit code.
+
+    The filter is supplied here (`--lua-filter`, this script's sibling source_comments.lua); the
+    project's `_quarto.yml` never names it, so a plain render cannot fail for want of it (tested
+    2026-10-26, Quarto 1.9.37: `--lua-filter` with `-M` and `--output` runs the filter with the
+    metadata set, and the project post-render still runs).
 
     Quarto runs from the manuscript's own directory: `--output` takes a bare file name, and from the
     project root a manuscript in a subdirectory would put it in the root instead (tested 2026-10-26,
     Quarto 1.9.37; project filters and post-render still apply from there)."""
     ms = declared_manuscript(root)
+    if not SOURCE_FILTER.is_file():
+        print(f"sources docx: {SOURCE_FILTER} is missing")
+        return 1
     out_path = ms.parent / f"{ms.stem}_sourced.docx"
-    cmd = ["quarto", "render", ms.name, "--to", "docx",
-           "-M", "source-comments:true", "--output", out_path.name]
+    cmd = ["quarto", "render", ms.name, "--to", "docx", "-M", "source-comments:true",
+           "--output", out_path.name, "--lua-filter", str(SOURCE_FILTER)]
     # Quarto's log is captured so the post-render source check's warnings are not printed twice.
     try:
         done = subprocess.run(cmd, cwd=ms.parent, capture_output=True, text=True)
@@ -1094,9 +1117,16 @@ def sources_docx(root: Path) -> int:
         tail = (done.stdout + done.stderr).strip().splitlines()[-15:]
         print(f"sources docx: quarto exited {done.returncode}\n" + "\n".join(tail))
     try:
-        results = source_check.check(root, ms.read_text(encoding="utf-8"))
+        text = ms.read_text(encoding="utf-8")
+        results = source_check.check(root, text)
         for line in source_check.warning_lines(results):
             print(line)
+        if done.returncode == 0:
+            expected = expected_comment_count(results, text)
+            found = docx_comment_count(out_path)
+            if found != expected:
+                print(f"sources docx: WARNING {out_path.name} has {found} comments; expected {expected} "
+                      "(one per .src tag, plus the design quote's on a .src-design span)")
     except Exception as err:  # warn only: the check never changes the exit code
         print(f"source-check: internal error: {err}")
     if done.returncode == 0:
