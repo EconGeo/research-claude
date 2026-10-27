@@ -12,6 +12,8 @@ A Bash command that invokes `claude` and contains the text `approve design` or `
 refused: a nested `claude -p` would fire UserPromptSubmit and self-issue the token. So is any `claude` fed its prompt
 by a `<` redirect, a heredoc or here-string, or a pipe (`cat f | claude -p`, `claude -p < f`),
 whatever the text: the prompt is then not on the command line to check. A Bash command that names
+`source_approvals` is refused unless each of its stages only reads or stages the file (cat, head,
+grep, git add/diff/…, or `pipeline.py sources approve`) with no `>` beside the name. A Bash command that names
 `author_token` (the token module) is refused, and so is one that names `design_lock` beside an
 interpreter (python, perl, ruby, node, Rscript), which could write the lock directly. The author
 approves in their own chat message; a session never submits an approval line.
@@ -46,6 +48,24 @@ def fed_claude(cmd: str) -> bool:
             if CLAUDE_CMD_RE.search(part) and (i > 0 or "<" in part): return True
     return False
 
+# A Bash command that names source_approvals may only read it or stage it: every stage of the
+# command is one of these (or `pipeline.py sources approve`), and the stage naming it has no `>`.
+APPROVALS_STAGE_RE = re.compile(r"^\s*(?:(?:cat|head|tail|wc|less|grep|ls|sort|column|echo|cd)\b"
+                                r"|git\s+(?:add|diff|log|show|status)\b"
+                                r"|\S*python[\d.]*\s+\S*pipeline\.py\b[^\n;&|]*\bsources\s+approve\b)")
+
+def writes_approvals(cmd: str) -> bool:
+    if "source_approvals" not in cmd:
+        return False
+    for stage in re.split(r"\n|;|&&|\|\||\||&", cmd):
+        if not stage.strip():
+            continue
+        if not APPROVALS_STAGE_RE.match(stage):
+            return True
+        if "source_approvals" in stage and ">" in stage:
+            return True
+    return False
+
 PIPELINE_ONLY = {"design_lock.json", "design_token.json", "design_amendments.csv", "design_amendments.md",
                  "source_approvals.csv",
                  "render_fingerprint.json", "cold_render.json", "findings_ledger.md", "rulings_log.md"}
@@ -56,7 +76,7 @@ def deny(msg):
 
 # A Bash command that names none of these can trip no check below, so it returns before any
 # file is read (this hook runs on every Bash call; keep the common case to a regex).
-BASH_TRIGGER_RE = re.compile(r"design|claude|author_token|pipeline\.py|sed|perl|tee|cp|mv|>|\.qmd", re.I)
+BASH_TRIGGER_RE = re.compile(r"design|claude|author_token|source_approvals|pipeline\.py|sed|perl|tee|cp|mv|>|\.qmd", re.I)
 
 def main() -> int:
     payload = json.load(sys.stdin); root = Path(os.environ.get("CLAUDE_PROJECT_DIR", "")).resolve()
@@ -70,6 +90,10 @@ def main() -> int:
         deny("the author token is written only by the design-token hook."); return 0
     if re.search(r"\bauthor_token\b", cmd):
         deny("the author token module is run only by the design-token hook and pipeline.py."); return 0
+    if writes_approvals(cmd):
+        deny("source_approvals.csv is written only by `pipeline.py sources approve` with the author's "
+             "token; a Bash command naming it may only read or stage it.")
+        return 0
     if cmd and fed_claude(cmd):
         deny("a nested claude may not take its prompt from a file, heredoc, here-string or pipe "
              "(the prompt could carry an approval line); pass the prompt as an argument."); return 0

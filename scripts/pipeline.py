@@ -1105,35 +1105,73 @@ def sources_docx(root: Path) -> int:
 
 def sources_approve(root: Path, ids: List[str]) -> int:
     """Record the author's approval of tagged claims: one quality_reports/source_approvals.csv row
-    per id, with the claim and source file as they stand now. Runs only with a fresh `sources`
-    token from the author's line `approve sources: <id>[, <id>…]` whose ids are these ids (any
-    order). Refuses, writing nothing and leaving the token unspent, on an id the manuscript does
-    not tag or one whose claim is FAILED or NOT ON THIS MACHINE."""
+    per id, with the claim, registry entry and source file as they stand now. Runs only with a
+    fresh `sources` token from the author's line `approve sources: <id>[, <id>…]` whose ids are
+    these ids (any order) and whose fingerprints (taken by the design-token hook when the author
+    approved) still match: an edit after the author's line is refused, not approved. Refuses,
+    writing nothing and leaving the token unspent, on an id the manuscript does not tag, one whose
+    claim is FAILED or NOT ON THIS MACHINE, or an approvals file that cannot be read."""
     ids = list(dict.fromkeys(ids))
     ok, why = tok.check(root, "sources", None, reason=",".join(ids))
-    if not ok: print(f"sources approve: refused — {why}"); return 1
-    results = {r.tag.tag_id: r for r in source_check.check(root, declared_manuscript(root).read_text(encoding="utf-8"))}
+    if not ok:
+        print(f"sources approve: refused — {why}")
+        return 1
+    text = declared_manuscript(root).read_text(encoding="utf-8")
+    results = {r.tag.tag_id: r for r in source_check.check(root, text)}  # the design block's result is last
     unknown = [i for i in ids if i not in results]
-    if unknown: print("sources approve: refused — the manuscript tags no claim with id " + ", ".join(unknown)); return 1
+    if unknown:
+        print("sources approve: refused — the manuscript tags no claim with id " + ", ".join(unknown))
+        return 1
     blocked = [f"{i} ({results[i].state}: {results[i].reason})" for i in ids
                if results[i].state in (source_check.FAILED, source_check.NOT_HERE)]
-    if blocked: print("sources approve: refused — " + "; ".join(blocked)); return 1
-    registry, _ = source_check._read_rows(root / source_check.REGISTRY_REL, "id")
-    files = {row["id"]: row.get("file") or "" for row in registry}
-    ok, why = tok.consume(root, "sources", None, reason=",".join(ids))
-    if not ok: print(f"sources approve: refused — {why}"); return 1
+    if blocked:
+        print("sources approve: refused — " + "; ".join(blocked))
+        return 1
+    approved_prints = (tok._read(root) or {}).get("fingerprints")
+    if not isinstance(approved_prints, dict):
+        print("sources approve: refused — the author token carries no fingerprints of what the author "
+              "saw; the author approves again in chat")
+        return 1
+    try:
+        current = source_check.fingerprints(root, text, ids)
+    except ValueError as err:
+        print(f"sources approve: refused — {err}")
+        return 1
+    labels = {"claim_sha256": "claim", "entry_sha256": "source entry", "file_sha256": "file"}
+    drift = []
+    for i in ids:
+        seen = approved_prints.get(i) or {}
+        changed = [label for key, label in labels.items() if seen.get(key) != current[i][key]]
+        if changed:
+            drift.append(f"{i} ({' and '.join(changed)})")
+    if drift:
+        print("sources approve: refused — changed since the author approved: " + "; ".join(drift)
+              + ". Show the author the claim and its comment as they stand now and ask again.")
+        return 1
     path = root / source_check.APPROVALS_REL
-    new_file = not path.exists()
-    path.parent.mkdir(parents=True, exist_ok=True)
+    old_rows, error = source_check._read_rows(path, "tag_id")
+    if error:
+        print(f"sources approve: refused — {error}; fix or move the approvals file first")
+        return 1
+    ok, why = tok.consume(root, "sources", None, reason=",".join(ids))
+    if not ok:
+        print(f"sources approve: refused — {why}")
+        return 1
     stamp = now()
-    with open(path, "a", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, fieldnames=source_check.APPROVAL_COLS)
-        if new_file: w.writeheader()
-        for i in ids:
-            r = results[i]
-            w.writerow({"tag_id": i, "ref": r.tag.ref, "claim_sha256": source_check.claim_sha256(r.tag.claim),
-                        "file_sha256": source_check._file_sha256(root / files[r.tag.ref]), "approved_at": stamp})
-    print(f"sources approve: {len(ids)} claim(s) approved — " + ", ".join(ids)); return 0
+    new_rows = []
+    for i in ids:
+        new_rows.append({"tag_id": i, "ref": results[i].tag.ref, "approved_at": stamp, **current[i]})
+    # The whole file is rewritten under the current columns, so a file from before
+    # entry_sha256 existed keeps its rows (which read as NEEDS REVIEW: source entry).
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=source_check.APPROVAL_COLS, restval="", extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(old_rows + new_rows)
+    tmp.replace(path)
+    print(f"sources approve: {len(ids)} claim(s) approved — " + ", ".join(ids))
+    return 0
 
 # ── main ────────────────────────────────────────────────────────────────────
 def main() -> int:

@@ -67,11 +67,35 @@ class TestHook(ProjectCase):
         out = self.prompt("approve design sign")
         self.assertEqual(self.token()["op"], "sign"); self.assertEqual(self.token()["design_hash"], dsb.design_hash(BASE))
         self.assertIn("design-token", out)
+    def sources_project(self):
+        import csv, source_check as sc
+        (self.proj / "src.txt").write_text("Intro.\n\nThe Firm shall disclose the fee. Then the rule took effect.\n")
+        self.ms.write_text(BASE + '\n[A claim.]{.src ref="ok" id="t1"}\n')
+        reg = self.proj / "quality_reports" / "sources.csv"
+        reg.parent.mkdir(exist_ok=True)
+        with open(reg, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=sc.REGISTRY_COLS)
+            w.writeheader()
+            w.writerow({"id": "ok", "file": "src.txt", "label": "L", "page": "1",
+                        "sentence": "The Firm shall disclose the fee.", "cleanup": "", "ocr": ""})
+            w.writerow({"id": "design:key2024", "file": "src.txt", "label": "L", "page": "1",
+                        "sentence": "", "cleanup": "", "ocr": ""})
+        return sc
     def test_issues_sources_token(self):
+        sc = self.sources_project()
         out = self.prompt("approve sources: t1, design")
         t = self.token()
         self.assertEqual((t["op"], t["reason"], t["design_hash"]), ("sources", "t1,design", None))
         self.assertIn("t1, design", out)
+        # Final review finding 2: the token carries what the author saw at approval.
+        self.assertEqual(t["fingerprints"], sc.fingerprints(self.proj, self.ms.read_text(), ["t1", "design"]))
+    def test_sources_token_not_issued_without_fingerprints(self):
+        self.sources_project()
+        self.prompt("approve design sign")                      # an unused token, to be revoked
+        out = self.prompt("approve sources: t1, nope")
+        self.assertIsNone(self.token())
+        self.assertIn("no token", out)
+        self.assertIn("nope", out)
     def test_next_message_revokes_unused(self):
         self.prompt("approve design sign"); self.prompt("actually, wait")
         self.assertIsNone(self.token())

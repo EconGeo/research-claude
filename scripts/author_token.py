@@ -67,10 +67,17 @@ def _read(root: Path) -> Optional[dict]:
     p = _path(root)
     return json.loads(p.read_text()) if p.exists() else None
 
-def issue(root: Path, op: str, reason: Optional[str], design_hash: Optional[str], now: Optional[dt.datetime] = None) -> None:
-    p = _path(root); p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps({"op": op, "reason": reason, "design_hash": design_hash,
-                             "issued_at": _now(now).isoformat(), "used_at": None}, indent=2) + "\n")
+def issue(root: Path, op: str, reason: Optional[str], design_hash: Optional[str], now: Optional[dt.datetime] = None,
+          fingerprints: Optional[dict] = None) -> None:
+    """Write the token. A sources token carries `fingerprints`: per tag id, the claim, registry
+    entry and source file hashes as they stood when the author approved."""
+    p = _path(root)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    token = {"op": op, "reason": reason, "design_hash": design_hash,
+             "issued_at": _now(now).isoformat(), "used_at": None}
+    if fingerprints is not None:
+        token["fingerprints"] = fingerprints
+    p.write_text(json.dumps(token, indent=2) + "\n")
 
 def revoke_unused(root: Path) -> None:
     t = _read(root)

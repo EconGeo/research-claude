@@ -33,7 +33,11 @@ class SourcesApprove(unittest.TestCase):
         self.app = self.t / sc.APPROVALS_REL
     def tearDown(self): shutil.rmtree(self.t)
     def author(self, ids):                     # stands in for hooks/design-token.py
-        tok.issue(self.t, "sources", ids, None)
+        try:
+            prints = sc.fingerprints(self.t, (self.t / "m.qmd").read_text(), ids.split(","))
+        except ValueError:
+            prints = None                      # the hook would issue no token; approve must refuse
+        tok.issue(self.t, "sources", ids, None, fingerprints=prints)
     def rows(self):
         if not self.app.exists(): return []
         with open(self.app, newline="") as fh: return list(csv.DictReader(fh))
@@ -116,9 +120,88 @@ class SourcesApprove(unittest.TestCase):
         rc, out = run("sources", "approve", "design", root=self.t)
         self.assertEqual(rc, 0, out); self.assertEqual(self.states(), {"design": sc.APPROVED})
 
+    # Final review finding 1: the approval row binds the registry entry.
+    def test_approval_row_has_entry_hash(self):
+        self.author("t1")
+        rc, out = run("sources", "approve", "t1", root=self.t)
+        self.assertEqual(rc, 0, out)
+        reg = self.t / "quality_reports" / "sources.csv"
+        with open(reg, newline="") as fh:
+            entry = [r for r in csv.DictReader(fh) if r["id"] == "ok"][0]
+        self.assertEqual(self.rows()[0]["entry_sha256"], sc.entry_sha256("ok", entry))
+        reg.write_text(reg.read_text().replace(SENT, "Other text here."))
+        self.assertEqual(self.states()["t1"], sc.NEEDS_REVIEW)
+
+    # Final review finding 2: the token binds what the author saw, not only the ids.
+    def test_claim_edited_after_author_approval_refused(self):
+        self.author("t1")
+        ms = self.t / "m.qmd"
+        ms.write_text(ms.read_text().replace(CLAIM, "Wording the author never saw.", 1))
+        rc, out = run("sources", "approve", "t1", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("changed since the author approved", out)
+        self.assertIn("claim", out)
+        self.assertEqual(self.rows(), [])
+        self.assertIsNone(tok._read(self.t)["used_at"])
+    def test_entry_or_file_edited_after_author_approval_refused(self):
+        reg = self.t / "quality_reports" / "sources.csv"
+        original = reg.read_text()
+        for change, word in ((lambda: reg.write_text(original.replace(",L,3,", ",Other,3,", 1)), "source entry"),
+                             (lambda: self.src.write_text(SRC_TEXT + "\n\nAdded."), "file")):
+            reg.write_text(original)
+            self.src.write_text(SRC_TEXT)
+            self.author("t1")
+            change()
+            rc, out = run("sources", "approve", "t1", root=self.t)
+            self.assertEqual(rc, 1, out)
+            self.assertIn(word, out)
+            self.assertEqual(self.rows(), [])
+    def test_token_without_fingerprints_refused(self):
+        tok.issue(self.t, "sources", "t1", None)
+        rc, out = run("sources", "approve", "t1", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("fingerprint", out)
+        self.assertEqual(self.rows(), [])
+
+    # Final review finding 4: repeated ids and the reserved id cannot be approved.
+    def test_duplicate_or_reserved_id_refused(self):
+        ms = self.t / "m.qmd"
+        ms.write_text(tag(CLAIM, "ok", "t1") + "\n\n" + tag("Again.", "ok", "t1") + "\n\n" + tag(CLAIM, "ok", "design") + "\n")
+        for tag_id in ("t1", "design"):
+            tok.issue(self.t, "sources", tag_id, None, fingerprints={tag_id: {}})
+            rc, out = run("sources", "approve", tag_id, root=self.t)
+            self.assertEqual(rc, 1, out)
+            self.assertIn("FAILED", out)
+            self.assertEqual(self.rows(), [])
+
+    # Minor: a malformed approvals file is never appended to; an old-format one is migrated.
+    def test_malformed_approvals_refused(self):
+        self.app.write_text("who,when\nx,y\n")
+        self.author("t1")
+        rc, out = run("sources", "approve", "t1", root=self.t)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("source_approvals.csv", out)
+        self.assertEqual(self.app.read_text(), "who,when\nx,y\n")
+    def test_old_format_approvals_migrated(self):
+        self.app.write_text("tag_id,ref,claim_sha256,file_sha256,approved_at\nt2,ok,abc,def,2026-10-25\n")
+        self.author("t1")
+        rc, out = run("sources", "approve", "t1", root=self.t)
+        self.assertEqual(rc, 0, out)
+        rows = self.rows()
+        self.assertEqual(list(rows[0].keys()), sc.APPROVAL_COLS)
+        self.assertEqual([(r["tag_id"], r["entry_sha256"] != "") for r in rows], [("t2", False), ("t1", True)])
+        self.assertEqual(self.states()["t1"], sc.APPROVED)
+
     def test_docx_still_parses(self):
         # `sources docx` keeps working with the new positional (no ids).
         rc, out = run("sources", "docx", "extra", root=self.t)
         self.assertNotEqual(rc, 0)
+
+    def test_docx_without_manuscript_is_one_line(self):
+        (self.t / "CLAUDE.md").write_text("no manuscript here\n")
+        rc, out = run("sources", "docx", root=self.t)
+        self.assertEqual(rc, 1)
+        self.assertNotIn("Traceback", out)
+        self.assertEqual(len(out.strip().splitlines()), 1, out)
 
 if __name__ == "__main__": unittest.main()

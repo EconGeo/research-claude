@@ -75,6 +75,25 @@ class TestDesignGuard(ProjectCase):
         self.assertTrue(self.denied(self.write(self.proj / "quality_reports/source_approvals.csv")))
         self.assertFalse(self.denied(self.write(self.proj / "quality_reports/sources.csv")))
 
+    # Final review finding 3: Bash cannot forge an approval row.
+    def test_bash_cannot_write_source_approvals(self):
+        for cmd in ("echo 't1,ok,a,b,c,d' >> quality_reports/source_approvals.csv",
+                    "python3 -c \"open('quality_reports/source_approvals.csv','a').write('x')\"",
+                    "cat forged.csv > quality_reports/source_approvals.csv",
+                    "cp /tmp/forged.csv quality_reports/source_approvals.csv",
+                    "printf x | tee -a quality_reports/source_approvals.csv",
+                    "sed -i '' 's/a/b/' quality_reports/source_approvals.csv",
+                    "git checkout HEAD~3 -- quality_reports/source_approvals.csv",
+                    "python3 .claude/scripts/pipeline.py sources approve t1 && echo x >> quality_reports/source_approvals.csv",
+                    "cat quality_reports/source_approvals.csv | python3 -c 'import sys'"):
+            self.assertTrue(self.denied(self.bash(cmd)), cmd)
+        for cmd in ("python3 .claude/scripts/pipeline.py sources approve t1 t2",
+                    "cat quality_reports/source_approvals.csv",
+                    "git add quality_reports/source_approvals.csv quality_reports/sources.csv",
+                    "git diff -- quality_reports/source_approvals.csv",
+                    "head -5 quality_reports/source_approvals.csv"):
+            self.assertFalse(self.denied(self.bash(cmd)), cmd)
+
     def test_author_token_module_is_hook_only(self):
         for cmd in ('python3 -c "import author_token as t; t.issue(\'.\', \'sign\', None, \'h\')"',
                     "cd .claude/scripts && python3 -m author_token", "cat .claude/scripts/author_token.py"):

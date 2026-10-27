@@ -69,7 +69,8 @@ enforces; `[judgment]` marks one nothing checks.
       starting with `>` does not count; a message must carry exactly one approval line.
     - **The token is fresh** only if the author's most recent message issued it, it is at most
       30 minutes old and unused, and it is for that operation and for the `design:` block as it
-      stood at approval (a sources token: for exactly its ids). One successful `sign`, `unlock` or
+      stood at approval (a sources token: for exactly its ids, and for those claims, registry entries
+      and source files as they stood). One successful `sign`, `unlock` or
       `sources approve` spends it.
     - **A session never submits an approval line itself** — design-guard refuses a nested
       `claude` command carrying one.

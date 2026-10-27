@@ -38,7 +38,8 @@ class ExtractMatch(unittest.TestCase):
         with self.assertRaises(ValueError): sc.clean("x", ["nope"])
 
 REG_COLS = ["id", "file", "label", "page", "sentence", "cleanup", "ocr"]
-APP_COLS = ["tag_id", "ref", "claim_sha256", "file_sha256", "approved_at"]
+APP_COLS = ["tag_id", "ref", "claim_sha256", "entry_sha256", "file_sha256", "approved_at"]
+OLD_APP_COLS = ["tag_id", "ref", "claim_sha256", "file_sha256", "approved_at"]
 SRC_TEXT = "Intro.\n\nThe Firm shall disclose the fee in writing.\n\nOther text here."
 SENT = "The Firm shall disclose the fee in writing."
 CLAIM = "Paper wording of the disclosure rule."
@@ -71,10 +72,12 @@ class States(unittest.TestCase):
     def reg_row(self, id_, file="sources/a.txt"):
         return {"id": id_, "file": file, "label": "Lbl", "page": "3", "sentence": SENT,
                 "cleanup": "", "ocr": "FALSE"}
-    def approve(self, rows):
-        write_csv(self.root / "quality_reports" / "source_approvals.csv", APP_COLS, rows)
-    def approval(self, tag_id, ref, claim, file_path):
+    def approve(self, rows, cols=APP_COLS):
+        write_csv(self.root / "quality_reports" / "source_approvals.csv", cols, rows)
+    def approval(self, tag_id, ref, claim, file_path, entry=None):
+        entry = entry or self.reg_row(ref)
         return {"tag_id": tag_id, "ref": ref, "claim_sha256": sc.claim_sha256(claim),
+                "entry_sha256": sc.entry_sha256(ref, entry),
                 "file_sha256": sha(file_path), "approved_at": "2026-10-26"}
     def test_each_state(self):
         qmd = "\n".join([tag(CLAIM, "ok", "t1"), tag(CLAIM, "ok", "t2"),
@@ -129,7 +132,7 @@ class States(unittest.TestCase):
     def test_design_quote_tag(self):
         qmd = ('---\ntitle: T\ndesign:\n  treatment:\n    source: {cite: key2024, page: 12, '
                'quote: "the rule took effect"}\n---\n\nBody.\n')
-        self.assertEqual(sc.scan_tags(qmd), [sc.Tag("design", "design:key2024", "the rule took effect")])
+        self.assertEqual(sc.scan_tags(qmd), [sc.Tag("design", "design:key2024", "the rule took effect", True)])
         self.assertEqual(sc.scan_tags("---\ntitle: T\n---\n\nBody.\n"), [])
     def test_warning_lines_summarise(self):
         def res(state, i):
@@ -186,7 +189,7 @@ class States(unittest.TestCase):
         self.assertTrue(got[1].reason.startswith("cannot read source"))
         self.assertIsNone(got[0].paragraph)
     def test_ocr_true_and_multi_cleanup(self):
-        (self.root / "sources" / "n.txt").write_text("Intro.\n\nThe Firm shall disclose the fee in writing. 206\n")
+        (self.root / "sources" / "n.txt").write_text("Intro. 205\n\nThe Firm shall disclose the fee in writing. 206\n")
         row = dict(self.reg_row("n", "sources/n.txt"), ocr="True", cleanup="trailing-line-numbers; trailing-line-numbers")
         self.registry([row])
         r = sc.check(self.root, tag(CLAIM, "n", "a"))[0]
@@ -215,6 +218,153 @@ class States(unittest.TestCase):
         r = sc.check(self.root, tag(CLAIM, "ok", "a"))[0]
         self.assertEqual(r.state, "UNREVIEWED")
         self.assertIn("approvals", r.reason)
+
+class ReviewFixes(unittest.TestCase):
+    """The final whole-branch review's findings (2026-10-26): each reproduces a reviewer scenario."""
+    setUp = States.setUp
+    tearDown = States.tearDown
+    registry = States.registry
+    reg_row = States.reg_row
+    approve = States.approve
+    approval = States.approval
+
+    # Finding 1: an approval binds the registry entry, not only the claim and the file.
+    def test_registry_sentence_edit_after_approval_needs_review(self):
+        self.registry([self.reg_row("ok")])
+        self.approve([self.approval("c1", "ok", CLAIM, self.src)])
+        self.assertEqual(sc.check(self.root, tag(CLAIM, "ok", "c1"))[0].state, "APPROVED")
+        self.registry([dict(self.reg_row("ok"), sentence="Other text here.")])
+        r = sc.check(self.root, tag(CLAIM, "ok", "c1"))[0]
+        self.assertEqual(r.state, "NEEDS REVIEW")
+        self.assertIn("source entry", r.reason)
+        self.assertEqual(r.parts[1], "Other text here.")
+    def test_label_or_page_edit_after_approval_needs_review(self):
+        self.registry([self.reg_row("ok")])
+        self.approve([self.approval("c1", "ok", CLAIM, self.src)])
+        for field, value in (("label", "Other"), ("page", "9"), ("cleanup", "trailing-line-numbers")):
+            self.registry([dict(self.reg_row("ok"), **{field: value})])
+            r = sc.check(self.root, tag(CLAIM, "ok", "c1"))[0]
+            self.assertEqual((r.state, "source entry" in r.reason), ("NEEDS REVIEW", True), field)
+    def test_entry_hash_ignores_whitespace_in_sentence(self):
+        row = self.reg_row("ok")
+        spaced = dict(row, sentence="  The Firm shall  disclose the fee\nin writing. ")
+        self.assertEqual(sc.entry_sha256("ok", row), sc.entry_sha256("ok", spaced))
+    def test_approval_for_other_ref_needs_review(self):
+        self.registry([self.reg_row("ok"), self.reg_row("ok2")])
+        self.approve([self.approval("c1", "ok", CLAIM, self.src)])
+        r = sc.check(self.root, tag(CLAIM, "ok2", "c1"))[0]
+        self.assertEqual(r.state, "NEEDS REVIEW")
+        self.assertIn("source entry", r.reason)
+    def test_old_approval_row_without_entry_hash_needs_review(self):
+        self.registry([self.reg_row("ok")])
+        row = self.approval("c1", "ok", CLAIM, self.src)
+        del row["entry_sha256"]
+        self.approve([row], cols=OLD_APP_COLS)
+        r = sc.check(self.root, tag(CLAIM, "ok", "c1"))[0]
+        self.assertEqual(r.state, "NEEDS REVIEW")
+        self.assertIn("source entry", r.reason)
+
+    # Finding 4: tag ids are unique, and `design` belongs to the design block.
+    def test_duplicate_tag_ids_all_fail(self):
+        self.registry([self.reg_row("ok")])
+        self.approve([self.approval("c1", "ok", CLAIM, self.src)])
+        qmd = tag(CLAIM, "ok", "c1") + " " + tag("Another claim.", "ok", "c1") + " " + tag(CLAIM, "ok", "c2")
+        got = sc.check(self.root, qmd)
+        self.assertEqual([r.state for r in got], ["FAILED", "FAILED", "UNREVIEWED"])
+        self.assertEqual(got[0].reason, "duplicate tag id c1")
+        self.assertIsNone(got[0].parts)
+        data = json.loads(sc.results_as_json(got))
+        self.assertEqual(data["c1"]["state"], "FAILED")
+    def test_user_tag_id_design_is_reserved(self):
+        qmd = ('---\ndesign:\n  treatment:\n    source: {cite: k24, page: 2, '
+               'quote: "disclose the fee"}\n---\n\n' + tag(CLAIM, "ok", "design") + "\n")
+        self.registry([self.reg_row("ok"), dict(self.reg_row("design:k24"), sentence="")])
+        got = sc.check(self.root, qmd)
+        user = [r for r in got if r.tag.ref == "ok"][0]
+        block = [r for r in got if r.tag.ref == "design:k24"][0]
+        self.assertEqual((user.state, user.reason), ("FAILED", "tag id design is reserved"))
+        self.assertIsNone(user.parts)
+        self.assertEqual(block.state, "UNREVIEWED")
+        self.assertEqual(json.loads(sc.results_as_json(got))["design"]["state"], "UNREVIEWED")
+
+    # Finding 5: the paragraph shown is the file's own text; normalisation is for matching only.
+    def test_display_keeps_file_characters(self):
+        self.src.write_text("Intro.\n\nThe rate is 3½ percent.¹ The ﬁnal Firm’s fee  is due.\n")
+        self.registry([dict(self.reg_row("ok"), sentence="The final Firm's fee is due.")])
+        r = sc.check(self.root, tag(CLAIM, "ok", "c1"))[0]
+        self.assertEqual(r.state, "UNREVIEWED")
+        self.assertEqual(r.parts, ("The rate is 3½ percent.¹ ",
+                                   "The ﬁnal Firm’s fee is due.", ""))
+        self.assertIn("3½ percent.¹", r.paragraph)
+    def test_dehyphenation_only_inside_the_sentence(self):
+        self.src.write_text("Intro.\n\nOffers went seller-\ndirect in 2022. Seller and Buyer shall pay com-\n"
+                            "pensation to the Firm at closing. After.\n")
+        self.registry([dict(self.reg_row("ok"), sentence="Seller and Buyer shall pay compensation to the Firm at closing.")])
+        r = sc.check(self.root, tag(CLAIM, "ok", "c1"))[0]
+        self.assertEqual(r.state, "UNREVIEWED")
+        self.assertEqual(r.parts, ("Offers went seller- direct in 2022. ",
+                                   "Seller and Buyer shall pay compensation to the Firm at closing.",
+                                   " After."))
+    def test_line_end_hyphen_kept_when_the_sentence_has_it(self):
+        self.src.write_text("Intro.\n\nOffers went seller-\ndirect in 2022.\n")
+        self.registry([dict(self.reg_row("ok"), sentence="Offers went seller-direct in 2022.")])
+        r = sc.check(self.root, tag(CLAIM, "ok", "c1"))[0]
+        self.assertEqual((r.state, r.parts), ("UNREVIEWED", ("", "Offers went seller-direct in 2022.", "")))
+    def test_trailing_line_numbers_keep_a_real_number(self):
+        text = ("Intro. 11\nPay within 30\ndays of closing. 13\nThe Firm shall disclose the fee in writing. 14\n")
+        out = sc.clean(text, ["trailing-line-numbers"])
+        self.assertIn("Pay within 30\ndays of closing.", out)
+        self.assertNotIn(" 13", out)
+        self.assertNotIn(" 14", out)
+        self.assertNotIn(" 11", out)
+        self.assertEqual(sc.clean("Pay within 30\ndays.\n", ["trailing-line-numbers"]), "Pay within 30\ndays.\n")
+
+    # Minor findings.
+    def test_not_found_reason_names_the_registry_sentence(self):
+        self.registry([dict(self.reg_row("ok"), sentence="Never said this.")])
+        r = sc.check(self.root, tag(CLAIM, "ok", "c1"))[0]
+        self.assertEqual(r.reason, "registry sentence not found in file: Never said this.")
+    def test_file_outside_project_fails(self):
+        outside = self.root.parent / (self.root.name + "_outside.txt")
+        outside.write_text(SRC_TEXT)
+        try:
+            for name in (str(outside), "../" + outside.name, "sources/../../" + outside.name):
+                self.registry([self.reg_row("ok", name)])
+                r = sc.check(self.root, tag(CLAIM, "ok", "c1"))[0]
+                self.assertEqual((r.state, r.reason), ("FAILED", "file must be inside the project"), name)
+                self.assertIsNone(r.parts)
+        finally:
+            outside.unlink()
+    def test_csv_with_excel_bom(self):
+        path = self.root / "quality_reports" / "sources.csv"
+        path.parent.mkdir()
+        with open(path, "w", newline="", encoding="utf-8-sig") as fh:
+            w = csv.DictWriter(fh, fieldnames=REG_COLS)
+            w.writeheader()
+            w.writerow(self.reg_row("ok"))
+        self.assertEqual(sc.check(self.root, tag(CLAIM, "ok", "c1"))[0].state, "UNREVIEWED")
+    def test_block_style_design_quote_fails_visibly(self):
+        qmd = ('---\ndesign:\n  treatment:\n    source:\n      cite: k24\n      quote: "disclose the fee"\n'
+               '---\n\nBody.\n')
+        got = sc.check(self.root, qmd)
+        self.assertEqual([(r.tag.tag_id, r.state) for r in got], [("design", "FAILED")])
+        self.assertIn("flow form", got[0].reason)
+        self.assertIsNone(got[0].parts)
+    def test_source_text_extracted_once_per_file_and_cleanup(self):
+        self.registry([self.reg_row("ok"), self.reg_row("ok2")])
+        qmd = " ".join(tag(CLAIM, ref, "c%d" % i) for i, ref in enumerate(["ok", "ok2", "ok", "ok2"]))
+        calls = []
+        real = sc.extract_text
+        def counting(path):
+            calls.append(path)
+            return real(path)
+        sc.extract_text = counting
+        try:
+            got = sc.check(self.root, qmd)
+        finally:
+            sc.extract_text = real
+        self.assertEqual([r.state for r in got], ["UNREVIEWED"] * 4)
+        self.assertEqual(len(calls), 1)
 
 import json, subprocess
 SCRIPT = ROOT / "scripts" / "source_check.py"
