@@ -8,16 +8,7 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh protect-files.sh",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh session-guard.py",
-            "timeout": 5
+            "timeout": 10
           }
         ]
       },
@@ -27,88 +18,34 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh script-guard.py",
-            "timeout": 5
+            "timeout": 10
           },
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh read-gate.py",
-            "timeout": 5
+            "timeout": 10
           },
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh design-guard.py",
-            "timeout": 5
+            "timeout": 10
           }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh verify-reminder.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh post-edit-lint.sh",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Read|Edit|Write|Grep|Glob|Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh context-monitor.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
         "matcher": "Read|Edit|Write",
         "hooks": [
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh read-gate.py",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh pre-compact.py",
             "timeout": 10
           }
         ]
       }
     ],
     "SessionStart": [
-      {
-        "matcher": "compact|resume",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh post-compact-restore.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh install-check.py"
-          }
-        ]
-      },
       {
         "hooks": [
           {
@@ -124,11 +61,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh log-reminder.py",
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh critic-pairing.py",
             "timeout": 10
           }
@@ -141,18 +73,7 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh dispatch-log.py",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh notify.sh",
-            "timeout": 5
+            "timeout": 10
           }
         ]
       }
@@ -163,7 +84,7 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/run-hook.sh design-token.py",
-            "timeout": 5
+            "timeout": 10
           }
         ]
       }
