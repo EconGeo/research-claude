@@ -27,11 +27,7 @@ manuscript_*.tex
 *.synctex.gz
 
 # ── Data ─────────────────────────────────────────────────────────────────────
-# Raw inputs are large / re-acquirable: ignore everything under data/raw/ but
-# keep the provenance manifest and hash-freeze record so inputs stay auditable.
-data/raw/**
-!data/raw/data_manifest.md
-!data/raw/MANIFEST.sha256
+# Committed when each file is under 100 MB; list larger files below
 
 # ── Language toolchain outputs ───────────────────────────────────────────────
 # R

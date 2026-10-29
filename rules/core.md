@@ -14,7 +14,7 @@ enforces; `[judgment]` marks one nothing checks.
    produces it. `[hook: script-guard]`
 3. **Read before you change or assert.** Before editing the manuscript, read all of it — above
    3,000 lines, the whole chunk or section you edit. Before stating what any file says, read it to
-   the end; a search hit is a location, not evidence. `[hook: read-gate for edits; judgment for claims]`
+   the end; a search hit is a location, not evidence. `[hook: read-gate for edits; script: source_check for tagged claims; judgment for the rest]`
 4. **Every number in prose is an inline `` `r ` `` expression** (INV-11).
    `[script: prose_number_check.py]`
 5. **Exhibits, numbers and cross-references come from the renderer:** `tbl-`/`fig-` labelled
@@ -64,11 +64,14 @@ enforces; `[judgment]` marks one nothing checks.
     - **The approval line** is a whole line of the author's own message, trimmed and
       case-insensitive, optionally ending in one `.`: exactly `approve design sign` (nothing
       after it — `approve design sign: …` does not count), or `approve design unlock: <reason>`
-      (the reason is required and recorded verbatim). A line inside a fenced code block or
+      (the reason is required and recorded verbatim), or `approve sources: <id>[, <id>…]` (one-word
+      ids; it issues the token for `pipeline.py sources approve`, see `quarto-word.md`). A line inside a fenced code block or
       starting with `>` does not count; a message must carry exactly one approval line.
     - **The token is fresh** only if the author's most recent message issued it, it is at most
       30 minutes old and unused, and it is for that operation and for the `design:` block as it
-      stood at approval. One successful `sign` or `unlock` spends it.
+      stood at approval (a sources token: for exactly its ids, and for those claims, registry entries
+      and source files as they stood). One successful `sign`, `unlock` or
+      `sources approve` spends it.
     - **A session never submits an approval line itself** — design-guard refuses a nested
       `claude` command carrying one.
 14. **Every result word is bound to the model:** helper output (`rc_sig`, `rc_stars`, `rc_dir`,

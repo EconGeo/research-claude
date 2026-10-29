@@ -177,6 +177,54 @@ rendered without it: `python3 .claude/scripts/fix_docx_floats.py <file>.docx`.
 
 ---
 
+## Source comments
+
+A claim about the outside world (a finding, number, date or fact from a source) is tagged in the
+manuscript: `[claim]{.src ref="<registry id>" id="<tag id>"}`. Brackets inside the claim are fine
+(citations, emphasis). Tag ids are one word and unique in the manuscript; `design` is reserved for
+the design block's quote. A repeated id, or a `.src` tag with id `design`, is FAILED. Tag every
+such claim, and tag when unsure; in the final message list any untagged outside-world claim you
+noticed.
+
+- **Registry** `quality_reports/sources.csv`, columns `id,file,label,page,sentence,cleanup,ocr`.
+  `file` is relative to the project root and inside it (an absolute path or one leaving the
+  project is FAILED); `sentence` is the source's own supporting sentence typed exactly as it
+  appears there (it must occur verbatim, word-bounded, in exactly one paragraph, after normalising
+  quotes, whitespace and ligatures and joining line-end hyphenation); `cleanup` is `;`-separated
+  rule names (currently `trailing-line-numbers`: drops a number ending a line only when it runs in
+  sequence with the numbers ending nearby lines, and a line holding only such a number); `ocr` is
+  `true`/`false`.
+- **What the comment shows** is the file's own paragraph after the entry's cleanup rules, with
+  whitespace runs collapsed to one space and nothing else changed (no ligature, quote or
+  character normalisation); inside the underlined sentence only, a line-end hyphen break is joined
+  the way it matched.
+- **Design treatment quote:** registry id `design:<cite>`; tag id `design`; see `quarto-empirical.md`.
+- **Approvals** `quality_reports/source_approvals.csv`, columns
+  `tag_id,ref,claim_sha256,entry_sha256,file_sha256,approved_at` (`entry_sha256`: the registry
+  entry's id, sentence, cleanup, label and page). Written only by
+  `python3 .claude/scripts/pipeline.py sources approve <id>…`, which needs a fresh token from the
+  author's own line `approve sources: <id>[, <id>…]` (grammar and freshness: core rule 13; the ids
+  must equal the command's). The token records each claim, entry and source file as they stood at
+  the author's line; if any changed since, the command refuses and the author approves again.
+  Never write the file by hand or from Bash.
+- **Five states:** APPROVED; UNREVIEWED; NEEDS REVIEW (claim text, registry entry or source file
+  changed since approval); FAILED (no registry entry, sentence not found verbatim or ambiguous,
+  unreadable source, file outside the project, malformed or repeated tag id); NOT ON THIS MACHINE
+  (source file missing).
+- **Offer.** Before building a Word draft for the author, ask once: plain, or with source comments
+  (`python3 .claude/scripts/pipeline.py sources docx`)? The sourced build writes
+  `<manuscript stem>_sourced.docx` beside the manuscript and never overwrites the plain `.docx`. In
+  it, each tag carries a comment by "Source check": `<label>, p. <page>. [OCR] <STATE>: ` then the
+  source paragraph with the sentence underlined; FAILED and NOT ON THIS MACHINE comments give the
+  reason and no source text. `sources docx` supplies the filter `source_comments.lua` itself
+  (`--lua-filter`, with `-M source-comments:true`) and warns if the docx's comment count differs
+  from the tag count. Nothing is added to a project's `_quarto.yml` for this feature.
+- **Warnings, never blocking:** every render (`fix_docx_floats.py`, the post-render step above,
+  runs `source_check.py` when it is linked beside it), `pipeline.py commit-check` (WARN lines) and
+  `pipeline.py critic-inputs` (its own log section).
+
+---
+
 ## What the writer-critic checks (Word format mode)
 
 Format-specific only. General-architecture checks (`source()`, hardcoded numbers,

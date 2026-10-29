@@ -11,7 +11,7 @@ names the first component stage that is ready, treating a scored stage with no l
 completion as adopted work (see next_report).
 """
 from __future__ import annotations
-import argparse, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, os, re, shutil, subprocess, sys
+import argparse, csv, datetime as dt, difflib, fnmatch, glob, hashlib, json, math, os, re, shutil, subprocess, sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -19,6 +19,7 @@ import registry_lib as rl
 import design_block as dsb
 import author_token as tok
 import qmd_chunks
+import source_check
 
 STATE_REL = Path("quality_reports") / "pipeline_state.json"
 LOG_REL = Path("quality_reports") / "agent_dispatch.jsonl"
@@ -380,6 +381,14 @@ def critic_inputs(root: Path) -> int:
     prc, out = run_script(root, "prose_number_check.py", rel)
     parts.append(f"## prose_number_check.py {rel} — " + (f"skipped: {out}" if prc is None else f"exit {prc}\n{out.rstrip()}"))
     summary.append("prose-check " + ("skipped" if prc is None else f"exit {prc}"))
+    src_rc, out = run_script(root, "source_check.py", rel, "--root", str(root))
+    if src_rc is None:
+        parts.append(f"## source_check.py {rel} — skipped: {out}")
+        summary.append("source-check skipped")
+    else:
+        parts.append(f"## source_check.py {rel} — exit {src_rc}\n{out.rstrip()}")
+        n_warnings = sum(1 for line in out.splitlines() if line.startswith("source-check:"))
+        summary.append(f"source-check {n_warnings} warnings")
     pdf = ms.with_suffix(".pdf")
     if rrc != 0:
         why = "render failed — any PDF on disk predates this run"
@@ -983,8 +992,12 @@ def commit_check(root: Path) -> int:
     rc, names = _git(root, "diff", "--cached", "--name-only", "-z")
     if rc != 0: print("commit-check: FAIL — git diff --cached failed"); return 1
     ms = root / hits[0]; ms_rel = ms.relative_to(root).as_posix(); fp_rel = FINGERPRINT_REL.as_posix()
-    staged = set(names.split("\0"))
-    if ms_rel not in staged and fp_rel not in staged: return 0
+    staged = set(names.split("\0")) - {""}
+    oversize = _oversize_staged(root, sorted(staged))
+    if ms_rel not in staged and fp_rel not in staged:
+        for p in oversize: print("commit-check: " + p)
+        if oversize: print("commit-check: FAIL")
+        return 1 if oversize else 0
     if not ms.exists(): print(f"commit-check: FAIL — declared manuscript {hits[0]} does not exist"); return 1
     # Every manuscript check reads the STAGED manuscript (`git show :path`), never the working file:
     # a hunk-wise `git add -p` commit is checked on what it commits. The staged bytes go to a
@@ -995,13 +1008,28 @@ def commit_check(root: Path) -> int:
     fd, tmp = tempfile.mkstemp(prefix=".commit-check-", suffix=".qmd", dir=ms.parent); os.close(fd)
     try:
         Path(tmp).write_text(staged_text)
-        return _commit_check_staged(root, ms, ms_rel, fp_rel, staged_text, Path(tmp))
+        return _commit_check_staged(root, ms, ms_rel, fp_rel, staged_text, Path(tmp), oversize)
     finally:
         Path(tmp).unlink(missing_ok=True)
 
-def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: str, tmp: Path) -> int:
+GITHUB_FILE_LIMIT = 104_857_600   # GitHub refuses a file of 100 MB or more
+
+def _oversize_staged(root: Path, staged: List[str]) -> List[str]:
+    """One problem per staged file at or over GitHub's 100 MB limit. The size is the index blob's
+    (`git cat-file -s :path`); a path that is not in the index (a deletion) is skipped."""
+    problems: List[str] = []
+    for path in staged:
+        rc, size_text = _git(root, "cat-file", "-s", f":{path}")
+        if rc != 0 or not size_text.strip().isdigit(): continue
+        size = int(size_text.strip())
+        if size >= GITHUB_FILE_LIMIT:
+            problems.append(f"staged file {path} is {size / 1048576:.1f} MB — GitHub refuses files over 100 MB; unstage it and keep it off GitHub")
+    return problems
+
+def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: str, tmp: Path,
+                         oversize: Optional[List[str]] = None) -> int:
     tmp_rel = tmp.relative_to(root).as_posix()
-    probs: List[str] = []; warns: List[str] = []
+    probs: List[str] = list(oversize or []); warns: List[str] = []
     st, why = design_state(root, ms, text)
     if st not in ("SIGNED", "NOT-RETROFITTED"): probs.append(f"design: {st} — {why}")
     # A paper with no design: block is not retrofitted: the prose gate and the cold-render receipt
@@ -1016,6 +1044,10 @@ def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: s
         (probs if retrofitted else warns).append(msg if retrofitted else "WARN (not retrofitted) " + msg)
     rc, out = run_script(root, "quarto_structure_check.py", tmp_rel)
     if rc != 0: probs.append("structure: quarto_structure_check.py " + ("not linked" if rc is None else f"exit {rc}") + ("" if rc is None else "\n" + out.rstrip().replace(tmp.name, ms.name)))
+    rc, out = run_script(root, "source_check.py", tmp_rel, "--root", str(root))
+    if rc is not None:   # warn only; a check that did not start prints nothing
+        for line in out.replace(tmp.name, ms.name).splitlines():
+            if line.startswith("source-check:"): warns.append("WARN " + line)
     rc, head_text = _git(root, "show", f"HEAD:{ms_rel}")
     changed = rc != 0 or chunk_code(head_text) != chunk_code(text)
     if changed and retrofitted:
@@ -1037,6 +1069,140 @@ def _commit_check_staged(root: Path, ms: Path, ms_rel: str, fp_rel: str, text: s
     for p in probs: print("commit-check: " + p)
     print("commit-check: " + ("FAIL" if probs else "ok")); return 1 if probs else 0
 
+SOURCE_FILTER = Path(__file__).resolve().parent / "source_comments.lua"
+_SRC_DESIGN_ANCHOR = re.compile(r"\]\{[^{}]*(?<![\w-])\.src-design(?![\w-])[^{}]*\}")
+
+def expected_comment_count(results: List[Any], qmd_text: str) -> int:
+    """Comments the filter writes: one per `.src` tag, plus the design quote's when the
+    manuscript has a `[…]{.src-design}` anchor for it."""
+    tags = sum(1 for r in results if not r.tag.from_block)
+    has_design = any(r.tag.from_block for r in results)
+    return tags + (1 if has_design and _SRC_DESIGN_ANCHOR.search(qmd_text) else 0)
+
+def docx_comment_count(path: Path) -> int:
+    import zipfile
+    with zipfile.ZipFile(path) as zf:
+        if "word/comments.xml" not in zf.namelist():
+            return 0
+        return zf.read("word/comments.xml").decode("utf-8").count("<w:comment ")
+
+def sources_docx(root: Path) -> int:
+    """The sourced Word build: `<stem>_sourced.docx` beside the manuscript, with each tagged claim's
+    source paragraph as a Word comment. The plain `<stem>.docx` is never touched. Prints the
+    source-check warnings, a WARNING if the docx has fewer or more comments than tags, then the
+    output path when quarto succeeded; returns quarto's exit code.
+
+    The filter is supplied here (`--lua-filter`, this script's sibling source_comments.lua); the
+    project's `_quarto.yml` never names it, so a plain render cannot fail for want of it (tested
+    2026-10-26, Quarto 1.9.37: `--lua-filter` with `-M` and `--output` runs the filter with the
+    metadata set, and the project post-render still runs).
+
+    Quarto runs from the manuscript's own directory: `--output` takes a bare file name, and from the
+    project root a manuscript in a subdirectory would put it in the root instead (tested 2026-10-26,
+    Quarto 1.9.37; project filters and post-render still apply from there)."""
+    ms = declared_manuscript(root)
+    if not SOURCE_FILTER.is_file():
+        print(f"sources docx: {SOURCE_FILTER} is missing")
+        return 1
+    out_path = ms.parent / f"{ms.stem}_sourced.docx"
+    cmd = ["quarto", "render", ms.name, "--to", "docx", "-M", "source-comments:true",
+           "--output", out_path.name, "--lua-filter", str(SOURCE_FILTER)]
+    # Quarto's log is captured so the post-render source check's warnings are not printed twice.
+    try:
+        done = subprocess.run(cmd, cwd=ms.parent, capture_output=True, text=True)
+    except FileNotFoundError:
+        print("sources docx: quarto is not on PATH")
+        return 1
+    if done.returncode != 0:
+        tail = (done.stdout + done.stderr).strip().splitlines()[-15:]
+        print(f"sources docx: quarto exited {done.returncode}\n" + "\n".join(tail))
+    try:
+        text = ms.read_text(encoding="utf-8")
+        results = source_check.check(root, text)
+        for line in source_check.warning_lines(results):
+            print(line)
+        if done.returncode == 0:
+            expected = expected_comment_count(results, text)
+            found = docx_comment_count(out_path)
+            if found != expected:
+                print(f"sources docx: WARNING {out_path.name} has {found} comments; expected {expected} "
+                      "(one per .src tag, plus the design quote's on a .src-design span)")
+    except Exception as err:  # warn only: the check never changes the exit code
+        print(f"source-check: internal error: {err}")
+    if done.returncode == 0:
+        print(out_path)
+    return done.returncode
+
+def sources_approve(root: Path, ids: List[str]) -> int:
+    """Record the author's approval of tagged claims: one quality_reports/source_approvals.csv row
+    per id, with the claim, registry entry and source file as they stand now. Runs only with a
+    fresh `sources` token from the author's line `approve sources: <id>[, <id>…]` whose ids are
+    these ids (any order) and whose fingerprints (taken by the design-token hook when the author
+    approved) still match: an edit after the author's line is refused, not approved. Refuses,
+    writing nothing and leaving the token unspent, on an id the manuscript does not tag, one whose
+    claim is FAILED or NOT ON THIS MACHINE, or an approvals file that cannot be read."""
+    ids = list(dict.fromkeys(ids))
+    ok, why = tok.check(root, "sources", None, reason=",".join(ids))
+    if not ok:
+        print(f"sources approve: refused — {why}")
+        return 1
+    text = declared_manuscript(root).read_text(encoding="utf-8")
+    results = {r.tag.tag_id: r for r in source_check.check(root, text)}  # the design block's result is last
+    unknown = [i for i in ids if i not in results]
+    if unknown:
+        print("sources approve: refused — the manuscript tags no claim with id " + ", ".join(unknown))
+        return 1
+    blocked = [f"{i} ({results[i].state}: {results[i].reason})" for i in ids
+               if results[i].state in (source_check.FAILED, source_check.NOT_HERE)]
+    if blocked:
+        print("sources approve: refused — " + "; ".join(blocked))
+        return 1
+    approved_prints = (tok._read(root) or {}).get("fingerprints")
+    if not isinstance(approved_prints, dict):
+        print("sources approve: refused — the author token carries no fingerprints of what the author "
+              "saw; the author approves again in chat")
+        return 1
+    try:
+        current = source_check.fingerprints(root, text, ids)
+    except ValueError as err:
+        print(f"sources approve: refused — {err}")
+        return 1
+    labels = {"claim_sha256": "claim", "entry_sha256": "source entry", "file_sha256": "file"}
+    drift = []
+    for i in ids:
+        seen = approved_prints.get(i) or {}
+        changed = [label for key, label in labels.items() if seen.get(key) != current[i][key]]
+        if changed:
+            drift.append(f"{i} ({' and '.join(changed)})")
+    if drift:
+        print("sources approve: refused — changed since the author approved: " + "; ".join(drift)
+              + ". Show the author the claim and its comment as they stand now and ask again.")
+        return 1
+    path = root / source_check.APPROVALS_REL
+    old_rows, error = source_check._read_rows(path, "tag_id")
+    if error:
+        print(f"sources approve: refused — {error}; fix or move the approvals file first")
+        return 1
+    ok, why = tok.consume(root, "sources", None, reason=",".join(ids))
+    if not ok:
+        print(f"sources approve: refused — {why}")
+        return 1
+    stamp = now()
+    new_rows = []
+    for i in ids:
+        new_rows.append({"tag_id": i, "ref": results[i].tag.ref, "approved_at": stamp, **current[i]})
+    # The whole file is rewritten under the current columns, so a file from before
+    # entry_sha256 existed keeps its rows (which read as NEEDS REVIEW: source entry).
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=source_check.APPROVAL_COLS, restval="", extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(old_rows + new_rows)
+    tmp.replace(path)
+    print(f"sources approve: {len(ids)} claim(s) approved — " + ", ".join(ids))
+    return 0
+
 # ── main ────────────────────────────────────────────────────────────────────
 def main() -> int:
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default=".")
@@ -1056,6 +1222,8 @@ def main() -> int:
     sub.add_parser("render").add_argument("--cold", action="store_true", required=True)
     sub.add_parser("conflicts").add_argument("agents", nargs="+")
     sub.add_parser("registry").add_argument("op", choices=["check"])
+    sp = sub.add_parser("sources"); sp.add_argument("op", choices=["docx", "approve"])
+    sp.add_argument("ids", nargs="*", help="approve: the tag ids the author approved")
     ds = sub.add_parser("design"); ds.add_argument("op", choices=["status", "sign", "unlock", "seed-amendment"])
     for flag in ("--signer", "--reason", "--date", "--field", "--old", "--new"): ds.add_argument(flag)
     lp = sub.add_parser("ledger"); lp.add_argument("op", choices=["add", "close", "decline", "accept", "reject", "settle", "show"])
@@ -1071,6 +1239,12 @@ def main() -> int:
     lg = sub.add_parser("log"); lg.add_argument("agent"); lg.add_argument("--source", default="skill")
     a = ap.parse_args(); root = Path(a.root).resolve()
     if a.cmd == "registry": return registry_check(root)
+    if a.cmd == "sources":
+        if a.op == "docx":
+            if a.ids: sys.exit("usage: sources docx (takes no ids)")
+            return sources_docx(root)
+        if not a.ids: sys.exit("usage: sources approve <id> [<id> ...]")
+        return sources_approve(root, a.ids)
     reg = load_reg(root)
     if a.cmd == "manuscript": print(declared_manuscript(root).relative_to(root)); return 0
     if a.cmd == "fresh":

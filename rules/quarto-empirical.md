@@ -101,6 +101,12 @@ design:
     size:  {rejection_at_0.10: 0.104, reps: 1000, file: explorations/size.qmd}
 ```
 
+The treatment quote is checked verbatim against a registry entry with id `design:<cite>`
+(`quality_reports/sources.csv`, see `quarto-word.md` "Source comments"); `source:` must be the flow
+form above (a quote in another form is FAILED, with that reason). The sourced Word build puts its comment on a `[…]{.src-design}` span where the
+manuscript states the treatment (without the span, no comment); the author approves it with tag id
+`design`.
+
 Each hypothesis names its model object on `spec:`; `rc_fingerprint()` stops when that object is
 missing.
 

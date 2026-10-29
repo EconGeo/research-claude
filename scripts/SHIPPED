@@ -13,3 +13,5 @@ design_block.py
 author_token.py
 findings_ledger.py
 check_single_manuscript.py
+source_check.py
+source_comments.lua

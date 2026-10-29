@@ -4,12 +4,16 @@
 Spec §4, §0.3. Once quality_reports/design_lock.json says `signed`, no agent edit may change the
 manuscript's `design:` front-matter block. `design sign|unlock` run only with the author's
 one-time token, issued by `.claude/hooks/design-token.py` from an approval line in the author's own chat
-message. The lock, the token and the record files are written only by pipeline.py or the render.
+message. The lock, the token and the record files (including quality_reports/source_approvals.csv,
+written by `pipeline.py sources approve` with an `approve sources:` token) are written only by
+pipeline.py or the render.
 Bash writes to the manuscript are refused while signed (use Edit, which this hook can evaluate).
-A Bash command that invokes `claude` and contains the text `approve design` is refused: a nested
-`claude -p` would fire UserPromptSubmit and self-issue the token. So is any `claude` fed its prompt
+A Bash command that invokes `claude` and contains the text `approve design` or `approve sources` is
+refused: a nested `claude -p` would fire UserPromptSubmit and self-issue the token. So is any `claude` fed its prompt
 by a `<` redirect, a heredoc or here-string, or a pipe (`cat f | claude -p`, `claude -p < f`),
 whatever the text: the prompt is then not on the command line to check. A Bash command that names
+`source_approvals` is refused unless each of its stages only reads or stages the file (cat, head,
+grep, git add/diff/…, or `pipeline.py sources approve`) with no `>` beside the name. A Bash command that names
 `author_token` (the token module) is refused, and so is one that names `design_lock` beside an
 interpreter (python, perl, ruby, node, Rscript), which could write the lock directly. The author
 approves in their own chat message; a session never submits an approval line.
@@ -44,7 +48,26 @@ def fed_claude(cmd: str) -> bool:
             if CLAUDE_CMD_RE.search(part) and (i > 0 or "<" in part): return True
     return False
 
+# A Bash command that names source_approvals may only read it or stage it: every stage of the
+# command is one of these (or `pipeline.py sources approve`), and the stage naming it has no `>`.
+APPROVALS_STAGE_RE = re.compile(r"^\s*(?:(?:cat|head|tail|wc|less|grep|ls|sort|column|echo|cd)\b"
+                                r"|git\s+(?:add|diff|log|show|status)\b"
+                                r"|\S*python[\d.]*\s+\S*pipeline\.py\b[^\n;&|]*\bsources\s+approve\b)")
+
+def writes_approvals(cmd: str) -> bool:
+    if "source_approvals" not in cmd:
+        return False
+    for stage in re.split(r"\n|;|&&|\|\||\||&", cmd):
+        if not stage.strip():
+            continue
+        if not APPROVALS_STAGE_RE.match(stage):
+            return True
+        if "source_approvals" in stage and ">" in stage:
+            return True
+    return False
+
 PIPELINE_ONLY = {"design_lock.json", "design_token.json", "design_amendments.csv", "design_amendments.md",
+                 "source_approvals.csv",
                  "render_fingerprint.json", "cold_render.json", "findings_ledger.md", "rulings_log.md"}
 
 def deny(msg):
@@ -53,7 +76,7 @@ def deny(msg):
 
 # A Bash command that names none of these can trip no check below, so it returns before any
 # file is read (this hook runs on every Bash call; keep the common case to a regex).
-BASH_TRIGGER_RE = re.compile(r"design|claude|author_token|pipeline\.py|sed|perl|tee|cp|mv|>|\.qmd", re.I)
+BASH_TRIGGER_RE = re.compile(r"design|claude|author_token|source_approvals|pipeline\.py|sed|perl|tee|cp|mv|>|\.qmd", re.I)
 
 def main() -> int:
     payload = json.load(sys.stdin); root = Path(os.environ.get("CLAUDE_PROJECT_DIR", "")).resolve()
@@ -67,12 +90,16 @@ def main() -> int:
         deny("the author token is written only by the design-token hook."); return 0
     if re.search(r"\bauthor_token\b", cmd):
         deny("the author token module is run only by the design-token hook and pipeline.py."); return 0
+    if writes_approvals(cmd):
+        deny("source_approvals.csv is written only by `pipeline.py sources approve` with the author's "
+             "token; a Bash command naming it may only read or stage it.")
+        return 0
     if cmd and fed_claude(cmd):
         deny("a nested claude may not take its prompt from a file, heredoc, here-string or pipe "
              "(the prompt could carry an approval line); pass the prompt as an argument."); return 0
     if re.search(r"\bdesign_lock\b", cmd) and INTERP_RE.search(cmd):
         deny("design_lock.json is written only by pipeline.py; an interpreter command may not name it."); return 0
-    if cmd and CLAUDE_RE.search(cmd) and re.search(r"approve\s+design", cmd, re.I):
+    if cmd and CLAUDE_RE.search(cmd) and re.search(r"approve\s+(design|sources)", cmd, re.I):
         deny("a session never submits an approval line (a nested claude would self-issue the author "
              "token); the author approves in their own chat message."); return 0
     ms = db.manuscript_path(root)

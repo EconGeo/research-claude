@@ -33,6 +33,12 @@ class TestRenderIsScoredFromTheLog(unittest.TestCase):
         self.assertNotRegex(s, r"Run\s+`python3", "a Bash-less critic cannot run a script")
         self.assertNotIn("Does `quarto render", s)
 
+    def test_render_category_names_the_source_check_section(self):
+        s = section(read(EIGHT), 6)
+        self.assertNotIn("three sections", s)
+        self.assertIn("`source_check.py`", s)
+        self.assertRegex(s, r"(?s)source-check: FAILED.*NEEDS REVIEW.*finding")
+
     def test_report_format_allows_not_scored(self):
         self.assertIn("## Render: [PASS/WARNINGS/FAIL/NOT SCORED]", read(EIGHT))
 
@@ -54,6 +60,29 @@ class TestEveryDispatchSiteRunsCriticInputs(unittest.TestCase):
             rel = str(f.relative_to(ROOT))
             if re.search(r"[Dd]ispatch\w*\W{0,4}(\*\*)?writer-critic", f.read_text()):
                 self.assertIn(rel, self.SITES, f"{rel} dispatches writer-critic without being a known critic-inputs site")
+
+
+class TestCriticInputsSourceSection(unittest.TestCase):
+    def test_critic_inputs_has_source_section(self):
+        import sys, tempfile, shutil, os, io, contextlib
+        from unittest import mock
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import pipeline
+        tmp = pathlib.Path(tempfile.mkdtemp())
+        try:
+            (tmp / "CLAUDE.md").write_text("manuscript: paper.qmd\n")
+            (tmp / "paper.qmd").write_text('A claim [about a rule]{.src ref="nope" id="t9"} here.\n')
+            (tmp / ".claude").mkdir()
+            (tmp / ".claude" / "scripts").symlink_to(ROOT / "scripts")
+            buf = io.StringIO()
+            with mock.patch.object(pipeline, "run_render", return_value=(0, "ok\n")), contextlib.redirect_stdout(buf):
+                self.assertEqual(pipeline.critic_inputs(tmp), 0)
+            log = next((tmp / "quality_reports" / "critic_inputs").glob("*.log")).read_text()
+            self.assertIn("## source_check.py paper.qmd — exit 0\n", log)
+            self.assertIn("source-check: FAILED t9", log)
+            self.assertRegex(buf.getvalue(), r"source-check [1-9]\d* warnings")
+        finally:
+            shutil.rmtree(tmp)
 
 
 if __name__ == "__main__":

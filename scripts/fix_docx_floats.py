@@ -15,10 +15,14 @@ defects in that wrapper break the WordprocessingML schema:
    left, spacing). Only the last is kept, as Word would render it, with
    <w:pStyle> moved to first position as the schema requires.
 
+As a post-render step it also runs source_check.py, when linked beside it, and prints its
+warnings (see source_check_warnings; it never changes this script's exit code).
+
 Verified 2026-10-04 in Word: a docx with both repairs opens in Word without the prompt;
 either repair alone does not. Idempotent: a repaired file passes through unchanged.
 """
 import os
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
@@ -72,12 +76,31 @@ def fix_docx(path):
     print(f"fix_docx_floats: {path.name}: {n_cells} table cells, {n_paras} captions repaired")
 
 
+def source_check_warnings():
+    """As a post-render step, also run source_check.py when it is linked beside this script and
+    print its warning lines. Fail-open: whatever it does, this script's exit code is its own.
+    It sits here, not in `_quarto.yml`, so a paper whose links lack it still renders (a missing
+    post-render script fails the render)."""
+    try:
+        script = Path(__file__).parent / "source_check.py"
+        if not script.is_file():
+            return
+        done = subprocess.run([sys.executable, str(script)], capture_output=True, text=True)
+        for line in done.stdout.splitlines():
+            if line.startswith("source-check:"):
+                print(line)
+    except Exception:
+        pass
+
+
 def main(argv):
     # Explicit paths win; otherwise the files Quarto just rendered.
     targets = argv or os.environ.get("QUARTO_PROJECT_OUTPUT_FILES", "").split("\n")
     for t in targets:
         if t.strip().endswith(".docx"):
             fix_docx(t.strip())
+    if not argv:
+        source_check_warnings()
 
 
 if __name__ == "__main__":
