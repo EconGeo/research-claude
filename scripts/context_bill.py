@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """context_bill.py — static token-cost audit of the shipped skill/agent/rule tree.
 
-Two questions this answers that context-monitor.py's live 40/55/65/80/90% hook nudges
-(.claude/hooks/context-monitor.py) do not: which skill's frontmatter description is
+Two questions this answers that Claude Code's live /context figure does not: which skill's frontmatter description is
 costing every session tokens before it is ever invoked (every skill's name+description
 loads into the "Available skills" listing at session start, whether or not the skill
 runs), and which shipped file is heaviest if something does read it in full. Adopted from

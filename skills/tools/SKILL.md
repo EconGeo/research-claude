@@ -1,7 +1,7 @@
 ---
 name: tools
-description: Utility commands — commit (with blocking quality/number/structure gates), render, validate-bib, lint, journal, learn, context-bill. Replaces individual utility skills.
-argument-hint: "[subcommand: commit | render | validate-bib | lint | journal | learn | context-bill] [args] [--yes]"
+description: Utility commands — commit (with blocking quality/number/structure gates), render, validate-bib, journal, learn, context-bill. Replaces individual utility skills.
+argument-hint: "[subcommand: commit | render | validate-bib | journal | learn | context-bill] [args] [--yes]"
 allowed-tools: Read,Grep,Glob,Write,Edit,Bash,Agent
 ---
 
@@ -120,51 +120,6 @@ are not citations. **Output:** MISSING, UNUSED and DUPLICATE lists, reported to 
 defect: Zotero is the source of truth for what has been read
 (`.claude/skills/lit-position/SKILL.md`), and the `.bib` is exported from it, so an entry the
 manuscript does not yet cite is normal mid-draft. Never delete entries here.
-
-### `/tools lint [file|dir]` — Mechanical Code Linting
-Run grep-based checks on R/Python/Julia scripts against the coding standards' prohibited patterns. Catches mechanical violations before the coder-critic's judgment review.
-
-```bash
-"$CLAUDE_PROJECT_DIR"/.claude/hooks/lint-scripts.sh [target]
-```
-
-- **Single file:** `/tools lint scripts/acquire/01_download.py`
-- **Directory:** `/tools lint scripts/acquire/` (recursive)
-- **Default:** `/tools lint` (lints `scripts/acquire/` only — `.claude/hooks/lint-scripts.sh`'s one default target)
-- **Explorations:** `/tools lint explorations/` — not covered by the default; run it separately
-- **`.qmd` file:** also lints the R chunks of a `.qmd` (`.claude/scripts/qmd_chunks.py`)
-
-**What it checks (drawn from `.claude/references/coding-standards-*.md`):**
-
-| Check | R | Python | Julia | Severity |
-|-------|---|--------|-------|----------|
-| Absolute paths | x | x | x | HIGH |
-| `setwd()` / `os.chdir()` / `cd()` | x | x | x | HIGH |
-| Missing seed (stochastic code) | x | x | x | HIGH |
-| `install.packages()` / `pip install` | x | x | | HIGH |
-| `rm(list = ls())` | x | | | MEDIUM |
-| `T`/`F` literals | x | | | MEDIUM |
-| `sapply()` | x | | | MEDIUM |
-| `attach()`/`detach()` | x | | | MEDIUM |
-| `source()` inside a chunk (INV-19) | x | | | HIGH |
-| `<<-` global assignment | x | | | MEDIUM |
-| `stargazer` / `plyr` | x | | | MEDIUM |
-| `set.seed()` position (after line 30) | x | | | MEDIUM |
-| Wildcard imports | | x | | MEDIUM |
-| `np.random.seed()` global state | | x | | MEDIUM |
-| Bare `except:` | | x | | MEDIUM |
-| `eval`/`@eval` runtime | | | x | MEDIUM |
-| Late `library()`/`import`/`using` | x | x | x | LOW |
-| `print()` for status | x | | | LOW |
-| `require()` | x | | | LOW |
-| `1:n` patterns | x | | | LOW |
-
-**Output:** Findings by file with severity, line number, and fix suggestion. Always advisory (exit 0).
-
-**When to use:**
-- Before `/review --code` — catches mechanical violations instantly
-- Before commits — quick sanity check
-- The coder-critic focuses on judgment (strategy alignment, numerical plausibility, design); this catches the grep-able stuff
 
 ### `/tools journal` — Research Journal
 Bring `quality_reports/research_journal.md` up to date with the state file. The journal is

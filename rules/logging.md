@@ -6,10 +6,7 @@ Append to `SESSION_REPORT.md` at end of session or before context compression.
 Create the file if it doesn't exist: `# Session Report — [Project Name]`
 
 **Other writers and readers.** `/checkpoint` appends the session entry.
-`.claude/hooks/pre-compact.py` appends a compaction marker in the same format and reads the
-`**Decisions:**` block of the latest entry; `.claude/hooks/post-compact-restore.py` surfaces
-the latest entry's heading after compaction; `.claude/hooks/log-reminder.py` nudges when the
-file is missing or stale. **This is the only session-continuity document the hooks read** —
+**This is the only session-continuity document** —
 there is deliberately no session-log directory. `.claude/rules/session-handoff.md` explains why: the
 continuity design is already complete, and "the fix is not another document."
 
@@ -59,7 +56,7 @@ Agent outputs (reports, scripts, memos, decisions) are saved to `quality_reports
 `quality_reports/pipeline_state.json` is the machine-readable record of scores and progress.
 Schema: `.claude/templates/pipeline-state.json` (v2). Written only by
 `python3 .claude/scripts/pipeline.py state ...`; read by `pipeline.py score`, `/pipeline`,
-`/checkpoint` (staleness sweep) and `.claude/hooks/post-compact-restore.py`. **Committed** — it is
+and `/checkpoint` (staleness sweep). **Committed** — it is
 replication provenance. The research journal entry is derived from it, never the reverse.
 
 ## Dispatch Log

@@ -2,8 +2,8 @@
 r"""qmd_chunks.py — extract R chunk bodies from a Quarto .qmd file (D-7).
 
 D-7: there is exactly one manuscript, a single .qmd, and all analysis code
-lives in its R chunks. `.claude/hooks/lint-scripts.sh` only knows how to grep .R/.py/.jl
-files; this script gives it something to grep by pulling the R chunk bodies
+lives in its R chunks. Line-oriented checks only know how to grep .R/.py/.jl
+files; this script gives them something to grep by pulling the R chunk bodies
 out of the .qmd and printing them as if they were a standalone .R file.
 
 The one property that matters: line numbers in the output are IDENTICAL to

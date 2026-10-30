@@ -45,7 +45,7 @@ SLASH_ALLOW = {"compact", "clear", "help", "init", "memory", "config", "permissi
                "home", "users", "private", "library", "applications", "system", "volumes", "workflows", "tasks",
                "artifacts", "code", "docs", "en", "api", "npm", "ajax", "libs", "gh-pages",
                # Verified false positives (2026-09-08, Task 0.5 red run) — not skill invocations:
-               "detach",  # attach()/detach() R function pair in hooks/lint-scripts.sh
+               "detach",  # attach()/detach() R function pair in R-code prose
                "assumptions", "results", "proofs",
                # theory-output filename tails (bracket topic placeholder, name, dot-tex) in
                # skills/strategize/SKILL.md — path segments, not skill invocations
@@ -60,7 +60,7 @@ SLASH_ALLOW = {"compact", "clear", "help", "init", "memory", "config", "permissi
                # the `*` lookbehind gap again (see "positioning"); `*` stays matchable for **/skill**.
                # Fix round 2, Task 3b.8. A bare `/learn` candidate for this set was investigated
                # and rejected: skills/tools/SKILL.md:98 documents a real `/tools learn`
-               # subcommand, so hooks/context-monitor.py's nudge text was corrected to say
+               # subcommand, so the (since deleted) context-monitor hook's nudge text was corrected to say
                # `/tools learn` instead of being suppressed here.
                }
 TOOLS_LINE = re.compile(r"^(allowed-)?tools:\s*(.*)$")

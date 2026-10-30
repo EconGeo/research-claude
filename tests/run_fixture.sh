@@ -107,59 +107,6 @@ run pairing-empty-sid     bash -c "
   echo \"\$a\" | grep -q '\"decision\": \"block\"' && echo \"\$b\" | grep -q '\"decision\": \"block\"'
 "
 
-# ── D-14: hooks emit on the documented JSON channel, not bare stderr (Task 7.1) ──
-# $T has no quality_reports/session_logs/ yet — the fixture's own state dir is keyed
-# on $T's path, so the "no log" advisory fires fresh here regardless of what earlier
-# checks above did.
-run hook-log-reminder     bash -c "echo '{\"cwd\":\"$T\"}' | CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/log-reminder.py' | grep -q '\"hookSpecificOutput\"'"
-
-echo 'setwd("/tmp")' > "$T/hook-lint-fixture.R"
-run hook-post-edit-lint   bash -c "echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$T/hook-lint-fixture.R\"}}' | '$RC/hooks/post-edit-lint.sh' | grep -q '\"hookSpecificOutput\"'"
-
-# ── lint-scripts.sh reads .qmd chunks via scripts/qmd_chunks.py (Task 7.3) ──
-# Clean: an ordinary modelsummary(booktabs=TRUE) table plus a "reboot your R
-# session" comment — real R-125-adjacent regression for the old bare `boot`
-# pattern, which false-flagged the comment as stochastic code (see
-# docs/audits/... task-7.3-report.md for the red). Must report CLEAN.
-cat > "$T/lint-qmd-clean-fixture.qmd" <<'EOF'
----
-title: booktabs test
----
-
-```{r}
-#| label: tbl-x
-# reboot your R session if renv appears stale, then re-render
-modelsummary(m, booktabs = TRUE)
-```
-EOF
-run lint-qmd-clean bash -c "'$RC/hooks/lint-scripts.sh' '$T/lint-qmd-clean-fixture.qmd' | grep -q 'Status: CLEAN'"
-
-# setwd() inside an R chunk must be caught at its correct SOURCE line (line 8
-# here) — the whole point of scripts/qmd_chunks.py blanking non-chunk lines
-# instead of dropping them.
-cat > "$T/lint-qmd-setwd-fixture.qmd" <<'EOF'
----
-title: setwd test
----
-
-```{r}
-#| label: fig-y
-x <- 1
-setwd("/Users/x")
-```
-EOF
-run lint-qmd-setwd bash -c "out=\$('$RC/hooks/lint-scripts.sh' '$T/lint-qmd-setwd-fixture.qmd'); echo \"\$out\" | grep -q 'lint-qmd-setwd-fixture.qmd (2 issues)' && echo \"\$out\" | grep -q 'Line 8: setwd() '"
-
-run hook-pre-compact      bash -c "echo '{\"trigger\":\"auto\"}' | CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/pre-compact.py' | grep -q '\"systemMessage\"'"
-
-# ── session-guard.py: exemption protects its own state file, not the rest of .claude/ (Task 7.2) ──
-mkdir -p "$T/.claude/state" "$T/.claude/rules"
-echo '{"freeze":{"active":true,"allowed_paths":[]}}' > "$T/.claude/state/session-guards.json"
-run session-guard-denies-state bash -c "echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$T/.claude/state/session-guards.json\"}}' | CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/session-guard.py' | grep -q '\"permissionDecision\": \"deny\"'"
-echo '# scratch' > "$T/.claude/rules/hook-fixture-scratch.md"
-run session-guard-allows-rules bash -c "[ -z \"\$(echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$T/.claude/rules/hook-fixture-scratch.md\"}}' | CLAUDE_PROJECT_DIR='$T' HOME='$H' python3 '$RC/hooks/session-guard.py')\" ]"
-rm -f "$T/.claude/state/session-guards.json"
-
 if [[ "$LIVE" == true ]]; then
   echo "── live tier (clean copy: $L)"
   cp -R "$RC/tests/fixture-project/." "$L/"

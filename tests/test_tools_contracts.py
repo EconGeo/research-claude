@@ -1,13 +1,8 @@
-"""Contracts for /tools.
-
-A documented default that disagrees with the script is worse than no default: the user reads
-`/tools lint` as covering explorations/ and it silently covers scripts/acquire only.
-"""
+"""Contracts for /tools."""
 import pathlib, re, unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SKILL = (ROOT / "skills" / "tools" / "SKILL.md").read_text()
-LINT = (ROOT / "hooks" / "lint-scripts.sh").read_text()
 
 
 def section(name):
@@ -21,12 +16,6 @@ class TestTools(unittest.TestCase):
         s = section("render")
         self.assertIn("pipeline.py manuscript", s)
         self.assertNotIn("manuscript_<project>.qmd", s)
-
-    def test_the_documented_lint_default_matches_the_script(self):
-        default = re.search(r'TARGET="\$\{1:-([^}"]+)\}"', LINT).group(1)
-        line = next(l for l in section("lint").splitlines() if "**Default:**" in l)
-        self.assertIn(default, line)
-        self.assertNotIn("explorations/", line)
 
     def test_every_advertised_subcommand_has_a_command_or_an_explicit_pointer(self):
         """`learn` is deliberately a pointer at meta-governance; every other subcommand the
