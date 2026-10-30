@@ -21,7 +21,7 @@ Targeted full-section reads elsewhere are cited inline. Greps were used only to 
 ## 0. Two corrections to the audit request, made before anything downstream
 
 **0.1 — The "folded into the canonical multi-skills" quotation is real, but it is not from
-`/tools learn` and not from this repo.** It is from **POGM4 commit `5f11c52`** ("Align agents and
+`/tools learn` and not from this repo.** It is from **paper-A commit `5f11c52`** ("Align agents and
 skills to research-claude canonical set"), verified this session:
 
 > Skills: 58 -> 18 (research-claude canonical + commit + flextable-quarto-word-captions …).
@@ -49,12 +49,12 @@ consumer-side cleanup was deferred and it was never done:**
 > CLAUDE.md skill table still references removed skills and will be reconciled in the CLAUDE.md
 > refresh during the data-chain upgrade.
 
-POGM4's `CLAUDE.md` "Skills Quick Reference" today still lists `/review-paper`,
+paper-A's `CLAUDE.md` "Skills Quick Reference" today still lists `/review-paper`,
 `/respond-to-referees`, `/review-r`, `/data-analysis`, `/audit-reproducibility`, `/validate-bib`,
 `/lit-review`, `/research-ideation`, `/interview-me`, `/seven-pass-review`, `/proofread`,
 `/permission-check`, `/commit` and `/context-status` — most of them the very standalone skills
 that commit deleted, promised for reconciliation in June 2026. The fold was done correctly in the
-pipeline (§2.2); **the project-side table documenting it was not**, and a reader of POGM4's
+pipeline (§2.2); **the project-side table documenting it was not**, and a reader of paper-A's
 `CLAUDE.md` is still told to invoke skills that have not existed for three months. This is
 project-level residue rather than pipeline residue, so it is not in the prioritized list, but it
 is the same defect class and worth a single reconciliation pass.
@@ -334,7 +334,7 @@ user reads.
 ### 2.3 Orphans — skills nothing references
 
 - **`/ztp-profile`** and **`/ztp-tutor`** — installed into every project (`apply.sh --link`
-  creates the symlinks; confirmed present in `~/Research/POGM4/.claude/skills/`) and referenced
+  creates the symlinks; confirmed present in `~/Research/paper-A/.claude/skills/`) and referenced
   from **nowhere** in `agents/`, `skills/`, `rules/`, `references/`, `hooks/`, `README.md` or
   `CLAUDE.md`. `/ztp-tutor` is the largest SKILL.md in the repo at 431 lines.
 - **`/ztp-ollama`** — 141 lines, referenced exactly once, and only as an example of the
@@ -399,11 +399,11 @@ clo-author, not clo-author itself). Slides/presentations noted, not faulted.
 
 | clo-author capability | research-claude equivalent | Status |
 |---|---|---|
-| `editor` | `agents/editor.md` (369 lines, harvested from POGM4's 366) | **Present** — and the three capabilities the spec called dormant all landed: novelty check with the anti-hallucination caveat (`:45` "Any 'already done' claim must include the URL or DOI … rather than asserting prior work"), no-duplicate dispositions (`:113` "**Do not draw the same disposition twice**"), and `--variance N` (`:117`, `:212`). **But `/review` cannot reach `--variance` — §1.10.** |
-| `coder-critic` (merge POGM4 + zoning2026) | `agents/coder-critic.md` | **Present** — success criterion 8 met. Carries POGM4's manifest half (`:74` INV-23, `:75` INV-24) *and* zoning2026's half (`:42` "## Correctness Layer", `:51` no derived CSVs, `:59` zero-inflation/extrapolation traps). |
+| `editor` | `agents/editor.md` (369 lines, harvested from paper-A's 366) | **Present** — and the three capabilities the spec called dormant all landed: novelty check with the anti-hallucination caveat (`:45` "Any 'already done' claim must include the URL or DOI … rather than asserting prior work"), no-duplicate dispositions (`:113` "**Do not draw the same disposition twice**"), and `--variance N` (`:117`, `:212`). **But `/review` cannot reach `--variance` — §1.10.** |
+| `coder-critic` (merge paper-A + paper-C) | `agents/coder-critic.md` | **Present** — success criterion 8 met. Carries paper-A's manifest half (`:74` INV-23, `:75` INV-24) *and* paper-C's half (`:42` "## Correctness Layer", `:51` no derived CSVs, `:59` zero-inflation/extrapolation traps). |
 | `methods-referee`, `domain-referee` | both present (212 / 137 lines) | **Present** |
 | `writer`, `writer-critic`, `coder` | all present | **Present** |
-| `verifier` (clo-author two-mode, `latexmk` → `quarto render`) | `agents/verifier.md` | **Present** — two modes intact (1–4c standard, 5–10 submission), check 1 is `quarto render`. The POGM4 slide-agent leak was correctly not harvested. |
+| `verifier` (clo-author two-mode, `latexmk` → `quarto render`) | `agents/verifier.md` | **Present** — two modes intact (1–4c standard, 5–10 submission), check 1 is `quarto render`. The paper-A slide-agent leak was correctly not harvested. |
 | `theorist`, `theorist-critic`, `strategist`, `strategist-critic`, `explorer`, `explorer-critic`, `data-engineer` | all present | **Present** |
 | `storyteller`, `storyteller-critic` (drop `beamer-scaffold.tex`, keep `quarto-scaffold.qmd`) | both present; `skills/talk/templates/quarto-scaffold.qmd` present, no Beamer scaffold | **Deliberately dropped (Beamer)** — the RevealJS path survives and works. |
 | `orchestrator`, `guide-writer` | deleted (D1) | **Deliberately dropped** — replaced by `registry.yaml` + `/pipeline` + `rules/agents.md` §4. |

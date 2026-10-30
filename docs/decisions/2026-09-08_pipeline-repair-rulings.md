@@ -330,7 +330,7 @@ not tidiness.
 green. That is worth what it is worth, and no more.
 
 `check_install.sh --all` reports all six paper repos linked to the **parent checkout on `main`**,
-not to the repair worktree. The plan's Stage 2 exit criterion ("POGM4 is linked to `$W`") was
+not to the repair worktree. The plan's Stage 2 exit criterion ("paper-A is linked to `$W`") was
 never met, so:
 
 - no hook in this branch has fired in a live session — the piped-payload tests and the fixture's
@@ -787,8 +787,8 @@ outward-facing.
 | Item | Source |
 |---|---|
 | `.gitignore` edits in all six paper repos (`gitignore-covers` FAIL ×6 until done) | Task 2.3 Step 3 |
-| Declare `manuscript:` in `~/Research/POGM4/CLAUDE.md` | Task 1b.1 Step 2 |
-| Re-link POGM4 to the worktree as the canary | Task 2.5 |
+| Declare `manuscript:` in `~/Research/paper-A/CLAUDE.md` | Task 1b.1 Step 2 |
+| Re-link paper-A to the worktree as the canary | Task 2.5 |
 | ZotPilot fork: fix `seed-papers/SKILL.md`, PR, re-vendor | Task 6.4 |
 | Stage 8 entirely — legacy migration, merge, re-link, lock bump, push | Stage 8 |
 | `stash@{0}` and branch `fix/critic-dispatch` still exist (content preserved as a patch and a cherry-pick) | R-5 |
@@ -799,7 +799,7 @@ outward-facing.
 | Add the `artifact-paths` gate: flag any `quality_reports/` path matching no registry glob, with an allow-list for genuine convenience artifacts | R-112 |
 | ~~Resolve the `.claude/references/coding-standards` double-reference left dangling by deleting `references/coding-standards-rmd.md`~~ — **withdrawn (R-125): the premise was false.** `coding-standards-{r,python,julia}.md` all exist; only the Rmd file was deleted, correctly. The two hits are R-21's documented truncation of `-{lang}` and `-*`, four sections above. Fixed in `PATH_RE` at Task 7.3, not by editing the references. | R-125 |
 | **Wire the six repos' `.claude/settings.json` AS PART OF THE MERGE, not after it.** `apply.sh`'s `copy_seed` never overwrites an existing settings file, so the two new hooks reach no existing project on merge. Until each is edited by hand, the dispatch log is written only where a skill explicitly runs `pipeline.py log` — three creators — and `post` fails closed on `creator None` for the rest. This is a prerequisite for the pairing gate being true in production, not a tidy-up | R-136 |
-| Stage 7b's `~/Research` half, all deferred under the read-only constraint: rename `JHE` → `JHousE` in the SHARED `~/Research/.claude/references/journal-profiles.md` (the repo copy is done, and `JHE` there now means Journal of Health Economics only — the two files currently disagree); copy the corrected `discipline-cards.md` out; replace ESG's and NAR_settlement's real reference files with symlinks after diffing for local edits; re-link `affordable_housing_2026`, whose target is a lowercase `/Users/.../research/...` path | Task 7b.1 Steps 3-4 |
+| Stage 7b's `~/Research` half, all deferred under the read-only constraint: rename `JHE` → `JHousE` in the SHARED `~/Research/.claude/references/journal-profiles.md` (the repo copy is done, and `JHE` there now means Journal of Health Economics only — the two files currently disagree); copy the corrected `discipline-cards.md` out; replace paper-H's and paper-D's real reference files with symlinks after diffing for local edits; re-link `paper-B`, whose target is a lowercase `/Users/.../research/...` path | Task 7b.1 Steps 3-4 |
 | Check the shared and project-local `journal-profiles.md` copies for the same `ReStud` vs `REStud` casing bug found and fixed in the repo's `discipline-cards.md` — a cross-reference that reads correctly and matches nothing | Task 7b.1 |
 | **Run something real before trusting any of this.** No hook in this branch has fired in a live session and `tests/run_fixture.sh --live` has never run (R-127). The first honest test is Stage 8's `/write abstract` on the canary: it must produce a writer-critic score and a Claim–Evidence Table *before* the draft is shown | R-127, Tasks 5.6/5.7 |
 | Implement the enumerated (but not yet applied) `SKILL.md` "Replaces /X" frontmatter rewordings for the 18 genuine `skill-refs` hits | Task 3b.8 |

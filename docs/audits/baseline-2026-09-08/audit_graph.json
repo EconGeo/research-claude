@@ -1,5 +1,5 @@
 {
-  "root": "/Users/andrew.mueller/Academic/research-claude/.claude/worktrees/pipeline-repair",
+  "root": "~/Academic/research-claude/.claude/worktrees/pipeline-repair",
   "counts": {
     "files": 155,
     "agents": 17,

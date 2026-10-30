@@ -16,7 +16,7 @@ Established 2026-09-29, each finding checked by reading the file or running the 
 
 - **Paper repos:** all six have `.claude/skills/{ztp-*,seed-papers}` as symlinks into `research-claude/zotpilot-skills/` (`apply.sh:172-175`).
 - **Shadow copy:** `~/.claude/skills/ztp-{profile,research,review,setup,tutor}` are real directories, each with a `.zotpilot-version.json`. They were written by `deploy_skills()` (`src/zotpilot/_platforms.py:794`) via `reconcile_runtime` → `apply_runtime_changes`, which is what `register`, `setup` and `upgrade` all call.
-- **Precedence (per docs, code.claude.com/docs/en/skills "Resolve skills that share a name"):** "Enterprise over personal, and personal over project." **Tested:** the NAR_settlement session transcript `88e46716…jsonl` loaded `Base directory for this skill: /Users/andrew.mueller/.claude/skills/ztp-research`. That project has its own linked copy.
+- **Precedence (per docs, code.claude.com/docs/en/skills "Resolve skills that share a name"):** "Enterprise over personal, and personal over project." **Tested:** the paper-D session transcript `88e46716…jsonl` loaded `Base directory for this skill: ~/.claude/skills/ztp-research`. That project has its own linked copy.
 - **Our copy is behind the fork:** `zotpilot-skills/` is at fork `6e63dd8`. Fork `main` is at `5e5e65a`, and fork commit `6057e79` changed `claude-skills/ztp-research/SKILL.md` (target library, `select_zotero_library`, `save_unconfirmed`). The shadow copy has that change; ours does not. Deleting the shadow copies before a re-sync would downgrade every paper.
 - **A `~/Research` skills folder won't load in paper sessions:** `~/Research` is not a git repo, and each paper is its own repo root. Per docs, project skills load from the start directory "and in every parent directory up to the repository root". Skills in `~/Research/.claude/skills/` therefore load only in sessions started in `~/Research` itself.
 - **Course sessions load the shadow copies too.** `~/.claude/skills` loads everywhere, including `~/Courses`, which breaks the domain split in `~/.claude/CLAUDE.md`.
@@ -927,7 +927,7 @@ Then merge `zotpilot-skills-single-source` into `main` locally (`git switch main
 
 ## Left open (user decisions, not tasks)
 
-- **`~/Research/NAR_settlement_legacy_archive/.claude/skills/`** holds *real* `ztp-*` copies from 2026-06-17. The user-level copies used to override them; after Task 6, a session started in that archive loads its own stale copies. Options: delete those directories, or leave the archive untouched.
+- **`~/Research/paper-D_legacy_archive/.claude/skills/`** holds *real* `ztp-*` copies from 2026-06-17. The user-level copies used to override them; after Task 6, a session started in that archive loads its own stale copies. Options: delete those directories, or leave the archive untouched.
 - **`~/Research/.claude/skills/obsidian-digest-sync`** is a leftover. The skill was removed from the pipeline on 2026-09-09.
 - **OpenCode** loses its ZotPilot skills in Task 6, because `deploy_skills` applies to all platforms. If OpenCode is in use, link `zotpilot-skills/*` into `~/.config/opencode/skills/`, the same way Task 6 Step 3 handles the research root.
 - **Cloud and Cowork sessions** read neither `~/.claude/skills` nor the gitignored project links. That is out of scope here.

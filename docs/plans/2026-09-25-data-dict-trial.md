@@ -39,8 +39,8 @@ not ticked during execution; they are not open work.
 
 ## Trial project
 
-**Default: `~/Research/zoning2026`.** Its `data/raw/` has 37 csv, 3 dta, 11 xlsx, 5 xls and 1 rds (counted 2026-09-25): a realistic format mix, several tables, likely joins.
-**Fallback: `~/Research/POGM4`** (54 csv, 17 xlsx, 1 dta).
+**Default: `~/Research/paper-C`.** Its `data/raw/` has 37 csv, 3 dta, 11 xlsx, 5 xls and 1 rds (counted 2026-09-25): a realistic format mix, several tables, likely joins.
+**Fallback: `~/Research/paper-A`** (54 csv, 17 xlsx, 1 dta).
 Confirm the choice with the user before Task 1.
 
 ---
@@ -70,7 +70,7 @@ Confirm the choice with the user before Task 1.
 **Files:**
 - Create: `$TRIAL/raw/…` (copies), plus `$TRIAL/convert.R` if Task 0 found CSV/`.dta` unsupported
 
-- [ ] **Step 1:** Read `~/Research/zoning2026/data/raw/data_manifest.md` **in full**. Pick 3–5 tables that the manuscript joins, based on the manifest's `Variables Used` column and the manuscript's read calls. Record the picks and why in the findings file.
+- [ ] **Step 1:** Read `~/Research/paper-C/data/raw/data_manifest.md` **in full**. Pick 3–5 tables that the manuscript joins, based on the manifest's `Variables Used` column and the manuscript's read calls. Record the picks and why in the findings file.
 - [ ] **Step 2:** Copy those files into `$TRIAL/raw/`. Never symlink them.
 - [ ] **Step 3 (only if needed):** If Task 0 found the native formats unsupported, convert them to Parquet in `$TRIAL/convert.R`. Use `arrow::write_parquet()`, with one descriptive object name per table and `local({...})` around any loop. Run the naming-rule grep on the script.
   Record `tested:` which conversions the tool itself forced. That count is an adoption cost.

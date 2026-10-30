@@ -255,7 +255,7 @@ def crit_hooks_wired_source(root):
     """hooks/README.md's table cell for Event states, per hook, whether it fires by direct
     settings.json wiring or 'via' another hook / the CLI. A directly-documented hook that
     seeds/settings.json never names is an unwired promise (hooks/README.md's own 'not a
-    dormant feature' section, written after session-guard.py shipped exactly this way)."""
+    dormant feature' section, written after a guard hook shipped exactly this way)."""
     readme = root / "hooks" / "README.md"
     settings = root / "seeds" / "settings.json"
     if not readme.exists():

@@ -31,8 +31,8 @@ files, it receives contradictory file-layout instructions.
 
 The manuscript file (today hardcoded as `manuscript.qmd` across four research-claude
 rules) should default to `manuscript_<project>.qmd`, where `<project>` is the project
-directory basename — e.g. the `zoning2026` project's manuscript is
-`manuscript_zoning2026.qmd`.
+directory basename — e.g. the `paper-C` project's manuscript is
+`manuscript_paper-C.qmd`.
 
 ## Constraints / context that shaped the design
 
@@ -97,7 +97,7 @@ Files to update:
 
 Each gets a one-line convention note on first mention:
 > `manuscript_<project>.qmd` — `<project>` is the project directory basename (e.g.
-> `manuscript_zoning2026.qmd` in the `zoning2026/` project). Examples below use
+> `manuscript_paper-C.qmd` in the `paper-C/` project). Examples below use
 > `manuscript_<project>.qmd` as a placeholder.
 
 Render artifacts (`manuscript_<project>_files/`, `manuscript_<project>_cache/`) already
@@ -126,7 +126,7 @@ match the existing `*_files/` / `*_cache/` gitignore globs — no gitignore chan
 
 ## Testing / verification
 
-1. **apply.sh smoke test** — run into a temp project dir named `zoning2026`; confirm
+1. **apply.sh smoke test** — run into a temp project dir named `paper-C`; confirm
    `.claude/rules/pipeline-precedence.md` lands and `apply.sh --list` mentions it.
 2. **Convention coverage** — `grep -rn "manuscript\.qmd" rules/` returns only intentional
    generic mentions (or none); every operative reference uses `manuscript_<project>.qmd`.

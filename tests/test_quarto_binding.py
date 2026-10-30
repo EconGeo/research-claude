@@ -40,7 +40,12 @@ class TestReferenceShips(unittest.TestCase):
         self.assertTrue(p.exists())
         t = p.read_text()
         self.assertIn("## The gotchas ledger", t)
-        self.assertNotRegex(t, r"\bNAR\b|zoning2026|POGM", "project noun in a shipped reference")  # <!-- residue:prohibition -->
+        self.assertNotRegex(t, r"\bNAR\b", "project noun in a shipped reference")  # <!-- residue:prohibition -->
+        local = ROOT / "scripts" / "project-nouns.local"  # untracked private names, see check_fork.sh
+        if local.exists():
+            nouns = [l.strip() for l in local.read_text().splitlines() if l.strip() and not l.startswith("#")]
+            if nouns:
+                self.assertNotRegex(t, "|".join(nouns), "project noun in a shipped reference")
 
 
 class TestBinding(unittest.TestCase):

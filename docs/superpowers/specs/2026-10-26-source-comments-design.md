@@ -10,7 +10,7 @@ mechanically (`prose_number_check.py`, the design-block hash, inline `r` express
 institutional fact is checked only by a critic's judgment, and nothing compares the sentence the
 paper relies on with the sentence the source contains.
 
-The incident that motivates this (NAR_settlement): on 2026-08-31 the litigation calendar marked
+The incident that motivates this (paper-D): on 2026-08-31 the litigation calendar marked
 NWMLS's reform history VERIFIED from primary sources. What those sources supported was that
 NWMLS moved compensation offers to "seller-direct" on 2022-10-03 and dropped the mandatory offer
 in 2019. In the design that followed, this became "NWMLS stopped posting offers", and a
@@ -110,7 +110,7 @@ comment anchored to the claim text, using pandoc's comment spans:
 [<label>, p. <page>. <paragraph with [sentence]{.underline}>]{.comment-start id="N" author="Source check"}<claim text>[]{.comment-end id="N"}
 ```
 
-Tested 2026-10-26: `quarto render` (1.9.37) to docx with NAR_settlement's `word-reference.docx`
+Tested 2026-10-26: `quarto render` (1.9.37) to docx with paper-D's `word-reference.docx`
 and `fix_docx_floats.py` post-render produced `w:commentRangeStart/End` around the claim and a
 comment whose supporting sentence carries `<w:u w:val="single"/>`; the author viewed it in Word
 and approved the look. A FAILED entry gets no comment from source text; it gets a comment saying
@@ -151,7 +151,7 @@ and `/write` where it renders).
 - `prose_number_check.py`'s allowlist lets "an institutional fact" stay a literal with a reason.
   Those rows are claims that should carry a source tag; the warning may name allowlisted
   institutional facts with no tag.
-- NAR_settlement already has a numbers-only claim map (`quality_reports/claim_source_map_gen.py`,
+- paper-D already has a numbers-only claim map (`quality_reports/claim_source_map_gen.py`,
   project-specific). This design covers the non-numeric side and does not replace it.
 
 ## 7. Constraints
@@ -204,4 +204,4 @@ author's ruling below; item 4 brought into scope by the author.
 - Which sentences Claude tags. Claude's proposal, not confirmed by the author: Claude
   tags outside-world claims, tags when unsure, and lists untagged outside-world claims it notices
   rather than leaving them silently.
-- Whether to retrofit NAR_settlement's current draft as the first live use.
+- Whether to retrofit paper-D's current draft as the first live use.

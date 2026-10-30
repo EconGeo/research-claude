@@ -10,7 +10,7 @@ them. Rules read in full: all fifteen candidates for exclusion, plus `agents.md`
 - per docs (`code.claude.com/docs/en/sub-agents`, fetched 2026-09-29): a non-fork
   subagent's initial context holds "every level of the CLAUDE.md hierarchy the main
   conversation loads, including `~/.claude/CLAUDE.md`, project rules …".
-- tested (headless `claude -p` in `~/Research/NAR_settlement`, one `general-purpose`
+- tested (headless `claude -p` in `~/Research/paper-D`, one `general-purpose`
   subagent, no tools, asked whether `logging.md`'s *Receipts* section, *Option Gates* and
   *Content Invariants* were in its context): at baseline all three were present in the
   subagent; with the Task 2 exclusion list only *Content Invariants* was. `InstructionsLoaded`
@@ -23,7 +23,7 @@ So an agent that needed an excluded rule's content needs a read step exactly as 
 appends one entry to `ai_use_log.md`" and `logging.md` says an entry goes to
 `research_journal.md` "whenever an agent completes work". Only `coder` and `writer` carry the
 AI-log instruction in their own file; no agent carries the journal one. The paper repos show
-both happening anyway — `affordable_housing_2026/ai_use_log.md` has entries from
+both happening anyway — `paper-B/ai_use_log.md` has entries from
 `strategist`, `explorer` and `data-engineer`, and its journal has entries from
 `strategist-critic`, `explorer`, `coder-critic` — which only the loaded rules can have caused.
 
@@ -114,11 +114,11 @@ already instruct a read of it.
 | file | rule | verdict |
 |---|---|---|
 | `~/.claude/CLAUDE.md` (carve-out 2) | quarto-empirical/-pdf/-word | citation — names them as owning document architecture. **But see D3**: it is the only instruction a session gets before an ad-hoc `.qmd` edit, and it points at `quarto-authoring.md` only |
-| `~/Research/NAR_settlement/CLAUDE.md` | quarto-empirical (×3), data-manifest | citation — the project restates the parts it relies on |
-| `~/Research/ESG/CLAUDE.md` | quarto-empirical | citation |
-| `~/Research/POGM4/CLAUDE.md` | quarto-empirical (×2), ai-disclosure | citation; the ai-disclosure line is a project override (T&F placement), which holds with or without the rule |
-| `~/Research/affordable_housing_2026/CLAUDE.md` | quarto-empirical | citation (documented exception) — not in the plan's list; found by the same grep |
-| `~/Research/zoning2026/CLAUDE.md` | quarto-empirical | citation — not in the plan's list |
+| `~/Research/paper-D/CLAUDE.md` | quarto-empirical (×3), data-manifest | citation — the project restates the parts it relies on |
+| `~/Research/paper-H/CLAUDE.md` | quarto-empirical | citation |
+| `~/Research/paper-A/CLAUDE.md` | quarto-empirical (×2), ai-disclosure | citation; the ai-disclosure line is a project override (T&F placement), which holds with or without the rule |
+| `~/Research/paper-B/CLAUDE.md` | quarto-empirical | citation (documented exception) — not in the plan's list; found by the same grep |
+| `~/Research/paper-C/CLAUDE.md` | quarto-empirical | citation — not in the plan's list |
 
 ## 4. Decisions for the user (Task 1 Step 5)
 
@@ -188,7 +188,7 @@ Harness: a scratch settings file with an `InstructionsLoaded` hook appending eac
 log, plus the §5 list, passed with `--settings` (a `claude` shim on `PATH` added it for
 `run_fixture.sh`). No timeouts on any run.
 
-**Startup load, `~/Research/NAR_settlement` (tested):**
+**Startup load, `~/Research/paper-D` (tested):**
 
 | | files at `session_start` | rule bytes | ≈ tokens (bytes/4) |
 |---|---|---|---|
@@ -217,12 +217,12 @@ like an external `@` import and loads only once external imports are approved fo
 the approval dialog appears only for `@path` imports, never for symlinks alone. tested:
 - a real file in a fixture copy's `.claude/rules/` loaded; symlinks beside it (relative or
   absolute, to the worktree or the shared checkout) did not;
-- `~/.claude.json` has `hasClaudeMdExternalIncludesApproved: true` for NAR_settlement, POGM4 and
-  BRI, and `false` for ESG, zoning2026 and affordable_housing_2026;
-- with no exclusion list, ESG and zoning2026 load 3 files at startup (CLAUDE.md only, **zero
-  rules**); POGM4 loads 21.
+- `~/.claude.json` has `hasClaudeMdExternalIncludesApproved: true` for paper-D, paper-A and
+  paper-G, and `false` for paper-H, paper-C and paper-B;
+- with no exclusion list, paper-H and paper-C load 3 files at startup (CLAUDE.md only, **zero
+  rules**); paper-A loads 21.
 
-So ESG, zoning2026, affordable_housing_2026, every fixture/eval copy and every coauthor clone
+So paper-H, paper-C, paper-B, every fixture/eval copy and every coauthor clone
 have never had any shared rule — `agents.md` and `content-invariants.md` included — in context at
 startup. The exclusion list changes nothing there; the read steps added here are the only way
 those sessions see the excluded rules at all.

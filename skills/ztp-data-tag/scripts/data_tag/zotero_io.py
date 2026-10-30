@@ -10,7 +10,8 @@ from pyzotero.zotero_errors import ResourceNotFoundError  # HTTP 404
 from . import NOTE_TITLE
 from .normalize import DocRecord, page_labels
 
-DEFAULT_ZOTERO_SQLITE = Path("/Users/andrew.mueller/Library/CloudStorage/OneDrive-UniversityofDenver/Zotero/zotero.sqlite")
+# $ZOTERO_SQLITE overrides the stock data directory (e.g. a cloud-synced Zotero folder).
+DEFAULT_ZOTERO_SQLITE = Path(os.environ.get("ZOTERO_SQLITE", Path.home() / "Zotero" / "zotero.sqlite")).expanduser()
 # v1 notes were titled either "Data (auto-extracted)" or "[ZotPilot] Data (auto-extracted)"
 _NOTE_H1_RE = re.compile(r"<h1>(?:\[ZotPilot\] )?" + re.escape(NOTE_TITLE) + r"</h1>")
 DEFAULT_PREFS = next(iter(Path.home().glob("Library/Application Support/Zotero/Profiles/*/prefs.js")), None)

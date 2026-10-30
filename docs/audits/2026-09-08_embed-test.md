@@ -143,7 +143,7 @@ processing file: manuscript_fixture.qmd
 output file: manuscript_fixture.knit.md
 
 ERROR: Rendering of qmd notebook produced an unexpected result
-ERROR: Refusing to remove directory /Users/andrew.mueller/Academic/research-claude/.claude/worktrees/pipeline-repair/tests/fixture-project/manuscript_fixture_files/mediabag that isn't a subdirectory of /Users/andrew.mueller/Academic/research-claude/.claude/worktrees/pipeline-repair/tests/fixture-project/talks
+ERROR: Refusing to remove directory ~/Academic/research-claude/.claude/worktrees/pipeline-repair/tests/fixture-project/manuscript_fixture_files/mediabag that isn't a subdirectory of ~/Academic/research-claude/.claude/worktrees/pipeline-repair/tests/fixture-project/talks
 
 Stack trace:
     at safeRemoveDirSync (file:///Applications/quarto/bin/quarto.js:3249:11)

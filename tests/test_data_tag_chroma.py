@@ -13,7 +13,7 @@ def _make_db(path):
         con.execute("INSERT INTO embeddings VALUES (?,?,?,?)", (i, "seg", f"e{i}", b"\x00"))
         for k, v in [("doc_id", doc), ("section", section), ("chroma:document", text),
                      ("doc_title", "T " + doc), ("publication", "JRE"), ("doi", "10.1/x"),
-                     ("tags", "Housing; Rent"), ("collections", "affordable_housing; REE")]:
+                     ("tags", "Housing; Rent"), ("collections", "project_lib; REE")]:
             con.execute("INSERT INTO embedding_metadata (id,key,string_value) VALUES (?,?,?)", (i, k, v))
         for k, v in [("chunk_index", idx), ("page_num", page), ("total_chunks", 3), ("year", 2020)]:
             con.execute("INSERT INTO embedding_metadata (id,key,int_value) VALUES (?,?,?)", (i, k, v))
@@ -43,7 +43,7 @@ def test_indexed_doc_ids(reader):
 def test_doc_meta(reader):
     meta = reader.doc_meta("AAA")
     assert meta["title"] == "T AAA" and meta["year"] == 2020
-    assert meta["tags"] == ["Housing", "Rent"] and "affordable_housing" in meta["collections"]
+    assert meta["tags"] == ["Housing", "Rent"] and "project_lib" in meta["collections"]
 
 def test_read_only(reader):
     with pytest.raises(sqlite3.OperationalError):

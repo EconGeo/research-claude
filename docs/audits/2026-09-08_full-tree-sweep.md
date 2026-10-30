@@ -268,12 +268,12 @@ not exist.
 
 | Repo | Finding |
 |---|---|
-| POGM4 | manuscript `manuscript_quarto_word.qmd`; `execute: cache: false` by declared deviation; `scripts/R/` "standalone reference pipeline"; `.claude/WORKFLOW_QUICK_REF.md`, `.claude/commands/` (clo-author residue) |
-| zoning2026 | two manuscripts under `paper/` (`manuscript.qmd` live, `manuscript_quarto_pdf.qmd` deprecated); `paper/tables/*.tex` fragments read by the manuscript; `scripts/` deprecated; 41 unexplained prose literals |
-| affordable_housing_2026 | hand-written `quality_reports/pipeline_state.json` from the clo-author era (records `librarian: complete`); otherwise conforming |
-| ESG | `manuscript.qmd`; 14 unexplained literals |
-| NAR_settlement | conforming; on `phase1-event-study`; 2 literals |
-| BRI | no manuscript yet |
+| paper-A | manuscript `manuscript.qmd`; `execute: cache: false` by declared deviation; `scripts/R/` "standalone reference pipeline"; `.claude/WORKFLOW_QUICK_REF.md`, `.claude/commands/` (clo-author residue) |
+| paper-C | two manuscripts under `paper/` (`manuscript.qmd` live, `manuscript_quarto_pdf.qmd` deprecated); `paper/tables/*.tex` fragments read by the manuscript; `scripts/` deprecated; 41 unexplained prose literals |
+| paper-B | hand-written `quality_reports/pipeline_state.json` from the clo-author era (records `librarian: complete`); otherwise conforming |
+| paper-H | `manuscript.qmd`; 14 unexplained literals |
+| paper-D | conforming; on `phase1-event-study`; 2 literals |
+| paper-G | no manuscript yet |
 | all six | `.gitignore` covers only `prose_number_check.py` under `.claude/scripts/`; `settings.json` wires 7 hooks |
 
 ## 11. Missing things referenced by shipped files (tested absent)

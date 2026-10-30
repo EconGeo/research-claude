@@ -82,7 +82,7 @@ reads only what its task's **Cold start** block names.
 **Every session begins with exactly this:**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git status --short && git branch --show-current
+cd ~/Academic/research-claude && git status --short && git branch --show-current
 ```
 
 Then read, in order:
@@ -112,7 +112,7 @@ checkboxes inside a task are working notes, this table is the handoff.
 | 5 — `write` refactor | done | `refactor/write-skill` | yes (4e765ce) | **11,290 → 7,482 chars** (budget 7,500). Pointer bug confirmed and fixed: `agents/writer.md` does **not** hold the section templates — it points at `templates/section-templates.md`, which is also where the duplicated "Section Length Summary" table already lived. `cleanup-patterns.md` bound as new **Step 4b** between writer and writer-critic — the pass the skill description promised and no step performed. Style-guide mode now dispatches against `style-extraction-protocol.md`; the inline copy was 5 steps to the protocol's 6, and **the omitted step was the self-citation check**, so missing self-citation bib keys went unreported. Both `--scope section:` `record-score` lines untouched (R-101) — `git diff main` deleted 0 after I caught and restored a step-5 body I had dropped while inserting 4b. Suite **158 passed**, 1 expected budget failure (discover/checkpoint only). `check_fork` PASS after prefixing the one `agents/writer.md` reference I wrote unprefixed. |
 | 6 — `discover` refactor | done | `refactor/discover-skill` | yes (4333ec2) | **9,733 → 5,934 chars** (budget 6,000). All five `KNOWN_UNBOUND` discover entries removed and both ratchet tests pass, so the bindings are real. **Grade scale reconciled** using the plan's tie-breaker: the explorer-critic's six categories separate *practical feasibility* from the four *fit* categories, so the grade measures **access effort** (the skill's A–D semantics), extended with the template's **F** = not obtainable (a state A–D could not express; F routes to the rejection table). Both copies now agree and state why. Same drift class also fixed: the skill said "5-point assessment" where the agent and `data-review-6-categories.md` both say six. `lit-review-entry.md` deleted (unreferenced). `pdf-processing.md` deleted — `rules/content-standards.md` §3 is a near-verbatim authoritative copy; its one unique item (the Read tool page-range limit) was moved into the rule **before** the deletion. `WebSearch`/`WebFetch` dropped from `allowed-tools` (no step uses them; the Explorer agent carries its own). Suite **158 passed**, 1 expected budget failure (checkpoint only). `check_fork` PASS. |
 | 7 — `checkpoint` refactor | done | `refactor/checkpoint-skill` | yes (52a3267) | **8,526 → 5,459 chars** (budget 5,500). All three templates bound; last three `KNOWN_UNBOUND` entries in scope removed and **the whole suite is green — 159 passed, 0 failures**. Added the three requirements the rules mandate and the skill never performed: plan staleness sweep (`session-handoff.md` R1), handoff reference dry-run (R3), `ai_use_log.md` confirmation (`ai-disclosure.md` Enforcement) — all as **report lines, not prompts**. Obsidian setup *and* sync both moved to `references/obsidian.md`; the sync procedure was loading on every checkpoint even with no vault configured. **Beyond the plan's table, one contradiction fixed:** Step 3 told the skill to ask "Look right? I'll save all of this. Wait for confirmation" and the Rules said "one confirmation prompt" — the user's global `CLAUDE.md` makes every `/checkpoint` behave as `--auto`, so the skill shipped a blocking question the user has standing instructions against. Removed; `--auto` documented as the default. Precedence section deleted after verifying `ls ~/.claude/skills/ \| grep -c checkpoint` = 0. `check_fork` PASS. |
-| 8 — Improvement loop + close out | done | `feat/checkpoint-improvement-candidates` | yes (35f82d5) | `/checkpoint` now names pipeline-skill corrections as **improvement candidates** in its Step 5 report and `/tools learn` is repointed at `meta-governance.md` (its "auto-memory handles corrections automatically" claim — silent self-modification — deleted). P6 deliberately not built. **Final: five skills 63,573 → 37,756 (−41%, target ≤38,000 ✓); all 18 121,621 → 98,672; one `/pipeline run` 73,176 → 50,819 (~18.3k → ~12.7k tok, −31%).** Suite **159 passed, 0 failures**; `check_fork` PASS. Budgets not lowered: each file already sits within 122 chars of its cap, so rounding achieved sizes up to the next 500 reproduces them — annotated in the test. **Step 4 correction: no re-link was needed and the plan's command is wrong** (`apply.sh --link` requires `--project-dir`); each skill is a *directory* symlink, so file/subdirectory membership propagates on save — verified in NAR_settlement, and `check_install`'s `membership` check passes in all six projects. **Step 9 correction: `CLAUDE.md` "Start here" deliberately NOT repointed** — the 2026-09-10 handoff's §2a/§2b/§2c/§4 are still open and untouched by this plan, so this is a parallel track, not a successor; the handoff now cross-links the new entry instead. Found in passing: ESG also fails `clone-links`, which the handoff records as fixed — its fix `9349a8e` is on `main` and is not an ancestor of the checked-out `pipeline-adoption` branch. |
+| 8 — Improvement loop + close out | done | `feat/checkpoint-improvement-candidates` | yes (35f82d5) | `/checkpoint` now names pipeline-skill corrections as **improvement candidates** in its Step 5 report and `/tools learn` is repointed at `meta-governance.md` (its "auto-memory handles corrections automatically" claim — silent self-modification — deleted). P6 deliberately not built. **Final: five skills 63,573 → 37,756 (−41%, target ≤38,000 ✓); all 18 121,621 → 98,672; one `/pipeline run` 73,176 → 50,819 (~18.3k → ~12.7k tok, −31%).** Suite **159 passed, 0 failures**; `check_fork` PASS. Budgets not lowered: each file already sits within 122 chars of its cap, so rounding achieved sizes up to the next 500 reproduces them — annotated in the test. **Step 4 correction: no re-link was needed and the plan's command is wrong** (`apply.sh --link` requires `--project-dir`); each skill is a *directory* symlink, so file/subdirectory membership propagates on save — verified in paper-D, and `check_install`'s `membership` check passes in all six projects. **Step 9 correction: `CLAUDE.md` "Start here" deliberately NOT repointed** — the 2026-09-10 handoff's §2a/§2b/§2c/§4 are still open and untouched by this plan, so this is a parallel track, not a successor; the handoff now cross-links the new entry instead. Found in passing: paper-H also fails `clone-links`, which the handoff records as fixed — its fix `9349a8e` is on `main` and is not an ancestor of the checked-out `pipeline-adoption` branch. |
 
 **Open decisions** (Task 2 raises the first one; record the answer here when the user gives it):
 
@@ -131,7 +131,7 @@ checkboxes inside a task are working notes, this table is the handoff.
 - [ ] **Step 1: Confirm a clean starting tree**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git status --short
+cd ~/Academic/research-claude && git status --short
 ```
 
 Expected: only `M skills/new-project-ztp/SKILL.md` (a pre-existing edit) or nothing. If anything
@@ -140,7 +140,7 @@ else is modified, stop and ask the user before continuing — this plan assumes 
 - [ ] **Step 2: Confirm the gate is green before you change anything**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && ./scripts/check_fork.sh; echo "exit=$?"
+cd ~/Academic/research-claude && ./scripts/check_fork.sh; echo "exit=$?"
 ```
 
 Expected: `✓ check_fork: PASS`, `exit=0`. If it is already red, stop — fix or report that first.
@@ -149,7 +149,7 @@ A refactor started on a red gate cannot prove it did no harm.
 - [ ] **Step 3: Confirm the test suite is green**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q
 ```
 
 Expected: all pass. Record the count in the Progress Log.
@@ -157,7 +157,7 @@ Expected: all pass. Record the count in the Progress Log.
 - [ ] **Step 4: Record the Level-2 baseline**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 - <<'PY'
+cd ~/Academic/research-claude && python3 - <<'PY'
 import re, glob
 tot = 0
 for f in sorted(glob.glob('skills/*/SKILL.md')):
@@ -217,7 +217,7 @@ nothing changed.
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b fix/session-guards
+cd ~/Academic/research-claude && git checkout -b fix/session-guards
 ```
 
 - [ ] **Step 2: Write the failing test**
@@ -342,7 +342,7 @@ if __name__ == "__main__":
 - [ ] **Step 3: Run it and watch it fail**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_session_guard.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_session_guard.py -q
 ```
 
 Expected: failures in `test_force_push_with_a_refspec_is_blocked`, `test_find_delete_is_blocked`,
@@ -485,7 +485,7 @@ Update the `## Blocked Patterns` table so it matches the hook exactly — add ro
 - [ ] **Step 8: Run the tests**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_session_guard.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_session_guard.py -q
 ```
 
 Expected: all pass.
@@ -493,7 +493,7 @@ Expected: all pass.
 - [ ] **Step 9: Run the full suite and the gate**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh
 ```
 
 Expected: all tests pass, `✓ check_fork: PASS`.
@@ -501,7 +501,7 @@ Expected: all tests pass, `✓ check_fork: PASS`.
 - [ ] **Step 10: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add hooks/session-guard.py skills/careful skills/freeze tests/test_session_guard.py && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add hooks/session-guard.py skills/careful skills/freeze tests/test_session_guard.py && git commit -m "$(cat <<'EOF'
 fix(guards): block the force-push form people type, stop blocking safe branch -d
 
 - git push origin main --force matched no pattern; find -delete matched none either
@@ -559,7 +559,7 @@ are deliberate. **Do not change it without the user's answer.**
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b fix/submit-coverage-check
+cd ~/Academic/research-claude && git checkout -b fix/submit-coverage-check
 ```
 
 - [ ] **Step 2: Write the failing test**
@@ -604,7 +604,7 @@ if __name__ == "__main__":
 - [ ] **Step 3: Run it and watch it fail**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_submit_gate.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_submit_gate.py -q
 ```
 
 Expected: `test_final_workflow_runs_state_show_before_trusting_a_pass` fails.
@@ -625,7 +625,7 @@ current step 3 and step 4:
 - [ ] **Step 5: Run the tests and the gate**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh
 ```
 
 Expected: all pass, `✓ check_fork: PASS`.
@@ -633,7 +633,7 @@ Expected: all pass, `✓ check_fork: PASS`.
 - [ ] **Step 6: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/submit/SKILL.md tests/test_submit_gate.py && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/submit/SKILL.md tests/test_submit_gate.py && git commit -m "$(cat <<'EOF'
 fix(submit): put the R-133 coverage check in the final workflow, not just the principles
 
 `score --gate submission` renormalises over scored components only, so a PASS can rest on
@@ -723,7 +723,7 @@ has drifted from its template.
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b refactor/review-skill
+cd ~/Academic/research-claude && git checkout -b refactor/review-skill
 ```
 
 - [ ] **Step 2: Write the step-binding test with a shrinking allowlist**
@@ -846,7 +846,7 @@ if __name__ == "__main__":
 - [ ] **Step 3: Run it and watch exactly two things fail**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_skill_contracts.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_skill_contracts.py -q
 ```
 
 Expected failures:
@@ -861,7 +861,7 @@ Expected failures:
 verification unambiguous, run the budget test filtered:
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -c "
+cd ~/Academic/research-claude && python3 -c "
 import sys; sys.path.insert(0,'tests')
 from test_skill_contracts import ROOT, body_of
 n = len(body_of(ROOT/'skills'/'review'/'SKILL.md')); print(f'review body: {n} chars (target 11000)')"
@@ -925,7 +925,7 @@ need no SKILL.md binding.
 - [ ] **Step 8: Verify the pinned strings survived**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_review_contracts.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_review_contracts.py -q
 ```
 
 Expected: all pass. If `test_the_review_skill_defers_to_the_agent_rather_than_restating` fails,
@@ -934,7 +934,7 @@ you moved something into the Verifier section that must not be there.
 - [ ] **Step 9: Confirm every `record-score` call site survived**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git diff main -- skills/review/SKILL.md | grep '^-' | grep -c 'record-score'
+cd ~/Academic/research-claude && git diff main -- skills/review/SKILL.md | grep '^-' | grep -c 'record-score'
 ```
 
 Expected: `0`. If it is not 0, you deleted a scoring call site — restore it (Global constraint 3).
@@ -942,7 +942,7 @@ Expected: `0`. If it is not 0, you deleted a scoring call site — restore it (G
 - [ ] **Step 10: Full verification**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q; ./scripts/check_fork.sh
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q; ./scripts/check_fork.sh
 ```
 
 Expected: everything passes except `test_refactored_skills_stay_under_budget`, which still names
@@ -951,7 +951,7 @@ Expected: everything passes except `test_refactored_skills_stay_under_budget`, w
 - [ ] **Step 11: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/review tests/test_skill_contracts.py && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/review tests/test_skill_contracts.py && git commit -m "$(cat <<'EOF'
 refactor(review): bind templates to steps, drop rubrics the critics already read
 
 SKILL.md carried the 4-phase econometrics protocol, the severity calibration table and a
@@ -1006,13 +1006,13 @@ PAP mode (R-103 made it mandatory on purpose), or the Pre-Theory Report structur
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b refactor/strategize-skill
+cd ~/Academic/research-claude && git checkout -b refactor/strategize-skill
 ```
 
 - [ ] **Step 2: Confirm the current red**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_skill_contracts.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_skill_contracts.py -q
 ```
 
 Expected: `test_refactored_skills_stay_under_budget` fails naming `strategize: 15966 chars > 8000`.
@@ -1028,7 +1028,7 @@ template first. A deletion that loses content is the failure mode this step exis
 After each block, check the size:
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -c "
+cd ~/Academic/research-claude && python3 -c "
 import re; b=re.sub(r'^---\n.*?\n---\n','',open('skills/strategize/SKILL.md').read(),count=1,flags=re.S)
 print(f'strategize body: {len(b)} chars (target 8000)')"
 ```
@@ -1061,14 +1061,14 @@ scope avoids overwriting the component.
 - [ ] **Step 8: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git diff main -- skills/strategize/SKILL.md | grep '^-' | grep -c 'record-score'
+cd ~/Academic/research-claude && git diff main -- skills/strategize/SKILL.md | grep '^-' | grep -c 'record-score'
 ```
 
 Expected: `0` if D1 is unanswered or (a). If (b), expect `1` and confirm the replacement line is
 present in the `+` side.
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q; ./scripts/check_fork.sh
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q; ./scripts/check_fork.sh
 ```
 
 Expected: all tests pass (the budget test is now fully green for review and strategize),
@@ -1077,7 +1077,7 @@ Expected: all tests pass (the budget test is now fully green for review and stra
 - [ ] **Step 9: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/strategize && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/strategize && git commit -m "$(cat <<'EOF'
 refactor(strategize): point at the templates instead of pasting them
 
 The Pre-Strategy Report, the PAP interview, the PAP section list and the observational
@@ -1128,7 +1128,7 @@ and a proofread covering four of eight categories must never be recorded as a fu
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b refactor/write-skill
+cd ~/Academic/research-claude && git checkout -b refactor/write-skill
 ```
 
 - [ ] **Step 2: Add `write` to the budget and watch it fail**
@@ -1136,7 +1136,7 @@ cd /Users/andrew.mueller/Academic/research-claude && git checkout -b refactor/wr
 In `tests/test_skill_contracts.py`, `BUDGET` already contains `"write": 7500`. Confirm the red:
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_skill_contracts.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_skill_contracts.py -q
 ```
 
 Expected: `test_refactored_skills_stay_under_budget` fails naming `write: 11290 chars > 7500`.
@@ -1161,13 +1161,13 @@ the skill's description promises; without it the description is a claim no step 
 - [ ] **Step 5: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git diff main -- skills/write/SKILL.md | grep '^-' | grep -cE 'record-score|scope section:'
+cd ~/Academic/research-claude && git diff main -- skills/write/SKILL.md | grep '^-' | grep -cE 'record-score|scope section:'
 ```
 
 Expected: `0`.
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q; ./scripts/check_fork.sh
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q; ./scripts/check_fork.sh
 ```
 
 Expected: all pass, `✓ check_fork: PASS`.
@@ -1175,7 +1175,7 @@ Expected: all pass, `✓ check_fork: PASS`.
 - [ ] **Step 6: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/write && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/write && git commit -m "$(cat <<'EOF'
 refactor(write): bind the cleanup pass, drop the duplicated section standards
 
 Section Standards duplicated templates/section-templates.md, and the pointer to them named
@@ -1229,13 +1229,13 @@ any skill.
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b refactor/discover-skill
+cd ~/Academic/research-claude && git checkout -b refactor/discover-skill
 ```
 
 - [ ] **Step 2: Confirm the red, then shrink the allowlist**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_skill_contracts.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_skill_contracts.py -q
 ```
 
 Expected: `test_refactored_skills_stay_under_budget` fails on `discover: 9733 > 6000`. The five
@@ -1258,13 +1258,13 @@ bind or delete — if you delete, `scripts/check_paths.py` catches any dangling 
 - [ ] **Step 5: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git diff main -- skills/discover/SKILL.md | grep '^-' | grep -c 'record-score'
+cd ~/Academic/research-claude && git diff main -- skills/discover/SKILL.md | grep '^-' | grep -c 'record-score'
 ```
 
 Expected: `0`.
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q; ./scripts/check_fork.sh
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q; ./scripts/check_fork.sh
 ```
 
 Expected: all pass — including `test_the_allowlist_has_no_stale_entries`, which now proves the
@@ -1273,7 +1273,7 @@ five discover files are genuinely bound. `✓ check_fork: PASS`.
 - [ ] **Step 6: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/discover tests/test_skill_contracts.py && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/discover tests/test_skill_contracts.py && git commit -m "$(cat <<'EOF'
 refactor(discover): bind five orphaned templates, delete the copies that disagreed with them
 
 The interview categories, the 8-section spec and the grade scale each existed twice and
@@ -1331,7 +1331,7 @@ skill gathers, writes, and reports. Everything new here is a **report line**, no
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b refactor/checkpoint-skill
+cd ~/Academic/research-claude && git checkout -b refactor/checkpoint-skill
 ```
 
 - [ ] **Step 2: Confirm the red, then shrink the allowlist**
@@ -1340,7 +1340,7 @@ Remove the three `skills/checkpoint/...` lines from `KNOWN_UNBOUND` in
 `tests/test_skill_contracts.py`, then:
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_skill_contracts.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_skill_contracts.py -q
 ```
 
 Expected: binding test fails on the three checkpoint templates; budget test fails on
@@ -1367,7 +1367,7 @@ The Step 5 confirmation block gains three lines:
 - [ ] **Step 5: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q; ./scripts/check_fork.sh
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q; ./scripts/check_fork.sh
 ```
 
 Expected: all pass, `✓ check_fork: PASS`.
@@ -1380,7 +1380,7 @@ the repo root), includes the three new report lines, and asks no questions.
 - [ ] **Step 7: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/checkpoint tests/test_skill_contracts.py && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/checkpoint tests/test_skill_contracts.py && git commit -m "$(cat <<'EOF'
 refactor(checkpoint): bind the three entry templates, restore three dropped report lines
 
 The SESSION_REPORT, research-journal and memory formats were pasted inline while their
@@ -1427,7 +1427,7 @@ correction lands as a project-level note first and is promoted only when it recu
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b feat/checkpoint-improvement-candidates
+cd ~/Academic/research-claude && git checkout -b feat/checkpoint-improvement-candidates
 ```
 
 - [ ] **Step 2: Add the candidate line to `/checkpoint` Step 5**
@@ -1463,7 +1463,7 @@ Membership under `skills/` changed in Tasks 3, 6 and 7 (files created and delete
 propagate through the symlinks on save; **membership does not.**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && ./apply.sh --link && ./scripts/check_install.sh --all; echo "exit=$?"
+cd ~/Academic/research-claude && ./apply.sh --link && ./scripts/check_install.sh --all; echo "exit=$?"
 ```
 
 Expected: `exit=0`. If a project reports a missing or dangling link, that is a file you deleted
@@ -1473,7 +1473,7 @@ blindly.
 - [ ] **Step 5: Measure the result**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 - <<'PY'
+cd ~/Academic/research-claude && python3 - <<'PY'
 import re, glob
 PIPE = ["pipeline", "lit-position", "discover", "strategize", "analyze", "write", "review", "submit"]
 tot = pipe = 0
@@ -1498,7 +1498,7 @@ files gets a red test instead of a silent regression.
 - [ ] **Step 7: Full verification**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && ./scripts/check_install.sh --all; echo "exit=$?"
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && ./scripts/check_install.sh --all; echo "exit=$?"
 ```
 
 Expected: all green, `exit=0`.
@@ -1506,7 +1506,7 @@ Expected: all green, `exit=0`.
 - [ ] **Step 8: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/checkpoint skills/tools tests/test_skill_contracts.py && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/checkpoint skills/tools tests/test_skill_contracts.py && git commit -m "$(cat <<'EOF'
 feat(checkpoint): surface pipeline-skill corrections as promotion candidates
 
 /checkpoint already scans the transcript for corrections and saves them as feedback memory;

@@ -258,7 +258,7 @@ by the critic, removes both problems.
 **Recorded on disk:** `skills/review/templates/claim-evidence-table.md` header — *"It replaces the
 retired hand-maintained claim-source map: the table is built from the manuscript by the critic,
 not maintained by the writer. INV-11 stays mechanical (`prose_number_check.py`); this table is the
-interpretation check."* Also POGM4's `CLAUDE.md` (INV-22 discharged by architecture). **This is the
+interpretation check."* Also paper-A's `CLAUDE.md` (INV-22 discharged by architecture). **This is the
 best-documented divergence in the register and is the model for the format.**
 
 ---
@@ -380,7 +380,7 @@ retired `requirements-spec` as *"superseded by `superpowers:brainstorming`"*.
 `skills/checkpoint/SKILL.md` Step 1 still scans `quality_reports/plans/` and
 `rules/session-handoff.md` R1 makes a plan staleness sweep **mandatory at every checkpoint**. The
 pipeline consumes plans it no longer tells anyone to write. Individual projects re-added the rule
-locally (POGM4's `CLAUDE.md`: *"Plan first — enter plan mode before non-trivial tasks; save plans
+locally (paper-A's `CLAUDE.md`: *"Plan first — enter plan mode before non-trivial tasks; save plans
 to `quality_reports/plans/`"*), which is drift of exactly the kind D-1 exists to prevent.
 
 ---
@@ -637,7 +637,7 @@ entries; `skills/submit/SKILL.md` step 2.6; `skills/promote/SKILL.md` step 2.5;
 
 **clo-author:** `editor` at 67 lines, without variance mode.
 
-**research-claude:** `agents/editor.md` (369 lines, harvested from POGM4) implements
+**research-claude:** `agents/editor.md` (369 lines, harvested from paper-A) implements
 `--variance N`, N ∈ {3,4,5}, and at `:124` states *"`--variance` cannot combine with `--stress` …
 The `/review --peer` skill enforces this."* **`skills/review/SKILL.md` has no `--variance` flag**;
 its full option list is `--peer`, `--r2`, `--stress`, `--methods`, `--theory`, `--proofread`,
@@ -651,7 +651,7 @@ conflict rule it delegates was enforced by nobody — **corrected 2026-09-23 (Ph
 `editor.md:124` no longer claims `/review --peer` enforces a conflict rule that has no dispatch
 path to run in. Checked directly against clo-author at the pinned `d36c408` commit before
 correcting: clo-author's `editor` is fixed at exactly two referees with no variance mode at all,
-so this is not a capability that regressed in the port — it is net-new work (from POGM4) whose
+so this is not a capability that regressed in the port — it is net-new work (from paper-A) whose
 referee-3-through-N agent identity (the registry has only two specialized referee agents,
 `domain-referee` and `methods-referee`, never a generic disposition-driven one) was never
 resolved anywhere, including in the source it was harvested from. **Still unreachable through

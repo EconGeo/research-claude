@@ -18,7 +18,7 @@ def _zot_db(path):
     CREATE TABLE groups (groupID INTEGER, libraryID INTEGER, name TEXT);
     INSERT INTO itemTypes VALUES (1,'journalArticle'),(2,'attachment'),(3,'note');
     INSERT INTO fields VALUES (1,'title'),(2,'date');
-    INSERT INTO groups VALUES (2350352, 3, 'affordable_housing');
+    INSERT INTO groups VALUES (2350352, 3, 'project_lib');
     INSERT INTO items VALUES (1,1,3,'BBB'),(2,1,3,'AAA'),(3,2,3,'PDF1'),(4,1,3,'DEL'),(5,1,1,'USR');
     INSERT INTO deletedItems VALUES (4);
     INSERT INTO itemDataValues VALUES (1,'Paper B'),(2,'Paper A'),(3,'2019-03-01');

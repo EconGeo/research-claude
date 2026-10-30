@@ -6,7 +6,7 @@
 session-handoff,revision,registry-verification-gate}.md`, `apply.sh`, `scripts/{check_fork,check_install}.sh`,
 `scripts/audit_graph.py`, `templates/{gitignore,settings.json,bootstrap-pipeline.sh}`, `hooks/{README.md,pre-compact.py,
 post-compact-restore.py,session-guard.py}`, the archived clo-author `rules/{permissions,lifecycle,workflow,meta-governance}.md`
-and `agents/orchestrator.md` in `~/Research/NAR_settlement_legacy_archive/.claude/`, and the hooks / sub-agents docs at
+and `agents/orchestrator.md` in `~/Research/paper-D_legacy_archive/.claude/`, and the hooks / sub-agents docs at
 `code.claude.com` (fetched this session, labelled `per docs:` below).
 
 **Verdict.** The diagnosis is right and the architecture is sound. The spec is not yet the "final" rewrite it is meant to be,
@@ -45,15 +45,15 @@ Measured this session:
 
 | Project | Manuscript |
 |---|---|
-| POGM4 (the canary) | `manuscript_quarto_word.qmd` |
-| ESG | `manuscript.qmd` |
-| zoning2026 | `paper/manuscript.qmd` **and** `paper/manuscript_quarto_pdf.qmd` |
-| BRI | none yet |
-| NAR_settlement, affordable_housing_2026 | match |
+| paper-A (the canary) | `manuscript.qmd` |
+| paper-H | `manuscript.qmd` |
+| paper-C | `paper/manuscript.qmd` **and** `paper/manuscript_quarto_pdf.qmd` |
+| paper-G | none yet |
+| paper-D, paper-B | match |
 
-`REQUIRES`/`PRODUCES`/`WRITES`, the render predicate, and `verifier` check 1 all key on the convention. On POGM4 they fail on
+`REQUIRES`/`PRODUCES`/`WRITES`, the render predicate, and `verifier` check 1 all key on the convention. On paper-A they fail on
 day one of Stage 1. The registry needs a per-project manuscript declaration (a `CLAUDE.md` field or `.claude/state/pipeline.json`)
-that the driver and scripts resolve, with a gate that refuses to run when it is absent or ambiguous (zoning2026 has two).
+that the driver and scripts resolve, with a gate that refuses to run when it is absent or ambiguous (paper-C has two).
 
 ### A3. The literature weight has no scorer
 
@@ -114,21 +114,21 @@ and `docs/decisions/2026-09-08_cut-the-orchestration-graph.md` state the opposit
 ### B4. Restoration source is unnamed, and it is a rewrite, not a vendor
 
 clo-author is no longer a submodule. Sources: GitHub `hugosantanna/clo-author` (reachable, HEAD `d36c408`) and the archive at
-`~/Research/NAR_settlement_legacy_archive/.claude/`. The archived `permissions.md` is fully multi-file (`paper/tables/` contains
+`~/Research/paper-D_legacy_archive/.claude/`. The archived `permissions.md` is fully multi-file (`paper/tables/` contains
 `.tex`, `paper/main.tex`, `scripts/`, `librarian`, `PHASE`, `PARALLEL_GROUP`), and the spec's registry adds `WRITES`, render
 predicates and `CONDITIONAL` renormalisation. Name the commit, and plan it as a rewrite against the archived file.
 
 ### B5. Canary mechanics do not work as written
 
-Re-linking POGM4 to a worktree points its symlinks at the worktree path. `bootstrap-pipeline.sh --tip` cannot be used for that
+Re-linking paper-A to a worktree points its symlinks at the worktree path. `bootstrap-pipeline.sh --tip` cannot be used for that
 (it runs `git checkout main` in `$RC`, and `main` is already checked out in the primary worktree), so the canary must call
 `apply.sh` directly with the worktree as `SCRIPT_DIR`. After merge and worktree removal the links dangle until re-linked. The new
-`branch` check FAILs on POGM4 for the whole migration unless `RESEARCH_CLAUDE_ALLOW_BRANCH=1` is set. And the D-D hazard (any
+`branch` check FAILs on paper-A for the whole migration unless `RESEARCH_CLAUDE_ALLOW_BRANCH=1` is set. And the D-D hazard (any
 `git checkout` in the shared tree re-points all six papers) is only closed at Stage 7 — move `branch` to Stage 0.
 
 ### B6. The render predicate is a full re-run on the canary
 
-POGM4's `CLAUDE.md` sets `execute: cache: false` deliberately. A PRE-dispatch render before every writer dispatch re-runs the whole
+paper-A's `CLAUDE.md` sets `execute: cache: false` deliberately. A PRE-dispatch render before every writer dispatch re-runs the whole
 analysis. Use freshness (rendered output newer than the `.qmd` and everything in `data/raw/`) as the predicate and render only
 when stale; `verifier` checks 1 and 4 already define those semantics.
 
@@ -187,7 +187,7 @@ when stale; `verifier` checks 1 and 4 already define those semantics.
 
 A permanent fixture project in the repo (`tests/fixture-project/`: synthetic `data/raw/`, a 200-line manuscript with one
 estimation chunk, one `tbl-`, one `fig-`, a bib) that `/pipeline` runs against, with every gate and every `pre`/`post` predicate
-red-tested against it. The spec's success criterion "runs end to end on a scratch project" is a one-time smoke test on POGM4;
+red-tested against it. The spec's success criterion "runs end to end on a scratch project" is a one-time smoke test on paper-A;
 a fixture makes it a repeatable test that every future change re-runs. Without it the next patch has the same silent-failure
 exposure as the last three.
 
@@ -206,4 +206,4 @@ exposure as the last three.
 6. Dangling names — plus `/tools upgrade`/`deploy`, `new-project-ztp`, `/discover lit`
 7. Hooks — `hooks-wired` check, README corrections, `post-merge.sh` out of the table
 7b. **Journal profiles** in the shared references dir and the template
-8. Merge, re-link six (POGM4 first, back off the worktree), lock bump, fixture run green
+8. Merge, re-link six (paper-A first, back off the worktree), lock bump, fixture run green

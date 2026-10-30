@@ -122,6 +122,7 @@ marker. Expect hours on local hardware; run it in a terminal tab, not inside a C
 
 - Never call `manage_tags(action="set")` or any MCP write — the script merges tags itself.
 - Never write to `chroma.sqlite3` or `zotero.sqlite`.
+- The Zotero database defaults to `~/Zotero/zotero.sqlite`; set `$ZOTERO_SQLITE` (or pass `--zotero-sqlite`) when the data directory lives elsewhere.
 - No Claude-side extraction fallback. If the model is weak on a paper, the fix is the
   vocabulary, the heading regex, or `DATA_TAG_MODEL=qwen2.5:14b-instruct` — never Claude.
 - Confirm before every live pass and before every vocabulary promotion.

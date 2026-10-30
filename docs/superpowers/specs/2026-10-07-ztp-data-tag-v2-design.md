@@ -29,7 +29,7 @@ Two uses drive the design:
   to canonical slugs; anything the model names that is not in the vocabulary goes into a
   review queue that is promoted into the vocabulary between passes.
 - **Storage = sidecar DB (truth) + Zotero tags + one Zotero note per paper** (option C).
-- **Iterative passes of 15 papers**, first on the `affordable_housing` group library
+- **Iterative passes of 15 papers**, first on the `paper-B` group library
   (groupID 2350352, libraryID 3; 59 items, 53 with PDFs, 42 indexed in Chroma as of
   2026-10-07). Each pass ends with a report; rules are revised before the next pass.
 - **Approach A**: standalone script over Chroma, read-only. No change to the ZotPilot
@@ -319,7 +319,7 @@ place Claude tokens are spent.
 ## 9. Seed vocabulary (pass 1)
 
 Sources: CoStar, Real Capital Analytics, NCREIF (NPI/ODCE), CRSP, Compustat, SNL/S&P
-Global, Bloomberg, Datastream, GRESB, MSCI ESG, HMDA, CoreLogic, ZTRAX/Zillow, Redfin,
+Global, Bloomberg, Datastream, GRESB, MSCI paper-H, HMDA, CoreLogic, ZTRAX/Zillow, Redfin,
 ATTOM, DataQuick, MLS (generic + regional boards), ACS, Decennial Census, LEHD/LODES, CPS,
 AHS, PSID, LIHTC database (HUD), HUD Picture of Subsidized Households, HUD Fair Market Rents,
 FEMA NFHL / NFIP, NOAA Storm Events / Billion-Dollar Disasters, First Street, PRISM,
@@ -351,7 +351,7 @@ separate, user-confirmed step (memory: confirm before delete); the spec only not
   "Results"), cue scoring, alias matching incl. word boundaries ("CoStar" not "costar
   analysis" in prose about costs), geo-level inference, schema validation (bad enum, bad
   chunk id, missing period), sidecar round-trip, note rendering, v1-JSON derivation.
-- Integration (no Zotero writes): `--dry-run` on 3 known affordable_housing papers whose
+- Integration (no Zotero writes): `--dry-run` on 3 known paper-B papers whose
   data sections the user knows; assert the expected `src_slug`s and at least one DV each.
 - Ollama contract test: `format` with the schema returns parseable JSON for one fixture;
   if not, switch to prompt-embedded schema + post-validation and record the finding.
@@ -362,7 +362,7 @@ separate, user-confirmed step (memory: confirm before delete); the spec only not
 
 - Changing ZotPilot's section classifier (approach B). The heading regex from §4.1 is the
   input that change would need; revisit after the rules stabilise.
-- Indexing the 11 unindexed affordable_housing PDFs (run `index_library` separately).
+- Indexing the 11 unindexed paper-B PDFs (run `index_library` separately).
 - Cleaning up v1 tags on the 34 items; Obsidian hub generation; journal-digest changes.
 - Any Claude-side extraction fallback. If the local model is inadequate the fix is a
   larger local model, not Claude.

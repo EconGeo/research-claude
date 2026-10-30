@@ -31,7 +31,7 @@ directory. Found and fixed 2026-09-29 (`docs/plans/2026-09-29-zotpilot-skills-si
   name (unless both resolve to the same directory), and (`--all`) WARNs `zotpilot-vendored` when this directory is behind the fork.
 - `scripts/sync-zotpilot-skills.sh` writes the commit line below itself; `--check` compares only.
 - Sessions started in the research root get the same copy through
-  `scripts/link-zotpilot-skills.sh ~/Research`.
+  `scripts/link-zotpilot-skills.sh <research-root>`.
 
 ## The fork is the only source — do not sync from upstream
 

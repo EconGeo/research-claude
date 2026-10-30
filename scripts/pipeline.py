@@ -262,9 +262,9 @@ def source_calls(ms: Path) -> List[int]:
     """INV-19b: no `source()` call inside any chunk — the one construct
     content-invariants.md attributed to the lint hook although the lint hook never checked
     for it (tested: seven prohibited constructs planted in one chunk, `source()` was the only
-    one of seven lint-scripts.sh missed). Reuses qmd_chunks.py's own chunk-body extraction —
+    one of seven the since-deleted lint hook missed). Reuses qmd_chunks.py's own chunk-body extraction —
     its stated purpose is exactly this: line numbers identical to the .qmd source (Phase 1.4).
-    Comment-only lines are skipped, matching lint-scripts.sh's convention for the sibling
+    Comment-only lines are skipped, matching the old lint hook's convention for the sibling
     INV-19a checks."""
     import qmd_chunks
     lines = qmd_chunks.extract(ms.read_text().split("\n"))

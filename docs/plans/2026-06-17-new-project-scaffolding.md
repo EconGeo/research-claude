@@ -87,6 +87,6 @@ Update the install summary and `--list` output to reflect references install, th
 - Re-run is idempotent and does not clobber an existing `.gitignore` or `CLAUDE.md`.
 
 ## First real use
-Recreate `~/research/affordable_housing_2026` through the new flow with
+Recreate `~/research/paper-B` through the new flow with
 `--link-references ~/research/.claude/references`, create the private `udenver` repo, grant
-the `affordable_housing` team, and verify.
+the `paper-B` team, and verify.

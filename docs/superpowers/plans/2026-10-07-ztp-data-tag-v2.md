@@ -16,7 +16,7 @@
 - All Zotero writes go through pyzotero (`zotero.Zotero(library_id, library_type, api_key)`), never the MCP tools. Tags are merged, never replaced (`set_item_tags` is forbidden).
 - Note title is exactly `Data (auto-extracted)`; v1 notes are `<div class="zotero-note znv1"><h1>Data (auto-extracted)</h1>…` — match on the `<h1>`.
 - Tag namespaces: keep `dataset:<slug>`, `var:<slug>`, `data-tagged`; add `datatype:<slug>`, `dv:<slug>`, `geo:<level>`, `data-tagged:v2`. Skip items carrying `data-tagged:v2`; **reprocess** items with only `data-tagged`.
-- Secrets: `ZOTERO_API_KEY` from the environment (`~/.secrets.env`), never in files. Group writes use `library_type="group"`, `library_id="2350352"` for affordable_housing.
+- Secrets: `ZOTERO_API_KEY` from the environment (`~/.secrets.env`), never in files. Group writes use `library_type="group"`, `library_id="2350352"` for paper-B.
 - Sidecar path: `~/.local/share/zotpilot/data_tags.sqlite` (override with `DATA_TAGS_DB` env for tests).
 - Ollama: `http://localhost:11434`, model `qwen2.5:7b-instruct`, `temperature 0`, `num_ctx 8192`; refuse to start if the server or model is absent.
 - Variable naming: no top-level names from the forbidden list in `~/.claude/CLAUDE.md` (`data`, `df`, `file`, `list`, `format`, `str`…). Use descriptive names (`chunk_rows`, `vocab_sources`).
@@ -225,7 +225,7 @@ sources:
   bloomberg: {name: Bloomberg, aliases: ['\bBloomberg\b'], type: macro-financial-series, geo_level: global, access: proprietary}
   datastream: {name: Datastream, aliases: ['\bDatastream\b'], type: macro-financial-series, geo_level: global, access: proprietary}
   gresb:    {name: GRESB, aliases: ['\bGRESB\b'], type: reit-firm-financials, geo_level: global, access: proprietary}
-  msci_esg: {name: MSCI ESG, aliases: ['\bMSCI ESG\b', '\bMSCI KLD\b', '\bKLD\b'], type: reit-firm-financials, geo_level: global, access: proprietary}
+  msci_esg: {name: MSCI paper-H, aliases: ['\bMSCI paper-H\b', '\bMSCI KLD\b', '\bKLD\b'], type: reit-firm-financials, geo_level: global, access: proprietary}
   hmda:     {name: HMDA, aliases: ['\bHMDA\b', 'Home Mortgage Disclosure Act'], type: mortgage-loan-level, geo_level: national, access: public}
   corelogic: {name: CoreLogic, aliases: ['\bCoreLogic\b', '\bDataQuick\b'], type: residential-transactions-deeds, geo_level: national, access: proprietary}
   ztrax:    {name: Zillow ZTRAX, aliases: ['\bZTRAX\b', 'Zillow Transaction and Assessment'], type: residential-transactions-deeds, geo_level: national, access: proprietary}
@@ -434,7 +434,7 @@ def _make_db(path):
         con.execute("INSERT INTO embeddings VALUES (?,?,?,?)", (i, "seg", f"e{i}", b"\x00"))
         for k, v in [("doc_id", doc), ("section", section), ("chroma:document", text),
                      ("doc_title", "T " + doc), ("publication", "JRE"), ("doi", "10.1/x"),
-                     ("tags", "Housing; Rent"), ("collections", "affordable_housing; REE")]:
+                     ("tags", "Housing; Rent"), ("collections", "paper-B; REE")]:
             con.execute("INSERT INTO embedding_metadata (id,key,string_value) VALUES (?,?,?)", (i, k, v))
         for k, v in [("chunk_index", idx), ("page_num", page), ("total_chunks", 3), ("year", 2020)]:
             con.execute("INSERT INTO embedding_metadata (id,key,int_value) VALUES (?,?,?)", (i, k, v))
@@ -464,7 +464,7 @@ def test_indexed_doc_ids(reader):
 def test_doc_meta(reader):
     meta = reader.doc_meta("AAA")
     assert meta["title"] == "T AAA" and meta["year"] == 2020
-    assert meta["tags"] == ["Housing", "Rent"] and "affordable_housing" in meta["collections"]
+    assert meta["tags"] == ["Housing", "Rent"] and "paper-B" in meta["collections"]
 
 def test_read_only(reader):
     with pytest.raises(sqlite3.OperationalError):
@@ -1504,7 +1504,7 @@ def _zot_db(path):
     CREATE TABLE groups (groupID INTEGER, libraryID INTEGER, name TEXT);
     INSERT INTO itemTypes VALUES (1,'journalArticle'),(2,'attachment'),(3,'note');
     INSERT INTO fields VALUES (1,'title'),(2,'date');
-    INSERT INTO groups VALUES (2350352, 3, 'affordable_housing');
+    INSERT INTO groups VALUES (2350352, 3, 'paper-B');
     INSERT INTO items VALUES (1,1,3,'BBB'),(2,1,3,'AAA'),(3,2,3,'PDF1'),(4,1,3,'DEL'),(5,1,1,'USR');
     INSERT INTO deletedItems VALUES (4);
     INSERT INTO itemDataValues VALUES (1,'Paper B'),(2,'Paper A'),(3,'2019-03-01');
@@ -1612,7 +1612,7 @@ from pyzotero.zotero_errors import PreConditionFailed  # HTTP 412
 from . import NOTE_TITLE
 from .normalize import DocRecord
 
-DEFAULT_ZOTERO_SQLITE = Path("/Users/andrew.mueller/Library/CloudStorage/OneDrive-UniversityofDenver/Zotero/zotero.sqlite")
+DEFAULT_ZOTERO_SQLITE = Path("~/Library/CloudStorage/<cloud-sync>/Zotero/zotero.sqlite")
 DEFAULT_PREFS = next(iter(Path.home().glob("Library/Application Support/Zotero/Profiles/*/prefs.js")), None)
 
 
@@ -2313,7 +2313,7 @@ Expected: all pass. If a contract test rejects the frontmatter (e.g. `allowed-to
 
 ```bash
 bash apply.sh --list | grep -n "ztp-data-tag"
-ls -la ~/Research/zoning2026/.claude/skills/ztp-data-tag 2>/dev/null | head -2
+ls -la ~/Research/paper-C/.claude/skills/ztp-data-tag 2>/dev/null | head -2
 ```
 Expected: listed; the symlink points at `skills/ztp-data-tag` (a directory link, so `scripts/` arrives with it).
 
@@ -2326,7 +2326,7 @@ git commit -m "docs(ztp-data-tag): v2 workflow — local passes, review-queue tu
 
 ---
 
-### Task 12: Pass 1 on affordable_housing (USER_REQUIRED gates)
+### Task 12: Pass 1 on paper-B (USER_REQUIRED gates)
 
 No new code. Run from a paper project that links research-claude (so `quality_reports/data_tags/` lands in the project), or from research-claude with `--report-dir`.
 

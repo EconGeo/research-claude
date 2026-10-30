@@ -64,14 +64,14 @@ Fleet state: **all six repos `check_install: PASS`**, `check_fork: PASS`, **175 
 - Repair plan **Phase 1.1–1.5 merged**: `chunk_labels()` parses all three label spellings; the
   chunk predicate checks prefix correctness; the render predicate fails on an unresolved-crossref
   WARNING; INV-19b has an executable check; INV-15 no longer claims a non-firing enforcer.
-- POGM4 skills table rebuilt (13 of 18 rows named skills deleted in June).
+- paper-A skills table rebuilt (13 of 18 rows named skills deleted in June).
 
 ---
 
 ## 4. Open work, in dependency order
 
 ### 4.1 Finish the repair plan — 14 items
-`docs/plans/2026-09-23_pipeline-repair.md`, Phases 2–5. Phase 2 **gates POGM4's resumption**.
+`docs/plans/2026-09-23_pipeline-repair.md`, Phases 2–5. Phase 2 **gates paper-A's resumption**.
 Highest value: the critic write contract (nine agents told to write with no `Write` tool; the
 peer-review chain, 25% of scoring weight, cannot write its four outputs), stages closing on
 reports that do not exist, and the D-17 `/write humanize` vs `/humanize` conflict.

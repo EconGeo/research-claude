@@ -25,18 +25,18 @@ and `check_install` fails `helpers-current` when a paper's paste differs from th
 
    | Paper | main | branch | Newly flagged |
    |---|---|---|---|
-   | ESG | PASS | FAIL | 4 literals in the YAML abstract placeholder |
-   | POGM4 | PASS | FAIL | 2000 ×7 and 382 ×2 in `notes=` captions |
-   | affordable_housing_2026 | FAIL | FAIL (3 → 4) | |
-   | zoning2026 | FAIL | FAIL (2 → 9) | abstract `$p<0.003$`, a math star legend written with `<` |
-   | NAR_settlement | PASS | PASS | |
+   | paper-H | PASS | FAIL | 4 literals in the YAML abstract placeholder |
+   | paper-A | PASS | FAIL | 2000 ×7 and 382 ×2 in `notes=` captions |
+   | paper-B | FAIL | FAIL (3 → 4) | |
+   | paper-C | FAIL | FAIL (2 → 9) | abstract `$p<0.003$`, a math star legend written with `<` |
+   | paper-D | PASS | PASS | |
 
    This conflicts with the 2026-09-28 ruling that papers fix gate findings on their own schedule. Options:
    install `core.hooksPath` only in papers that pass (the plan's default: Step 5 is per-paper), or make
    commit-check's prose check a WARN for NOT-RETROFITTED papers.
 2. **`check_install --all` goes red after the re-link:** `gitignore-covers` in all six projects (no
    `.claude/state/design_token.json` line; seeds never overwrite), `claude-md-design-facts` in
-   NAR_settlement (CLAUDE.md:19), and `claude-md-size` + design facts in NAR_settlement_legacy_archive.
+   paper-D (CLAUDE.md:19), and `claude-md-size` + design facts in paper-D_legacy_archive.
    Decide whether `apply.sh --link` should append missing required `.gitignore` lines.
 3. **`/analyze`, `/write`, `/revise` now run `pre` as a blocking step** for every paper (spec §7), so any
    failing `pre coder`/`pre writer` predicate stops those skills.
@@ -72,7 +72,7 @@ and `check_install` fails `helpers-current` when a paper's paste differs from th
 - close the seeds/quarto-preamble.tex ≤ gap inside Task 15's fix round (add the fixture's mapping to the seed; rules/quarto-empirical.md names the two lines for papers whose preamble was seeded earlier) — the shipped rule tells papers to print ≤ and the seed can't; fixing it before the merge is cheaper than a separate task — cost if wrong: two preamble lines in new papers.
 - Task 15 deviation (e) `rerun:` field accepted as a test of gate mechanics; the gate-level gap (checks_changed is satisfied by any textual edit; an honest identical re-run needs a cosmetic edit) is recorded for the author, not fixed — "fix the fixture, never the gate" — cost if wrong: an amendment can be re-signed without a genuine re-run.
 - Final I1 (token boundary) — design-guard additionally denies Bash that (i) mentions `author_token`, (ii) runs `claude` fed by `<` redirect or a pipe, (iii) mentions `design_lock` together with an interpreter (python/perl/ruby/node/Rscript); no process-ancestry check in design-token.py (the desktop app and the top-level CLI make ancestor counting unreliable, untestable without live runs) and no commit-check token cross-check (the token is gitignored local state, so a coauthor's fresh clone would be blocked) — residual text-match limit stays documented and goes to the author — cost if wrong: a deliberately evasive session can still self-approve.
-- Final I2 — claims helpers resolve fingerprint and data paths from the project root (walk up from getwd() to the dir holding CLAUDE.md), base R only, re-pasted into the fixture — zoning2026-style subdirectory manuscripts would otherwise never write a readable fingerprint — cost if wrong: none.
+- Final I2 — claims helpers resolve fingerprint and data paths from the project root (walk up from getwd() to the dir holding CLAUDE.md), base R only, re-pasted into the fixture — paper-C-style subdirectory manuscripts would otherwise never write a readable fingerprint — cost if wrong: none.
 - Final I3 — cold_render.json records a hash of chunk_code(ms) and commit-check compares that, so prose-only edits after a cold render don't force another; the "any chunk" vs "model chunks" trigger stays broad and goes to the author — cost if wrong: extra cold renders on long papers until the author narrows it.
 - Final I4 (merge impact on unretrofitted papers: pre-commit would block 4 of 5; blocking `pre` in skills; check_install --all red; gitignore top-up) — no code change; it is Task 16 Step 3/5's author decision, reported with the per-paper table — cost if wrong: none before the author decides.
 - Final I5 + must-fix minors — fix in the one fix wave: radix sort in rc_fingerprint; protect-files `&>`/`&>>`, `dd of=`, regex fallback when shlex fails (not fail-open), `<<<` here-string; wire_guard_hooks uses the seed's per-hook timeout for stale-stages; `ledger add --creator` validated against registry agents; NA_VALUE skips `Inf.`-before-capital abbreviations — cheap and each closes a real hole — cost if wrong: none.

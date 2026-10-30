@@ -108,7 +108,7 @@ Part A can start immediately; Part B needs D4; Part C needs D5.
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b feat/option-gates-rule
+cd ~/Academic/research-claude && git checkout -b feat/option-gates-rule
 ```
 
 - [ ] **Step 2: Write the failing test**

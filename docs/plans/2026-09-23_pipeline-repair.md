@@ -4,10 +4,10 @@
 **After this plan:** `docs/2026-09-23_pipeline-closeout-handoff.md` gathers everything remaining —
 the stalled 09-16 closeout (43 defects), the six divergence GAPs, the connectivity check class,
 and the audit defects not yet planned. Do not start it until Phases 2–5 below are done.
-**Blocks:** POGM4's JRER submission plan, which is paused until Phase 2 lands.
+**Blocks:** paper-A's JRER submission plan, which is paused until Phase 2 lands.
 
 **Status: complete (2026-09-24).** Phases 1–4 are the pipeline's work and are done; Phase 5 is
-POGM4's own resumption and lives in that repo (1.6's edit is committed there as `e6a99bc`;
+paper-A's own resumption and lives in that repo (1.6's edit is committed there as `e6a99bc`;
 `87840d8` re-linked it for the option-gates rule). The closeout handoff this plan deferred to is
 itself closed — see `CLAUDE.md` § Start here. Original status text follows.
 
@@ -19,9 +19,9 @@ Phase 2 (`7424e79`, `71aaaf3`, `ab41926`, `8d65c68`) merged to `main` in `19aaac
 items, 4.1–4.3) is done as of this session on branch `phase4-repair-plan` — see each item for its
 gate evidence; every gate was reproduced failing before the fix and passing after, and
 `check_fork.sh` / `check_install.sh --all` / the full test suite (212 tests) all PASS as of the
-last item. One item remains not fully closed, not silently marked done: 1.6's POGM4 edit is
-uncommitted in POGM4's own repo (outside this session's scope to commit). POGM4 can resume — Phase
-2 landed. Next: Phase 5 (resume POGM4) — the closeout handoff (`docs/2026-09-23_pipeline-closeout-handoff.md`)
+last item. One item remains not fully closed, not silently marked done: 1.6's paper-A edit is
+uncommitted in paper-A's own repo (outside this session's scope to commit). paper-A can resume — Phase
+2 landed. Next: Phase 5 (resume paper-A) — the closeout handoff (`docs/2026-09-23_pipeline-closeout-handoff.md`)
 is what comes after this plan finishes, not started.
 
 ---
@@ -63,7 +63,7 @@ per project and `--all`), `scripts/prose_number_check.py` (INV-11),
       fixtures, FAIL on a workaround fixture, and it reproduces on a real manuscript the counts
       two independent audits found by other means.
 - [x] `hooks/install-check.py` wired at SessionStart — the detector existed and nothing ran it.
-- [x] POGM4 skills table rebuilt; 13 of 18 rows were dead.
+- [x] paper-A skills table rebuilt; 13 of 18 rows were dead.
 
 ---
 
@@ -76,8 +76,8 @@ enforcement table names an enforcer for each.
 - [x] **1.1 Fix `chunk_labels()`.** `tested:` it reads only `#| label:` and returns `['setup']`
   for an 80-chunk manuscript, so `pipeline.py post coder` raises a false alarm on a compliant
   document — which is how real findings get waived. Parse brace-form labels too.
-  **Gate:** `chunk_labels()` on POGM4's manuscript returns ≥ 80 labels including the `tbl-` set.
-  **Done 2026-09-23** (`ec8905e`, merged to `main` in `04375cb`). Gate note: POGM4's manuscript
+  **Gate:** `chunk_labels()` on paper-A's manuscript returns ≥ 80 labels including the `tbl-` set.
+  **Done 2026-09-23** (`ec8905e`, merged to `main` in `04375cb`). Gate note: paper-A's manuscript
   has 80 labels total but zero start with `tbl-` (all 35 table chunks use `tab-` instead) —
   flagged to the user, not fixed here (separate repo, out of pipeline scope); a follow-up task
   was spawned (`task_9e2623f6`).
@@ -105,19 +105,19 @@ enforcement table names an enforcer for each.
   (INV-15 marked reviewer-judgment only); INV-24's row already only named agents, not a script, so
   it needed no change.
 - [x] **1.6 Resolve the two `prose_number_check.py` copies.** research-claude's 255-line version is
-  the superset; `~/Research/scripts/`'s 152-line copy is what POGM4's CLAUDE.md tells you to run,
+  the superset; `~/Research/scripts/`'s 152-line copy is what paper-A's CLAUDE.md tells you to run,
   so the documented command and the automated predicate can disagree. Keep one, repoint callers.
   **Gate:** `grep -rn prose_number_check` shows one path across all six repos and the pipeline.
-  **Done 2026-09-23.** `~/Research/scripts/prose_number_check.py` deleted; `~/Research/POGM4/CLAUDE.md`
+  **Done 2026-09-23.** `~/Research/scripts/prose_number_check.py` deleted; `~/Research/paper-A/CLAUDE.md`
   repointed to `.claude/scripts/prose_number_check.py` (two places). The other five linked repos
-  (BRI, ESG, NAR_settlement, affordable_housing_2026, zoning2026) never referenced the weak copy.
-  This edit is **outside research-claude** — uncommitted in POGM4's own repo, left for the user.
+  (paper-G, paper-H, paper-D, paper-B, paper-C) never referenced the weak copy.
+  This edit is **outside research-claude** — uncommitted in paper-A's own repo, left for the user.
 
 ---
 
 ## Phase 2 — Contracts that contradict themselves
 
-**POGM4 resumes after this phase.** These are the defects that corrupt review output, and POGM4's
+**paper-A resumes after this phase.** These are the defects that corrupt review output, and paper-A's
 next task is a review round.
 
 - [x] **2.1 Settle the critic write contract.** Of 13 report producers: 2 succeed (only by
@@ -337,14 +337,14 @@ objects; Quarto dissolved that for expressions, and nothing owned it for literal
 
 ---
 
-## Phase 5 — Resume POGM4
+## Phase 5 — Resume paper-A
 
-POGM4's plan (`quality_reports/plans/2026-09-23_jrer-submission-plan.md`, v2) stands, with Task A
+paper-A's plan (`quality_reports/plans/2026-09-23_jrer-submission-plan.md`, v2) stands, with Task A
 amended: **A2 is done upstream** (`quarto_structure_check.py` exists and is linked), and A1 is
 Phase 1.6 here. The rest of Task A — the number-gate holes, the allowlist retirement, the
 `chunk_labels` fix — is either Phase 1 above or genuinely project-local.
 
-Resume at POGM4 Task B (native Quarto migration) once Phase 2 lands, because Task B's verification
+Resume at paper-A Task B (native Quarto migration) once Phase 2 lands, because Task B's verification
 depends on gates that are currently wrong, and its first review round depends on critics that can
 write their reports.
 

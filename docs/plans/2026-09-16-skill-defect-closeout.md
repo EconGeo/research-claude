@@ -7,7 +7,7 @@
 >
 > **Resumable at Task 1. The §6.4 amendments were applied on 2026-09-24:** every task's
 > verification block now chains `python3 scripts/check_paths.py --root
-> /Users/andrew.mueller/Academic/research-claude` (the un-rooted form exited on an argparse
+> ~/Academic/research-claude` (the un-rooted form exited on an argparse
 > usage error and killed the `&&` chain before `run_fixture.sh`, `check_refs` and
 > `check_install --all` ever ran — this is fixed at all 7 occurrences); the Task 6
 > `/obsidian-digest-sync` occurrence count was corrected from three to two; and D2 was resolved
@@ -99,7 +99,7 @@ and **clear the context window**. The next session starts cold and reads only wh
 **Every session begins with exactly this:**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git status --short && git branch --show-current
+cd ~/Academic/research-claude && git status --short && git branch --show-current
 ```
 
 Then read, in order:
@@ -127,8 +127,8 @@ notes; this table is the handoff.
 | 3 — `pipeline`: single owner for `state strike` | done | `fix/strike-ownership` | yes | Premise confirmed by grep then by reading all twelve reference files and every stage skill: `record-score` already has one owner per stage; `strike` had two for literature/strategy/analyze/write (driver + skill) and none for data, theory, talk, and analyze's data-engineer round. **Rule installed:** the stage skill owns `state strike <creator>`; the driver reads the count and escalates (`skills/pipeline/SKILL.md` run loop reworded; `rules/agents.md` §3 paragraph). **Strike lines added** beside the `below 80` branch: `/discover data` → `explorer`; `/strategize theory` → `theorist` (replacing 'iterate (max 3 rounds)'); `/analyze` Step 2 → `data-engineer` (Step 3's `coder` already there); `/talk create` Step 4 → `storyteller` (target writer). **Stated exceptions, not forced:** `review` (reference: 'No new strike counter here') and `submit` ('Creator: none') — `tests/test_strike_ownership.py` derives stage→creators from each reference's **Creator(s):** line against the registry's creator roles, so both fall out naturally and are listed in `STATED_EXCEPTIONS` with the reason. Budget: `discover` 6,141 vs 6,000 after the three-line strike sentence — cap raised to 6,200 with the reason in `test_skill_contracts.py` (a dispatch instruction, not compressed). Green: 254 tests · `check_fork` PASS · `check_paths` PASS · `run_fixture` (mechanical) PASS · 0 `record-score` lines removed. **Also this session (not this task): `run_fixture.sh --live` completed GREEN for the first time** — explorer → explorer-critic → strategist → strategist-critic all via hook, literature=88 (seeded) / data=92 / strategy=84, no strikes, exit 0. |
 | 4 — `tools`: `render`, `lint`, and the three stepless subcommands | done | `fix/tools-subcommands` | yes | `render` resolves the manuscript via `pipeline.py manuscript`; lint **Default** line now says `scripts/acquire/` only, with a separate `/tools lint explorations/` line — `hooks/lint-scripts.sh` untouched (its single default is the right one: `explorations/` is scratch work the coder-critic never scores). **`validate-bib` given a real step** (comm-based MISSING / UNUSED / DUPLICATE over the declared manuscript + `talks/*.qmd` vs `references.bib`); smoke-tested on a fixture copy with planted keys — first draft caught `@fig-`/`@tbl-` cross-refs and an email as citations, regex tightened and Quarto prefixes excluded; UNUSED documented as informational because Zotero is the source of truth. **`journal` reframed, not 'regenerated'**: `rules/logging.md` (read in full) defines the journal as append-only, one entry per completion, derived from the state file — so the step reads `state show` + the dispatch log, appends the entries not yet present, never reorders, never decides where the pipeline starts. **`context` DELETED** (plan Step 6's escape hatch): `hooks/context-monitor.py` computes usage from a `transcript_path` only the harness passes a hook, so a skill cannot run it honestly, and Claude Code's built-in `/context` already reports the real figure. Removed from `argument-hint` and `description`; `context-monitor.py`'s nudge names `/tools learn`, which still exists (`skill-refs` PASS). **gotchas.md: three contradictions found, file deleted.** (1) 'validate-bib doesn't verify keys match the .bib' — now false, dropped; (2) 'Journal selection (`/tools journal`) reads journal-profiles.md' — described `/submit target`, not this subcommand, dropped; (3) 'never stage `.claude/state/`' vs commit Step 3's list — folded into Step 3. The two consistent bullets (xelatex-by-hand, lint advisory) folded into `render` and already in `lint`; nothing left, file removed; catalogue table removed. `check_paths` caught an unprefixed `hooks/lint-scripts.sh` in the new default line — fixed. **`/tools commit` confirmation gates — done after Task 5 at the user's request** (`fix/tools-commit-gates`), outside this task's scope but recorded here: audit P4's row for `tools` asked for binary gates before commit and before PR/merge, each honouring `--yes`. Gate A (after staging: branch, `diff --cached --stat`, Step 0 results, exact message → commit / edit / abort) and Gate B (after the commit: base, PR title, what merges → PR and merge / PR only / push only / stop here). `--yes` answers both with their default and **never** skips Step 0 — only an explicit 'commit anyway' with a reason does. Nothing in the shipped tree invokes `/tools commit` (only a comment in `pipeline.py`), so no driver path stalls. Pinned by `TestCommitConfirmationGates` (3 tests). Green: 259 tests · `check_fork` PASS · `check_paths` PASS · `check_refs` no FAIL. `check_install --all` FAILs `[branch]` only while the checkout is on this feature branch; PASS again after merge. |
 | 5 — ZotPilot side: `ztp-data-tag` atomicity, `lit-position` local-first | done | `fix/zotpilot-bridge-skills` | yes | All three defects confirmed by reading (`ztp-research` Phase 1 step 2 is `search_academic_databases`; `local_duplicate` is web-result dedup; `lit-position` had no `Bash`). **ztp-data-tag Step 5 reordered:** `get_notes` check → `create_note(idempotent=true)` → tags + `data-tagged` only for an item that now has a Data note; a `create_note` that returns without creating (item has a non-Data ZotPilot note) stops that item with no marker and is counted in Step 6 as 'skipped: has a non-Data ZotPilot note'. Undo and Rules updated to match; `add`/`allow_new=true`/never-`set` rules untouched. **lit-position Step 1 gained a numbered local sweep** (`search_topic` → `advanced_search` → `search_papers`) before `/ztp-research`, which now receives the gap set only; the one-line reason (vendored, starts external, `local_duplicate` ≠ local-first) is in the step so the next reader does not delete it. `Bash` added to `allowed-tools`. `tests/test_zotpilot_skills.py` (5 tests; the vendored-file tripwire passed before and after). Nothing under `zotpilot-skills/` or `ai-audit/` changed (`git status` empty). Green: 264 tests · `check_fork` PASS · `check_paths` PASS. |
-| 6 — Low sweep: `promote`, `state/`, `new-project-ztp`, `/write humanize` | done | `fix/low-severity-sweep` | yes | **D2 skipped as moot** per the amendment — re-verified: `humanize` outside `skills/write/SKILL.md` appears only in `ai-audit/VENDORED.md`'s provenance note; `/write humanize` untouched, `write` budget unchanged. **promote:** Step 1 now reads the lock's `# installed via:` line (the only discriminator `write_lock()` writes; `commit=` appears in both modes) and stops on `pinned`; Step 5 gives `./bootstrap-pipeline.sh --tip` or `"$RC/apply.sh" --project-dir "$PWD" --link --tip`, and the re-link claim is narrowed to new top-level items with the directory-link reason stated. **state/:** both `/obsidian-digest-sync` references removed (the plan said three; the file, read in full, had two — header comment and the knowledge-base table heading); the knowledge-base folder table deleted after confirming nothing under `skills/checkpoint/`, `agents/`, `rules/` or `hooks/` reads those folders — `references/obsidian.md` reads only the vault path and the project-name mapping. `SHIP` gained `state`, `TEXT_SUFFIX` gained `.example`; the widened scan found nothing else in `state/`. **new-project-ztp:** premise refined — `## Current Project State` exists in POGM4 and zoning2026 but not ESG and in no shipped template, so the anchor is now 'update `## Tools` in place, else append at end of `CLAUDE.md`'; index estimate quotes the README (200 papers ≈ 10–20 min either provider) and names Ollama as recommended. Nothing vendored changed. `tests/test_low_severity_contracts.py` (7 tests). Green: 274 tests · `check_fork` PASS · `check_paths` PASS · `check_refs` 0 FAIL. |
-| 7 — Close out | done | `main` | — | Clean-tree verification: 274 tests · `check_fork` PASS · `check_paths` PASS · `check_refs` 0 FAIL · `check_install --all` **PASS ×6** (Step 1's 'expected RED on clone-links' is stale: fixed by D-26 on 09-23 — the failure set is empty, not 'exactly that'). Measured: all 18 = 114,966 (baseline 98,672); pipeline-run = 56,656 (baseline 50,819); review and discover caps raised with reasons. Close-out entry: `docs/SESSION_REPORT.md` 2026-09-24. `CLAUDE.md`'s `templates/` sentence corrected (those files are `seeds/`; `templates/` is linked). **Start here** already repointed at the 09-23 closeout handoff earlier today; now states §4.3 done and that nothing from the 09-10 handoff remains (R-136 detected by `hooks-wired`, live tier green, clone-links PASS, POGM4 html gone). Single pointer kept. |
+| 6 — Low sweep: `promote`, `state/`, `new-project-ztp`, `/write humanize` | done | `fix/low-severity-sweep` | yes | **D2 skipped as moot** per the amendment — re-verified: `humanize` outside `skills/write/SKILL.md` appears only in `ai-audit/VENDORED.md`'s provenance note; `/write humanize` untouched, `write` budget unchanged. **promote:** Step 1 now reads the lock's `# installed via:` line (the only discriminator `write_lock()` writes; `commit=` appears in both modes) and stops on `pinned`; Step 5 gives `./bootstrap-pipeline.sh --tip` or `"$RC/apply.sh" --project-dir "$PWD" --link --tip`, and the re-link claim is narrowed to new top-level items with the directory-link reason stated. **state/:** both `/obsidian-digest-sync` references removed (the plan said three; the file, read in full, had two — header comment and the knowledge-base table heading); the knowledge-base folder table deleted after confirming nothing under `skills/checkpoint/`, `agents/`, `rules/` or `hooks/` reads those folders — `references/obsidian.md` reads only the vault path and the project-name mapping. `SHIP` gained `state`, `TEXT_SUFFIX` gained `.example`; the widened scan found nothing else in `state/`. **new-project-ztp:** premise refined — `## Current Project State` exists in paper-A and paper-C but not paper-H and in no shipped template, so the anchor is now 'update `## Tools` in place, else append at end of `CLAUDE.md`'; index estimate quotes the README (200 papers ≈ 10–20 min either provider) and names Ollama as recommended. Nothing vendored changed. `tests/test_low_severity_contracts.py` (7 tests). Green: 274 tests · `check_fork` PASS · `check_paths` PASS · `check_refs` 0 FAIL. |
+| 7 — Close out | done | `main` | — | Clean-tree verification: 274 tests · `check_fork` PASS · `check_paths` PASS · `check_refs` 0 FAIL · `check_install --all` **PASS ×6** (Step 1's 'expected RED on clone-links' is stale: fixed by D-26 on 09-23 — the failure set is empty, not 'exactly that'). Measured: all 18 = 114,966 (baseline 98,672); pipeline-run = 56,656 (baseline 50,819); review and discover caps raised with reasons. Close-out entry: `docs/SESSION_REPORT.md` 2026-09-24. `CLAUDE.md`'s `templates/` sentence corrected (those files are `seeds/`; `templates/` is linked). **Start here** already repointed at the 09-23 closeout handoff earlier today; now states §4.3 done and that nothing from the 09-10 handoff remains (R-136 detected by `hooks-wired`, live tier green, clone-links PASS, paper-A html gone). Single pointer kept. |
 
 **Open decisions** (record the answer here when the user gives it):
 
@@ -154,7 +154,7 @@ so no later task's diff is contaminated by it.
 - [ ] **Step 1: Branch and read the diff**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b fix/new-project-ztp-registration && git diff skills/new-project-ztp/SKILL.md
+cd ~/Academic/research-claude && git checkout -b fix/new-project-ztp-registration && git diff skills/new-project-ztp/SKILL.md
 ```
 
 - [ ] **Step 2: Verify the claim the edit makes, do not assume it**
@@ -163,7 +163,7 @@ The edit asserts `/ztp-setup` registers at client scope and writes no project `.
 it against the vendored skill:
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && cat zotpilot-skills/ztp-setup/SKILL.md
+cd ~/Academic/research-claude && cat zotpilot-skills/ztp-setup/SKILL.md
 ```
 
 If the vendored skill contradicts the edit, the edit is wrong and the vendored skill wins — it
@@ -172,13 +172,13 @@ is the thing that actually runs. Report and stop rather than shipping a confiden
 - [ ] **Step 3: Gate and commit**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && ./scripts/check_fork.sh && python3 -m pytest tests/ -q; echo "exit=$?"
+cd ~/Academic/research-claude && ./scripts/check_fork.sh && python3 -m pytest tests/ -q; echo "exit=$?"
 ```
 
 Expected: `✓ check_fork: PASS` and **159 passed**. Then:
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/new-project-ztp/SKILL.md && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/new-project-ztp/SKILL.md && git commit -m "$(cat <<'EOF'
 fix(new-project-ztp): ZotPilot registers at client scope, not in a project .mcp.json
 
 Step 2 promised micromamba + fork + a project `.mcp.json`. /ztp-setup registers at client
@@ -194,7 +194,7 @@ EOF
 - [ ] **Step 4: Record the baseline**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 - <<'PY'
+cd ~/Academic/research-claude && python3 - <<'PY'
 import re, glob
 for f in sorted(glob.glob('skills/*/SKILL.md')):
     body = re.sub(r'^---\n.*?\n---\n', '', open(f).read(), count=1, flags=re.S)
@@ -286,7 +286,7 @@ add text. Pay for them first:
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b fix/review-modes
+cd ~/Academic/research-claude && git checkout -b fix/review-modes
 ```
 
 - [ ] **Step 2: Put D3 to the user before writing anything**
@@ -358,7 +358,7 @@ if __name__ == "__main__":
 - [ ] **Step 4: Run it and confirm it fails**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_review_modes.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_review_modes.py -q
 ```
 
 Expected: **6 failures**. If any passes already, read the file again before proceeding — a
@@ -371,7 +371,7 @@ style), leave the `git status --porcelain` imperative in SKILL.md, and add one l
 Comprehensive step naming `gotchas.md`. Then:
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -c "
+cd ~/Academic/research-claude && python3 -c "
 import re,pathlib
 b=re.sub(r'^---\n.*?\n---\n','',pathlib.Path('skills/review/SKILL.md').read_text(),count=1,flags=re.S)
 print(len(b),'chars — cap 11000')"
@@ -437,14 +437,14 @@ Progress Log what changed.
 - [ ] **Step 10: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_review_modes.py tests/test_review_contracts.py tests/test_skill_contracts.py -q && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
+cd ~/Academic/research-claude && python3 -m pytest tests/test_review_modes.py tests/test_review_contracts.py tests/test_skill_contracts.py -q && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root ~/Academic/research-claude; echo "exit=$?"
 ```
 
 Expected: all green. `test_review_contracts.py` must be **9/9** — the three pinned strings.
 Then confirm you deleted no recording site:
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git diff main -- skills/ agents/ | grep -c "^-.*record-score"
+cd ~/Academic/research-claude && git diff main -- skills/ agents/ | grep -c "^-.*record-score"
 ```
 
 Expected: **0**.
@@ -452,7 +452,7 @@ Expected: **0**.
 - [ ] **Step 11: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/review agents/editor.md tests/ && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/review agents/editor.md tests/ && git commit -m "$(cat <<'EOF'
 fix(review): give --theory a mode section, document --variance, stop --stress recording
 
 --theory was advertised in the flag list and named by pipeline/references/adopt.md as the
@@ -530,7 +530,7 @@ EOF
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b fix/revise-gate-and-letter
+cd ~/Academic/research-claude && git checkout -b fix/revise-gate-and-letter
 ```
 
 - [ ] **Step 2: Write the failing test**
@@ -590,7 +590,7 @@ if __name__ == "__main__":
 - [ ] **Step 3: Run it and confirm it fails**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_revise_contracts.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_revise_contracts.py -q
 ```
 
 Expected: **6 failures**.
@@ -632,13 +632,13 @@ entries from `KNOWN_UNBOUND` in `tests/test_skill_contracts.py`.
 - [ ] **Step 8: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root ~/Academic/research-claude; echo "exit=$?"
 ```
 
 - [ ] **Step 9: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/revise rules/revision.md tests/ && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/revise rules/revision.md tests/ && git commit -m "$(cat <<'EOF'
 fix(revise): run post writer, write the letter the template specifies, pre-approve Bash
 
 rules/revision.md puts `pipeline.py post writer` between the critic and the response letter;
@@ -704,13 +704,13 @@ strike total; it does not add to it.
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b fix/strike-ownership
+cd ~/Academic/research-claude && git checkout -b fix/strike-ownership
 ```
 
 - [ ] **Step 2: Confirm the premise yourself before changing anything**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && grep -rn "state strike" skills/ agents/ rules/ scripts/ && grep -n "Delegates to" skills/pipeline/references/*.md
+cd ~/Academic/research-claude && grep -rn "state strike" skills/ agents/ rules/ scripts/ && grep -n "Delegates to" skills/pipeline/references/*.md
 ```
 
 Every stage whose reference says **Delegates to: `/<skill>`** must end up with the strike in that
@@ -774,7 +774,7 @@ if __name__ == "__main__":
 - [ ] **Step 4: Run it and confirm it fails**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_strike_ownership.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_strike_ownership.py -q
 ```
 
 Expected: at least the first two fail. **If `test_every_delegating_stage_skill_strikes_its_own_creator`
@@ -814,7 +814,7 @@ unconditional increment with no round key, so a second call in the same round is
 - [ ] **Step 8: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && ./tests/run_fixture.sh; echo "exit=$?"
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root ~/Academic/research-claude && ./tests/run_fixture.sh; echo "exit=$?"
 ```
 
 `run_fixture.sh`'s mechanical tier simulates dispatch lines and is the closest thing to an
@@ -823,7 +823,7 @@ end-to-end check for the driver — run it, and report what it says even if it i
 - [ ] **Step 9: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/ rules/agents.md tests/ && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/ rules/agents.md tests/ && git commit -m "$(cat <<'EOF'
 fix(pipeline): give state strike a single owner per creator
 
 pipeline.py's strike is an unconditional increment with no round key. The driver's run loop
@@ -886,7 +886,7 @@ and say so in the Progress Log so the next audit does not read the omission as a
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b fix/tools-subcommands
+cd ~/Academic/research-claude && git checkout -b fix/tools-subcommands
 ```
 
 - [ ] **Step 2: Write the failing test**
@@ -943,7 +943,7 @@ if __name__ == "__main__":
 - [ ] **Step 3: Run it and confirm it fails**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_tools_contracts.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_tools_contracts.py -q
 ```
 
 Expected: **4 failures**.
@@ -997,13 +997,13 @@ or delete the file if nothing survives.
 - [ ] **Step 8: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && python3 scripts/check_refs.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root ~/Academic/research-claude && python3 scripts/check_refs.py --root ~/Academic/research-claude; echo "exit=$?"
 ```
 
 - [ ] **Step 9: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/tools tests/ && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/tools tests/ && git commit -m "$(cat <<'EOF'
 fix(tools): resolve the manuscript, correct the lint default, give three subcommands steps
 
 render hardcoded manuscript_<project>.qmd instead of asking pipeline.py, which is the one
@@ -1073,7 +1073,7 @@ EOF
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b fix/zotpilot-bridge-skills
+cd ~/Academic/research-claude && git checkout -b fix/zotpilot-bridge-skills
 ```
 
 - [ ] **Step 2: Write the failing test**
@@ -1134,7 +1134,7 @@ if __name__ == "__main__":
 - [ ] **Step 3: Run it and confirm it fails**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_zotpilot_skills.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_zotpilot_skills.py -q
 ```
 
 Expected: 5 failures, and `test_ztp_research_still_starts_externally` **passing** — it is a
@@ -1172,7 +1172,7 @@ Add `Bash` to `allowed-tools`.
 - [ ] **Step 6: Verify nothing vendored moved**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git status --short zotpilot-skills/ ai-audit/ && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
+cd ~/Academic/research-claude && git status --short zotpilot-skills/ ai-audit/ && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root ~/Academic/research-claude; echo "exit=$?"
 ```
 
 Expected: **no output** from the first command, everything else green.
@@ -1180,7 +1180,7 @@ Expected: **no output** from the first command, everything else green.
 - [ ] **Step 7: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/ztp-data-tag skills/lit-position tests/ && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/ztp-data-tag skills/lit-position tests/ && git commit -m "$(cat <<'EOF'
 fix(zotpilot): never mark an item data-tagged without a Data note; run the local sweep
 
 create_note(idempotent=true) skips any item that already has a ZotPilot note — from
@@ -1240,7 +1240,7 @@ EOF
    `rules/shared-pipeline.md` gives the re-link as `./bootstrap-pipeline.sh --tip`, run from the
    project. It also claims *"A promotion that **adds** a file matters beyond the lock: no other
    project has a link to it until each one re-links."* The predecessor plan established
-   (verified in `NAR_settlement`, `docs/SESSION_REPORT.md`) that each skill is a **directory**
+   (verified in `paper-D`, `docs/SESSION_REPORT.md`) that each skill is a **directory**
    symlink, so a file added inside an existing skill propagates immediately; only a **new
    top-level item** (a new skill, agent, rule or hook) needs a re-link. Narrow the claim to that.
 3. **`state/obsidian-config.md.example` names a skill that was deleted on 2026-09-09.**
@@ -1285,7 +1285,7 @@ EOF
 - [ ] **Step 1: Branch**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git checkout -b fix/low-severity-sweep
+cd ~/Academic/research-claude && git checkout -b fix/low-severity-sweep
 ```
 
 - [ ] **Step 2: Put D2 to the user with the overlap evidence**
@@ -1355,7 +1355,7 @@ if __name__ == "__main__":
 - [ ] **Step 4: Run it and confirm it fails**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_low_severity_contracts.py -q
+cd ~/Academic/research-claude && python3 -m pytest tests/test_low_severity_contracts.py -q
 ```
 
 Expected: **6 failures**.
@@ -1395,13 +1395,13 @@ do not edit `ai-audit/`.
 - [ ] **Step 9: Verify**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git status --short zotpilot-skills/ ai-audit/ && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && python3 scripts/check_refs.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
+cd ~/Academic/research-claude && git status --short zotpilot-skills/ ai-audit/ && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root ~/Academic/research-claude && python3 scripts/check_refs.py --root ~/Academic/research-claude; echo "exit=$?"
 ```
 
 - [ ] **Step 10: Commit and merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add skills/ state/ scripts/check_refs.py tests/ && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add skills/ state/ scripts/check_refs.py tests/ && git commit -m "$(cat <<'EOF'
 fix: close the low-severity audit defects — promote, state/, new-project-ztp
 
 promote's checkout test read `commit=`, which apply.sh writes in both modes, and offered
@@ -1432,19 +1432,19 @@ EOF
 - [ ] **Step 1: Full verification from a clean tree**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git status --short && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && python3 scripts/check_refs.py --root /Users/andrew.mueller/Academic/research-claude && ./scripts/check_install.sh --all; echo "exit=$?"
+cd ~/Academic/research-claude && git status --short && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && python3 scripts/check_paths.py --root ~/Academic/research-claude && python3 scripts/check_refs.py --root ~/Academic/research-claude && ./scripts/check_install.sh --all; echo "exit=$?"
 ```
 
-`check_install --all` is **expected RED** — `clone-links` fails in BRI, NAR_settlement, POGM4,
-zoning2026 (deliberate: each needs real copies of the three `references/*` files before a
-coauthor clones it) and in ESG (its fix `9349a8e` is on `main` and is not an ancestor of the
+`check_install --all` is **expected RED** — `clone-links` fails in paper-G, paper-D, paper-A,
+paper-C (deliberate: each needs real copies of the three `references/*` files before a
+coauthor clones it) and in paper-H (its fix `9349a8e` is on `main` and is not an ancestor of the
 checked-out `pipeline-adoption` branch). Confirm the failure set is **exactly** that and no
 larger. A new name in that list is this plan's doing.
 
 - [ ] **Step 2: Measure**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 - <<'PY'
+cd ~/Academic/research-claude && python3 - <<'PY'
 import re, glob
 PIPE = ["pipeline", "lit-position", "discover", "strategize", "analyze", "write", "review", "submit"]
 tot = pipe = 0
@@ -1476,9 +1476,9 @@ explicitly:
 - **Still open from the predecessor's close-out, and from the 2026-09-10 handoff** (whose §2
   status markers were corrected on 2026-09-16 — see its progress log): R-136, the seed/hook
   propagation gap where a new hook in `seeds/settings.json` reaches no existing project; a full
-  green `--live` run; `clone-links` failing in BRI, NAR_settlement, POGM4, zoning2026 and
-  ESG-on-`pipeline-adoption`; the six `pipeline.lock` files, now 40+ commits behind; POGM4's
-  leftover `manuscript_quarto_word.html`. None of it is skill text, which is why this plan does
+  green `--live` run; `clone-links` failing in paper-G, paper-D, paper-A, paper-C and
+  paper-H-on-`pipeline-adoption`; the six `pipeline.lock` files, now 40+ commits behind; paper-A's
+  leftover `manuscript.html`. None of it is skill text, which is why this plan does
   not touch it.
 - **Found in passing while writing this plan, not fixed:** this repo's own `CLAUDE.md` says
   *"`templates/` holds files `apply.sh` installs directly into a project (e.g.
@@ -1495,7 +1495,7 @@ plan began** (`docs/2026-09-10_final-cleanup-handoff.md`, the 2026-09-16 progres
 §2a is done, §2b is a revisit-when condition, §2c is three recorded decisions, and §4's
 submodule half is obsolete. What is genuinely open there is infrastructure, not skill text:
 R-136's seed/hook propagation gap, a full green `--live` run, `clone-links` in five repos, the
-six stale `pipeline.lock` files, and POGM4's leftover `.html`.
+six stale `pipeline.lock` files, and paper-A's leftover `.html`.
 
 So the question at this step is narrow: **does that remaining list still belong to the handoff?**
 If it does, cross-link this plan's close-out from the handoff and leave the pointer alone. If it
@@ -1505,7 +1505,7 @@ single-pointer rule is the point.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add docs/ CLAUDE.md && git commit -m "$(cat <<'EOF'
+cd ~/Academic/research-claude && git add docs/ CLAUDE.md && git commit -m "$(cat <<'EOF'
 docs: close out the skill defect close-out plan
 
 Per-task record of what was verified, what was fixed, which copy won each contradiction, the

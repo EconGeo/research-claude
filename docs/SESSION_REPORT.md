@@ -125,7 +125,7 @@ All work in `~/Projects/ZotPilot` (= `EconGeo/ZotPilot`, fork of `xunhe730/ZotPi
 - Also fixed 2 stale embedder tests (nomic-embed-text/768 → bge-large/1024). **PR #4** opened, stacked on PR #2. 12 commits, all reviews clean.
 
 **Live runs (real library, ~/Library/CloudStorage/.../Zotero):**
-- 5 libraries (My Library + 4 groups: ESG, NAR_settlement, affordable_housing, regenerative_paradigm); global union 3340 PDFs.
+- 5 libraries (My Library + 4 groups: paper-H, paper-D, paper-B, paper-A-library); global union 3340 PDFs.
 - First sweep FAILED to embed (254 fails): root cause was env misconfig — `embedding_provider=gemini` with invalid key `'exit'` while Ollama+bge-large was the real backend; failures masked as the EMN7YZV7 `UnboundLocalError`. SAFETY HELD: store unchanged at 2744, 0 deletions.
 - Fixed via `zotpilot config set embedding_provider ollama` (verified bge-large 1024-dim matches the existing `chunks_bge` collection — space is set by MODEL, so safe). Re-ran: +254 docs indexed (store 2744 → 2998), 0 deletions across 4 passes. Remaining ~343 unindexed = long books >40pp (by design), image-only/no-text PDFs, 11 group PDFs not on local disk.
 
@@ -151,7 +151,7 @@ All work in `~/Projects/ZotPilot` (= `EconGeo/ZotPilot`, fork of `xunhe730/ZotPi
 **Operations:**
 - Audited all 47 clo-author agent/rule/skill files for LaTeX/Beamer/multi-file coupling.
 - Checked every clo-author capability for artifact-level evidence of use across `~/Research/*`.
-- Compared agent versions across clo-author, POGM4, NAR_settlement, zoning2026.
+- Compared agent versions across clo-author, paper-A, paper-D, paper-C.
 - Created `docs/superpowers/specs/2026-09-08-quarto-native-research-pipeline-design.md`.
 - Created `docs/checkpoints/2026-09-08_quarto-native-pipeline-fork.md`.
 - Branch `design/quarto-native-pipeline` cut from `main`. No code touched; docs only.
@@ -170,18 +170,18 @@ All work in `~/Projects/ZotPilot` (= `EconGeo/ZotPilot`, fork of `xunhe730/ZotPi
 - Coupling is narrow: `working-paper-format.md` 17%, `content-standards.md` 9%, `storyteller.md` 9%,
   writer/writer-critic/verifier 6%; ten agents measure exactly 0%.
 - `clo-author` pinned at 2026-05-10; no pulls in four months.
-- Stranded value: `editor.md` 366 lines in POGM4 vs 67 upstream; `coder-critic` diverged
-  independently in POGM4 (99) and zoning2026 (82), each adding a *different* half of Quarto
-  support — POGM4 the manifest checks (INV-23/24), zoning2026 the Correctness Layer.
-- `NAR_settlement` is at baseline on every agent — nothing to harvest there.
+- Stranded value: `editor.md` 366 lines in paper-A vs 67 upstream; `coder-critic` diverged
+  independently in paper-A (99) and paper-C (82), each adding a *different* half of Quarto
+  support — paper-A the manifest checks (INV-23/24), paper-C the Correctness Layer.
+- `paper-D` is at baseline on every agent — nothing to harvest there.
 - Four shipped files give wrong instructions and are NOT covered by `pipeline-precedence.md`:
   `table-standards.md` (threeparttable/tabularray vs flextable), `figure-standards.md`
   (`ggsave("fig.pdf")` vs PNG@200dpi for Word), `content-standards.md`, `meta-governance.md`
   (Emory/biology-forker identity leak).
-- Never-exercised capabilities confirmed empty in POGM4: `strategy/`, `theory/`,
+- Never-exercised capabilities confirmed empty in paper-A: `strategy/`, `theory/`,
   `preregistrations/`, `decisions/`, `specs/`, `literature/`, `traces/`, `paper/talks/`,
   `paper/replication/`.
-- De-projectification scope: one leaked token (`manuscript_quarto_word`) across 8 candidates.
+- De-projectification scope: one leaked token (`manuscript`) across 8 candidates.
 
 **Commits:**
 - `7729df1` Design spec: fork to a Quarto-native research pipeline
@@ -189,8 +189,8 @@ All work in `~/Projects/ZotPilot` (= `EconGeo/ZotPilot`, fork of `xunhe730/ZotPi
 **Status:**
 - Done: audit, design, spec written + self-reviewed + committed, checkpoint saved.
 - Pending: user review of the spec; then `superpowers:writing-plans`; then implementation.
-- Open: Q1 scratch-vs-in-place re-apply to POGM4; Q2 promotion mechanism; Q3 rollout order for
-  zoning2026 / ESG / BRI / affordable_housing_2026.
+- Open: Q1 scratch-vs-in-place re-apply to paper-A; Q2 promotion mechanism; Q3 rollout order for
+  paper-C / paper-H / paper-G / paper-B.
 
 ---
 
@@ -203,15 +203,15 @@ per-item symlink.
 **Final tree:** 17 agents · 18 skills · 15 rules · 9 references · 8 hooks · 2 submodules
 (`ai-audit`, `journal-digest`). `scripts/check_fork.sh` exits 0.
 
-### Task 17 — scratch-POGM4 validation (D6)
+### Task 17 — scratch-paper-A validation (D6)
 
-Conversion of `/private/tmp/pogm4-scratch` (a copy of POGM4) via
+Conversion of `/private/tmp/pogm4-scratch` (a copy of paper-A) via
 `apply.sh --link --tip`:
 
 | Check | Spec criterion | Result |
 |---|---|---|
-| `quarto render manuscript_quarto_word.qmd` | 4 | **exit 0** — .docx produced, newer than source, 0 ERROR/WARNING in the log |
-| `prose_number_check.py manuscript_quarto_word.qmd` | 5 | **exit 0** — 95 distinct literals, all allowlisted with a reason (479 occurrences) |
+| `quarto render manuscript.qmd` | 4 | **exit 0** — .docx produced, newer than source, 0 ERROR/WARNING in the log |
+| `prose_number_check.py manuscript.qmd` | 5 | **exit 0** — 95 distinct literals, all allowlisted with a reason (479 occurrences) |
 | Links resolve | link mechanism 1 | **pass** — only the 3 shared-reference symlinks dangle, an artifact of `/tmp` being outside `~/Research`; they resolve in the real project |
 | Override preserved, dead link pruned, edited seed untouched | link mechanism 2 | **pass** — `flextable-quarto-word-captions` and `commit` stayed real directories across a re-link |
 | Every linked skill/agent well-formed and discoverable | link mechanism 3 (proxy) | **pass** — 28/28 skills have valid frontmatter with `name:` matching the directory; 19/19 agents valid; 15 rules and 8 hooks resolve |
@@ -239,7 +239,7 @@ the six live paper repos) is gated on it and has NOT been run.**
 4. **Wrong invocation in four places** (mine, and the plan's):
    `prose_number_check.py .` — the script takes a manuscript path and errors on a
    directory.
-5. **`rules/ai-disclosure.md` existed only in POGM4** — a stranded improvement the
+5. **`rules/ai-disclosure.md` existed only in paper-A** — a stranded improvement the
    harvested `writer`/`coder` agents already referenced. Vendored with its template.
 6. **Scope larger than the spec estimated.** The spec measured clo-author's LaTeX
    coupling at 0–6%; the vendored *skills* carried much more (`/talk`'s Beamer engine,
@@ -255,15 +255,15 @@ the six live paper repos) is gated on it and has NOT been run.**
   `project-nouns` (journal/vendor names, banned everywhere *except* `references/`).
   `discipline-cards.md` names REE/JREFE/JRER/JREPM and CoStar because that is what a
   discipline card is; the original rule made shipping one impossible.
-- **`prose_number_check.py`'s provenance comments naming POGM4 and NAR_settlement were
+- **`prose_number_check.py`'s provenance comments naming paper-A and paper-D were
   kept.** They record why the rule exists, and `scripts/` is infrastructure rather than
   shipped instruction content.
 - **`templates/response-letter.tex` converted to `.qmd`.** A LaTeX-only response letter
   does not belong in a pipeline whose output contract is `quarto render`.
 
-### Task 18 — POGM4 converted on a branch, deliberately NOT merged
+### Task 18 — paper-A converted on a branch, deliberately NOT merged
 
-`~/Research/POGM4` branch `pipeline-symlink` (b7dd786) holds the conversion. The
+`~/Research/paper-A` branch `pipeline-symlink` (b7dd786) holds the conversion. The
 working tree was returned to `main` and is byte-identical to how it was found, apart
 from the untracked rollback dir `.claude.bak.20260908/`. The other five repos were not
 touched.
@@ -279,7 +279,7 @@ discovery mechanism is not a call to make unattended.
 
 ### What Task 18 found that the plan did not anticipate
 
-1. **Step 2 does not diff `hooks/` or `agents/`, but Step 3 deletes them.** POGM4 had
+1. **Step 2 does not diff `hooks/` or `agents/`, but Step 3 deletes them.** paper-A had
    four project-specific hooks (`context-monitor.py`, `log-reminder.py`, `notify.sh`,
    `verify-reminder.py`) and two locally-corrected canonical ones. Following the plan
    literally would have destroyed all six. **Add `hooks` and `agents` to the Step 2
@@ -292,21 +292,21 @@ discovery mechanism is not a call to make unattended.
 
 3. **The plan's `.gitignore` block silently drops a project's own overrides.** It uses
    `.claude/skills/`, and git cannot re-include a path inside an excluded *directory*,
-   so any negation is dead. POGM4's two local skills and four local hooks would have
+   so any negation is dead. paper-A's two local skills and four local hooks would have
    vanished from the repo, and a coauthor's clone would be missing them. Fixed in the
    project and in `templates/gitignore` (b7742c8): `/*` form plus explicit negations.
 
 ### Before converting the remaining five
 
-Order per D11: NAR_settlement → zoning2026 → ESG → affordable_housing_2026 → BRI.
+Order per D11: paper-D → paper-C → paper-H → paper-B → paper-G.
 
 | Repo | Watch out for |
 |---|---|
-| `NAR_settlement` | On branch `phase1-event-study`, **not** `main` — branch from there, not from main. Carries `rules/session-handoff.md`, which exists in no canonical tree and looks generalizable: it extends what `/checkpoint` must verify. It references `pipeline-precedence.md` and `workflow.md`, both now deleted, so it needs rewriting before upstreaming. Decide before converting. |
-| `zoning2026` | Carries `rules/ground-truth.md` — a RETIRED stub kept so inbound references do not dangle. Project-local; keep as a real file. **No `manuscript_*.qmd` at the repo root**, so the Step 6 render check needs a different target. |
-| `ESG` | Has the same four local hooks as POGM4 — shared across two projects, so consider upstreaming rather than keeping local in both. Manuscript is `manuscript.qmd`, which does not follow the `manuscript_<project>.qmd` convention. |
-| `affordable_housing_2026` | Clean; `manuscript_affordable_housing_2026.qmd` matches the convention. |
-| `BRI` | No `manuscript_*.qmd` at the repo root. |
+| `paper-D` | On branch `phase1-event-study`, **not** `main` — branch from there, not from main. Carries `rules/session-handoff.md`, which exists in no canonical tree and looks generalizable: it extends what `/checkpoint` must verify. It references `pipeline-precedence.md` and `workflow.md`, both now deleted, so it needs rewriting before upstreaming. Decide before converting. |
+| `paper-C` | Carries `rules/ground-truth.md` — a RETIRED stub kept so inbound references do not dangle. Project-local; keep as a real file. **No `manuscript_*.qmd` at the repo root**, so the Step 6 render check needs a different target. |
+| `paper-H` | Has the same four local hooks as paper-A — shared across two projects, so consider upstreaming rather than keeping local in both. Manuscript is `manuscript.qmd`, which does not follow the `manuscript_<project>.qmd` convention. |
+| `paper-B` | Clean; `manuscript_paper-B.qmd` matches the convention. |
+| `paper-G` | No `manuscript_*.qmd` at the repo root. |
 
 `humanize`, `verify-claims`, `seed-papers` and the `ztp-*` skills show as "only local"
 against `research-claude/skills/` but are **not** overrides — they come from the
@@ -344,7 +344,7 @@ merging. That is the outstanding gate.
 Merging the conversion branch leaves the working tree broken until you re-run the
 linker. `git checkout main` restores the real `.claude/` files from main's index; the
 merge then applies the branch's deletion of those same files — and because the linked
-directories are gitignored, git neither creates nor restores the symlinks. POGM4 landed
+directories are gitignored, git neither creates nor restores the symlinks. paper-A landed
 at `agents: 0 entries, rules: 1` immediately after a correct merge.
 
 The fix is one command, and it is exactly what the bootstrap script is for:
@@ -361,17 +361,17 @@ Verify after: `ls .claude/agents | wc -l` is non-zero, a linked skill resolves, 
 
 ## 2026-09-08 (later) — Rollout complete: all six repos converted
 
-The gating check passed — the user confirmed in a live POGM4 session that a per-item
+The gating check passed — the user confirmed in a live paper-A session that a per-item
 symlinked skill is discovered (`/write` resolves). Task 18 ran to completion.
 
 | # | Repo | Branch merged into | Overrides kept | render | prose |
 |---|---|---|---|---|---|
-| 1 | POGM4 | `main` | `skills/commit`, `skills/flextable-quarto-word-captions` | 0 | 0 |
-| 2 | NAR_settlement | `phase1-event-study` | none | 0 | 2 pre-existing |
-| 3 | zoning2026 | `main` | `rules/ground-truth.md` (retired stub) | 0 | 41 pre-existing |
-| 4 | ESG | `main` | none | 0 | 14 pre-existing |
-| 5 | affordable_housing_2026 | `main` | none | 0 | 0 |
-| 6 | BRI | `main` | none | n/a — no `.qmd` yet | n/a |
+| 1 | paper-A | `main` | `skills/commit`, `skills/flextable-quarto-word-captions` | 0 | 0 |
+| 2 | paper-D | `phase1-event-study` | none | 0 | 2 pre-existing |
+| 3 | paper-C | `main` | `rules/ground-truth.md` (retired stub) | 0 | 41 pre-existing |
+| 4 | paper-H | `main` | none | 0 | 14 pre-existing |
+| 5 | paper-B | `main` | none | 0 | 0 |
+| 6 | paper-G | `main` | none | n/a — no `.qmd` yet | n/a |
 
 All six: 19 agents · 26 skills · 16–17 rules · 12 hooks resolving, zero dangling links,
 clean working trees, pushed, rollback backups removed.
@@ -379,24 +379,24 @@ clean working trees, pushed, rollback backups removed.
 ### Three more improvements came home rather than being deleted
 
 - **Four hooks** (`context-monitor`, `log-reminder`, `verify-reminder`, `notify.sh`) were
-  byte-identical in POGM4 and ESG and absent from the other four. Two projects
+  byte-identical in paper-A and paper-H and absent from the other four. Two projects
   independently carrying the same file is shared infrastructure, not a project override.
-  Upstreamed; all six now have them, and POGM4's local copies were dropped so it links
+  Upstreamed; all six now have them, and paper-A's local copies were dropped so it links
   like everything else.
-- **`rules/session-handoff.md`** existed only in NAR_settlement. It makes `/checkpoint`
+- **`rules/session-handoff.md`** existed only in paper-D. It makes `/checkpoint`
   verify the active plan's status section rather than trust it — a plan three days behind
   is worse than no plan, because a resuming session believes it. De-projected and
   upstreamed with `templates/handoff.md`.
-- **`rules/ai-disclosure.md`** (earlier) existed only in POGM4.
+- **`rules/ai-disclosure.md`** (earlier) existed only in paper-A.
 
 That is the whole point of the fork, demonstrated three times in one session: value that
 had been stranded in one paper now reaches all six.
 
 ### End-to-end verification
 
-Edited `rules/quality.md` through BRI's symlink, then confirmed: visible immediately from
-POGM4 and ESG with no re-apply · shows as an uncommitted change in `research-claude`'s
-`git status` · invisible to BRI's own `git status` · revert propagated instantly. That
+Edited `rules/quality.md` through paper-G's symlink, then confirmed: visible immediately from
+paper-A and paper-H with no re-apply · shows as an uncommitted change in `research-claude`'s
+`git status` · invisible to paper-G's own `git status` · revert propagated instantly. That
 single test exercises both the payoff and the hazard the design is built around.
 
 ### Pre-existing manuscript findings (NOT caused by the conversion)
@@ -404,14 +404,14 @@ single test exercises both the payoff and the hazard the design is built around.
 `prose_number_check.py` now runs in every project. Three manuscripts have unexplained
 literals — untouched by these branches, and worth a separate pass:
 
-- **zoning2026** `paper/manuscript.qmd` — 41, including a hardcoded "Section 5.3" that
+- **paper-C** `paper/manuscript.qmd` — 41, including a hardcoded "Section 5.3" that
   should be `@sec-`
-- **ESG** `manuscript.qmd` — 14
-- **NAR_settlement** `manuscript_NAR_settlement.qmd` — 2, in appendix prose
+- **paper-H** `manuscript.qmd` — 14
+- **paper-D** `manuscript_paper-D.qmd` — 2, in appendix prose
   ("Figures 1, C1, G1 and I1"; "three figures"). No allowlist file exists in that project,
   so 2 hits across 11,800 lines is a genuinely strong result.
 
-Also cosmetic: ESG's manuscript is `manuscript.qmd`, not `manuscript_ESG.qmd`. The naming
+Also cosmetic: paper-H's manuscript is `manuscript.qmd`, not `manuscript_ESG.qmd`. The naming
 convention governs what the template ships, not what an existing paper is called, so it
 was left alone.
 
@@ -431,8 +431,8 @@ log line, just nothing happening.
   tested. Clones, detaches at the locked SHA into a project-local
   `.pipeline/research-claude`, links 19/26/16/12 with zero dangling, leaves the
   shared checkout on `main`. **D10 holds.**
-- Re-linked POGM4 (`bootstrap-pipeline.sh --tip`), 15 → 16 rules.
-- Untracked 142 committed symlinks across five repos; ESG was already correct.
+- Re-linked paper-A (`bootstrap-pipeline.sh --tip`), 15 → 16 rules.
+- Untracked 142 committed symlinks across five repos; paper-H was already correct.
 - Wrote `scripts/check_install.sh` and red-tested all six of its checks.
 - Audited all twelve hooks against the documented contract at
   `code.claude.com/docs/en/hooks` (fetched, not recalled); fixed three; wired
@@ -448,9 +448,9 @@ log line, just nothing happening.
    so a coauthor's clone dangles before bootstrap and stays permanently dirty after,
    since bootstrap repoints them at `.pipeline/`. Exactly the hazard D10 gitignores
    those directories to prevent. Only mode-120000 entries were untracked; the real
-   overrides (`statusline.sh`, POGM4's two skills, zoning2026's `ground-truth.md`)
+   overrides (`statusline.sh`, paper-A's two skills, paper-C's `ground-truth.md`)
    stayed tracked.
-2. **POGM4 was never re-linked**, so it alone lacked `rules/session-handoff.md`.
+2. **paper-A was never re-linked**, so it alone lacked `rules/session-handoff.md`.
    Per-item links (D9) propagate *edits* instantly but not *membership*: a link
    points at a file, not at whatever a directory will later contain. Per-directory
    links would fix that at the cost of the override escape hatch — the wrong trade,
@@ -482,7 +482,7 @@ log line, just nothing happening.
   and `/promote` step 5.
 - **`pipeline.lock` drift is a WARN, not a FAIL.** In `--tip` mode the lock is an
   install-time provenance stamp; it is only wrong at submission time.
-- Left alone: ESG's `manuscript.qmd` naming; POGM4's untracked
+- Left alone: paper-H's `manuscript.qmd` naming; paper-A's untracked
   `quality_reports/pipeline_test_2026-09-08/` (not this session's).
 
 **Results**
@@ -509,10 +509,10 @@ log line, just nothing happening.
 **Status**
 
 - Done: all four defects fixed, verified and pushed. Plan amended.
-- Pending: the pre-existing manuscript prose-number findings — zoning2026 41
-  (incl. a hardcoded "Section 5.3" that should be `@sec-`), ESG 14,
-  NAR_settlement 2. Not conversion-caused; a separate pass.
-- Note: NAR_settlement's `origin/main` is 95 commits behind `phase1-event-study` and
+- Pending: the pre-existing manuscript prose-number findings — paper-C 41
+  (incl. a hardcoded "Section 5.3" that should be `@sec-`), paper-H 14,
+  paper-D 2. Not conversion-caused; a separate pass.
+- Note: paper-D's `origin/main` is 95 commits behind `phase1-event-study` and
   predates the conversion entirely. Pre-existing, untouched.
 
 **The generalisable lesson.** Every defect here was a *presence* check passing while
@@ -554,7 +554,7 @@ Independently measured on `main` @ `999f3f9`, distinct paths matching
 
 The inference that no `.claude/templates/` implies the skill paths dangle does not hold:
 `.claude/skills/submit` is a symlink to the canonical skill **directory**, which contains
-`templates/`. Verified in BRI — no top-level `.claude/templates/`, and every per-skill
+`templates/`. Verified in paper-G — no top-level `.claude/templates/`, and every per-skill
 template present through the skill symlinks.
 
 So the surface splits three ways rather than one: **~44 false positives · ~19 real but
@@ -571,7 +571,7 @@ is not definitional. **Unresolved at window close: that session had not replied.
 
 **Decision D-D — ruled, then overtaken.** The shared checkout was found on
 `fix/critic-dispatch`, so all six papers were running an in-progress branch through their
-symlinks (BRI's `rules/quality.md` verified byte-identical to the branch tip).
+symlinks (paper-G's `rules/quality.md` verified byte-identical to the branch tip).
 `check_install.sh` does not detect this — it emits only a lock WARN that reads like
 ordinary tip drift. Drew ruled *accept knowingly + add a branch check*; the recommended
 shape is FAIL unless the checkout is on `main` or detached at the project's lock SHA,
@@ -585,7 +585,7 @@ branch here.
 critic-dispatch plan is paused in favour of an audit-first re-scope, its `/discover` edit
 is in `stash@{0}`, and `check_fork.sh` criteria 9a/9b live only on `fix/critic-dispatch`
 at `cd1d47a`, unmerged. Checkout on `main`, clean, six repos verified resolving.
-`pogm4-91` is on the POGM4 manuscript rewrite and is not involved.
+`pogm4-91` is on the paper-A manuscript rewrite and is not involved.
 
 **Method lessons, all earned the hard way this session.** Four instances of the same
 failure, in which *the green result was the bug*: `check_install.sh`'s `! -path '*/.*'`
@@ -605,14 +605,14 @@ resolution base before the file.
 - §1: dropped the stash (verified byte-identical to the committed patch first), deleted
   `fix/critic-dispatch` after diffing `cd1d47a` against the shipped gates.
 - Fixed `any_of` swallowing its branches' `producer` hints (`eeb21da` → `616d719`), red-first.
-- §2e: `JHousE` in all three real `journal-profiles.md` copies; consumer `zoning2026/CLAUDE.md`
-  updated (ESG `ce7c32b`, zoning2026 `342e870`).
+- §2e: `JHousE` in all three real `journal-profiles.md` copies; consumer `paper-C/CLAUDE.md`
+  updated (paper-H `ce7c32b`, paper-C `342e870`).
 - Built and exercised the live tier (`a70885b`, `d6f4a9e`, `12cbcee` → `dc293d7`).
 - Fixed `check_install` membership counting `hooks/__pycache__` (`3b64af0` → `1513246`).
 - Pushed `7268017..be1e8d4`; `main` in sync with `origin/main`.
 
 **Decisions:**
-- Do NOT run `/pipeline run` in a paper repo — POGM4's state file is younger than the work it
+- Do NOT run `/pipeline run` in a paper repo — paper-A's state file is younger than the work it
   tracks, so every stage reads unstarted and `writer` would be pointed at a manuscript already
   through three referee rounds. The fixture is the vehicle.
 - The live tier asserts MECHANISM, never OUTCOME. Strategy scored 61 on round one; an
@@ -704,21 +704,21 @@ Test suite 142 → **159 passed**, `check_fork.sh` PASS.
 **Two findings worth carrying forward:**
 1. **No re-link was needed.** Task 8 Step 4 assumed membership changes require `apply.sh --link`.
    Each skill is a *directory* symlink into this tree, so files and subdirectories created or
-   deleted inside an existing skill propagate immediately. Verified in `NAR_settlement`:
+   deleted inside an existing skill propagate immediately. Verified in `paper-D`:
    `causal-audit-4-phases.md` present, `referee-report-template.md` absent,
    `checkpoint/references/` present, `discover/references/` gone. `check_install`'s `membership`
    check passes in all six projects. A re-link is only needed for a brand-new top-level skill.
    (Also note: the plan's command `./apply.sh --link` is wrong — `--project-dir` is required.)
 2. **`check_install --all` is RED — known and deliberate, but one project is worse than
    recorded.** `docs/2026-09-10_final-cleanup-handoff.md` records `clone-links` as failing
-   **BRI, NAR_settlement, POGM4 and zoning2026** on purpose: each needs real copies of the three
+   **paper-G, paper-D, paper-A and paper-C** on purpose: each needs real copies of the three
    `references/*` files before a coauthor clones it. That is still true and is not this work
-   (BRI's links date to `cd60ca1`, 2026-06-17).
+   (paper-G's links date to `cd60ca1`, 2026-06-17).
 
-   **New:** ESG also fails, and the handoff says ESG was *fixed* by `9349a8e` on `main`. ESG is
+   **New:** paper-H also fails, and the handoff says paper-H was *fixed* by `9349a8e` on `main`. paper-H is
    checked out on `pipeline-adoption`, and `9349a8e` is **not an ancestor of that branch** — the
    three links are still committed there (mode `120000`). The fix has not reached the adoption
-   branch, so ESG regresses into the failure if that branch merges. Worth resolving before the
+   branch, so paper-H regresses into the failure if that branch merges. Worth resolving before the
    adoption lands.
 
 **Deliberately not implemented** (so the next audit does not re-raise them):
@@ -819,14 +819,14 @@ explorer-critic → strategist → strategist-critic via hook; data=92, strategy
 **Commits (research-claude, main):** `1edcffa` docs pointer + June plans closed; `c5df76a`,
 `7c031a9`, `a281b5b`, `69e3e3f`, `4c68b6c`, `d91b540`, `7885356` (task merges); plus the close-out
 commit that carries this entry. Paper repos: pipeline.lock refresh committed in all six;
-POGM4 `e6a99bc` (Phase 1.6); ESG `98de0c5`, `1d072d7` (adoption round, field audit, script).
+paper-A `e6a99bc` (Phase 1.6); paper-H `98de0c5`, `1d072d7` (adoption round, field audit, script).
 **Nothing pushed anywhere** — `main` is ~15 ahead of origin; five paper repos ahead of theirs.
 
 **Status:**
 - Done: the 09-16 plan in full (Tasks 0–7); every carry-forward item from the 2026-09-10 handoff
   is closed (R-136 is detected by `hooks-wired` deriving from the seed; live tier green;
   `clone-links` PASS ×6; locks refreshed 09-23 — re-warn on every commit by design, refresh at
-  submission; POGM4's leftover `.html` is gone).
+  submission; paper-A's leftover `.html` is gone).
 - Still open from the 2026-09-15 audit, unchanged by this plan and recorded in its "What this
   plan deliberately leaves open": the other **P4 option points** (`/tools commit` is now done);
   **P5 subagent routing**; the full **`allowed-tools` sweep** (`strategize`, `discover`, and
@@ -953,7 +953,7 @@ to `.qmd`/`.bib` targets, unit-tested both ways, fresh run PASS (4 Bash calls, s
 no inline re-implementation).
 
 **Docs.** 06-17 design doc marked superseded with its plan; 09-23 repair plan marked complete
-(Phase 5 is POGM4's own — 1.6 is committed there as `e6a99bc`). `CLAUDE.md` § Start here
+(Phase 5 is paper-A's own — 1.6 is committed there as `e6a99bc`). `CLAUDE.md` § Start here
 repointed.
 
 **Fleet.** `validate_bib.py` is a new shipped file → re-linked all six repos; each lock refreshed
@@ -998,15 +998,15 @@ conflicts. Not pushed.
 
 **Results:** 355 tests passed (3 subtests) · `check_fork` PASS (pre-existing WARNs only —
 unprefixed vendored paths, orphan files, `ztp-ollama` never invoked). Smoke test:
-`check_render.py /Users/andrew.mueller/Research/NAR_settlement/manuscript_NAR_settlement.pdf
+`check_render.py ~/Research/paper-D/manuscript_paper-D.pdf
 --expect "IS NOT MET"` → 0 findings.
 
 **2026-09-25 (later) — fleet re-link and final-review fixes.** All six paper repos
-(`BRI`, `ESG`, `NAR_settlement`, `POGM4`, `zoning2026`, `affordable_housing_2026`) re-linked
+(`paper-G`, `paper-H`, `paper-D`, `paper-A`, `paper-C`, `paper-B`) re-linked
 with `apply.sh --project-dir <p> --link` (pinned mode kept — `# installed via: pinned` in each
-`.claude/pipeline.lock`), locks refreshed to `1b11285` and committed: `BRI` `e50231a`, `ESG`
-`3cd1cab`, `NAR_settlement` `2039c39`, `POGM4` `c7a717d`, `zoning2026` `8072475`,
-`affordable_housing_2026` `3864103` (each is `git log -1 --format=%h .claude/pipeline.lock` in
+`.claude/pipeline.lock`), locks refreshed to `1b11285` and committed: `paper-G` `e50231a`, `paper-H`
+`3cd1cab`, `paper-D` `2039c39`, `paper-A` `c7a717d`, `paper-C` `8072475`,
+`paper-B` `3864103` (each is `git log -1 --format=%h .claude/pipeline.lock` in
 that repo). `./scripts/check_install.sh --all` PASS. `~/.claude/references/quarto-authoring.md`
 is now a symlink to the canonical checkout's `references/quarto-authoring.md`. Separately, a
 final-review fix wave landed as `b3bb593`, closing four Important findings: `/promote` now
@@ -1101,7 +1101,7 @@ added or removed.
 
 ## 2026-09-25 — data-dict (tidyverse) trial: ruled DEFER
 
-**Scope.** Assessed Hadley Wickham's `data-dict` (spec 0.1.0, CLI 0.0.3) as a checkable replacement for `data-engineer`'s prose codebook, under `docs/plans/2026-09-25-data-dict-trial.md`. The trial ran on scratch copies of five `zoning2026` raw inputs. **No shipped file changed; the paper repo was read only.**
+**Scope.** Assessed Hadley Wickham's `data-dict` (spec 0.1.0, CLI 0.0.3) as a checkable replacement for `data-engineer`'s prose codebook, under `docs/plans/2026-09-25-data-dict-trial.md`. The trial ran on scratch copies of five `paper-C` raw inputs. **No shipped file changed; the paper repo was read only.**
 
 **Findings** (`docs/audits/2026-09-25_data-dict-trial-findings.md`):
 - The validator caught 6/6 planted faults and the 10 real known AK/MD BPS duplicates, with line-level messages and a good self-contained HTML report.
@@ -1123,8 +1123,8 @@ that `docs/plans/2026-09-25-remaining-skill-evals.md` left open. Built on `fix/s
 **Housekeeping.** The gstack merge (`ccea599`) added `rules/systematic-debugging.md` and
 `scripts/context_bill.py`, which no paper repo linked yet (`check_install --all` FAIL
 [membership] ×6). All six re-linked with `apply.sh --project-dir <p> --link` (pinned), locks
-refreshed to `ccea599` and committed: `affordable_housing_2026` `65898a4`, `BRI` `129c77b`, `ESG`
-`e101a17`, `NAR_settlement` `e3bb283`, `POGM4` `23db43d`, `zoning2026` `2632651`;
+refreshed to `ccea599` and committed: `paper-B` `65898a4`, `paper-G` `129c77b`, `paper-H`
+`e101a17`, `paper-D` `e3bb283`, `paper-A` `23db43d`, `paper-C` `2632651`;
 `check_install --all` PASS. The user removed the merged gstack worktree, 27 merged local
 branches and a stash (an older copy of the committed gstack plan). Remote
 `evals/remaining-skills` and `evals/remaining-skills-7tvb54` (merged) deleted. The gstack merge
@@ -1170,7 +1170,7 @@ so no re-link; paper locks record `ccea599` (WARN only).
 ## 2026-09-28 — prose-gate-holes: six number-gate holes closed; merge held on the fleet gate
 
 **Scope.** `docs/plans/2026-09-28-prose-gate-holes.md`, off a project audit
-(`~/Research/POGM4/quality_reports/2026-09-23_pipeline_gate_audit.md`, §A–§D) that found
+(`~/Research/paper-A/quality_reports/2026-09-23_pipeline_gate_audit.md`, §A–§D) that found
 `scripts/prose_number_check.py` (INV-11's enforcer) passing manuscripts it should fail. Built in
 a worktree on branch `prose-gate-holes` (off `main` `3ee3a5a`), one task per hole, each with its
 own reviewed commit; **not merged**.
@@ -1201,23 +1201,23 @@ head. Baseline on `main` before this work: 505 passed.
 **Fleet gate (Task 7).** Ran the branch's stricter gate against all five linked paper
 manuscripts and compared to their `main` result. Two stayed clean; three went from exit 0 to
 exit 1 — every new red is a finding the old gate could not see (table re-measured at `39fc61a`).
-One is borderline: zoning2026's "one specification" is the existing spelled-out-count rule
+One is borderline: paper-C's "one specification" is the existing spelled-out-count rule
 (declared noun `specifications?`) reaching a caption, where "one" means "a single":
 
 | Project | main | branch | Sign glue | New caption literals | Comma-key changes | Unclosed fence | Verdict words (advisory) |
 |---|---|---|---|---|---|---|---|
-| ESG | 0 | 0 | 0 | 0 | 0 | no | 0 |
-| NAR_settlement | 0 | 0 | 0 | 0 | none failing; 6 `N,` rows named for cleanup | no | 23 |
-| POGM4 | 0 | **1** | **4** (l. 5846 ×3, l. 6007 — the shipped `+-0.634`) | `1.20` (figure caption, l. 5365) | none failing after the comma-key fix; 14 `N,` rows named for cleanup | no | 64 |
-| affordable_housing_2026 | 0 | **1** | 0 | `95`, `0` ×2, `1` ×2 (one figure caption, l. 588: "95% CIs", "e = 0", "e = -1"); no allowlist file exists | 0 | no | 0 |
-| zoning2026 | 0 | **1** | **3** (l. 2601, 3107, 3171 — `$+`r sprintf(...)`$` inside math) | `2010` ("Saiz (2010)", l. 2187), `one specification` (l. 3632) | none failing; 3 `N,` rows named for cleanup | no | 32 |
+| paper-H | 0 | 0 | 0 | 0 | 0 | no | 0 |
+| paper-D | 0 | 0 | 0 | 0 | none failing; 6 `N,` rows named for cleanup | no | 23 |
+| paper-A | 0 | **1** | **4** (l. 5846 ×3, l. 6007 — the shipped `+-0.634`) | `1.20` (figure caption, l. 5365) | none failing after the comma-key fix; 14 `N,` rows named for cleanup | no | 64 |
+| paper-B | 0 | **1** | 0 | `95`, `0` ×2, `1` ×2 (one figure caption, l. 588: "95% CIs", "e = 0", "e = -1"); no allowlist file exists | 0 | no | 0 |
+| paper-C | 0 | **1** | **3** (l. 2601, 3107, 3171 — `$+`r sprintf(...)`$` inside math) | `2010` ("Saiz (2010)", l. 2187), `one specification` (l. 3632) | none failing; 3 `N,` rows named for cleanup | no | 32 |
 
 The fixes are project-side:
 - **Sign glue (7 sites, 2 projects):** put the sign in the expression, e.g. `sprintf("%+.3f", x)`.
   Not allowlistable by design.
-- **Caption literals (POGM4 1, affordable_housing 3, zoning 2):** make each inline, or add an
-  allowlist row with a reason (affordable_housing needs the file created first).
-- **Comma twins (NAR, POGM4, zoning):** keys like `"1999,"` still match after the fix, but the gate
+- **Caption literals (paper-A 1, paper-B 3, zoning 2):** make each inline, or add an
+  allowlist row with a reason (paper-B needs the file created first).
+- **Comma twins (NAR, paper-A, zoning):** keys like `"1999,"` still match after the fix, but the gate
   now names them; rename each to the bare literal or delete the twin.
 
 **Decision.** Per the plan's rule (all five projects must stay at exit 0 to merge automatically),
@@ -1231,7 +1231,7 @@ PASS, 551 tests passed; pushed. The three projects absorb their findings on thei
 of claiming nothing is open; `docs/plans/2026-09-23_pipeline-repair.md` Phase 5 corrected — its
 "either Phase 1 above or genuinely project-local" claim about the number-gate holes was wrong,
 Phase 1 has no such item and the holes were research-wide; `docs/improvement-ledger.md` gained
-`L-007` (POGM4, this audit; `landed 6bc7b05` after the merge). `check_fork.sh` PASS.
+`L-007` (paper-A, this audit; `landed 6bc7b05` after the merge). `check_fork.sh` PASS.
 
 ## 2026-09-29 — writer-critic render inputs (L-005)
 
@@ -1299,7 +1299,7 @@ commits and the merge, plus the docs commit that follows.
 - Audit of every consumer, read in full: `docs/audits/2026-09-29_rule-consumer-audit.md`.
 - Read steps added to 11 gated skills (every **Option gate**), `/checkpoint`, `/submit`, `/write` (GATE 1 moved before dispatch), coder-critic, coder, data-engineer, writer, strategist, explorer, theorist, storyteller. Contract test `tests/test_rule_reads.py`.
 - `~/.claude/settings.json`: `claudeMdExcludes` for 13 rules. `~/.claude/CLAUDE.md` carve-out 2: read quarto-empirical + format rules before a hand edit of a manuscript.
-- `~/.claude.json`: external imports approved for ESG, zoning2026, affordable_housing_2026.
+- `~/.claude.json`: external imports approved for paper-H, paper-C, paper-B.
 - README / `rules/shared-pipeline.md` / seeded `bootstrap-pipeline.sh`: `--tip` projects need that approval.
 - Committed the author's Quarto-native exhibit regime and declined L-004 (`4659caf`).
 
@@ -1309,9 +1309,9 @@ commits and the merge, plus the docs commit that follows.
 - D3 hand-edit read line in `~/.claude/CLAUDE.md` — author.
 
 **Results:**
-- Startup: 21 files / ~26.7k tokens of rules → 9 files / ~7.6k (tested in all six papers; BRI 8, it has one fewer CLAUDE.md).
+- Startup: 21 files / ~26.7k tokens of rules → 9 files / ~7.6k (tested in all six papers; paper-G 8, it has one fewer CLAUDE.md).
 - Subagents load project rules and the exclusion applies to them (tested), hence agent-side reads.
-- Symlinked rules outside the project load only with external-import approval: ESG, zoning2026, affordable_housing_2026 had loaded 0 of 18 rules; fixture/eval copies still do.
+- Symlinked rules outside the project load only with external-import approval: paper-H, paper-C, paper-B had loaded 0 of 18 rules; fixture/eval copies still do.
 - pytest 586 passed; check_fork PASS; `run_fixture.sh --live` PASS with the exclusions on.
 
 **Commits:**
@@ -1325,7 +1325,7 @@ commits and the merge, plus the docs commit that follows.
 ## 2026-09-29 — ZotPilot skills load from zotpilot-skills/ only
 
 **Operations:**
-- Finding: `zotpilot register`/`setup`/`upgrade` deployed the fork's skills into `~/.claude/skills/ztp-{profile,research,review,setup,tutor}` (and `~/.config/opencode/skills/`). Claude Code runs a personal skill instead of a same-named project skill, so every paper ran those copies. Evidence: NAR_settlement session transcript `88e46716…jsonl` loaded `Base directory for this skill: ~/.claude/skills/ztp-research`.
+- Finding: `zotpilot register`/`setup`/`upgrade` deployed the fork's skills into `~/.claude/skills/ztp-{profile,research,review,setup,tutor}` (and `~/.config/opencode/skills/`). Claude Code runs a personal skill instead of a same-named project skill, so every paper ran those copies. Evidence: paper-D session transcript `88e46716…jsonl` loaded `Base directory for this skill: ~/.claude/skills/ztp-research`.
 - Fork: `EconGeo/ZotPilot#8` merged as `d9ea447` (`cf17237` strict bool coercion + `deploy_skills`; `748f880` reconcile opt-out). Also fixed: `zotpilot config set oa_pdf_upload false` had stored the string "false", which `Config.load` read back as True (enabling Web-API PDF uploads).
 - Machine: `deploy_skills false`; `zotpilot register` removed 5 Claude Code + 5 OpenCode copies (verified identical to the vendored copy first); re-run removes 0; `zotpilot status` Drift clean, Restart no. `~/Research/.claude/skills/` links the six vendored skills via `scripts/link-zotpilot-skills.sh` (`8026381`).
 - Re-sync: `zotpilot-skills/` fork `6e63dd8` to `d9ea447` (`ab0b0e4`): ztp-research target library / `select_zotero_library` / `save_unconfirmed`; ztp-setup step 7 deploy_skills note. `sync-zotpilot-skills.sh --check` exits 0.
@@ -1335,10 +1335,10 @@ commits and the merge, plus the docs commit that follows.
 - Gates: `check_install` `personal-shadow` (FAIL-level) → PASS ×6; `zotpilot-vendored` (`--all`, WARN-only) PASS. Sync script `--check` (`8748a0e`), check_install (`e720406`).
 - Evals: checkers for ztp-research, ztp-review, ztp-profile, ztp-tutor, seed-papers fail when a skill loads from outside the project, or when no load is recorded (`c7d39c4`, `d5b60fc`). stream-json output has no "Base directory" line for slash-command skills, so the check reads Claude Code's session transcript by session_id. Live runs 2026-09-29: all five exit 0, each loaded `<eval project>/.claude/skills/<skill>` (the project copy) - the first time the vendored copies themselves were graded.
 - Fork CI: test job green; lint job red on two pre-existing mypy errors in untouched files (`index_authority.py:291`, `pdf/llamaindex_chunker.py:39`); main's CI red since 2026-09-25.
-- `check_install --all` residue unrelated to this plan: POGM4 `[membership]` FAIL (7 `references/` never linked - run `./bootstrap-pipeline.sh --tip` there).
+- `check_install --all` residue unrelated to this plan: paper-A `[membership]` FAIL (7 `references/` never linked - run `./bootstrap-pipeline.sh --tip` there).
 
 **Open (user decisions):**
-- `~/Research/NAR_settlement_legacy_archive/.claude/skills/` holds real `ztp-*` copies (2026-06-17); they now load in sessions started there. Delete them or leave the archive untouched.
+- `~/Research/paper-D_legacy_archive/.claude/skills/` holds real `ztp-*` copies (2026-06-17); they now load in sessions started there. Delete them or leave the archive untouched.
 - `~/Research/.claude/skills/obsidian-digest-sync` is a leftover (skill removed 2026-09-09).
 - OpenCode no longer has ZotPilot skills; link `zotpilot-skills/*` into `~/.config/opencode/skills/` if used.
 - Cloud and Cowork sessions read neither `~/.claude/skills` nor the gitignored project links: out of scope.
@@ -1371,7 +1371,7 @@ commits and the merge, plus the docs commit that follows.
 
 **Status:**
 - Done: spec + plan on branch `feat/ztp-data-tag-v2` (not merged, not pushed).
-- Pending: Tasks 1-12 of the plan; Task 1 pulls `qwen2.5:7b-instruct`; Task 12 = pass 1 on affordable_housing with user gates. v1 `agents/data-tag-extractor.md` becomes unused -- ask before deleting.
+- Pending: Tasks 1-12 of the plan; Task 1 pulls `qwen2.5:7b-instruct`; Task 12 = pass 1 on paper-B with user gates. v1 `agents/data-tag-extractor.md` becomes unused -- ask before deleting.
 
 ## 2026-10-17 — Rule diet tier 2 (plan `docs/plans/2026-10-12_rule-diet.md`)
 
@@ -1382,7 +1382,7 @@ commits and the merge, plus the docs commit that follows.
 **Results:**
 - pytest 828 passed, 1 skipped; `check_fork.sh` exit 0.
 - tested: project-level `enabledPlugins` false drops superpowers and its injection; a parent directory's settings do not reach a child project. All six papers already disable it in `settings.local.json`.
-- `/context` in NAR_settlement: memory files 6.6k tokens (~14.5k before this step).
+- `/context` in paper-D: memory files 6.6k tokens (~14.5k before this step).
 
 **Status:**
 - Done: plan steps 1–4, step 5 measurement. `~/Research/CLAUDE.md` 79 → 50 lines (backup `.bak-2026-10-17`); budget raises confirmed by the author. Pending: one-week transcript check for script-guard/read-gate denials (from 2026-10-24).

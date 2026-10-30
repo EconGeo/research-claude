@@ -30,7 +30,7 @@ ZotPilot's skills for the same reason.
   `manuscript_<project>.qmd`, `quarto render` as the only compilation-adjacent entry) and
   was kept as the one true copy. `apply.sh` used to link the standard `rules/` first and
   then this submodule's `rules/` second, so `ln -sfn` let the *stale* submodule copy win
-  in every installed project — verified live in `~/Research/POGM4/.claude/rules/ai-disclosure.md`.
+  in every installed project — verified live in an installed project's `.claude/rules/ai-disclosure.md`.
   That link step is gone; `ai-audit/` ships no `rules/` directory at all, so
   `rules/ai-disclosure.md` at repo root is the only copy and cannot be shadowed again.
 - `.gitignore`, `.git` (submodule plumbing — not applicable to a vendored copy)

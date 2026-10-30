@@ -7,7 +7,7 @@
 #
 # Run it from a paper repo, or point it anywhere:
 #   ./check_install.sh                       # $PWD
-#   ./check_install.sh --project-dir ~/Research/<project>
+#   ./check_install.sh --project-dir ~/path/to/<project>
 #   ./check_install.sh --all                 # every project under $RESEARCH_DIR
 #
 # Exit 0 = this project's pipeline is correctly installed.
@@ -377,8 +377,7 @@ PY
   # critic-pairing.py is what makes a session notice it skipped a critic.
   # The required set is DERIVED from seeds/settings.json, never hardcoded here. It was a
   # hardcoded trio, and that is exactly how two hooks went unwired in all six repos without
-  # this check noticing: context-monitor.py (seeded 2026-09-10, required by Task 7.5) and
-  # install-check.py (seeded 2026-09-23). Seeding a hook only affects NEW projects --
+  # this check noticing (two hooks seeded 2026-09-10 and 2026-09-23, both since deleted). Seeding a hook only affects NEW projects --
   # settings.json is project-owned and copy_seed never overwrites -- so an existing repo
   # silently never gets it. Deriving the list means a newly seeded hook is required
   # everywhere the moment it is seeded. protect-files.sh joined the seed 2026-09-24

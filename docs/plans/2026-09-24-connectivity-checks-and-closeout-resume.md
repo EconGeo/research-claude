@@ -118,7 +118,7 @@ it, which also copies the real `rules/registry.yaml` into a tempdir).
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/test_check_refs.py::TestWritesTools -v`
+Run: `cd ~/Academic/research-claude && python3 -m pytest tests/test_check_refs.py::TestWritesTools -v`
 Expected: FAIL with `AttributeError: module 'check_refs' has no attribute 'crit_writes_tools'`
 
 - [ ] **Step 3: Implement `crit_writes_tools`**
@@ -824,14 +824,14 @@ Each of these chains calls `check_paths.py` and/or `check_refs.py` with no `--ro
 exits on an argparse usage error and kills everything after it in the `&&` chain — confirmed
 2026-09-24 by running `python3 scripts/check_paths.py` bare: `error: the following arguments
 are required: --root`. Fix all 7 occurrences by appending
-`--root /Users/andrew.mueller/Academic/research-claude` to every bare `check_paths.py` /
+`--root ~/Academic/research-claude` to every bare `check_paths.py` /
 `check_refs.py` invocation in the plan. Use `Edit` with `replace_all: true` where the exact
 same broken substring repeats, or per-line replacement where the surrounding chain differs:
 
 At `docs/plans/2026-09-16-skill-defect-closeout.md:435`:
 ```
 old: && python3 scripts/check_paths.py; echo "exit=$?"
-new: && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
+new: && python3 scripts/check_paths.py --root ~/Academic/research-claude; echo "exit=$?"
 ```
 (This exact substring `&& python3 scripts/check_paths.py; echo "exit=$?"` also appears at
 lines 630 and 1170 — use `replace_all: true` for these three in one `Edit` call.)
@@ -839,19 +839,19 @@ lines 630 and 1170 — use `replace_all: true` for these three in one `Edit` cal
 At line 812:
 ```
 old: && python3 scripts/check_paths.py && ./tests/run_fixture.sh; echo "exit=$?"
-new: && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && ./tests/run_fixture.sh; echo "exit=$?"
+new: && python3 scripts/check_paths.py --root ~/Academic/research-claude && ./tests/run_fixture.sh; echo "exit=$?"
 ```
 
 At lines 995 and 1384 (identical substring — `replace_all: true`):
 ```
 old: && python3 scripts/check_paths.py && python3 scripts/check_refs.py; echo "exit=$?"
-new: && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && python3 scripts/check_refs.py --root /Users/andrew.mueller/Academic/research-claude; echo "exit=$?"
+new: && python3 scripts/check_paths.py --root ~/Academic/research-claude && python3 scripts/check_refs.py --root ~/Academic/research-claude; echo "exit=$?"
 ```
 
 At line 1421:
 ```
 old: && python3 scripts/check_paths.py && python3 scripts/check_refs.py && ./scripts/check_install.sh --all; echo "exit=$?"
-new: && python3 scripts/check_paths.py --root /Users/andrew.mueller/Academic/research-claude && python3 scripts/check_refs.py --root /Users/andrew.mueller/Academic/research-claude && ./scripts/check_install.sh --all; echo "exit=$?"
+new: && python3 scripts/check_paths.py --root ~/Academic/research-claude && python3 scripts/check_refs.py --root ~/Academic/research-claude && ./scripts/check_install.sh --all; echo "exit=$?"
 ```
 
 - [ ] **Step 2: Verify each fixed chain actually reaches its end**
@@ -910,7 +910,7 @@ second `/humanize` skill anywhere), then add, directly above `## Task 6` in
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude
+cd ~/Academic/research-claude
 git add docs/plans/2026-09-16-skill-defect-closeout.md
 git commit -m "docs(plans): unblock 09-16 closeout — fix --root gaps, correct count, resolve D2 as moot"
 ```
@@ -929,8 +929,8 @@ closeout.md`, "How to execute this plan across cleared contexts").
 
 ## What this plan does not do
 
-It does not resume `docs/plans/2026-09-23_pipeline-repair.md` Phase 5 (POGM4's native-Quarto
-migration) — that work is in `~/Research/POGM4`, a different repository with its own plan
+It does not resume `docs/plans/2026-09-23_pipeline-repair.md` Phase 5 (paper-A's native-Quarto
+migration) — that work is in `~/Research/paper-A`, a different repository with its own plan
 (`quality_reports/plans/2026-09-23_jrer-submission-plan.md`), out of this repo's scope. It does
 not re-litigate the divergence register (`docs/decisions/clo-author-divergences.md`) or the
 six `§4.5` audit defects the closeout handoff listed — both were verified closed on 2026-09-24

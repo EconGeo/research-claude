@@ -32,7 +32,7 @@ Spec: docs/superpowers/specs/2026-10-07-ztp-data-tag-v2-design.md (read in full)
 - Ruling: T8 — import `PreConditionFailedError as PreConditionFailed` (module attr name kept for tests); implementer must verify by reading installed pyzotero that update_item raises on 412 and accepts the full item dict from zot.item() (else pass item["data"]) — cost if wrong: live 412 path untested.
 - Ruling: T10 — test_query_type asserts 'Paper A' (Zotero title is the documents.title of record) — cost if wrong: none.
 - Ruling: T10 — ZoteroWriterV2.upsert_note sets `self.last_note_created`; cli records note_key only when the note was created this pass (getattr default True for fakes), so undo never deletes a pre-existing v1/earlier note — non-destructive per "confirm before delete" — cost if wrong: undo leaves v2 content in previously-existing notes instead of restoring them.
-- Ruling: T12 (pass 1 live on affordable_housing) is NOT executed by this SDD run — USER_REQUIRED gates + cloud writes; handed back to user — cost if wrong: one extra session.
+- Ruling: T12 (pass 1 live on paper-B) is NOT executed by this SDD run — USER_REQUIRED gates + cloud writes; handed back to user — cost if wrong: one extra session.
 - Ruling: T1 Step 1 `ollama pull qwen2.5:7b-instruct` (~4.7 GB) runs — explicitly in the approved plan/spec — cost if wrong: disk space, removable with `ollama rm`.
 
 ## Tasks

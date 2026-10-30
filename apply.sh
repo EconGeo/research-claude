@@ -210,7 +210,7 @@ fi
 echo "→ Installing project-owned seeds"
 # references/ are LINKED, not copied (D-26). They were copy_seed scaffolding
 # "meant to be edited", and that is exactly how they rotted: nothing refreshes a
-# copy, so POGM4's coding-standards-r.md still described a functions/ directory
+# copy, so one paper's coding-standards-r.md still described a functions/ directory
 # and source() with here() long after upstream made source() in a chunk a
 # prohibited pattern (INV-19, -10) -- the local copy contradicted the invariant
 # the project was being scored against. discipline-cards.md still routed to
@@ -280,9 +280,8 @@ if [[ -f "$SCRIPT_DIR/seeds/bootstrap-pipeline.sh" ]]; then
 
   # A linked hook does nothing until settings.json names it, and settings.json is
   # project-owned and never linked (C4) — so without a seed a new project gets
-  # twelve installed hooks and zero firing ones, which is how /freeze and
-  # /careful came to be shipped with their enforcement mechanism uninstalled in
-  # every project. copy_seed never overwrites, so an existing file is safe.
+  # installed hooks and zero firing ones, which is how a guard skill once shipped
+  # with its enforcement hook uninstalled in every project. copy_seed never overwrites, so an existing file is safe.
   copy_seed "$SCRIPT_DIR/seeds/settings.json" "$PROJECT_DIR/.claude/settings.json"
   chmod +x "$PROJECT_DIR/bootstrap-pipeline.sh" 2>/dev/null || true
 fi

@@ -55,7 +55,7 @@ green on 2026-09-25 (`EconGeo/ai-audit#4`, `ai-audit/` re-vendored at `1c237da`;
 dispatch rule in `rules/agents.md` §4) — see the 2026-09-25 "Five skill reds closed" entry in
 `docs/SESSION_REPORT.md`. On 2026-09-28 `docs/plans/2026-09-28-prose-gate-holes.md` landed
 (merge `6bc7b05`): six holes in `scripts/prose_number_check.py` closed. The author merged knowing
-three paper manuscripts (POGM4, affordable_housing_2026, zoning2026) now fail the stricter gate
+three paper manuscripts now fail the stricter gate
 on real findings they will fix on their own schedule — see the 2026-09-28 entry in
 `docs/SESSION_REPORT.md`. On 2026-09-29 `docs/plans/2026-09-29-writer-critic-render-inputs.md`
 landed (merge `6fc61f0`, ledger L-005): writer-critic scores Render from a `pipeline.py

@@ -76,7 +76,7 @@ stay always on (D1). Every paper repo now starts with 6 rules instead of 18 (tes
 
 - [ ] **Step 1:** Create the worktree with `superpowers:using-git-worktrees`, branch `rule-load-exclusions` off `main`.
 - [ ] **Step 2:** Run `python3 -m pytest tests/ -q` to a scratch log and record the pass count. Run `./scripts/check_fork.sh` and record exit 0.
-- [ ] **Step 3:** Record the baseline load with the `InstructionsLoaded` harness (Task 4, Step 1) in `~/Research/NAR_settlement`. Expected: 21 `session_start` events.
+- [ ] **Step 3:** Record the baseline load with the `InstructionsLoaded` harness (Task 4, Step 1) in `~/Research/paper-D`. Expected: 21 `session_start` events.
 
 ### Task 1: Consumer audit (read in full, no edits)
 
@@ -90,7 +90,7 @@ The grep inventory below is a **locator**. For each file, read the whole file an
   - `coder` for `quarto-empirical.md`.
   Where the agent's own file already carries the format it needs, record "self-contained" and take no action.
 - [ ] **Step 3: Check whether subagents load project rules at all** (docs: `code.claude.com/docs/en/sub-agents`, "what loads at startup", then test with the Task 4 harness, dispatching one agent). If subagents never received `.claude/rules/` at startup, agent-side consumers are unchanged by this plan and only skill-side (main-session) consumers need read steps. Record the result, labelled `per docs:` or `tested:`.
-- [ ] **Step 4:** Also list the mentions outside this repo, which Task 3 does not edit: `~/.claude/CLAUDE.md` (the quarto rules carve-out) and the project `CLAUDE.md` files of NAR_settlement, ESG and POGM4. Mark each "needs content" or "citation only". Anything that needs content goes into the Task 5 report for the user.
+- [ ] **Step 4:** Also list the mentions outside this repo, which Task 3 does not edit: `~/.claude/CLAUDE.md` (the quarto rules carve-out) and the project `CLAUDE.md` files of paper-D, paper-H and paper-A. Mark each "needs content" or "citation only". Anything that needs content goes into the Task 5 report for the user.
 
 **Inventory (grep, 2026-09-29; mention counts in parentheses):**
 
@@ -158,7 +158,7 @@ The grep inventory below is a **locator**. For each file, read the whole file an
 ### Task 4: Verification harness and evidence
 
 - [ ] **Step 1: Harness.** Write a scratch settings file with an `InstructionsLoaded` hook that appends its stdin JSON to a log, plus the Task 2 `claudeMdExcludes` list. Put the prompt **before** `--allowedTools=Read`: the flag takes a variable number of arguments and swallows a trailing prompt.
-- [ ] **Step 2: Startup count.** Run `claude -p` in `~/Research/NAR_settlement` with the harness. Expected: 7 `session_start` events (3 CLAUDE.md + 4 rules) and no excluded file.
+- [ ] **Step 2: Startup count.** Run `claude -p` in `~/Research/paper-D` with the harness. Expected: 7 `session_start` events (3 CLAUDE.md + 4 rules) and no excluded file.
 - [ ] **Step 3: Point-of-need load.** For one skill per rule family (`/checkpoint` for logging and session-handoff, `/review` for quarto-pdf and quarto-word, a skill with an option gate for option-gates), run it headless on `tests/fixture-project/` and confirm in the transcript (`--output-format stream-json`) that the `Read` of the excluded rule happens before the step that uses it. No timeout (Global Constraints).
 - [ ] **Step 4: Regression.** Run `tests/run_fixture.sh --live` against the worktree with the harness settings. It must be green. Compare against the Task 0 baseline.
 - [ ] **Step 5:** Record the before and after numbers (files and estimated tokens at startup) and the Step 3 transcript excerpts in the audit file.

@@ -30,7 +30,7 @@ pipeline keeps making is silent at render time.
 `docs/audits/2026-09-15_skill-best-practices-audit.md` §3 P6 and §7 decision 2, and
 `docs/plans/2026-09-24-option-gates-subagent-routing-evals.md` "What this plan deliberately
 leaves open". Evidence for the Quarto rows: the NAR project's memory file
-`feedback-quarto-authoring.md` (author corrections 2026-09-04 and 2026-09-21) and zoning2026's
+`feedback-quarto-authoring.md` (author corrections 2026-09-04 and 2026-09-21) and paper-C's
 `latex_table_compile_bugs.md` (2026-06-08).
 
 ## Rationale (the decision this plan implements)
@@ -130,7 +130,7 @@ leaves open". Evidence for the Quarto rows: the NAR project's memory file
 - [ ] **Step 1: Branch from main**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git status --porcelain && git checkout -b improvement-loop
+cd ~/Academic/research-claude && git status --porcelain && git checkout -b improvement-loop
 ```
 
 Expected: no porcelain output before the checkout; `Switched to a new branch 'improvement-loop'`.
@@ -387,7 +387,7 @@ Note on `cmd_mark`: `m.start(6)` is the offset of the status group; the slice ke
 - [ ] **Step 4: Ship it and create the ledger header**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && echo ledger.py >> scripts/SHIPPED && chmod +x scripts/ledger.py && python3 - <<'EOF'
+cd ~/Academic/research-claude && echo ledger.py >> scripts/SHIPPED && chmod +x scripts/ledger.py && python3 - <<'EOF'
 import sys; sys.path.insert(0, "scripts"); import ledger, pathlib
 p = pathlib.Path("docs/improvement-ledger.md"); p.write_text(ledger.HEADER); print(p.read_text())
 EOF
@@ -427,10 +427,10 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" && git log --oneline -
 Dates and projects are from the memory files named in the Spec; notes are generic.
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && \
-python3 scripts/ledger.py add --project NAR_settlement --date 2026-09-04 --target rules/quarto-empirical.md --note "Author correction: .qmd written without reading the Quarto authoring reference; silent render failures (dropped YAML field, doubled exhibit numbers, plain-text section refs). Nothing in the shipped tree names the reference." && \
-python3 scripts/ledger.py add --project NAR_settlement --date 2026-09-21 --target rules/quarto-empirical.md --note "Same class twice in one session: kableExtra footnote boxed to table width clipped a column, then clipped words from a note; render exit 0. Only a check of the rendered page catches it." && \
-python3 scripts/ledger.py add --project zoning2026 --date 2026-06-08 --target rules/quarto-empirical.md --note "R-generated .tex tables: unescaped % and Unicode outside math mode; fixed per file, never as a pre-render check." && \
+cd ~/Academic/research-claude && \
+python3 scripts/ledger.py add --project paper-D --date 2026-09-04 --target rules/quarto-empirical.md --note "Author correction: .qmd written without reading the Quarto authoring reference; silent render failures (dropped YAML field, doubled exhibit numbers, plain-text section refs). Nothing in the shipped tree names the reference." && \
+python3 scripts/ledger.py add --project paper-D --date 2026-09-21 --target rules/quarto-empirical.md --note "Same class twice in one session: kableExtra footnote boxed to table width clipped a column, then clipped words from a note; render exit 0. Only a check of the rendered page catches it." && \
+python3 scripts/ledger.py add --project paper-C --date 2026-06-08 --target rules/quarto-empirical.md --note "R-generated .tex tables: unescaped % and Unicode outside math mode; fixed per file, never as a pre-render check." && \
 python3 scripts/ledger.py show
 ```
 
@@ -619,7 +619,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - [ ] **Step 1: Measure the current body size**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 - <<'EOF'
+cd ~/Academic/research-claude && python3 - <<'EOF'
 import pathlib; t=pathlib.Path("skills/checkpoint/SKILL.md").read_text(); print(len(t.split("---",2)[2]))
 EOF
 ```
@@ -783,7 +783,7 @@ class TestReferenceShips(unittest.TestCase):
         self.assertTrue(p.exists())
         t = p.read_text()
         self.assertIn("## The gotchas ledger", t)
-        self.assertNotRegex(t, r"\bNAR\b|zoning2026|POGM", "project noun in a shipped reference")
+        self.assertNotRegex(t, r"\bNAR\b|paper-C|paper-A", "project noun in a shipped reference")
 
 
 class TestBinding(unittest.TestCase):
@@ -805,7 +805,7 @@ Expected: 2 failures.
 - [ ] **Step 3: Move the reference; make the global path a symlink**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && \
+cd ~/Academic/research-claude && \
 test -f ~/.claude/references/quarto-authoring.md && ! test -L ~/.claude/references/quarto-authoring.md && \
 mv ~/.claude/references/quarto-authoring.md references/quarto-authoring.md && \
 ln -s "$PWD/references/quarto-authoring.md" ~/.claude/references/quarto-authoring.md && \
@@ -1124,7 +1124,7 @@ Expected: all pass, including `test_tools_contracts` (render section still has `
 - [ ] **Step 7: Prove it on a real render**
 
 ```bash
-cd ~/Research/NAR_settlement && MS=$(python3 .claude/scripts/pipeline.py manuscript) && ls -la "${MS%.qmd}.pdf" && python3 /Users/andrew.mueller/Academic/research-claude/scripts/check_render.py "${MS%.qmd}.pdf" --expect "IS NOT MET"; echo "exit $?"
+cd ~/Research/paper-D && MS=$(python3 .claude/scripts/pipeline.py manuscript) && ls -la "${MS%.qmd}.pdf" && python3 ~/Academic/research-claude/scripts/check_render.py "${MS%.qmd}.pdf" --expect "IS NOT MET"; echo "exit $?"
 ```
 
 Expected: the checker runs on the existing PDF (do **not** re-render; the PDF may be stale and that is fine for a smoke test). Record the finding count in the commit message. A non-zero exit here is information about the manuscript, not a failure of this task.
@@ -1132,7 +1132,7 @@ Expected: the checker runs on the existing PDF (do **not** re-render; the PDF ma
 - [ ] **Step 8: Mark the ledger rows landed and commit**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && git add scripts/check_render.py scripts/SHIPPED rules/quarto-empirical.md skills/tools/SKILL.md agents/coder.md tests/test_check_render.py tests/test_quarto_binding.py && git commit -q -m "feat(quarto): check_render.py — post-render page check as write-gate item 4; /tools render and coder run it
+cd ~/Academic/research-claude && git add scripts/check_render.py scripts/SHIPPED rules/quarto-empirical.md skills/tools/SKILL.md agents/coder.md tests/test_check_render.py tests/test_quarto_binding.py && git commit -q -m "feat(quarto): check_render.py — post-render page check as write-gate item 4; /tools render and coder run it
 
 Smoke test on a live manuscript PDF: <N> finding(s).
 
@@ -1154,7 +1154,7 @@ Expected: `ledger: no rows` is **not** printed (rows are landed, still listed); 
 - [ ] **Step 1: Merge**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && git checkout main && git merge --no-ff improvement-loop -m "Merge improvement-loop
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && git checkout main && git merge --no-ff improvement-loop -m "Merge improvement-loop
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ```
@@ -1162,13 +1162,13 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - [ ] **Step 2: Re-link every project (three new shipped files: one reference, two scripts)**
 
 All six locks read `# installed via: pinned` and every link resolves to this checkout
-(`readlink ~/Research/NAR_settlement/.claude/skills/write` → `../../../../Academic/research-claude/skills/write`,
+(`readlink ~/Research/paper-D/.claude/skills/write` → `../../../../Academic/research-claude/skills/write`,
 verified 2026-09-25). Re-link without `--tip`, as the 2026-09-25 refresh did:
 
 ```bash
-for p in ~/Research/BRI ~/Research/ESG ~/Research/NAR_settlement ~/Research/POGM4 ~/Research/affordable_housing_2026 ~/Research/zoning2026; do
-  /Users/andrew.mueller/Academic/research-claude/apply.sh --project-dir "$p" --link;
-done && /Users/andrew.mueller/Academic/research-claude/scripts/check_install.sh --all
+for p in ~/Research/paper-G ~/Research/paper-H ~/Research/paper-D ~/Research/paper-A ~/Research/paper-B ~/Research/paper-C; do
+  ~/Academic/research-claude/apply.sh --project-dir "$p" --link;
+done && ~/Academic/research-claude/scripts/check_install.sh --all
 ```
 
 Expected: `check_install --all` PASS ×6; each lock still says `pinned` with the new merge SHA. Each project shows `.claude/references/quarto-authoring.md`, `.claude/scripts/ledger.py`, `.claude/scripts/check_render.py` as links.
@@ -1176,7 +1176,7 @@ Expected: `check_install --all` PASS ×6; each lock still says `pinned` with the
 - [ ] **Step 3: Commit each lock refresh in its paper repo**
 
 ```bash
-for p in ~/Research/BRI ~/Research/ESG ~/Research/NAR_settlement ~/Research/POGM4 ~/Research/affordable_housing_2026 ~/Research/zoning2026; do
+for p in ~/Research/paper-G ~/Research/paper-H ~/Research/paper-D ~/Research/paper-A ~/Research/paper-B ~/Research/paper-C; do
   git -C "$p" add .claude/pipeline.lock && git -C "$p" commit -q -m "chore: pipeline lock refresh (ledger, check_render, quarto-authoring reference)
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" && echo "committed $p";
@@ -1201,7 +1201,7 @@ Expected: the title line and the research-claude path.
 - [ ] **Step 6: Final gates and commit**
 
 ```bash
-cd /Users/andrew.mueller/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && ./scripts/check_install.sh --all && git add CLAUDE.md docs/ && git commit -q -m "docs: close P6 — improvement loop and Quarto render gate; session entry 2026-09-25
+cd ~/Academic/research-claude && python3 -m pytest tests/ -q && ./scripts/check_fork.sh && ./scripts/check_install.sh --all && git add CLAUDE.md docs/ && git commit -q -m "docs: close P6 — improvement loop and Quarto render gate; session entry 2026-09-25
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" && git log --oneline -3
 ```

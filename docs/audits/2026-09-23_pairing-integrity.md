@@ -116,7 +116,7 @@ entries**. `per file:` `scripts/pipeline.py:registry_check()` builds its roster 
 so the "exists but is not declared" check cannot see them.
 
 `tested:` they are nonetheless installed into every project:
-`ls ~/Research/POGM4/.claude/agents/` shows 20 symlinks, including
+`ls ~/Research/paper-A/.claude/agents/` shows 20 symlinks, including
 `claim-verifier.md -> …/research-claude/ai-audit/agents/claim-verifier.md` and
 `humanize-auditor.md -> …/ai-audit/agents/humanize-auditor.md`.
 
@@ -493,12 +493,12 @@ critic is meaningless but indistinguishable from striking a creator.
 `critic-pairing.py` on `Stop`. `tested:` all six live projects have both:
 
 ```
-~/Research/BRI                    critic-pairing:YES dispatch-log:YES
-~/Research/ESG                    critic-pairing:YES dispatch-log:YES
-~/Research/NAR_settlement         critic-pairing:YES dispatch-log:YES
-~/Research/POGM4                  critic-pairing:YES dispatch-log:YES
-~/Research/affordable_housing_2026 critic-pairing:YES dispatch-log:YES
-~/Research/zoning2026             critic-pairing:YES dispatch-log:YES
+~/Research/paper-G                    critic-pairing:YES dispatch-log:YES
+~/Research/paper-H                    critic-pairing:YES dispatch-log:YES
+~/Research/paper-D         critic-pairing:YES dispatch-log:YES
+~/Research/paper-A                  critic-pairing:YES dispatch-log:YES
+~/Research/paper-B critic-pairing:YES dispatch-log:YES
+~/Research/paper-C             critic-pairing:YES dispatch-log:YES
 ```
 
 ### 5.2 `dispatch-log.py` — what it does

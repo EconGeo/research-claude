@@ -44,7 +44,7 @@ has been pulled in four months.
 **3. Value flows out of projects and never returns.** Improvements made while writing papers
 are stranded in those papers:
 
-| Agent | clo-author | POGM4 | zoning2026 |
+| Agent | clo-author | paper-A | paper-C |
 |---|---|---|---|
 | `editor` | 67 | **366** | 67 |
 | `coder-critic` | 58 | **99** | **82** |
@@ -54,9 +54,9 @@ are stranded in those papers:
 | `domain-referee` | 147 | 137 (rewrite) | 147 |
 | `verifier` | 128 | 90 (de-LaTeXed) | 128 |
 
-The sharpest case: **POGM4 and zoning2026 independently taught `coder-critic` Quarto, and
-taught it different halves.** POGM4 added Quarto Empirical Mode, Rmd Mode, and INV-23/INV-24
-manifest coverage. zoning2026 added a Correctness Layer — hardcoded prose numbers (INV-11),
+The sharpest case: **paper-A and paper-C independently taught `coder-critic` Quarto, and
+taught it different halves.** paper-A added Quarto Empirical Mode, Rmd Mode, and INV-23/INV-24
+manifest coverage. paper-C added a Correctness Layer — hardcoded prose numbers (INV-11),
 no derived CSVs in `data/raw/`, cache discipline, zero-inflation/extrapolation traps for
 count outcomes. Neither project knows the other exists. A new project today scaffolds from
 the 58-line baseline and gets neither.
@@ -127,11 +127,11 @@ all disappear.
 
 | Agent | Source | De-project work |
 |---|---|---|
-| `editor` | POGM4 (366 vs 67) | none — verified generic, zero hardcoded journals |
-| `coder-critic` | **merge POGM4 + zoning2026** | `manuscript_quarto_word` → `manuscript_<project>.qmd` |
-| `methods-referee`, `domain-referee` | POGM4 rewrites | none |
-| `writer-critic`, `writer`, `coder` | POGM4 | none |
-| `verifier` | clo-author | POGM4's `verifier.md` is a leaked `~/Courses` slide agent (12 LaTeX/Beamer/TikZ hits vs clo-author's 6) — do not harvest. Take clo-author's two-mode structure; rewrite check 1 `latexmk` → `quarto render`. See plan correction C1. |
+| `editor` | paper-A (366 vs 67) | none — verified generic, zero hardcoded journals |
+| `coder-critic` | **merge paper-A + paper-C** | `manuscript` → `manuscript_<project>.qmd` |
+| `methods-referee`, `domain-referee` | paper-A rewrites | none |
+| `writer-critic`, `writer`, `coder` | paper-A | none |
+| `verifier` | clo-author | paper-A's `verifier.md` is a leaked `~/Courses` slide agent (12 LaTeX/Beamer/TikZ hits vs clo-author's 6) — do not harvest. Take clo-author's two-mode structure; rewrite check 1 `latexmk` → `quarto render`. See plan correction C1. |
 | `theorist`, `theorist-critic`, `strategist`, `strategist-critic`, `explorer`, `explorer-critic`, `data-engineer` | clo-author (identical everywhere) | vendor as-is |
 | `storyteller`, `storyteller-critic` | clo-author | Quarto-only: drop `beamer-scaffold.tex`, keep `quarto-scaffold.qmd` |
 | `orchestrator`, `guide-writer` | — | **delete** (D1) |
@@ -144,7 +144,7 @@ anti-hallucination caveat (every "already done" claim must carry a URL/DOI, othe
 `--variance N` mode running 3–5 referees to estimate review variance rather than enforce
 diversity.
 
-`NAR_settlement` is at baseline on every agent — nothing to harvest there.
+`paper-D` is at baseline on every agent — nothing to harvest there.
 
 ### B. Ports — dormant capability worth having
 
@@ -202,11 +202,11 @@ skills/lit-position/
 1. `submodules/clo-author` removed; `.gitmodules` retains only `ai-audit` and `journal-digest`.
 2. `apply.sh` installs from `research-claude`'s own directories; `CLO_SKIP_SKILLS` and the precedence rule are gone.
 3. `rules/pipeline-precedence.md` deleted.
-4. `apply.sh --update` against a scratch copy of POGM4 leaves `quarto render manuscript_quarto_word.qmd` exiting 0.
+4. `apply.sh --update` against a scratch copy of paper-A leaves `quarto render manuscript.qmd` exiting 0.
 5. `python3 ~/Research/scripts/prose_number_check.py` still exits 0 on that scratch copy.
 6. No installed file matches `latexmk`, `\doublespacing`, `threeparttable`, `paper/main.tex`, `paper/sections`, or `Emory`.
-7. No installed file matches a project noun (`POGM`, `JREPM`, `JRER`, `CoStar`, `SFPP`, `zoning`, `WRLURI`, `NAR`) or `manuscript_quarto_word`.
-8. The merged `coder-critic` contains both POGM4's manifest checks (INV-23/INV-24) and zoning2026's Correctness Layer.
+7. No installed file matches a project noun (`paper-A`, `JREPM`, `JRER`, `CoStar`, `paper-E`, `zoning`, `WRLURI`, `NAR`) or `manuscript`.
+8. The merged `coder-critic` contains both paper-A's manifest checks (INV-23/INV-24) and paper-C's Correctness Layer.
 9. Every B-list port has a landing place. `skills/strategize/templates/design-checklists/` ships in the template (in-skill; skills travel with their templates);
    `quality_reports/decisions/` and `paper/replication/` are created by the skills that write to
    them (`/strategize`, `/submit`), not at scaffold time — `apply.sh` creates only `explorations/`.
@@ -215,6 +215,6 @@ skills/lit-position/
 
 ## Open items for the implementation plan
 
-- Whether POGM4 is re-applied in place or verified on a scratch copy first (criterion 4 assumes scratch).
+- Whether paper-A is re-applied in place or verified on a scratch copy first (criterion 4 assumes scratch).
 - The promotion step that returns future project improvements to `research-claude` — a documented `/promote` skill, or a manual checklist in the README.
-- Whether `zoning2026`, `ESG`, `BRI`, `affordable_housing_2026` get re-applied, and in what order. They carry the same clo-author baseline and the same four actively-wrong standards files.
+- Whether `paper-C`, `paper-H`, `paper-G`, `paper-B` get re-applied, and in what order. They carry the same clo-author baseline and the same four actively-wrong standards files.

@@ -2,7 +2,7 @@
 
 **Written:** 2026-09-10, at the end of the repair session, by a session that had become
 worktree-isolated and could no longer reach git or write into the checkout.
-**For:** a fresh session rooted at `/Users/andrew.mueller/Academic/research-claude`.
+**For:** a fresh session rooted at `~/Academic/research-claude`.
 
 **First:** move this file into the repo and commit it, or delete it once acted on. **Done —
 this file is that move.**
@@ -20,9 +20,9 @@ this file is that move.**
   `deleted-things` (`orchestrator` is in `DELETED_AGENTS`, 8 dirs vs its 3); both ran green.
   The branch code was also stale — it globbed the removed `submodules/ai-audit/agents/`.
   Recover with `git branch fix/critic-dispatch cd1d47a` (~90 days). Commit `4cf76a8`.
-- **§2f partially exercised.** `/pipeline status` run in POGM4 — the driver's first
+- **§2f partially exercised.** `/pipeline status` run in paper-A — the driver's first
   execution. `status` works end to end; `run` still untouched and `run_fixture.sh --live`
-  still never run. **Do not run `/pipeline run` in a paper repo:** POGM4's state file is
+  still never run. **Do not run `/pipeline run` in a paper repo:** paper-A's state file is
   three days old, so every stage reads unstarted and the driver would start from
   `literature` and point `writer` at a 3,694-line manuscript already through three referee
   rounds. The fixture is the vehicle.
@@ -30,13 +30,13 @@ this file is that move.**
   `producer` hints, so `pre strategist` — the one stage a user reads `status` to unblock —
   named no skill to run. Red-first test, `producer_hint()` shared by both call sites.
   Commit `eeb21da`, merged `616d719`. Not in §6's blind-spot list.
-- **§2e done.** `JHousE` now in all three real copies (repo, `~/Research/.claude/`, ESG's
+- **§2e done.** `JHousE` now in all three real copies (repo, `~/Research/.claude/`, paper-H's
   local). NAR's copy has no housing entry at all. **`JHE` deliberately kept** in the Health
-  Economics entries and in `NAR_settlement/.claude/references/domain-profile.md:24`, whose
+  Economics entries and in `paper-D/.claude/references/domain-profile.md:24`, whose
   neighbours are Health Affairs / AJHE / JHR / Medical Care — a global rename corrupts it.
-  Consumer updated: `zoning2026/CLAUDE.md:134`. Backup of the unversioned shared file at
-  `~/Research/.claude/journal-profiles.md.bak-2026-09-10`. Commits: ESG `ce7c32b`,
-  zoning2026 `342e870`.
+  Consumer updated: `paper-C/CLAUDE.md:134`. Backup of the unversioned shared file at
+  `~/Research/.claude/journal-profiles.md.bak-2026-09-10`. Commits: paper-H `ce7c32b`,
+  paper-C `342e870`.
 - **`ReStud` casing: no bug.** All copies already read `REStud`. §2e's second half is closed.
 - **§2f live tier: BUILT AND EXERCISED.** `run_fixture.sh --live` now runs. Getting there
   took peeling apart six defects, listed here because the class recurs:
@@ -81,7 +81,7 @@ this file is that move.**
   `SESSION_REPORT.md` and the research journal, and "the fix is not another document"; it uses
   the phrase "becomes a second session log" for the failure it wards off. The evidence agreed:
   `SESSION_REPORT.md` exists in all six paper repos and each yields three decisions to the new
-  parser, while `session_logs/` existed in **one** of six (POGM4, 2 files) despite the nudge
+  parser, while `session_logs/` existed in **one** of six (paper-A, 2 files) despite the nudge
   being wired into all six `settings.json`. Those two files are left as history; nothing reads
   them. Red-first `tests/test_compaction_hooks.py` (13 tests, 12 red first); its last test
   forbids the string in any shipped hook, so the directory cannot creep back.
@@ -94,10 +94,10 @@ this file is that move.**
 - Verified green on main after all of the above: `check_fork` PASS · **75 tests OK** (62 + 13
   for the compaction hooks) · `run_fixture` (mechanical) PASS · `check_install --all` PASS six
   repos · `audit_graph` dangling 0 · roster [] · never-invoked [].
-- **Locks refreshed to `452aa4f`** in all six repos (`31851ef` POGM4, `a96ed56` NAR,
-  `aca8715` zoning2026, `4040fd5` ESG, `47032da` BRI, `69d9ace` affordable_housing_2026).
+- **Locks refreshed to `452aa4f`** in all six repos (`31851ef` paper-A, `a96ed56` NAR,
+  `aca8715` paper-C, `4040fd5` paper-H, `47032da` paper-G, `69d9ace` paper-B).
   Nothing parses the lock's `# installed via:` comment — `check_install` reads only
-  `^commit=` — so it was left saying `pinned`. Note POGM4 and NAR are on feature branches
+  `^commit=` — so it was left saying `pinned`. Note paper-A and NAR are on feature branches
   (`rewrite-phase1`, `phase1-event-study`), so their lock commit landed there, not on main.
 - **Loose ends 1 and 2 are both done**; the six locks are refreshed and all six repos are
   pushed and in sync with their remotes.
@@ -111,13 +111,13 @@ this file is that move.**
     against the same allowlist first and agreed exactly (54 distinct, 152 occurrences, same
     two stale rows). `x7_gate.sh`, `HANDOFF.md` and the `nword()` comment repointed.
     Commit `689ec39`.
-  - **ESG (14): drafting notes, not prose.** Every hit sat inside an italic
+  - **paper-H (14): drafting notes, not prose.** Every hit sat inside an italic
     `*Stage G. …*` / `*RA-6. …*` note — referee ids, cited-work years, a filename. Resolved
     by converting those notes to HTML comments, which the scanner skips *because they do not
     render*, and which the file already used for its own STATUS block. Allowlisting would
     have pre-authorised bare `2`, `3`, `4`, `2023` in a manuscript whose prose is not yet
     written. Now 0 literals — the honest state of a 154-line shell. Commit `8e81512`.
-  - **zoning2026 (41): the real adjudication.** Four became inline expressions because they
+  - **paper-C (41): the real adjudication.** Four became inline expressions because they
     mirrored a live value — `65,000`→`POP_THRESHOLD`, `2017 dollars`×3→`CPI_BASE_YEAR`,
     the `2014--2024` table note→a new `SUMM_YEARS` named once in `sumstats-table` and used by
     its five filters, and `10`/`15` log points→`theta_lo`/`theta_hi` in `power-sim` (the
@@ -132,7 +132,7 @@ this file is that move.**
      resolve from the project root, and `rules/quarto-empirical.md` (read in full) already
      called the allowlist "per-project". It now walks up from the manuscript to the nearest
      directory carrying a `.claude`, falling back to the manuscript's own directory outside a
-     project, so a manuscript in `paper/` reads the project's one allowlist. zoning2026's file
+     project, so a manuscript in `paper/` reads the project's one allowlist. paper-C's file
      moved back to `quality_reports/` (`105e95a`).
      **The second half of that fix is the one that matters more.** A missing allowlist and an
      allowlist that simply lacks a row produced the *same* output — which is how NAR's 54
@@ -153,7 +153,7 @@ this file is that move.**
      cardinal buried in a hyphenated compound out of it (`leave-one-state-out` fired six
      times once `states?` was declared), and the docstring stopped listing `markets` among
      the scanned nouns, which `_NOUN` has never contained.
-     **What it caught, which is the point.** zoning2026: eight spelled-out counts, seven
+     **What it caught, which is the point.** paper-C: eight spelled-out counts, seven
      sound, one wrong. Two sentences said "all four outcomes" reject parallel pre-trends "at
      `sa_pretrend_str` for each" — but that p is `max(sa_wald_ps_all)` over `sa_results`,
      which `map()`s over `es_outcomes`, **six** entries. Four was the Data section's count of
@@ -184,7 +184,7 @@ this file is that move.**
   `skills/pipeline/references/adopt.md` is the sequence: each existing artifact is scored by its
   own critic; nothing is back-filled. **This supersedes "do not run `/pipeline run` in a paper
   repo"** — run `next` first, adopt, then `run` starts at the frontier.
-- **affordable_housing_2026 partly adopted.** Its two ported scores now cite the real critic
+- **paper-B partly adopted.** Its two ported scores now cite the real critic
   reports (`c19f316` there). `next` there reads strategy and code CLOSED, `next: manuscript`.
   An explorer-critic adoption of its data assessment was started and **died on a session limit
   before writing a report; no data score was recorded.** Literature and data remain SKIPPED.
@@ -192,15 +192,15 @@ this file is that move.**
   found the theory-review template saving to an unregistered path, now fixed. The
   `detached at the lock SHA` branch of `check_install` has five tests, each shown red against a
   mutated copy. `next` reports a conditional component as OPTIONAL wherever it sits.
-- **JRER verified profile moved upward (`43a80db`; ESG `33fbe05`).** ESG's T&F-checked JRER
+- **JRER verified profile moved upward (`43a80db`; paper-H `33fbe05`).** paper-H's T&F-checked JRER
   block replaced the recalled one in the template and the shared `~/Research` copy (backup:
   `~/Research/.claude/references/journal-profiles.md.bak-2026-09-10b`).
-- **✅ DONE 2026-09-13, run by the user — Task 7b.1 steps 3-4** (ESG `a30b42f`, NAR_settlement
+- **✅ DONE 2026-09-13, run by the user — Task 7b.1 steps 3-4** (paper-H `a30b42f`, paper-D
   `d4f1887` on `phase1-event-study`). All six now relative links (mode 120000) that resolve to
   the shared copies; `check_install --all` PASS. Original note follows.
-  Replacing ESG's and NAR_settlement's three
+  Replacing paper-H's and paper-D's three
   committed reference files with symlinks to the shared copies was refused twice by the
-  auto-mode classifier as local destruction. Content no longer blocks it for either repo: ESG's
+  auto-mode classifier as local destruction. Content no longer blocks it for either repo: paper-H's
   only unique content was the JRER block, and NAR's `domain-profile.md` and
   `personal-style-guide.md` are the blank templates while its `journal-profiles.md` lacks the
   whole Real Estate section. **Ruling: link both.** The files are git-tracked, so the change is
@@ -213,8 +213,8 @@ this file is that move.**
 
 **2026-09-13 (evening), session `01Sco7`, continued:**
 
-- **Four unpushed commits pushed** (research-claude `a6e7a21`, affordable_housing_2026 `0f7a6a8`,
-  ESG `a30b42f`, NAR_settlement `d4f1887`). The affordable_housing data adoption the log above
+- **Four unpushed commits pushed** (research-claude `a6e7a21`, paper-B `0f7a6a8`,
+  paper-H `a30b42f`, paper-D `d4f1887`). The paper-B data adoption the log above
   says "died" did finish: explorer-critic scored the data assessment **0**, overall 93.25 → 74.6.
 - **`audit_graph.py` runs with no arguments (`4a1125c`).** ROOT defaults to this checkout and the
   JSON report is written only when an output path is given; `--help` works; a bad root is exit 2.
@@ -230,14 +230,14 @@ this file is that move.**
   invoked` and 3 `UNRESOLVED` ai-audit WARNs are gone; the remaining ai-audit WARNs are
   `UNPREFIXED` paths in its README and VENDORED.md, which are upstream-repo-relative and correct
   as written. `rules/ai-disclosure.md` needed no drift check: the PR did not touch upstream `rules/`.
-- **POGM4 and NAR_settlement adopted** (POGM4 on `rewrite-phase1`, NAR on `phase1-event-study`;
+- **paper-A and paper-D adopted** (paper-A on `rewrite-phase1`, NAR on `phase1-event-study`;
   both committed and pushed). Each ran `/review --code <manuscript>` then the comprehensive
   `/review`, via `claude -p` inside the project (so the project's hooks log dispatches):
 
   | | code | strategy | manuscript | replication | overall |
   |---|---|---|---|---|---|
-  | POGM4 | 0 | 41 | 0 | 0 (FAIL) | 18.64 |
-  | NAR_settlement | 0 | 48 | 0 | 0 (FAIL) | 21.82 |
+  | paper-A | 0 | 41 | 0 | 0 (FAIL) | 18.64 |
+  | paper-D | 0 | 48 | 0 | 0 (FAIL) | 21.82 |
 
   `next` reads `none — every component stage is closed` in both. The findings are paper matters
   (see each repo's `quality_reports/reviews/*_2026-09-13.md`); what they show about the
@@ -246,20 +246,20 @@ this file is that move.**
      floor of 0. Two papers at 0 are not equally far from 80; only the reports' priority lists
      say how far.
   2. **The strategist-critic rubric has no point values.** Both critics invented a weighting and
-     said so (NAR: CRITICAL −20 / MAJOR −6 / MINOR −1; POGM4: −20 / −3 / −1). 48 and 41 are
+     said so (NAR: CRITICAL −20 / MAJOR −6 / MINOR −1; paper-A: −20 / −3 / −1). 48 and 41 are
      therefore not comparable, and a third run could produce a different number from the same
      findings.
   3. **The verifier has two pass/fail definitions.** `skills/review/SKILL.md`'s "Verifier
      Pass/Fail Definition" for a manuscript lists render, refs, bib, prose check and
      freshness; `agents/verifier.md` also makes INV-9/11/14/15/16/19/24 mandatory FAILs. Both
-     NAR and POGM4 pass the first and fail the second; the verifier followed its agent file.
+     NAR and paper-A pass the first and fail the second; the verifier followed its agent file.
   4. **The verifier runs project gate scripts that rewrite tracked files.** NAR's `x7_gate.sh`
      restamped two committed reports; reverted by hand before the adoption commit.
   5. **Two adoption runs in parallel exhausted the 5-hour usage window in ~15 minutes.** One was
-     paused and relaunched after the reset; POGM4's first run died with strategist-critic done
+     paused and relaunched after the reset; paper-A's first run died with strategist-critic done
      but its report unsaved (critics return reports as text; the orchestrating session writes
      them). Run adoptions one at a time.
-  6. POGM4's `fresh` fails on a leftover gitignored `manuscript_quarto_word.html` the YAML no
+  6. paper-A's `fresh` fails on a leftover gitignored `manuscript.html` the YAML no
      longer produces — `is_fresh()` failing closed as designed; delete the file.
 
 **2026-09-14, session `01Sco7`, continued — the five adoption findings fixed (`fix/adoption-findings`):**
@@ -269,7 +269,7 @@ this file is that move.**
   `score` and `next` print it, and flag a 0 recorded without one as "floored — deductions not
   recorded". Every deduction-rubric `record-score` line in the skills now passes it (22 sites);
   `validate` rejects a malformed field. 8 red-first tests in `tests/test_pipeline.py`.
-  **Not back-filled:** the POGM4, NAR and affordable_housing scores predate the flag. Re-recording
+  **Not back-filled:** the paper-A, NAR and paper-B scores predate the flag. Re-recording
   them from their reports would bump each entry's `at` and `rounds`, so it was left to the user.
 - **2. strategist-critic has point values:** CRITICAL −25, MAJOR −5, MINOR −1 per issue
   (`scoring-rubrics.md`). Chosen so one CRITICAL alone fails the commit gate (75) and a fifth
@@ -293,24 +293,24 @@ this file is that move.**
   the adoption commit.
 - Green: **135 tests OK** (118 + 8 deductions + 9 `tests/test_review_contracts.py`) ·
   `check_fork` PASS. No file added or removed under `agents/ skills/ rules/ hooks/`, so no re-link.
-- Still open from the adoption list: POGM4's leftover `manuscript_quarto_word.html` (item 6, a
+- Still open from the adoption list: paper-A's leftover `manuscript.html` (item 6, a
   paper matter), and the papers' own revisions against their critic reports.
 
-**2026-09-15 — ESG made coauthor-ready (Ben, `williamsbenjamin`, via the `esg` team):**
+**2026-09-15 — paper-H made coauthor-ready (a coauthor, via a GitHub team):**
 
 - **The 2026-09-13 Task 7b.1 ruling "link both" was wrong for any repo a coauthor clones.**
-  A fresh clone of `udenver/esg-reit-disclosure` + `./bootstrap-pipeline.sh` got three dead
+  A fresh clone of `<org>/paper-H` + `./bootstrap-pipeline.sh` got three dead
   `.claude/references/` links into `../../../.claude/references/` — `~/Research`, which exists only
-  here. `check_install --all` passed because `dangling` resolves on this machine. ESG `9349a8e`
+  here. `check_install --all` passed because `dangling` resolves on this machine. paper-H `9349a8e`
   (on `main`) restores real copies, byte-identical to the shared files the links resolved to.
 - **New gate `clone-links` (`c331016`, merged `6c69ce5`):** reads each committed link's target from
-  git, not the filesystem. Its first run FAILs **BRI, NAR_settlement, POGM4 and zoning2026** with
+  git, not the filesystem. Its first run FAILs **paper-G, paper-D, paper-A and paper-C** with
   the same three links — not fixed; each needs real copies before any coauthor clones it.
   `check_install --all` is therefore red on those four until then, deliberately.
 - **`apply.sh` leaves an unchanged lock byte-identical** (same `c331016`), so a coauthor's
   bootstrap no longer dirties `pipeline.lock`.
-- **ESG lock → `6c69ce5`; `bootstrap-pipeline.sh` replaced with the seed** (no submodule flags).
-- Done in a worktree on ESG `main` while the ESG adoption ran on `pipeline-adoption`, untouched.
+- **paper-H lock → `6c69ce5`; `bootstrap-pipeline.sh` replaced with the seed** (no submodule flags).
+- Done in a worktree on paper-H `main` while the paper-H adoption ran on `pipeline-adoption`, untouched.
   Verified: fresh clone at `9349a8e`, bootstrap run twice, `git status` empty both times,
   `check_install` PASS (one WARN: no `pipeline_state.json` on `main` yet — it is on the adoption
   branch). 142 tests OK · `check_fork` PASS · `run_fixture` PASS.
@@ -326,22 +326,22 @@ this file is that move.**
   **done** — the 2026-09-10 entry above records it green in all three repos (`689ec39`,
   `8e81512`, `41af5dc`), and its `### 2a` header simply never got the ✅ marker §2d/§2e/§2f got,
   so the header was read instead of the log. §2b is a *revisit-when* condition, not work: it
-  unblocks when ESG's results set is frozen, and ESG's manuscript is still a 154-line skeleton
+  unblocks when paper-H's results set is frozen, and paper-H's manuscript is still a 154-line skeleton
   with a `PLACEHOLDER` abstract. §2c is three deliberate decisions with recorded reasons —
   reverse them only if you disagree. §4's submodule half is obsolete (submodules were removed
   2026-09-09); its R-136 half is live. What is genuinely open is what this progress log itself
-  lists: R-136's seed/hook propagation gap, a full green `--live` run, `clone-links` red in BRI,
-  NAR_settlement, POGM4, zoning2026 and ESG-on-`pipeline-adoption`, the six `pipeline.lock`
-  files now 40+ commits behind, and POGM4's leftover `manuscript_quarto_word.html`.
+  lists: R-136's seed/hook propagation gap, a full green `--live` run, `clone-links` red in paper-G,
+  paper-D, paper-A, paper-C and paper-H-on-`pipeline-adoption`, the six `pipeline.lock`
+  files now 40+ commits behind, and paper-A's leftover `manuscript.html`.
   `CLAUDE.md`'s "Start here" still points here because that list is still this document's.
-- **§4-adjacent correction:** the progress log above says `clone-links` FAILs BRI, NAR_settlement,
-  POGM4 and zoning2026, with ESG fixed by `9349a8e`. **ESG fails too.** It is checked out on
+- **§4-adjacent correction:** the progress log above says `clone-links` FAILs paper-G, paper-D,
+  paper-A and paper-C, with paper-H fixed by `9349a8e`. **paper-H fails too.** It is checked out on
   `pipeline-adoption`, and `9349a8e` is on `main` and is not an ancestor of that branch, so the
   three `references/*` symlinks are still committed there. The fix has to reach the adoption
-  branch or ESG regresses when it merges.
+  branch or paper-H regresses when it merges.
 - **`apply.sh --link` is not needed for file-level membership changes.** Each skill is a
   *directory* symlink into the shared tree, so files and subdirectories added or deleted inside an
-  existing skill propagate on save. Verified in NAR_settlement after Tasks 3/6/7 created and
+  existing skill propagate on save. Verified in paper-D after Tasks 3/6/7 created and
   deleted several. Only a brand-new top-level skill needs a re-link. (The plan's own
   `./apply.sh --link` invocation is also wrong — `--project-dir` is required.)
 
@@ -349,8 +349,8 @@ this file is that move.**
 
 Neither is urgent; both are recorded because nothing else points at them.
 
-**1. ✅ FIXED 2026-09-10 — `affordable_housing_2026`'s three symlinks through a lowercase
-`research`.** Repointed at `/Users/andrew.mueller/Research/.claude/references/`; zero
+**1. ✅ FIXED 2026-09-10 — `paper-B`'s three symlinks through a lowercase
+`research`.** Repointed at `~/Research/.claude/references/`; zero
 lowercase-`research` links remain anywhere under `~/Research`. **No commit was needed** — the
 links are untracked (which is why `check_install`'s `tracked-links` criterion passes), so the
 fix is purely local and will need redoing on any fresh checkout until `apply.sh
@@ -360,12 +360,12 @@ case-insensitively, not two directories with drifting content. Note `stat` witho
 the *symlink's* inode, not the target's — the first comparison run this way looked like the
 targets differed when they did not. Original text follows.
 
-**1 (original). `affordable_housing_2026` has three absolute symlinks through a lowercase `research`.**
+**1 (original). `paper-B` has three absolute symlinks through a lowercase `research`.**
 
 ```
-.claude/references/journal-profiles.md      -> /Users/andrew.mueller/research/.claude/references/...
-.claude/references/domain-profile.md        -> /Users/andrew.mueller/research/.claude/references/...
-.claude/references/personal-style-guide.md  -> /Users/andrew.mueller/research/.claude/references/...
+.claude/references/journal-profiles.md      -> ~/research/.claude/references/...
+.claude/references/domain-profile.md        -> ~/research/.claude/references/...
+.claude/references/personal-style-guide.md  -> ~/research/.claude/references/...
 ```
 
 Three of that repo's 87 links; the other 84 are fine. The directory is `~/Research`, capital R.
@@ -373,7 +373,7 @@ These resolve **only because macOS is case-insensitive by default** — they bre
 case-sensitive volume, on Linux, and for any coauthor. `check_install`'s `dangling` criterion
 passes for exactly that reason, so the gate will never catch this. Re-link that repo's
 references with the correctly-cased path. The rulings track it under Task 7b.1 Steps 3-4,
-which also covers replacing ESG's and NAR_settlement's real reference files with symlinks
+which also covers replacing paper-H's and paper-D's real reference files with symlinks
 after diffing for local edits.
 
 **2. ✅ DONE 2026-09-10 — `design/quarto-native-pipeline` deleted.** `git branch -d` accepted it
@@ -436,7 +436,7 @@ remote; some of that predates this refresh, so none were pushed.**
 
 All six paper repos are on the repaired pipeline: linked to this checkout, lock at the merge
 commit, `dispatch-log.py` and `critic-pairing.py` wired into each `settings.json`, manuscripts
-declared (BRI excepted — it has no `.qmd` yet and correctly refuses to run).
+declared (paper-G excepted — it has no `.qmd` yet and correctly refuses to run).
 
 **Read these before changing anything:**
 
@@ -489,11 +489,11 @@ stays reachable in the reflog for ~90 days: `git branch fix/critic-dispatch cd1d
 
 Ordered by how much judgment each needs. **None is mechanical.**
 
-### 2a. Prose literals — ✅ DONE 2026-09-10 (NAR `689ec39`, ESG `8e81512`, zoning2026 `41af5dc`)
+### 2a. Prose literals — ✅ DONE 2026-09-10 (NAR `689ec39`, paper-H `8e81512`, paper-C `41af5dc`)
 
 **All three repos are green.** The progress log above has the full account: NAR's 54 were
-already adjudicated in a file the shipped scanner was not looking for; ESG's 14 were drafting
-notes, converted to HTML comments, leaving 0 literals; zoning2026's 41 were the real
+already adjudicated in a file the shipped scanner was not looking for; paper-H's 14 were drafting
+notes, converted to HTML comments, leaving 0 literals; paper-C's 41 were the real
 adjudication — 4 became inline expressions, 37 got rows with reasons. Two scanner defects it
 surfaced were also fixed (`105e95a` allowlist resolution, `66fb3e7` per-project nouns).
 **This header lacked the ✅ marker its siblings got, and a later session read the header
@@ -510,26 +510,26 @@ an allowlist row **with a real reason**, decided one at a time against its conte
 prevent, and the ruling log says so in several places. If a literal is a *result*, it becomes an
 inline `` `r ` `` expression; if it is a fact about the world, it gets a row explaining why.
 
-### 2b. ESG's seven analysis scripts — deliberately untouched
+### 2b. paper-H's seven analysis scripts — deliberately untouched
 
-Stage 8.4 said to fold them into the manuscript. **This was not done, on purpose.** ESG's
+Stage 8.4 said to fold them into the manuscript. **This was not done, on purpose.** paper-H's
 manuscript is a 154-line skeleton whose abstract reads `PLACEHOLDER — rewritten at Stage G, after
 the results set is frozen (plan F-3)`. The project is mid-analysis under its own staged plan.
 Folding its scripts in now fights that plan rather than serving it.
 
-Revisit when ESG's own results set is frozen — not before.
+Revisit when paper-H's own results set is frozen — not before.
 
 ### 2c. Three other plan instructions not followed
 
 Each is recorded with its reasoning in the sign-off. Reverse any of them if you disagree, but read
 the reason first:
 
-- `ESG/scripts/generate_dashboard.py` kept. D-18 removed the dashboard from the *shipped
-  pipeline*, not from a project's own tooling; it is documented in ESG's `CLAUDE.md` and preserves
+- `paper-H/scripts/generate_dashboard.py` kept. D-18 removed the dashboard from the *shipped
+  pipeline*, not from a project's own tooling; it is documented in paper-H's `CLAUDE.md` and preserves
   authored content in `dashboard_state.json`.
-- POGM4's `.claude/commands/{zotero-notes,zotero-review}.md` kept. Usage could not be established,
+- paper-A's `.claude/commands/{zotero-notes,zotero-review}.md` kept. Usage could not be established,
   `obsidian-digest-sync` was dropped from the shipped tree, and nothing replaces them.
-- POGM4's `scripts/acquire/lock_market_list.R` kept live rather than archived with the rest of
+- paper-A's `scripts/acquire/lock_market_list.R` kept live rather than archived with the rest of
   `scripts/R`. The manuscript points at it in three comments and a `stopifnot` message; archiving
   it would have left an error telling a user to run a missing file.
 
@@ -565,7 +565,7 @@ output has no consumer in this pipeline. Either `/lit-position` should read the 
 settled.
 Its residue is WARN-tier and blocks nothing.
 
-### 2e. `JHE` / `JHousE` disagreement — ✅ DONE (ESG `ce7c32b`, zoning2026 `342e870`)
+### 2e. `JHE` / `JHousE` disagreement — ✅ DONE (paper-H `ce7c32b`, paper-C `342e870`)
 
 `references/journal-profiles.md` in this repo now calls the housing journal `JHousE`, because
 `JHE` was already taken by Journal of Health Economics. **The shared
@@ -588,7 +588,7 @@ cheapest first test is `/pipeline status` in a project with a declared manuscrip
 
 ## 3. What the live run established, and what it did not
 
-`/write abstract` in POGM4 on 2026-09-10 was the first execution of any of this outside a test
+`/write abstract` in paper-A on 2026-09-10 was the first execution of any of this outside a test
 harness. It proved the enforcement chain end to end:
 
 - the SubagentStop hook fires and writes UTC millisecond timestamps (R-109);

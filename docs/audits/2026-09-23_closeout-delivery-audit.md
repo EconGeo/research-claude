@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-23
 **Auditor:** Claude Opus 5 (read-only forensic pass; nothing was fixed)
-**Repo:** `/Users/andrew.mueller/Academic/research-claude`
+**Repo:** `~/Academic/research-claude`
 **Branch at audit time:** `jrer-rebase`
 
 ## Question
@@ -371,7 +371,7 @@ running the suite.
 | 7 | *"checkpoint: 8,526 → ≤5,500; three templates bound; three dropped report lines restored"* | `a3bb0bf` / `52a3267` | `tested:` 5,495 (5,459 + 36 from Task 8). `references/obsidian.md` present; three checkpoint entries gone from `KNOWN_UNBOUND`. | **LANDED-AND-WORKS** |
 | 8 | *"surface pipeline-skill corrections as promotion candidates"*; ratchet budgets | `fb457c9` / `35f82d5` | `per file:` `skills/checkpoint/SKILL.md:75` and `:123` carry the candidate lines; `/tools learn` repointed. `tested:` `BUDGET` caps are the measured sizes rounded to the next 500, annotated in the test at lines 34–36. | **LANDED-AND-WORKS** |
 | 8 | *"Step 9: repoint this repo's `CLAUDE.md` **Start here** … if this work supersedes [the handoff]"* | `66ca1cb` | Deliberately **not** repointed; reason recorded in the Progress Log and cross-linked from the handoff. That reason was itself corrected two commits later (`6f0e820`). | **SUPERSEDED** (a recorded decision, not a miss) |
-| 8 | *"Step 4: Re-link the projects … `./apply.sh --link`"* | `35f82d5` | The executor found the plan's command **wrong** (`apply.sh --link` needs `--project-dir`), established that skills are *directory* symlinks so membership propagates on save, verified in NAR_settlement, and recorded the correction instead of running a broken command. | **SUPERSEDED** (correct handling of a defective plan step) |
+| 8 | *"Step 4: Re-link the projects … `./apply.sh --link`"* | `35f82d5` | The executor found the plan's command **wrong** (`apply.sh --link` needs `--project-dir`), established that skills are *directory* symlinks so membership propagates on save, verified in paper-D, and recorded the correction instead of running a broken command. | **SUPERSEDED** (correct handling of a defective plan step) |
 | — | *"P2 / P4 / P6-as-specified / P7"* | — | Explicitly out of scope, with reasons, in the plan header and its close-out. | **SUPERSEDED** (deliberate non-adoption) |
 
 **Nine of nine tasks landed and work.** Two plan steps were found to be wrong during

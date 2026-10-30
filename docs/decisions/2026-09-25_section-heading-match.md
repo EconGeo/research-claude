@@ -18,7 +18,7 @@ case is folded. What remains must **equal** the name. `Key Assumptions and Threa
 Threats section, and `Threats to validity` is not either. The tolerance covers typography only,
 never substring. `tested:` `tests/test_pipeline.py`: the template, copied verbatim, passes; the
 real-memo shapes pass; a numbered memo missing a section still fails; a heading that only
-contains a name still fails. Against the four real memos, three now pass all five. zoning2026's
+contains a name still fails. Against the four real memos, three now pass all five. paper-C's
 2026-06-04 memo still fails Assumptions and Threats, correctly: it merges them into one section
 and has no Threats section.
 

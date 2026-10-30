@@ -22,7 +22,7 @@
 - **Red before green.** Every new gate criterion and every `pre`/`post` predicate is shown FAILING against the fixture before it is shown passing. A green without a recorded red is a stop condition (spec §12).
 - **The sweep is the expectation; the tree is the truth.** Every verification step runs the grep, reads the whole output, and only then records the result. A residue row the sweep did not list is a stop condition: record it in `docs/audits/2026-09-08_full-tree-sweep.md` under a `## Addendum (found during repair)` heading before fixing it.
 - **Nothing project-specific ships.** `scripts/check_fork.sh` `project-identity` and `project-nouns` stay green at every commit.
-- **Worktree development.** All Stage 0–7b work happens in the worktree `$W` on branch `repair/pipeline`. The shared checkout `$RC` stays on `main` because six paper repos link to it. Only POGM4 (the canary) is re-linked to `$W`, and only from Task 2.9 on.
+- **Worktree development.** All Stage 0–7b work happens in the worktree `$W` on branch `repair/pipeline`. The shared checkout `$RC` stays on `main` because six paper repos link to it. Only paper-A (the canary) is re-linked to `$W`, and only from Task 2.9 on.
 - **Commit trailers.** Every commit ends with the two attribution lines given in the session's system reminder (`Co-Authored-By: ...` and `Claude-Session: ...`).
 
 ---
@@ -33,11 +33,11 @@
 
 | Name | Value |
 |---|---|
-| `$RC` | `/Users/andrew.mueller/Academic/research-claude` — the shared checkout, stays on `main` |
-| `$W` | `/Users/andrew.mueller/Academic/research-claude-repair` — the worktree, branch `repair/pipeline` (created in Task 0.2) |
+| `$RC` | `~/Academic/research-claude` — the shared checkout, stays on `main` |
+| `$W` | `~/Academic/research-claude-repair` — the worktree, branch `repair/pipeline` (created in Task 0.2) |
 | `$FX` | `$W/tests/fixture-project` — the committed fixture |
 | `$T` | a temp copy of the fixture that `tests/run_fixture.sh` creates under `mktemp -d` and links the pipeline into |
-| `$R` | `~/Research` — the six paper repos: POGM4 (canary), zoning2026, affordable_housing_2026, ESG, NAR_settlement, BRI |
+| `$R` | `~/Research` — the six paper repos: paper-A (canary), paper-C, paper-B, paper-H, paper-D, paper-G |
 | shipped dirs | `agents skills rules references hooks templates seeds scripts` (plus `tests` for the identity scan) |
 
 ### 0.2 Conventions the executor must follow
@@ -95,7 +95,7 @@ These are choices the spec left open or that the ground truth forced. Each is on
 | `rules/lifecycle.md` | 1 | prose description of what `pipeline.py pre/post` does |
 | `rules/meta-governance.md` | 1 | learning promotion policy, no autonomous self-modification |
 | `templates/pipeline-state.json` | 2 | empty v2 state instance |
-| `templates/journal-profile-template.md` | 2 | from POGM4's copy, cross-refs fixed |
+| `templates/journal-profile-template.md` | 2 | from paper-A's copy, cross-refs fixed |
 | `seeds/` (`gitignore`, `settings.json`, `bootstrap-pipeline.sh`, `ai-use-log.md`, `data_manifest.md`, `quarto-preamble.tex`) | 2 | copied once, project-owned |
 | `skills/analyze/templates/chunk-structure.md` | 3b | replaces the two script scaffolds |
 | `skills/review/templates/claim-evidence-table.md` | 4 | Claim–Evidence Table format |
@@ -904,7 +904,7 @@ py() {  # py <script> [args] — run a python criterion, fold its exit into $fai
 }
 
 echo "── identity: nothing project-specific ships ──"
-scan project-identity 'POGM|SFPP|WRLURI|zoning2026|NAR_settlement|manuscript_quarto_word' "${SHIP[@]}" tests
+scan project-identity 'paper-A|paper-E|WRLURI|paper-C|paper-D|manuscript' "${SHIP[@]}" tests
 scan project-nouns    'JREPM|JRER|CoStar|[^a-z]zoning|WRLURI|[^A-Za-z]NAR[^A-Za-z]' agents skills rules hooks templates seeds scripts
 scan course-leak      'academic course materials|Beamer slides|TikZ Freshness'
 
@@ -2137,7 +2137,7 @@ Create `docs/decisions/2026-09-08_d1-superseded.md`:
 
 **What changes.** `rules/permissions.md` (now rendered from `rules/registry.yaml`), `rules/lifecycle.md`
 and `rules/meta-governance.md` are restored as rewrites against the archived clo-author files
-(`~/Research/NAR_settlement_legacy_archive/.claude/rules/`, upstream `hugosantanna/clo-author@d36c408`).
+(`~/Research/paper-D_legacy_archive/.claude/rules/`, upstream `hugosantanna/clo-author@d36c408`).
 `rules/workflow.md` is not restored: its loop is `skills/pipeline/SKILL.md`, its graph is the registry.
 `agents/orchestrator.md` is not restored: a subagent cannot hold an approval gate, so the driver is a skill.
 
@@ -2653,10 +2653,10 @@ git add rules/logging.md rules/revision.md && git commit -m "fix(rules): logging
 
 ## Stage 1b — Manuscript declaration (D-8)
 
-### Task 1b.1: `manuscript-declared` in `check_install.sh`; `quarto-empirical.md` documents the declaration; POGM4 declares
+### Task 1b.1: `manuscript-declared` in `check_install.sh`; `quarto-empirical.md` documents the declaration; paper-A declares
 
 **Files:**
-- Modify: `scripts/check_install.sh` (append a check 7), `rules/quarto-empirical.md` (lines 9–12 block), `~/Research/POGM4/CLAUDE.md`
+- Modify: `scripts/check_install.sh` (append a check 7), `rules/quarto-empirical.md` (lines 9–12 block), `~/Research/paper-A/CLAUDE.md`
 
 - [ ] **Step 1: `check_install.sh` check 7 (before the `bootstrap` line)**
 
@@ -2674,12 +2674,12 @@ git add rules/logging.md rules/revision.md && git commit -m "fix(rules): logging
   else bad manuscript-declared "CLAUDE.md declares $decl manuscripts; exactly one is required"; fi
 ```
 
-- [ ] **Step 2: Red across the fleet, then green on POGM4**
+- [ ] **Step 2: Red across the fleet, then green on paper-A**
 
 ```bash
 "$W/scripts/check_install.sh" --all | grep -E '\[manuscript-declared\]'
 ```
-Expected: FAIL for POGM4, zoning2026, affordable_housing_2026, ESG, NAR_settlement; WARN for BRI. Then edit `~/Research/POGM4/CLAUDE.md`: insert the line `manuscript: manuscript_quarto_word.qmd` as its own paragraph directly after the `**Pipeline:**` line (line 6). Re-run for POGM4 → PASS. Commit in POGM4: `git -C ~/Research/POGM4 commit -am "chore: declare manuscript for the research-claude pipeline (D-8)"`. The other four are declared in Stage 8 (their residue must be migrated first).
+Expected: FAIL for paper-A, paper-C, paper-B, paper-H, paper-D; WARN for paper-G. Then edit `~/Research/paper-A/CLAUDE.md`: insert the line `manuscript: manuscript.qmd` as its own paragraph directly after the `**Pipeline:**` line (line 6). Re-run for paper-A → PASS. Commit in paper-A: `git -C ~/Research/paper-A commit -am "chore: declare manuscript for the research-claude pipeline (D-8)"`. The other four are declared in Stage 8 (their residue must be migrated first).
 
 - [ ] **Step 3: `rules/quarto-empirical.md`** — replace the blockquote at lines 9–12 with:
 
@@ -2703,7 +2703,7 @@ cd "$W" && git add scripts/check_install.sh rules/quarto-empirical.md && git com
 
 ## Stage 2 — Missing and mis-homed files: `templates/` vs `seeds/`, installer, install gate, embed test, canary
 
-**Exit criteria:** `seeds/` holds every copied-once file; `templates/` holds only files agents read by a `.claude/templates/` path; `apply.sh` links `templates/` and the `scripts/SHIPPED` set; the gitignore seed and all six repos ignore `.claude/{templates,scripts}/*`; `check_install.sh` has `scripts-linked`, `templates-linked`, `gitignore-covers`, `state-valid`; `docs/audits/2026-09-08_embed-test.md` records R-5; POGM4 is linked to `$W`.
+**Exit criteria:** `seeds/` holds every copied-once file; `templates/` holds only files agents read by a `.claude/templates/` path; `apply.sh` links `templates/` and the `scripts/SHIPPED` set; the gitignore seed and all six repos ignore `.claude/{templates,scripts}/*`; `check_install.sh` has `scripts-linked`, `templates-linked`, `gitignore-covers`, `state-valid`; `docs/audits/2026-09-08_embed-test.md` records R-5; paper-A is linked to `$W`.
 
 ### Task 2.1: Split `templates/` into `templates/` and `seeds/`
 
@@ -2727,7 +2727,7 @@ PY
 ```
 (`qmd_chunks.py` is created in Task 7.3; `scripts-manifest` stays red until then — intended.)
 
-- [ ] **Step 2: `templates/journal-profile-template.md`** — copy `~/Research/POGM4/templates/journal-profile-template.md` (read it in full; it is the clo-author template) and make exactly these edits: line 3 `.claude/references/journal-profiles.md` (already prefixed — keep); line 67 `.claude/agents/methods-referee.md` (keep); line 77 `.claude/skills/review-paper/SKILL.md` → `` `.claude/skills/review/SKILL.md` — entry point for `--peer [SHORT]` ``. Add after the template block: "**Short-name uniqueness.** A short name is used as the `--peer` argument and must be unique across the file; `JHE` is Journal of Health Economics, the housing journal is `JHousE`."
+- [ ] **Step 2: `templates/journal-profile-template.md`** — copy `~/Research/paper-A/templates/journal-profile-template.md` (read it in full; it is the clo-author template) and make exactly these edits: line 3 `.claude/references/journal-profiles.md` (already prefixed — keep); line 67 `.claude/agents/methods-referee.md` (keep); line 77 `.claude/skills/review-paper/SKILL.md` → `` `.claude/skills/review/SKILL.md` — entry point for `--peer [SHORT]` ``. Add after the template block: "**Short-name uniqueness.** A short name is used as the `--peer` argument and must be unique across the file; `JHE` is Journal of Health Economics, the housing journal is `JHousE`."
 
 - [ ] **Step 3: Gitignore seed** — in `seeds/gitignore`: delete the `data/cleaned/` line and its comment (P-15); after `.claude/scripts/prose_number_check.py` replace that line with:
 ```
@@ -2832,7 +2832,7 @@ Append before `bootstrap`:
 ```bash
 "$W/scripts/check_install.sh" --all | grep -E '\[(membership|gitignore-covers|state-valid)\]'
 ```
-Expected: `membership` FAIL ×6 (templates/* and scripts/pipeline.py never linked); `gitignore-covers` FAIL ×6; `state-valid` FAIL for affordable_housing_2026 (legacy shape), WARN ×5. Save the output into `docs/audits/2026-09-08_stage0-red.md` under `## check_install (Stage 2)`.
+Expected: `membership` FAIL ×6 (templates/* and scripts/pipeline.py never linked); `gitignore-covers` FAIL ×6; `state-valid` FAIL for paper-B (legacy shape), WARN ×5. Save the output into `docs/audits/2026-09-08_stage0-red.md` under `## check_install (Stage 2)`.
 
 - [ ] **Step 3: Edit the six repos' `.gitignore` by hand** (seeds never overwrite): in each, replace the `.claude/scripts/prose_number_check.py` line with the three lines from Task 2.1 Step 3 plus the `agent_dispatch.jsonl` line; commit in each repo: `chore: gitignore linked .claude/{scripts,templates} and the dispatch log`. Re-run → `gitignore-covers` PASS ×6.
 
@@ -2880,16 +2880,16 @@ Read the whole output. Write `docs/audits/2026-09-08_embed-test.md` with: Quarto
 cd "$W" && git add docs/audits/2026-09-08_embed-test.md tests/fixture-project/talks && git commit -m "test(fixture): R-5 embed test — <result> (see docs/audits/2026-09-08_embed-test.md)"
 ```
 
-### Task 2.5: Re-link the canary (POGM4) to the worktree
+### Task 2.5: Re-link the canary (paper-A) to the worktree
 
 - [ ] **Step 1: Link from `$W` directly (not `bootstrap-pipeline.sh --tip`, which would `git checkout main` in `$RC`)**
 
 ```bash
-"$W/apply.sh" --project-dir ~/Research/POGM4 --link | tail -6
-readlink ~/Research/POGM4/.claude/agents/coder.md      # expect a path ending in research-claude-repair/agents/coder.md
-RESEARCH_CLAUDE_ALLOW_BRANCH=1 "$W/scripts/check_install.sh" --project-dir ~/Research/POGM4
+"$W/apply.sh" --project-dir ~/Research/paper-A --link | tail -6
+readlink ~/Research/paper-A/.claude/agents/coder.md      # expect a path ending in research-claude-repair/agents/coder.md
+RESEARCH_CLAUDE_ALLOW_BRANCH=1 "$W/scripts/check_install.sh" --project-dir ~/Research/paper-A
 ```
-Expected: `WARN [branch] ... allowed`, `PASS [membership]`, `PASS [gitignore-covers]`, `PASS [manuscript-declared]`, `PASS [dangling]`. POGM4's own `templates/` already has real files (`ai-use-log.md`, `journal-profile-template.md`, …) — those are project content and untouched; the seed `quarto-preamble.tex` is copied in because POGM4 lacks it (it is Word-only; harmless).
+Expected: `WARN [branch] ... allowed`, `PASS [membership]`, `PASS [gitignore-covers]`, `PASS [manuscript-declared]`, `PASS [dangling]`. paper-A's own `templates/` already has real files (`ai-use-log.md`, `journal-profile-template.md`, …) — those are project content and untouched; the seed `quarto-preamble.tex` is copied in because paper-A lacks it (it is Word-only; harmless).
 
 - [ ] **Step 2: Record** in `docs/audits/2026-09-08_stage0-red.md` under `## Canary`: the readlink output and the check_install result. From here until Stage 8, every `check_install.sh --all` run sets `RESEARCH_CLAUDE_ALLOW_BRANCH=1`.
 
@@ -4175,57 +4175,57 @@ Read it in full. Replace every `librarian` (×7) with `/lit-position` phrasing (
 ### Task 7.6: Stage 7 sign-off
 
 - [ ] `./scripts/check_fork.sh; echo exit=$?` → `exit=0` expected for the first time. Read the whole output; every criterion PASS; `fixture` PASS. If anything is red, it is a defect in this stage, not a plan change.
-- [ ] `RESEARCH_CLAUDE_ALLOW_BRANCH=1 ./scripts/check_install.sh --all` → PASS on POGM4 (linked to `$W`); on the other five: `membership` FAIL (templates not linked until Stage 8 re-link), `manuscript-declared` FAIL/WARN (Stage 8), everything else PASS. Record.
+- [ ] `RESEARCH_CLAUDE_ALLOW_BRANCH=1 ./scripts/check_install.sh --all` → PASS on paper-A (linked to `$W`); on the other five: `membership` FAIL (templates not linked until Stage 8 re-link), `manuscript-declared` FAIL/WARN (Stage 8), everything else PASS. Record.
 
 ---
 
 ## Stage 7b — Journal profiles and discipline cards, in the template and in the shared references
 
 **Files:**
-- Modify: `references/journal-profiles.md`, `~/Research/.claude/references/journal-profiles.md`, `references/discipline-cards.md`, `~/Research/.claude/references/discipline-cards.md` (create by copy if absent — check first), `~/Research/ESG/.claude/references/*`, `~/Research/NAR_settlement/.claude/references/*`
+- Modify: `references/journal-profiles.md`, `~/Research/.claude/references/journal-profiles.md`, `references/discipline-cards.md`, `~/Research/.claude/references/discipline-cards.md` (create by copy if absent — check first), `~/Research/paper-H/.claude/references/*`, `~/Research/paper-D/.claude/references/*`
 
 ### Task 7b.1: Profiles
 
 - [ ] **Step 1: Port the three shared profiles into the repo file.** Copy the `## Real Estate` section (shared file lines 351–403, read in full) into `references/journal-profiles.md` before `## Add Your Own Journal`. Rename `### Journal of Housing Economics (JHE)` → `### Journal of Housing Economics (JHousE)` and `**Short name:** \`JHE\`` → `` `JHousE` `` **in both files** (P-4). Add a `**Table format:**` line to JREFE and JHousE (stars, SE in parentheses — as REE).
 - [ ] **Step 2: Add five profiles** using `templates/journal-profile-template.md` (every field, weights summing to 1.0): JRER (Journal of Real Estate Research — applied; ARES flagship; CREDIBILITY high, POLICY high, MEASUREMENT medium), JREPM (Journal of Real Estate Portfolio Management — investment/portfolio; STRUCTURAL medium, MEASUREMENT high, POLICY medium), APSR (American Political Science Review — general; THEORY high, CREDIBILITY high, SKEPTIC medium; stars used), AJPS (American Journal of Political Science — causal inference and survey experiments; CREDIBILITY high, MEASUREMENT high; replication policy at acceptance), JOP (Journal of Politics — broad; CREDIBILITY high, POLICY medium). Write each from the discipline card's method conventions; typical concerns as three quoted questions. Land them in **both** files identically (`diff` the two sections → identical).
-- [ ] **Step 3: Cards true.** `references/discipline-cards.md` lines 23, 52, 81: for every journal named as "shipped", `grep -c "^### .*(<SHORT>)" references/journal-profiles.md` must be 1. AEA P&P (line 23) is not shipped → either add a short AEA P&P profile or delete it from the sentence; choose add (four fields, descriptive/measurement route). Copy the corrected card file to `~/Research/.claude/references/discipline-cards.md` (POGM4, zoning2026, BRI symlink `references/*.md` there — confirm `ls -la ~/Research/.claude/references/`; if the card file is absent there, the projects have real copies from the seed: check each and replace stale copies with the corrected one, preserving any project edit found by `diff`).
-- [ ] **Step 4: ESG and NAR references** are real files (seeds copied once). `diff ~/Research/ESG/.claude/references/journal-profiles.md references/journal-profiles.md`; if the project copy carries no local edits beyond the old baseline, replace it with a symlink into `~/Research/.claude/references/` (`"$W/apply.sh" --project-dir ~/Research/ESG --link --link-references ~/Research/.claude/references`); if it has edits, merge them into the shared file first, then link. Same for NAR_settlement. `affordable_housing_2026` links via a lowercase `/Users/andrew.mueller/research/...` target — relink it the same way so the path is canonical.
+- [ ] **Step 3: Cards true.** `references/discipline-cards.md` lines 23, 52, 81: for every journal named as "shipped", `grep -c "^### .*(<SHORT>)" references/journal-profiles.md` must be 1. AEA P&P (line 23) is not shipped → either add a short AEA P&P profile or delete it from the sentence; choose add (four fields, descriptive/measurement route). Copy the corrected card file to `~/Research/.claude/references/discipline-cards.md` (paper-A, paper-C, paper-G symlink `references/*.md` there — confirm `ls -la ~/Research/.claude/references/`; if the card file is absent there, the projects have real copies from the seed: check each and replace stale copies with the corrected one, preserving any project edit found by `diff`).
+- [ ] **Step 4: paper-H and NAR references** are real files (seeds copied once). `diff ~/Research/paper-H/.claude/references/journal-profiles.md references/journal-profiles.md`; if the project copy carries no local edits beyond the old baseline, replace it with a symlink into `~/Research/.claude/references/` (`"$W/apply.sh" --project-dir ~/Research/paper-H --link --link-references ~/Research/.claude/references`); if it has edits, merge them into the shared file first, then link. Same for paper-D. `paper-B` links via a lowercase `~/research/...` target — relink it the same way so the path is canonical.
 - [ ] **Step 5: Verify and commit** — `./scripts/check_fork.sh | grep -E 'project-nouns|project-identity'` → PASS (journal names are allowed in `references/`); `grep -n 'JHE\b' references/discipline-cards.md references/journal-profiles.md` → only Journal of Health Economics. Commit: `feat(references): REE, JREFE, JHousE, JRER, JREPM, APSR, AJPS, JOP, AEA P&P profiles; cards true; landed in ~/Research/.claude/references`.
 
 ---
 
 ## Stage 8 — Legacy-project migration, merge, re-link, lock bump, green on `main`
 
-**Exit criteria (spec §13):** `check_fork.sh` exit 0 on `main`; `check_install.sh --all` exit 0 on six repos (`hooks-wired`, `manuscript-declared`, `state-valid` included); `audit_graph.py` 0 dangling, 0 agents named-but-absent; the widened residue grep returns only marked lines; `tests/run_fixture.sh` (mechanical and live) green on `main`; `/write abstract` on POGM4 produces a writer-critic score and a Claim–Evidence Table before the draft; six repos declare a manuscript; zoning2026 has one manuscript and no `.tex` fragments; no repo has a `scripts/R/` analysis tree.
+**Exit criteria (spec §13):** `check_fork.sh` exit 0 on `main`; `check_install.sh --all` exit 0 on six repos (`hooks-wired`, `manuscript-declared`, `state-valid` included); `audit_graph.py` 0 dangling, 0 agents named-but-absent; the widened residue grep returns only marked lines; `tests/run_fixture.sh` (mechanical and live) green on `main`; `/write abstract` on paper-A produces a writer-critic score and a Claim–Evidence Table before the draft; six repos declare a manuscript; paper-C has one manuscript and no `.tex` fragments; no repo has a `scripts/R/` analysis tree.
 
-Each repo is migrated on its own commit(s) in that repo, then re-linked, then `check_install.sh` must pass for it. POGM4 first (it is already on `$W`).
+Each repo is migrated on its own commit(s) in that repo, then re-linked, then `check_install.sh` must pass for it. paper-A first (it is already on `$W`).
 
-### Task 8.1: POGM4 (canary)
+### Task 8.1: paper-A (canary)
 
-- [ ] Read `~/Research/POGM4/CLAUDE.md` in full and the `scripts/R/` tree listing. Archive the reference pipeline: `git mv scripts/R archive/scripts_R_reference` (or delete if `CLAUDE.md` line 28's "standalone reference only" has no consumer — grep the manuscript for `source(`/`scripts/R`; expect none). Remove `.claude/WORKFLOW_QUICK_REF.md` and `.claude/commands/` (two files: `zotero-notes.md`, `zotero-review.md` — read both; if they are still used, move them to `.claude/skills/<name>/SKILL.md` as project overrides with a `!.claude/skills/<name>/` gitignore negation). Keep `execute: cache: false` and add to `CLAUDE.md`: `**Declared deviation:** \`execute: cache: false\` — the \`fresh\` predicate renders only when stale, so the pipeline pays for it once per change.` Commit in POGM4.
-- [ ] `RESEARCH_CLAUDE_ALLOW_BRANCH=1 "$W/scripts/check_install.sh" --project-dir ~/Research/POGM4` → PASS on everything but `branch` (WARN).
-- [ ] **Success criterion 6:** in POGM4, `claude -p '/write abstract'` (or interactive) → expected sequence in the transcript and on disk: writer writes the abstract; `quality_reports/agent_dispatch.jsonl` shows `writer` then `writer-critic`; `quality_reports/reviews/writer-critic_<date>.md` and `claim_evidence_POGM4_<date>.md` exist; `pipeline_state.json` has `sections.abstract`; the draft is shown after the score. Record in `docs/audits/2026-09-08_stage0-red.md` under `## Success criteria`.
+- [ ] Read `~/Research/paper-A/CLAUDE.md` in full and the `scripts/R/` tree listing. Archive the reference pipeline: `git mv scripts/R archive/scripts_R_reference` (or delete if `CLAUDE.md` line 28's "standalone reference only" has no consumer — grep the manuscript for `source(`/`scripts/R`; expect none). Remove `.claude/WORKFLOW_QUICK_REF.md` and `.claude/commands/` (two files: `zotero-notes.md`, `zotero-review.md` — read both; if they are still used, move them to `.claude/skills/<name>/SKILL.md` as project overrides with a `!.claude/skills/<name>/` gitignore negation). Keep `execute: cache: false` and add to `CLAUDE.md`: `**Declared deviation:** \`execute: cache: false\` — the \`fresh\` predicate renders only when stale, so the pipeline pays for it once per change.` Commit in paper-A.
+- [ ] `RESEARCH_CLAUDE_ALLOW_BRANCH=1 "$W/scripts/check_install.sh" --project-dir ~/Research/paper-A` → PASS on everything but `branch` (WARN).
+- [ ] **Success criterion 6:** in paper-A, `claude -p '/write abstract'` (or interactive) → expected sequence in the transcript and on disk: writer writes the abstract; `quality_reports/agent_dispatch.jsonl` shows `writer` then `writer-critic`; `quality_reports/reviews/writer-critic_<date>.md` and `claim_evidence_paper-A_<date>.md` exist; `pipeline_state.json` has `sections.abstract`; the draft is shown after the score. Record in `docs/audits/2026-09-08_stage0-red.md` under `## Success criteria`.
 
-### Task 8.2: zoning2026
+### Task 8.2: paper-C
 
-- [ ] Read `paper/manuscript.qmd` in full, `paper/manuscript_quarto_pdf.qmd` (confirm DEPRECATED per its own `CLAUDE.md`), `paper/tables/{descriptive,estimation,robustness}/*.tex` and the chunks that `\input` them. For each `.tex` fragment: identify the R that produced it (in `scripts/R/` or `scripts/python/`), move that code into a `tbl-*` chunk (`booktabs = TRUE`, notes) with `dependson`, delete the fragment and the `\input`. Delete `paper/manuscript_quarto_pdf.qmd` and its `.pdf`/`.tex`; delete `scripts/R` and `scripts/python` once every consumer is a chunk (`grep -rn 'source(\|read_rds\|readRDS' paper/manuscript.qmd` → none). Declare `manuscript: paper/manuscript.qmd` in `CLAUDE.md`. Run `python3 .claude/scripts/prose_number_check.py paper/manuscript.qmd` → 41 literals: each becomes an expression or an allowlist row with a reason. Render clean. Commit(s) in zoning2026.
-- [ ] Re-link: `~/Research/zoning2026/bootstrap-pipeline.sh --tip` **only after the merge in Task 8.7**; until then `"$W/apply.sh" --project-dir ~/Research/zoning2026 --link` and `RESEARCH_CLAUDE_ALLOW_BRANCH=1 check_install.sh` → PASS.
+- [ ] Read `paper/manuscript.qmd` in full, `paper/manuscript_quarto_pdf.qmd` (confirm DEPRECATED per its own `CLAUDE.md`), `paper/tables/{descriptive,estimation,robustness}/*.tex` and the chunks that `\input` them. For each `.tex` fragment: identify the R that produced it (in `scripts/R/` or `scripts/python/`), move that code into a `tbl-*` chunk (`booktabs = TRUE`, notes) with `dependson`, delete the fragment and the `\input`. Delete `paper/manuscript_quarto_pdf.qmd` and its `.pdf`/`.tex`; delete `scripts/R` and `scripts/python` once every consumer is a chunk (`grep -rn 'source(\|read_rds\|readRDS' paper/manuscript.qmd` → none). Declare `manuscript: paper/manuscript.qmd` in `CLAUDE.md`. Run `python3 .claude/scripts/prose_number_check.py paper/manuscript.qmd` → 41 literals: each becomes an expression or an allowlist row with a reason. Render clean. Commit(s) in paper-C.
+- [ ] Re-link: `~/Research/paper-C/bootstrap-pipeline.sh --tip` **only after the merge in Task 8.7**; until then `"$W/apply.sh" --project-dir ~/Research/paper-C --link` and `RESEARCH_CLAUDE_ALLOW_BRANCH=1 check_install.sh` → PASS.
 
-### Task 8.3: affordable_housing_2026
+### Task 8.3: paper-B
 
-- [ ] Declare `manuscript: manuscript_affordable_housing_2026.qmd` (it matches the convention; the declaration is still required). `git mv quality_reports/pipeline_state.json quality_reports/pipeline_state_legacy_2026-06-18.json` (the hand-written clo-author-era file is history, not state) and `python3 .claude/scripts/pipeline.py state init`; port its two scores into the new file: `state record-score strategy 94 --critic strategist-critic --report "legacy 2026-06-18"` and `state record-score code 92 --critic coder-critic --report "legacy 2026-06-18"` (the file's own numbers; read it first). `state validate` → valid. Commit. Re-link, check_install → PASS.
+- [ ] Declare `manuscript: manuscript_paper-B.qmd` (it matches the convention; the declaration is still required). `git mv quality_reports/pipeline_state.json quality_reports/pipeline_state_legacy_2026-06-18.json` (the hand-written clo-author-era file is history, not state) and `python3 .claude/scripts/pipeline.py state init`; port its two scores into the new file: `state record-score strategy 94 --critic strategist-critic --report "legacy 2026-06-18"` and `state record-score code 92 --critic coder-critic --report "legacy 2026-06-18"` (the file's own numbers; read it first). `state validate` → valid. Commit. Re-link, check_install → PASS.
 
-### Task 8.4: ESG
+### Task 8.4: paper-H
 
 - [ ] Declare `manuscript: manuscript.qmd`. `scripts/` holds seven numbered analysis scripts and `generate_dashboard.py`: read each; any whose output the manuscript reads becomes a chunk; the rest move to `archive/scripts/` with a README line each; `scripts/acquire/` stays. Delete `scripts/generate_dashboard.py`. 14 literals → expressions or allowlist rows. Render clean. Commit. Re-link, check_install → PASS.
 
-### Task 8.5: NAR_settlement
+### Task 8.5: paper-D
 
-- [ ] On branch `phase1-event-study` (its working branch; do not switch it). Declare `manuscript: manuscript_NAR_settlement.qmd`. 2 literals → fix. `scripts/compare_golden.sh` is a verification aid, not analysis — leave, note it in `CLAUDE.md`. Commit. Re-link, check_install → PASS.
+- [ ] On branch `phase1-event-study` (its working branch; do not switch it). Declare `manuscript: manuscript_paper-D.qmd`. 2 literals → fix. `scripts/compare_golden.sh` is a verification aid, not analysis — leave, note it in `CLAUDE.md`. Commit. Re-link, check_install → PASS.
 
-### Task 8.6: BRI
+### Task 8.6: paper-G
 
-- [ ] No manuscript yet. `check_install.sh` gives WARN on `manuscript-declared`; `/pipeline` refuses with the declaration message (test it once: `cd ~/Research/BRI && python3 .claude/scripts/pipeline.py manuscript; echo exit=$?` → message + `exit=1`). Nothing to migrate. Re-link, check_install → PASS (WARN allowed).
+- [ ] No manuscript yet. `check_install.sh` gives WARN on `manuscript-declared`; `/pipeline` refuses with the declaration message (test it once: `cd ~/Research/paper-G && python3 .claude/scripts/pipeline.py manuscript; echo exit=$?` → message + `exit=1`). Nothing to migrate. Re-link, check_install → PASS (WARN allowed).
 
 ### Task 8.7: Merge, re-link six to the shared checkout, lock bump, remove the worktree
 
@@ -4236,8 +4236,8 @@ cd "$RC" && git status --porcelain | wc -l        # expect 0
 git merge --no-ff repair/pipeline -m "merge: pipeline repair — one manuscript, every pair, every gate (spec 2026-09-08 v2)"
 ./scripts/check_fork.sh; echo exit=$?               # expect 0 on main
 ```
-- [ ] **Step 3: Re-link the six to `$RC`** — for each repo: `./bootstrap-pipeline.sh --tip` (safe now: `$RC` is on `main`); then `"$RC/scripts/check_install.sh" --all; echo exit=$?` → `exit=0`, `branch` PASS ×6, `lock` PASS ×6 (the lock now records the merge SHA — that is the lock bump), `hooks-wired` PASS ×6, `manuscript-declared` PASS ×5 + WARN (BRI).
-- [ ] **Step 4: Remove the worktree** — `git worktree remove ../research-claude-repair && git branch -d repair/pipeline && git worktree list` → one row. `readlink ~/Research/POGM4/.claude/agents/coder.md` → points into `$RC`, not the removed path.
+- [ ] **Step 3: Re-link the six to `$RC`** — for each repo: `./bootstrap-pipeline.sh --tip` (safe now: `$RC` is on `main`); then `"$RC/scripts/check_install.sh" --all; echo exit=$?` → `exit=0`, `branch` PASS ×6, `lock` PASS ×6 (the lock now records the merge SHA — that is the lock bump), `hooks-wired` PASS ×6, `manuscript-declared` PASS ×5 + WARN (paper-G).
+- [ ] **Step 4: Remove the worktree** — `git worktree remove ../research-claude-repair && git branch -d repair/pipeline && git worktree list` → one row. `readlink ~/Research/paper-A/.claude/agents/coder.md` → points into `$RC`, not the removed path.
 - [ ] **Step 5: Success criteria, verbatim** — run and paste into `docs/audits/2026-09-08_repair-signoff.md`:
 ```bash
 cd "$RC"
@@ -4246,10 +4246,10 @@ cd "$RC"
 python3 scripts/audit_graph.py . /tmp/g8.json | sed -n 2,3p
 grep -rnE 'paper/tables|paper/figures|paper/sections|main\.tex|scripts/R/|00_master|\\cite[tp]?\{|\\input\{|\\label\{|\\ref\{|\\cref|latexmk|threeparttable|\\doublespacing|Bibliography_base|results_summary\.md|\.Rmd|bookdown|\\pause|\\only<' agents skills rules references hooks templates seeds scripts | grep -vc 'residue:'
 tests/run_fixture.sh --live | tail -1
-for r in POGM4 zoning2026 affordable_housing_2026 ESG NAR_settlement BRI; do echo "$r: $(grep -E '^manuscript:' ~/Research/$r/CLAUDE.md || echo '(none — BRI expected)')"; done
-ls ~/Research/zoning2026/paper/tables 2>&1; ls -d ~/Research/*/scripts/R 2>&1
+for r in paper-A paper-C paper-B paper-H paper-D paper-G; do echo "$r: $(grep -E '^manuscript:' ~/Research/$r/CLAUDE.md || echo '(none — paper-G expected)')"; done
+ls ~/Research/paper-C/paper/tables 2>&1; ls -d ~/Research/*/scripts/R 2>&1
 ```
-Expected, line by line: `✓ check_fork: PASS`; `✓ check_install: PASS`; `dangling path refs : 0` and `agents named, not on roster: []`; `0`; `✓ run_fixture: PASS`; five declarations + BRI none; `No such file or directory` twice.
+Expected, line by line: `✓ check_fork: PASS`; `✓ check_install: PASS`; `dangling path refs : 0` and `agents named, not on roster: []`; `0`; `✓ run_fixture: PASS`; five declarations + paper-G none; `No such file or directory` twice.
 - [ ] **Step 6: Commit the sign-off and push** — `git add docs/audits/2026-09-08_repair-signoff.md && git commit -m "docs(audit): repair sign-off — success criteria recorded" && git push origin main`. Then `/checkpoint`.
 
 ---

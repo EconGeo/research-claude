@@ -12,3 +12,9 @@ __pycache__/
 # Skill run output (e.g. ztp-data-tag pass reports) when a skill is run from this repo:
 # library-specific, never shipped in the public template.
 /quality_reports/
+
+# Secrets never live in the repo; private project names for check_fork's identity scan.
+.env
+.env.*
+*.secrets*
+scripts/project-nouns.local

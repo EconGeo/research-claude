@@ -60,7 +60,7 @@
   - `test_underline_markup`: returned paragraph contains `"[" + normalised sentence + "]{.underline}"` exactly once.
   - `test_unknown_cleanup_rule`: `clean("x", ["nope"])` raises `ValueError`.
 - [ ] **Step 2:** `python3 -m pytest tests/test_source_check.py -q` → FAIL (module missing).
-- [ ] **Step 3:** Implement the four functions in `scripts/source_check.py`. Fixture `form_lines.txt` is the Form 21 ¶u block as `pdftotext` emits it (line numbers at line ends, a lone `216` line): generate it once with `pdftotext ~/Research/NAR_settlement/data/raw/legal/2023-07_nwmls_form21_rev7-23_hosted_spokanerealtors.pdf - | sed -n 684,700p` and check it starts at `205` / `u.` and ends after `216`. `tests/` is not scanned by `check_fork.sh`; nothing from it may move into `scripts/`.
+- [ ] **Step 3:** Implement the four functions in `scripts/source_check.py`. Fixture `form_lines.txt` is the Form 21 ¶u block as `pdftotext` emits it (line numbers at line ends, a lone `216` line): generate it once with `pdftotext ~/Research/paper-D/data/raw/legal/2023-07_nwmls_form21_rev7-23_hosted_spokanerealtors.pdf - | sed -n 684,700p` and check it starts at `205` / `u.` and ends after `216`. `tests/` is not scanned by `check_fork.sh`; nothing from it may move into `scripts/`.
 - [ ] **Step 4:** Same command → PASS.
 - [ ] **Step 5:** Add `source_check.py` to `scripts/SHIPPED`; `./scripts/check_fork.sh` exit 0; commit `"source_check: extraction, cleanup and verbatim paragraph match"`.
 
@@ -192,7 +192,7 @@
 
 ### Task 8: Roll out to the seven papers
 
-**Files (in each of `~/Research/{affordable_housing_2026,BRI,ESG,NAR_settlement,POGM4,zoning_hearings_2026_chacon_mueller,zoning2026}`):**
+**Files (in each of `~/Research/{paper-B,paper-G,paper-H,paper-D,paper-A,paper-F,paper-C}`):**
 - Modify: `_quarto.yml` (add the `filters:` line; `post-render:` list as in the seed)
 - Modify: `.gitignore` (drop the blanket `data/raw/**`; add each file under `data/raw/` ≥ 100 MB by path)
 
@@ -200,4 +200,4 @@
 - [ ] **Step 2:** Edit `_quarto.yml`. Run `./apply.sh --project-dir <paper> --link` (new shipped scripts are new link members), then `./scripts/check_install.sh --all` → exit 0.
 - [ ] **Step 3:** In each paper, `quarto render <ms> --to docx` → exit 0 and the `.docx` has no `word/comments.xml`.
 - [ ] **Step 4:** One local commit per paper, staging only `_quarto.yml` and `.gitignore`, message `"Wire source comments (research-claude <sha>)"`. Do not push.
-- [ ] **Step 5:** End-to-end in NAR_settlement on a scratch branch: one registry row for Form 21 ¶u (`data/raw/legal/2023-07_nwmls_form21_rev7-23_hosted_spokanerealtors.pdf`, cleanup `trailing-line-numbers`), one tagged sentence, `pipeline.py sources docx` → the comment shows the ¶u paragraph with the sentence underlined. Open it in Word for the author to look at; then delete the scratch branch unless the author keeps it.
+- [ ] **Step 5:** End-to-end in paper-D on a scratch branch: one registry row for Form 21 ¶u (`data/raw/legal/2023-07_nwmls_form21_rev7-23_hosted_spokanerealtors.pdf`, cleanup `trailing-line-numbers`), one tagged sentence, `pipeline.py sources docx` → the comment shows the ¶u paragraph with the sentence underlined. Open it in Word for the author to look at; then delete the scratch branch unless the author keeps it.

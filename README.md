@@ -1,7 +1,7 @@
 # research-claude: AI-Powered Research Workstation
 
-A Quarto-native, multi-agent research pipeline for empirical academic work — 17 agents,
-17 skills and 19 rules, plus ZotPilot (Zotero MCP server) and ai-audit (prose quality
+A Quarto-native, multi-agent research pipeline for empirical academic work — agents,
+skills, rules and hooks for Claude Code, plus ZotPilot (Zotero MCP server) and ai-audit (prose quality
 tools).
 
 **This repo is the pipeline**, not a composer of other people's. It is installed into a
@@ -35,6 +35,14 @@ improvements that had accumulated in individual paper projects.
 ---
 
 ## Prerequisites
+
+**Platform:** macOS or Linux. On Windows, use WSL — `apply.sh`, the symlinked install and
+the shell hooks do not run under native Windows.
+
+**You need:** [Claude Code](https://claude.com/claude-code), `git`, `python3` (3.10+), `jq`
+(the `protect-files.sh` hook needs it — `brew install jq` / `apt install jq`), Quarto, a TeX
+distribution with XeLaTeX, and R (4.3+). ZotPilot, Zotero, Ollama, the Chrome Connector and
+Obsidian are optional — the pipeline runs without them, minus literature search.
 
 Follow these steps in order. Each step has a verification check.
 
@@ -84,10 +92,11 @@ Download from [quarto.org](https://quarto.org/docs/get-started/) and run the ins
 quarto check   # verify: should report versions for knitr and jupyter
 ```
 
-### Step 4 — Install XeLaTeX (MacTeX)
+### Step 4 — Install XeLaTeX
 
 ```bash
-brew install --cask mactex-no-gui   # ~4GB; run this before bed
+brew install --cask mactex-no-gui   # macOS, ~4GB; run this before bed
+# Linux: sudo apt install texlive-xetex texlive-fonts-recommended   (or: quarto install tinytex)
 xelatex --version                    # verify: should print pdfTeX or XeTeX version
 ```
 
@@ -116,8 +125,9 @@ install.packages(c(
 ### Step 6 — Clone this repo and link it into your project
 
 ```bash
-git clone https://github.com/EconGeo/research-claude.git ~/Academic/research-claude
-cd ~/Academic/research-claude
+# Any location works; ~/research-claude is only an example
+git clone https://github.com/EconGeo/research-claude.git ~/research-claude
+cd ~/research-claude
 
 # Link the pipeline into your project
 ./apply.sh --project-dir ~/path/to/your-project --link
@@ -125,8 +135,14 @@ cd ~/Academic/research-claude
 # Preview what would be installed without making changes
 ./apply.sh --list
 
-# Share one set of voice/style references across projects
-./apply.sh --project-dir ~/path/to/your-project --link --link-references ~/Research/.claude/references
+# Optional: share one set of voice/style references across projects (any directory you keep them in)
+./apply.sh --project-dir ~/path/to/your-project --link --link-references ~/path/to/shared-references
+
+# Optional: your own voice profile is picked up from $RESEARCH_VOICE_PROFILE
+# (a blank template is installed when it is unset)
+
+# Verify the install
+./scripts/check_install.sh --project-dir ~/path/to/your-project
 ```
 
 **The pipeline is linked, not copied.** `apply.sh --link` creates one relative symlink
@@ -364,7 +380,7 @@ zotpilot config set zotero_user_id YOUR_ZOTERO_USER_ID
 
 Finding your Zotero data directory:
 ```bash
-# macOS with OneDrive sync:
+# macOS with a cloud-synced Zotero folder (OneDrive, Dropbox…):
 ls ~/Library/CloudStorage/ | grep Zotero
 
 # macOS local storage:
@@ -821,3 +837,6 @@ manifest coverage, the other a correctness layer catching hardcoded prose number
 and neither knew the other existed. Copying is the drift engine. Linking removes it by
 construction: there is one tree, and everything points at it.
 
+## License
+
+MIT — see [LICENSE](LICENSE). `zotpilot-skills/` and `ai-audit/` are vendored from [EconGeo/ZotPilot](https://github.com/EconGeo/ZotPilot) and [EconGeo/ai-audit](https://github.com/EconGeo/ai-audit); see those repos for their terms.

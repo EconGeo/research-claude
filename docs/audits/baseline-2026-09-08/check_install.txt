@@ -1,5 +1,5 @@
-══ /Users/andrew.mueller/Research/affordable_housing_2026
-PASS [checkout] /Users/andrew.mueller/Academic/research-claude
+══ ~/Research/paper-B
+PASS [checkout] ~/Academic/research-claude
 PASS [dangling] every link resolves
 PASS [tracked-links] no symlink is committed
 PASS [membership] every upstream item is present
@@ -8,8 +8,8 @@ PASS [override-tracked] every project override is committed
 WARN [lock] records 1ad4140, checkout is at 36c0b20 (10 commits later) — refresh before submission
 PASS [bootstrap]
 
-══ /Users/andrew.mueller/Research/BRI
-PASS [checkout] /Users/andrew.mueller/Academic/research-claude
+══ ~/Research/paper-G
+PASS [checkout] ~/Academic/research-claude
 PASS [dangling] every link resolves
 PASS [tracked-links] no symlink is committed
 PASS [membership] every upstream item is present
@@ -18,8 +18,8 @@ PASS [override-tracked] every project override is committed
 WARN [lock] records 1ad4140, checkout is at 36c0b20 (10 commits later) — refresh before submission
 PASS [bootstrap]
 
-══ /Users/andrew.mueller/Research/ESG
-PASS [checkout] /Users/andrew.mueller/Academic/research-claude
+══ ~/Research/paper-H
+PASS [checkout] ~/Academic/research-claude
 PASS [dangling] every link resolves
 PASS [tracked-links] no symlink is committed
 PASS [membership] every upstream item is present
@@ -28,8 +28,8 @@ PASS [override-tracked] every project override is committed
 WARN [lock] records 1ad4140, checkout is at 36c0b20 (10 commits later) — refresh before submission
 PASS [bootstrap]
 
-══ /Users/andrew.mueller/Research/NAR_settlement
-PASS [checkout] /Users/andrew.mueller/Academic/research-claude
+══ ~/Research/paper-D
+PASS [checkout] ~/Academic/research-claude
 PASS [dangling] every link resolves
 PASS [tracked-links] no symlink is committed
 PASS [membership] every upstream item is present
@@ -38,8 +38,8 @@ PASS [override-tracked] every project override is committed
 WARN [lock] records 1ad4140, checkout is at 36c0b20 (10 commits later) — refresh before submission
 PASS [bootstrap]
 
-══ /Users/andrew.mueller/Research/POGM4
-PASS [checkout] /Users/andrew.mueller/Academic/research-claude
+══ ~/Research/paper-A
+PASS [checkout] ~/Academic/research-claude
 PASS [dangling] every link resolves
 PASS [tracked-links] no symlink is committed
 PASS [membership] every upstream item is present
@@ -48,8 +48,8 @@ PASS [override-tracked] every project override is committed
 WARN [lock] records fd7539d, checkout is at 36c0b20 (8 commits later) — refresh before submission
 PASS [bootstrap]
 
-══ /Users/andrew.mueller/Research/zoning2026
-PASS [checkout] /Users/andrew.mueller/Academic/research-claude
+══ ~/Research/paper-C
+PASS [checkout] ~/Academic/research-claude
 PASS [dangling] every link resolves
 PASS [tracked-links] no symlink is committed
 PASS [membership] every upstream item is present

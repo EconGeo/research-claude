@@ -48,7 +48,11 @@ echo "── identity: nothing project-specific ships ──"
 # The `<!-- residue:prohibition -->` marker on the three scan lines below is
 # this file's one reserved use of that convention: it exempts a line that
 # NAMES a forbidden pattern in order to forbid it, never a line that uses one.
-scan project-identity '\bPOGM|\bSFPP|\bWRLURI|\bzoning2026|\bNAR_settlement|\bmanuscript_quarto_word' "${SHIP[@]}" tests  # <!-- residue:prohibition -->
+# Private project names are not published: list them, one ERE alternative per line, in the
+# untracked scripts/project-nouns.local (gitignored). Without it only the public tokens run.
+ident='\bWRLURI|\bmanuscript_[a-z]+_word'  # <!-- residue:prohibition -->
+[[ -f "$RC/scripts/project-nouns.local" ]] && ident+="|$(grep -v '^[[:space:]]*\(#\|$\)' "$RC/scripts/project-nouns.local" | paste -sd'|' -)"
+scan project-identity "$ident" "${SHIP[@]}" tests
 scan project-nouns    '\bJREPM|\bJRER|\bCoStar|\bzoning|\bWRLURI|\bNAR\b' agents skills rules hooks templates seeds scripts  # <!-- residue:prohibition -->
 scan course-leak      'academic course materials|Beamer slides|TikZ Freshness'  # <!-- residue:prohibition -->
 

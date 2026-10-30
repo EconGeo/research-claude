@@ -1,6 +1,6 @@
 # data-dict Trial — Findings
 
-Plan: `docs/plans/2026-09-25-data-dict-trial.md`. Trial project: `~/Research/zoning2026` (read-only; copies only).
+Plan: `docs/plans/2026-09-25-data-dict-trial.md`. Trial project: `~/Research/paper-C` (read-only; copies only).
 
 ## Task 0 — install and format surface (2026-09-25)
 
@@ -36,7 +36,7 @@ Plan: `docs/plans/2026-09-25-data-dict-trial.md`. Trial project: `~/Research/zon
 
 ## Task 1 — staging (2026-09-25)
 
-`~/Research/zoning2026/data/raw/data_manifest.md` was read in full (116 lines). The picks cover CSV, a 14-file yearly series and a `.dta`, and each carries a known quirk worth testing:
+`~/Research/paper-C/data/raw/data_manifest.md` was read in full (116 lines). The picks cover CSV, a 14-file yearly series and a `.dta`, and each carries a known quirk worth testing:
 
 | Table | Source file(s) | Why |
 |---|---|---|

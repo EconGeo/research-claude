@@ -37,7 +37,7 @@ Either would justify restoring a dispatch layer. Neither is true of any project 
 
 ## Related
 
-- `agents/verifier.md` — note that POGM4's `verifier.md` was **not** harvested. It is a
+- `agents/verifier.md` — note that paper-A's `verifier.md` was **not** harvested. It is a
   `~/Courses` slide verifier that leaked into a `~/Research` project (12 Beamer/TikZ/slide
   hits against clo-author's 6 LaTeX hits), the exact domain crossover the user's global
   CLAUDE.md forbids. clo-author's two-mode verifier was taken instead, with check 1

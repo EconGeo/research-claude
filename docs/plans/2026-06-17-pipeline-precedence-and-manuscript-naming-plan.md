@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- **Naming convention (verbatim):** `manuscript_<project>.qmd`, where `<project>` is the project **directory basename** (e.g. the `zoning2026/` project → `manuscript_zoning2026.qmd`). Use the literal placeholder string `manuscript_<project>.qmd` in rule text.
+- **Naming convention (verbatim):** `manuscript_<project>.qmd`, where `<project>` is the project **directory basename** (e.g. the `paper-C/` project → `manuscript_paper-C.qmd`). Use the literal placeholder string `manuscript_<project>.qmd` in rule text.
 - **Zero submodule edits:** no file under `submodules/clo-author/**` (or any other submodule) may be created, modified, or deleted.
 - **No skill rewrites:** do not edit `analyze`/`write`/`revise` SKILL.md or any clo-author skill/rule/agent.
 - **Mechanism is rules-convention-only:** do NOT add manuscript scaffolding to `apply.sh`, do NOT parse git remotes, do NOT change `.gitignore`.
@@ -84,8 +84,8 @@ follows quarto-empirical.
 ## Manuscript Naming Convention
 
 The manuscript file is named **`manuscript_<project>.qmd`**, where `<project>` is the
-**project directory basename**. Example: in a project directory named `zoning2026/`,
-the manuscript is `manuscript_zoning2026.qmd`. This is the single source of truth for
+**project directory basename**. Example: in a project directory named `paper-C/`,
+the manuscript is `manuscript_paper-C.qmd`. This is the single source of truth for
 the naming convention; `quarto-empirical.md`, `quarto-pdf.md`, `quarto-word.md`, and
 `data-manifest.md` use `manuscript_<project>.qmd` as a placeholder for the same name.
 
@@ -149,7 +149,7 @@ In `rules/quarto-empirical.md`, after the line `The rendered PDF is the paper.` 
 
 ```markdown
 > **File name:** the manuscript is `manuscript_<project>.qmd`, where `<project>` is the
-> project directory basename (e.g. `manuscript_zoning2026.qmd` in the `zoning2026/`
+> project directory basename (e.g. `manuscript_paper-C.qmd` in the `paper-C/`
 > project). Examples below use `manuscript_<project>.qmd` as a placeholder. See
 > `pipeline-precedence.md` for the canonical statement of this convention.
 ```
@@ -348,14 +348,14 @@ with:
   echo "→ Installing research-claude rules (quarto-empirical, pipeline-precedence, data-manifest, quarto-pdf, quarto-word, registry-verification-gate, literature-search-order)..."
 ```
 
-- [ ] **Step 4: Smoke-test apply.sh into a temp `zoning2026` project**
+- [ ] **Step 4: Smoke-test apply.sh into a temp `paper-C` project**
 
 Run:
 ```bash
 cd ~/Academic/research-claude
-rm -rf /tmp/rc-test-plan && mkdir -p /tmp/rc-test-plan/zoning2026
-./apply.sh --project-dir /tmp/rc-test-plan/zoning2026 >/dev/null 2>&1
-ls /tmp/rc-test-plan/zoning2026/.claude/rules/pipeline-precedence.md
+rm -rf /tmp/rc-test-plan && mkdir -p /tmp/rc-test-plan/paper-C
+./apply.sh --project-dir /tmp/rc-test-plan/paper-C >/dev/null 2>&1
+ls /tmp/rc-test-plan/paper-C/.claude/rules/pipeline-precedence.md
 ./apply.sh --list | grep pipeline-precedence
 ```
 Expected: the `ls` prints the path (file installed); the `--list` grep prints the new line.
@@ -364,7 +364,7 @@ Expected: the `ls` prints the path (file installed); the `--list` grep prints th
 
 Run:
 ```bash
-grep -c "manuscript_<project>.qmd" /tmp/rc-test-plan/zoning2026/.claude/rules/pipeline-precedence.md
+grep -c "manuscript_<project>.qmd" /tmp/rc-test-plan/paper-C/.claude/rules/pipeline-precedence.md
 ```
 Expected: a count ≥ 1 (the convention text installed verbatim; `<project>` is a literal placeholder, resolved by Claude at manuscript-creation time, not by apply.sh).
 

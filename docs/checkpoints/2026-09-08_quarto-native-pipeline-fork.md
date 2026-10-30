@@ -40,21 +40,21 @@ no project under `~/Research/` was modified.**
   serializes the coder↔writer looping the research journal shows actually happens.
 - **librarian folds into a ZotPilot *bridge* skill**, not an edit to `zotpilot-skills/` —
   those are vendored, and editing them in place would recreate the drift we're escaping.
-- **De-projectification is cheaper than feared** — one leaked token (`manuscript_quarto_word`
+- **De-projectification is cheaper than feared** — one leaked token (`manuscript`
   in coder-critic) across eight harvest candidates; `editor.md` is fully generic.
-- Two errors self-corrected during the session: `domain-referee` is 137 lines in POGM4, not
+- Two errors self-corrected during the session: `domain-referee` is 137 lines in paper-A, not
   351 (I had extrapolated from a diff-line count), and `writer-critic` is 62 lines, not ~100.
 
 ## Open questions
-- **Q1** Re-apply to POGM4 in place, or verify on a scratch copy first? (Criterion 4 assumes scratch.)
+- **Q1** Re-apply to paper-A in place, or verify on a scratch copy first? (Criterion 4 assumes scratch.)
 - **Q2** How do future project improvements get promoted back — a `/promote` skill, or a README checklist?
-- **Q3** Rollout order for `zoning2026`, `ESG`, `BRI`, `affordable_housing_2026`? All carry the
-  same clo-author baseline and the same four wrong standards files; only POGM4 has been patched around.
+- **Q3** Rollout order for `paper-C`, `paper-H`, `paper-G`, `paper-B`? All carry the
+  same clo-author baseline and the same four wrong standards files; only paper-A has been patched around.
 
 ## Next 1–3 actions
 1. Review the spec; answer Q1–Q3 (or defer them into the plan).
 2. Invoke `superpowers:writing-plans` to turn the spec into a file-by-file implementation plan.
-3. Execute in dependency order: vendor+harvest agents → rewrite D-list → port B-list → rewrite `apply.sh` → delete submodule + `pipeline-precedence.md` → verify against a scratch POGM4.
+3. Execute in dependency order: vendor+harvest agents → rewrite D-list → port B-list → rewrite `apply.sh` → delete submodule + `pipeline-precedence.md` → verify against a scratch paper-A.
 
 ## Resume prompt
 > Resuming from checkpoint `docs/checkpoints/2026-09-08_quarto-native-pipeline-fork.md`. Read it and the spec it points to, then continue with action 1.

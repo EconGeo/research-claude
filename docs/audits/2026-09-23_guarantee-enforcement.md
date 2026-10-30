@@ -5,7 +5,7 @@
 **Guarantee A** — exactly one Quarto document is the single source of ground truth.
 **Guarantee B** — rendering and referencing are strictly native Quarto.
 **Method:** every file named in the brief read to EOF; fixtures built in a scratchpad project
-and every shipped executable run against them; POGM4's live manuscript used as the field case.
+and every shipped executable run against them; paper-A's live manuscript used as the field case.
 Every claim below is labelled `tested:` (a command was run in this session) or `per file:`
 (read in full). Nothing in this audit modified a pipeline file.
 
@@ -35,7 +35,7 @@ Column 3 below is what the brief calls for: what actually fires.
 | **INV-2** | `#\| fig-cap:` on every figure | `reviewer-judgment` (L114) | writer-critic `scoring-rubrics.md:28`; coder-critic cat 11; `quarto-empirical.md:313` `-5`. **No script.** `quarto render` does not fail on a missing cap | CRITIC |
 | **INV-3** | Booktabs only | `reviewer-judgment` | coder-critic cat 12 | CRITIC |
 | **INV-4** | Stars per journal profile | `reviewer-judgment` | coder-critic cat 12 | CRITIC |
-| **INV-5** | Abstract ≤ 150 words | `reviewer-judgment` | writer-critic. (POGM4 overrides to 200 — JRER/T&F) | CRITIC |
+| **INV-5** | Abstract ≤ 150 words | `reviewer-judgment` | writer-critic. (paper-A overrides to 200 — JRER/T&F) | CRITIC |
 | **INV-6** | JEL + keywords | `reviewer-judgment` | `scoring-rubrics.md:36` `-5` | CRITIC |
 | **INV-7** | Consistent notation | `reviewer-judgment` | `scoring-rubrics.md:158` `-5 per symbol` | CRITIC |
 | **INV-8** | Causal claim ⇒ identification section | `reviewer-judgment` | `scoring-rubrics.md:20` `-20` | CRITIC |
@@ -108,7 +108,7 @@ the whole project tree. The dir-sweep lint *scanned* `run_analysis.R` and
 `explorations/side_analysis.R` and had nothing to say about them — it lints their contents, and
 has no concept of a file that should not exist.
 
-`tested:` the same on the live project. `check_install.sh --project-dir ~/Research/POGM4` prints
+`tested:` the same on the live project. `check_install.sh --project-dir ~/Research/paper-A` prints
 **`✓ check_install: PASS`** on a repo that carries 15 analysis scripts in
 `archive/scripts_R_reference/`, 8 more in `quality_reports/phase2_scripts_2026-09-08/`, an
 `explorations/verify_rent_cagr.R`, and two further `.qmd` files under
@@ -159,7 +159,7 @@ attribution is wrong.**
 > `def chunk_labels(ms: Path) -> List[str]:`
 > `    return re.findall(r"^#\|\s*label:\s*([A-Za-z0-9_-]+)", ms.read_text(), re.M)`
 
-`tested:` against `~/Research/POGM4/manuscript_quarto_word.qmd`:
+`tested:` against `~/Research/paper-A/manuscript.qmd`:
 
 ```
 chunk_labels() returns: ['setup']
@@ -173,7 +173,7 @@ tbl- labels (any form): 34
 The brief's hypothesis is confirmed exactly: **one label found in an 80-chunk manuscript**,
 because 79 chunks carry their label in the brace header rather than a `#| label:` line.
 
-Downstream, `tested:` `pipeline.py post coder` in POGM4:
+Downstream, `tested:` `pipeline.py post coder` in paper-A:
 
 ```
 MISSING chunks tbl-* (0 found, need 1)
@@ -205,7 +205,7 @@ The checker has no concept of a cross-reference. `tested:` adding those three di
 @fig-                prose-only count = 20
 ```
 
-and `prose_number_check.py manuscript_quarto_word.qmd` →
+and `prose_number_check.py manuscript.qmd` →
 `Prose number check PASSED: 92 distinct literals, all allowlisted with a reason`.
 
 **The single genuinely-wired gate in the pipeline exits 0 on a manuscript with 49 typed table
@@ -281,10 +281,10 @@ FAIL [path-resolves]
 FAIL [inv-refs]
     skills/tools/SKILL.md:35: INV-25 is not defined
 FAIL [project-identity]
-    scripts/check_install.sh:225:  # Why it is not a style rule. POGM4 carried a project-local skill,
+    scripts/check_install.sh:225:  # Why it is not a style rule. paper-A carried a project-local skill,
 ```
 
-(`scripts/quality_score.py` likewise exists only as `~/Research/POGM4/scripts/quality_score.py` —
+(`scripts/quality_score.py` likewise exists only as `~/Research/paper-A/scripts/quality_score.py` —
 a project-local file, not a pipeline one. The `/tools commit` Step 0 first command is
 unresolvable in any other project.)
 
@@ -299,7 +299,7 @@ the gate is not weak, it is absent, and the repo's own hygiene check would have 
 Both were read in full. **Neither ever reads a manuscript.** They are repo-hygiene gates for the
 research-claude checkout, invoked only by `scripts/check_fork.sh` (lines 93–99), and neither is
 in `scripts/SHIPPED`, so neither is linked into a project's `.claude/scripts/` (`tested:`
-POGM4's `.claude/scripts/` contains only `pipeline.py`, `prose_number_check.py`, `qmd_chunks.py`,
+paper-A's `.claude/scripts/` contains only `pipeline.py`, `prose_number_check.py`, `qmd_chunks.py`,
 `registry_lib.py`, and a project-local `statusline.sh`).
 
 **`check_paths.py`** — `per file:` its docstring states the scope outright:
@@ -327,10 +327,10 @@ rows." Eight criteria:
 | `hooks-readme` | `hooks/README.md` rows matching real hook files and their declared events |
 | `artifact-paths` | a `quality_reports/…` path matching no registry glob |
 
-`tested:` pointed at a project, `check_refs.py --root ~/Research/POGM4` **crashes**:
-`FileNotFoundError: '/Users/andrew.mueller/Research/POGM4/rules/registry.yaml'` (via
-`crit_artifact_paths` → `registry_lib.load_registry`). `check_paths.py --root ~/Research/POGM4`
-does not crash but produces 20 meaningless rows by scanning POGM4's *own* `templates/` directory.
+`tested:` pointed at a project, `check_refs.py --root ~/Research/paper-A` **crashes**:
+`FileNotFoundError: '~/Research/paper-A/rules/registry.yaml'` (via
+`crit_artifact_paths` → `registry_lib.load_registry`). `check_paths.py --root ~/Research/paper-A`
+does not crash but produces 20 meaningless rows by scanning paper-A's *own* `templates/` directory.
 Both are correct behaviour for tools that were never meant to leave the repo — the point is that
 neither is, or can be, a manuscript gate.
 
@@ -382,15 +382,15 @@ Cosmetic divergence: the short copy's docstring lists `markets` among the scanne
 | `agents/verifier.md` check 4b | `.claude/scripts/…` → **255-line** |
 | `skills/tools/SKILL.md` `/tools commit` Step 0 | `.claude/scripts/…` → **255-line** |
 | `rules/quarto-empirical.md` write gate item 3 | `.claude/scripts/…` → **255-line** |
-| **`~/Research/POGM4/CLAUDE.md`** (two places) | **`python3 ~/Research/scripts/prose_number_check.py`** → **152-line** |
+| **`~/Research/paper-A/CLAUDE.md`** (two places) | **`python3 ~/Research/scripts/prose_number_check.py`** → **152-line** |
 | `~/Research/CLAUDE.md` / other legacy projects | 152-line |
 
-`tested:` `~/Research/POGM4/.claude/scripts/prose_number_check.py` is a symlink to the 255-line
-copy — so **POGM4 has both on hand and its own `CLAUDE.md` names the weaker one.** A hand-run of
+`tested:` `~/Research/paper-A/.claude/scripts/prose_number_check.py` is a symlink to the 255-line
+copy — so **paper-A has both on hand and its own `CLAUDE.md` names the weaker one.** A hand-run of
 the documented command and an automated `pipeline.py post` run can disagree, and the documented
-one is the one that misses round-ten counts and per-project nouns. POGM4's `CLAUDE.md` also calls
+one is the one that misses round-ten counts and per-project nouns. paper-A's `CLAUDE.md` also calls
 `~/Research/scripts/prose_number_check.py` "the **research-wide** checker … the reference
-implementation is NAR_settlement's `quality_reports/w_prose_number_check.py`" — a third lineage.
+implementation is paper-D's `quality_reports/w_prose_number_check.py`" — a third lineage.
 
 ---
 
@@ -407,12 +407,12 @@ implementation is NAR_settlement's `quality_reports/w_prose_number_check.py`" �
    `content-invariants.md:112` should stop claiming it.
 4. **No executable looks for a second analysis path.** A second `.qmd`, a root-level analysis `.R`,
    and an `explorations/` script feeding the manuscript are all invisible; `check_install.sh`
-   PASSES POGM4 with 24 such files present.
+   PASSES paper-A with 24 such files present.
 5. **INV-19b (`source()`), INV-24 (manifest), INV-15 (packages in setup) have no executable check**
    while `content-invariants.md:110-111` names enforcers for all three. INV-19's row even spells
    out `source()` as something the lint hook catches; it does not.
 6. **`prose_number_check.py`'s incidental catch of typed exhibit numbers is one allowlist row
-   wide**, and in POGM4 that row already exists — the gate exits 0 on 49 typed table references.
+   wide**, and in paper-A that row already exists — the gate exits 0 on 49 typed table references.
 7. **Two divergent `prose_number_check.py` copies**, with the live project's `CLAUDE.md` pointing
    at the weaker one while its own `.claude/scripts/` symlinks the stronger.
 

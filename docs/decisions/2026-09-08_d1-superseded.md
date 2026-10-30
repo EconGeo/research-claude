@@ -4,7 +4,7 @@
 
 **What changes.** `rules/permissions.md` (now rendered from `rules/registry.yaml`), `rules/lifecycle.md`
 and `rules/meta-governance.md` are restored as rewrites against the archived clo-author files
-(`~/Research/NAR_settlement_legacy_archive/.claude/rules/`, upstream `hugosantanna/clo-author@d36c408`).
+(`~/Research/paper-D_legacy_archive/.claude/rules/`, upstream `hugosantanna/clo-author@d36c408`).
 `rules/workflow.md` is not restored: its loop is `skills/pipeline/SKILL.md`, its graph is the registry.
 `agents/orchestrator.md` is not restored: a subagent cannot hold an approval gate, so the driver is a skill.
 

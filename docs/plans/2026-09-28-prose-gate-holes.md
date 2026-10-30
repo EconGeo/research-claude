@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3 stdlib (`re`, `csv`, `os`); tests are `unittest.TestCase` classes run by `python3 -m pytest tests/ -q`.
 
-**Spec:** `~/Research/POGM4/quality_reports/2026-09-23_pipeline_gate_audit.md`. This plan implements its §D1 (sign glue), §D2 (verdict words), §D3 (captions) and §D6 (fence desync), plus two smaller holes from §A: the `` `{r}` `` inline syntax and the trailing-comma key. §D4/§D5 already landed (`quarto_structure_check.py`, `chunk_labels()`). §D7 is project-local, and §D8 landed as repair-plan item 1.6. The executor reads §A and §D of that audit in full before Task 1.
+**Spec:** `~/Research/paper-A/quality_reports/2026-09-23_pipeline_gate_audit.md`. This plan implements its §D1 (sign glue), §D2 (verdict words), §D3 (captions) and §D6 (fence desync), plus two smaller holes from §A: the `` `{r}` `` inline syntax and the trailing-comma key. §D4/§D5 already landed (`quarto_structure_check.py`, `chunk_labels()`). §D7 is project-local, and §D8 landed as repair-plan item 1.6. The executor reads §A and §D of that audit in full before Task 1.
 
 ## Why this plan exists
 
@@ -47,12 +47,12 @@ The repair plan (`docs/plans/2026-09-23_pipeline-repair.md`) Phase 5 says the nu
 - [ ] **Step 3:** Record the fleet baseline with the **main** copy. All five exited 0 on 2026-09-28:
 
 ```bash
-for m in ESG/manuscript.qmd NAR_settlement/manuscript_NAR_settlement.qmd POGM4/manuscript_quarto_word.qmd affordable_housing_2026/manuscript_affordable_housing_2026.qmd zoning2026/paper/manuscript.qmd; do
-  python3 /Users/andrew.mueller/Academic/research-claude/scripts/prose_number_check.py "/Users/andrew.mueller/Research/$m" >/dev/null 2>&1; echo "$m $?"
+for m in paper-H/manuscript.qmd paper-D/manuscript_paper-D.qmd paper-A/manuscript.qmd paper-B/manuscript_paper-B.qmd paper-C/paper/manuscript.qmd; do
+  python3 ~/Academic/research-claude/scripts/prose_number_check.py "~/Research/$m" >/dev/null 2>&1; echo "$m $?"
 done
 ```
 
-(BRI has no manuscript yet.)
+(paper-G has no manuscript yet.)
 
 ---
 
@@ -554,9 +554,9 @@ Merging makes the stricter gate live in every paper, and some are mid-task (a pr
 
 ```bash
 WT="<worktree path>"
-for m in ESG/manuscript.qmd NAR_settlement/manuscript_NAR_settlement.qmd POGM4/manuscript_quarto_word.qmd affordable_housing_2026/manuscript_affordable_housing_2026.qmd zoning2026/paper/manuscript.qmd; do
+for m in paper-H/manuscript.qmd paper-D/manuscript_paper-D.qmd paper-A/manuscript.qmd paper-B/manuscript_paper-B.qmd paper-C/paper/manuscript.qmd; do
   log="$SCRATCH/fleet_${m%%/*}.log"
-  python3 "$WT/scripts/prose_number_check.py" "/Users/andrew.mueller/Research/$m" > "$log" 2>&1; echo "$m $?"
+  python3 "$WT/scripts/prose_number_check.py" "~/Research/$m" > "$log" 2>&1; echo "$m $?"
 done
 ```
 
@@ -571,7 +571,7 @@ done
 
 - [ ] **Step 1:** In `CLAUDE.md` § Start here, replace `**Nothing is open in this repo.**` with the true state. Name `docs/plans/2026-09-28-prose-gate-holes.md` as landed at `<sha>` or awaiting the fleet decision, and name the open improvement-ledger rows (as of 2026-09-28, **L-004 and L-005 are `open`** in `docs/improvement-ledger.md`; re-read the ledger before writing).
 - [ ] **Step 2:** In `docs/plans/2026-09-23_pipeline-repair.md` Phase 5, append a paragraph: `**Correction (2026-09-28).** "The number-gate holes … either Phase 1 above or genuinely project-local" was wrong: Phase 1 has no such item and the holes are research-wide. They were carried by no plan until docs/plans/2026-09-28-prose-gate-holes.md.`
-- [ ] **Step 3:** Append a ledger row: `L-007 | 2026-09-28 | POGM4 | scripts/prose_number_check.py | Project gate audit: sign typed beside an inline value, caption strings in chunks, unclosed fence and typed verdict words all passed the prose-number gate. | landed <sha>` (or `open` if Task 7 stopped the merge). Before writing, read the ledger's header rule on generic notes; the project name belongs only in the `project` column.
+- [ ] **Step 3:** Append a ledger row: `L-007 | 2026-09-28 | paper-A | scripts/prose_number_check.py | Project gate audit: sign typed beside an inline value, caption strings in chunks, unclosed fence and typed verdict words all passed the prose-number gate. | landed <sha>` (or `open` if Task 7 stopped the merge). Before writing, read the ledger's header rule on generic notes; the project name belongs only in the `project` column.
 - [ ] **Step 4:** Append a `docs/SESSION_REPORT.md` entry: what landed, the fleet table (or a link to it) and the decision owed, if any.
 - [ ] **Step 5:** `check_fork.sh`, then commit `docs: correct the open-work pointer; record the prose-gate holes close-out`.
 - [ ] **Step 6:** Final message to the author: the outcome in 1–3 sentences; the per-project fleet table if any project went red; the merge decision if one is owed.
