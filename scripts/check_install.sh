@@ -303,7 +303,12 @@ check_project() {
   local decl mf=""; decl="$(grep -cE '^manuscript:\s*\S+\.qmd\s*$' "$P/CLAUDE.md" 2>/dev/null || true)"; decl="${decl:-0}"
   if [[ "$decl" -eq 1 ]]; then
     mf="$(sed -nE 's/^manuscript:[[:space:]]*([^[:space:]]+\.qmd)[[:space:]]*$/\1/p' "$P/CLAUDE.md")"
-    [[ -f "$P/$mf" ]] && ok manuscript-declared "$mf" || bad manuscript-declared "CLAUDE.md declares $mf but it does not exist"
+    # Declared ahead of time with no .qmd anywhere yet is the pre-results state (the commit gate
+    # checks the manuscript only once it is staged); a missing file beside other .qmd files is a typo.
+    if [[ -f "$P/$mf" ]]; then ok manuscript-declared "$mf"
+    elif [[ -z "$(find "$P" -maxdepth 2 -name '*.qmd' -not -path '*/talks/*' -not -path '*/explorations/*' -not -path '*/.claude/*' -print -quit)" ]]; then
+      warn manuscript-declared "CLAUDE.md declares $mf, not written yet — /pipeline refuses until it exists"
+    else bad manuscript-declared "CLAUDE.md declares $mf but it does not exist"; fi
   elif [[ "$decl" -eq 0 ]]; then
     if [[ -n "$(find "$P" -maxdepth 2 -name '*.qmd' -not -path '*/talks/*' -not -path '*/explorations/*' -print -quit)" ]]; then
       bad manuscript-declared "no 'manuscript: <file>.qmd' line in CLAUDE.md"
