@@ -210,7 +210,8 @@ def append_log(root: Path, agent: str, source: str = "pipeline.py") -> None:
     with p.open("a") as f: f.write(json.dumps({"at": now(), "agent": agent, "source": source}) + "\n")
 
 def last_completion(log, agent) -> Optional[str]:
-    ats = [e["at"] for e in log if e.get("agent") == agent]
+    ats = [e["at"] for e in log
+           if isinstance(e, dict) and e.get("agent") == agent and isinstance(e.get("at"), str)]
     return max(ats) if ats else None
 
 # ── predicates ──────────────────────────────────────────────────────────────

@@ -157,6 +157,38 @@ class TestReadGate(ProjectCase):
         self.full_read(agent="writer-1")
         self.assertFalse(self.denied(self.edit(agent="writer-1")))
 
+    def parallel_reads(self, reads):
+        """Run one PostToolUse Read hook per (agent, offset) at the same time."""
+        env = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.proj), TMPDIR=str(self.tmp))
+        procs = []
+        for agent, off in reads:
+            n = min(2000, self.total() - off + 1)
+            p = {"hook_event_name": "PostToolUse", "tool_name": "Read", "session_id": self.session,
+                 "agent_id": agent, "tool_input": {"file_path": str(self.ms), "offset": off, "limit": 2000},
+                 "tool_response": {"file": {"startLine": off, "numLines": n, "totalLines": self.total()}}}
+            pr = subprocess.Popen([sys.executable, str(READ_GATE)], stdin=subprocess.PIPE, env=env,
+                                  stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+            pr.stdin.write(json.dumps(p)); pr.stdin.close()
+            procs.append(pr)
+        for pr in procs:
+            self.assertEqual(pr.wait(), 0, pr.stderr.read())
+
+    def test_parallel_subagents_keep_their_own_reads(self):
+        """EconGeo/research-claude#7: one shared state file let parallel agents overwrite each
+        other's records, so an agent that had read the file was refused."""
+        agents = [f"writer-{i}" for i in range(20)]
+        self.parallel_reads([(a, off) for a in agents for off in (1, 2001)])
+        for a in agents:
+            self.assertFalse(self.denied(self.edit(agent=a)), a)
+
+    def test_one_agents_parallel_chunk_reads_all_count(self):
+        """Chunked Reads sent in one message run their hooks at the same time for one agent."""
+        self.ms.write_text("".join(f"line {i}\n" for i in range(1, 20001)))
+        self.parallel_reads([("main", off) for off in range(1, 20001, 2000)])
+        p = {"hook_event_name": "PreToolUse", "tool_name": "Write",
+             "tool_input": {"file_path": str(self.ms), "content": "x"}}
+        self.assertFalse(self.denied(self.run_hook(READ_GATE, p)))
+
     def test_bash_inplace_write_gated_render_not(self):
         sed = {"hook_event_name": "PreToolUse", "tool_name": "Bash",
                "tool_input": {"command": "sed -i '' 's/a/b/' manuscript_p.qmd"}}
