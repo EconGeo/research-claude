@@ -67,6 +67,9 @@ def _run() -> int:
         try: e = json.loads(ln)
         except json.JSONDecodeError: continue
         if not isinstance(e, dict): continue  # same non-object case, one log line at a time
+        # A line with no usable "at" (hand-appended, half-written) is skipped like a bad line;
+        # left in, it raised KeyError below and the fail-open turned the check off for good.
+        if not isinstance(e.get("at"), str): continue
         all_entries.append(e)
         if not sid or (e.get("session") or "") in ("", sid): entries.append(e)
     unpaired = []

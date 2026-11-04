@@ -82,6 +82,19 @@ class TestFailOpen(FixtureCase):
         self.assertEqual(rc, 0)
         self.assertEqual(out, "")
 
+    def test_log_line_missing_at_key_does_not_switch_the_check_off(self):
+        """EconGeo/research-claude#6: the at-less line used to reach the fail-open, so a real
+        unpaired creator on another line went unreported for every later Stop. It is skipped
+        one line at a time instead, and the rest of the log is still checked."""
+        log = self.t / "quality_reports" / "agent_dispatch.jsonl"
+        log.write_text(json.dumps({"at": "2026-09-10T00:00:00.000+00:00", "agent": "coder"}) + "\n"
+                       + json.dumps({"agent": "coder"}) + "\n"
+                       + json.dumps({"at": None, "agent": "coder-critic"}) + "\n")
+        rc, out = self.run_hook(json.dumps({"session_id": "s1", "cwd": str(self.t)}))
+        self.assertEqual(rc, 0)
+        self.assertIn('"decision": "block"', out)
+        self.assertIn("coder", out)
+
 class TestEmptySessionId(FixtureCase):
     """Fix round 1, Finding 2: the sentinel key is "<sid>:<creator>", keyed by project hash
     only. An empty sid collapses every session's incident onto the same ":<creator>" token,

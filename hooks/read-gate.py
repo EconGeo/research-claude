@@ -25,12 +25,13 @@ size with a line `read-gate: full` in its CLAUDE.md.
 
 Coverage comes from the Read result's `file.startLine/numLines/totalLines` when present, else
 from tool_input offset/limit (default limit 2000, the Read tool's default). Chunked reads add up.
-State is session-scoped under the system temp dir, never in the repo. Bash is gated best-effort
+State is one file per session + agent under the system temp dir, never in the repo; each
+load-change-save holds a lock and replaces the file atomically, so parallel hooks lose nothing. Bash is gated best-effort
 for in-place writes that name the manuscript (`sed -i`, `perl -i`, `>`, `>>`, `tee`, `cp`/`mv`
 onto it). Fails open on any internal error.
 """
 # Hook Event: PostToolUse|PreToolUse
-import json, os, re, sys, tempfile
+import contextlib, json, os, re, sys, tempfile
 from pathlib import Path
 
 DEFAULT_LIMIT = 2000
@@ -52,11 +53,27 @@ def manuscript_path():
     return (Path(root) / hits[0]).resolve()
 
 
-def state_file(session_id: str) -> Path:
+def state_file(session_id: str, agent_key: str) -> Path:
+    """One file per agent, so parallel subagents never rewrite each other's record."""
     safe = re.sub(r"[^A-Za-z0-9_-]", "_", session_id or "nosession")
-    d = Path(tempfile.gettempdir()) / "claude-read-gate"
+    agent = re.sub(r"[^A-Za-z0-9_-]", "_", agent_key)
+    d = Path(tempfile.gettempdir()) / "claude-read-gate" / safe
     d.mkdir(parents=True, exist_ok=True)
-    return d / f"{safe}.json"
+    return d / f"{agent}.json"
+
+
+@contextlib.contextmanager
+def locked(path: Path):
+    """Hold an exclusive lock on the agent's record for one load-change-save, so one agent's
+    parallel tool calls (chunked Reads in one message) cannot drop each other's ranges."""
+    try:
+        import fcntl
+    except ImportError:  # no flock on this platform: run unlocked
+        yield
+        return
+    with open(path.with_suffix(".lock"), "a") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        yield
 
 
 def load_state(path: Path) -> dict:
@@ -64,6 +81,13 @@ def load_state(path: Path) -> dict:
         return json.loads(path.read_text())
     except (OSError, json.JSONDecodeError):
         return {}
+
+
+def save_state(path: Path, rec: dict):
+    """Write then rename, so a reader never sees a half-written file."""
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(rec))
+    os.replace(tmp, path)
 
 
 def stat_sig(p: Path):
@@ -226,13 +250,17 @@ def main() -> int:
     if ms is None:
         return 0
 
+    agent_key = payload.get("agent_id") or "main"
+    sf = state_file(payload.get("session_id", ""), agent_key)
+    with locked(sf):
+        return gate(payload, ms, sf)
+
+
+def gate(payload: dict, ms: Path, sf: Path) -> int:
     event = payload.get("hook_event_name", "")
     tool = payload.get("tool_name", "")
     tool_input = payload.get("tool_input") or {}
-    agent_key = payload.get("agent_id") or "main"
-    sf = state_file(payload.get("session_id", ""))
-    state = load_state(sf)
-    rec = state.get(agent_key, {"ranges": [], "sig": None, "total": None})
+    rec = load_state(sf) or {"ranges": [], "sig": None, "total": None}
 
     if event == "PostToolUse":
         if not ms.exists() or not same_file(tool_input.get("file_path", ""), ms):
@@ -256,8 +284,7 @@ def main() -> int:
             return 0
         rec["sig"] = stat_sig(ms)
         rec["total"] = total_now
-        state[agent_key] = rec
-        sf.write_text(json.dumps(state))
+        save_state(sf, rec)
         return 0
 
     if event != "PreToolUse" or not ms.exists():
@@ -301,8 +328,7 @@ def main() -> int:
         rec["pending"] = {"key": [tool_input.get("old_string"), tool_input.get("new_string")],
                           "sites": sites, "new_span": new_span,
                           "total_after": total + sum(new_span - s for _, s in sites)}
-        state[agent_key] = rec
-        sf.write_text(json.dumps(state))
+        save_state(sf, rec)
     return 0
 
 
