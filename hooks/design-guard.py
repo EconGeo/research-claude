@@ -21,6 +21,7 @@ Known limit: every Bash check here is a text match on the command. A command ass
 variables or fragments (`c=claude; $c -p ...`, a path built from pieces) evades it, and so does an
 indirect writer (a script file that does the write, run by name). The token's binding to the
 design hash and its one-message lifetime bound the damage.
+A lock file that exists but does not parse counts as signed (as pipeline.py design_state does).
 Fails open on internal error.
 
 Hook Event: PreToolUse
@@ -106,23 +107,32 @@ def main() -> int:
     if not ms or not ms.exists(): return 0
     m = SIGN_RE.search(cmd)
     if m:
-        ok, why = tok.check(root, m.group(1), db.design_hash(ms.read_text()))
+        ok, why = tok.check(root, m.group(1), db.design_hash(ms.read_text(errors="surrogateescape")))
         if not ok: deny(f"`design {m.group(1)}` needs the author's approval in chat: {why}")
         return 0
     if tool == "Bash":
         if not re.search(INPLACE_RE.format(name=re.escape(ms.name)), cmd): return 0
     elif Path(ti.get("file_path", "")).resolve() != ms: return 0
-    lock = db.read_lock(root)                      # read only once the call can touch the manuscript
-    if not lock or lock.get("status") != "signed": return 0
+    if not (root / db.LOCK_REL).exists(): return 0  # read only once the call can touch the manuscript
+    try: lock = db.read_lock(root)
+    except (ValueError, OSError): lock = None
+    # A lock file that does not parse counts as signed, as pipeline.py design_state treats it: a
+    # merge conflict in the committed lock must not switch this guard off. With no signed hash to
+    # compare, the block as it stands now is what an edit may not change.
+    unreadable = not isinstance(lock, dict) or "hash" not in lock
+    if not unreadable and lock.get("status") != "signed": return 0
+    restore = "design_lock.json is unreadable — restore it from git or ask the author"
     if tool == "Bash":
-        deny(f"the design is signed; edit {ms.name} with the Edit tool so the design block can be checked."); return 0
-    text = ms.read_text()
+        deny(f"{restore}." if unreadable else
+             f"the design is signed; edit {ms.name} with the Edit tool so the design block can be checked."); return 0
+    text = ms.read_text(errors="surrogateescape")  # one stray byte must not skip the check
     if tool == "Write": new = ti.get("content", "")
     else:
         old, rep = ti.get("old_string", ""), ti.get("new_string", "")
         new = text.replace(old, rep) if ti.get("replace_all") else text.replace(old, rep, 1)
-    if db.design_hash(new) != lock.get("hash"):
-        deny("this edit changes the signed design: block. Ask the author to approve in chat with "
+    if db.design_hash(new) != (db.design_hash(text) if unreadable else lock.get("hash")):
+        deny(f"this edit changes the design: block and {restore}." if unreadable else
+             "this edit changes the signed design: block. Ask the author to approve in chat with "
              "`approve design unlock: <reason>`; then run `pipeline.py design unlock --reason \"<reason>\"`.")
     return 0
 
