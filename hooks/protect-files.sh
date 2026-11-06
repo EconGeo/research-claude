@@ -7,12 +7,27 @@
 # Extend PROTECTED_PATTERNS below for a project's own extra artifacts
 # Hook Event: PreToolUse
 INPUT=$(cat)
-TOOL=$(echo "$INPUT" | jq -r '.tool_name')
+
+# One field of the payload. jq when present, else python3 (already required): without jq every
+# field came back empty and the hook allowed everything, silently (audit 2026-11-04).
+field() {
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$INPUT" | jq -r "$1 // empty"
+  else
+    printf '%s' "$INPUT" | python3 -c 'import json, sys
+v = json.load(sys.stdin)
+for k in sys.argv[1].strip(".").split("."):
+    v = v.get(k) if isinstance(v, dict) else None
+print("" if v is None else v)' "$1" 2>/dev/null
+  fi
+}
+
+TOOL=$(field '.tool_name')
 FILE=""
 
 # Extract file path based on tool type
 if [ "$TOOL" = "Edit" ] || [ "$TOOL" = "Write" ]; then
-  FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+  FILE=$(field '.tool_input.file_path')
 fi
 
 # Bash branch: a shell write (redirect, tee, sed -i, cp, mv, rm) that names a protected file is
@@ -67,13 +82,13 @@ if [ "$TOOL" = "Bash" ]; then
   # above. When the command does not tokenize (a quoted string spanning lines), a conservative
   # regex scan of the whole command for destinations replaces the parse; it may refuse a command
   # that only reads. Fails open on any other internal error (hook convention).
-  CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+  CMD=$(field '.tool_input.command')
   # No write form at all (redirect, tee, cp/mv/install/rm/dd, sed/perl -i, git mv/rm): nothing below
   # can match, so the python scan is skipped — this branch runs on every Bash call.
   if ! printf '%s' "$CMD" | grep -qE '>|\b(tee|cp|mv|install|rm|dd)\b|\b(sed|perl)\b|\bgit\s+(mv|rm)\b'; then
     exit 0
   fi
-  CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
+  CWD=$(field '.cwd')
   # The scanner is read into a variable by a top-level heredoc, not run from a heredoc inside $( ):
   # macOS /bin/bash 3.2 counts quotes and parentheses inside a command substitution's heredoc and
   # fails to parse the script (tested: 2026-10-18, `/bin/bash -n` on the inline form).

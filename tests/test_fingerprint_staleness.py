@@ -106,6 +106,15 @@ class TestStaleness(StaleCase):
         self.assertEqual(j["hookSpecificOutput"]["hookEventName"], "SessionStart")
         self.assertIn("manuscript", j["systemMessage"])
 
+    def test_8_hook_says_when_the_check_cannot_run(self):
+        """Audit 2026-11-04: a crashing `pipeline.py stale` used to look like "nothing is stale"."""
+        (self.t / ".claude" / "scripts" / "pipeline.py").write_text("raise RuntimeError('boom: state unreadable')\n")
+        p = subprocess.run([sys.executable, str(HOOK)], capture_output=True, text=True,
+                           env=dict(os.environ, CLAUDE_PROJECT_DIR=str(self.t)))
+        self.assertEqual(p.returncode, 0)
+        msg = json.loads(p.stdout)["systemMessage"]
+        self.assertIn("could not check", msg); self.assertIn("boom", msg)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,6 +8,7 @@ touched today. Cases below exercise wildcard patterns specifically for that reas
 just the literal ones.
 """
 import json
+import shutil
 import pathlib
 import subprocess
 import tempfile
@@ -185,6 +186,37 @@ class TestProtectFiles(unittest.TestCase):
             "seeding it only reaches new projects; check_install.sh's hooks-wired "
             "derives its required set from this file",
         )
+
+
+class TestWithoutJq(unittest.TestCase):
+    """Audit 2026-11-04: with no jq on PATH every payload field came back empty and the hook
+    allowed everything. It now falls back to python3 and still refuses."""
+    def setUp(self):
+        self.bin = pathlib.Path(tempfile.mkdtemp())
+        for b in ("cat", "basename", "python3", "grep", "printf"):
+            (self.bin / b).symlink_to(shutil.which(b))
+
+    def tearDown(self):
+        shutil.rmtree(self.bin)
+
+    def run_nojq(self, payload):
+        p = subprocess.run(["/bin/bash", str(HOOK)], input=json.dumps(payload), capture_output=True,
+                           text=True, env={"PATH": str(self.bin)})
+        return p.returncode, p.stderr
+
+    def test_edit_of_protected_file_still_blocked(self):
+        code, err = self.run_nojq({"tool_name": "Edit", "tool_input":
+                                   {"file_path": "/tmp/proj/quality_reports/pipeline_state.json"}})
+        self.assertEqual(code, 2, err); self.assertIn("pipeline_state.json", err)
+
+    def test_shell_write_to_protected_file_still_blocked(self):
+        code, err = self.run_nojq({"tool_name": "Bash", "tool_input":
+                                   {"command": "echo x > quality_reports/pipeline_state.json"}})
+        self.assertEqual(code, 2, err)
+
+    def test_ordinary_edit_still_allowed(self):
+        code, _ = self.run_nojq({"tool_name": "Edit", "tool_input": {"file_path": "/tmp/proj/notes.md"}})
+        self.assertEqual(code, 0)
 
 
 if __name__ == "__main__":

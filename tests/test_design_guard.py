@@ -133,4 +133,30 @@ class TestDesignGuard(ProjectCase):
         self.ms.write_text(BASE); (self.proj / db.LOCK_REL).unlink(); self.sign()
         self.assertTrue(self.denied(self.bash(f"sed -i '' 's/a/b/' {self.ms.name}")))
 
+class TestDesignGuardStillGuards(TestDesignGuard.__bases__[0]):
+    """Audit 2026-11-04: inputs that used to reach the fail-open and allow a design edit."""
+    def setUp(self):
+        super().setUp(); self.ms.write_text(BASE)
+        db.write_lock(self.proj, {"status": "signed", "hash": db.design_hash(BASE)})
+    edit = TestDesignGuard.edit
+    bash = TestDesignGuard.bash
+
+    def test_conflicted_lock_still_blocks_design_edit(self):
+        p = self.proj / db.LOCK_REL; good = p.read_text()
+        p.write_text("<<<<<<< HEAD\n" + good + "=======\n" + good + ">>>>>>> other\n")
+        out = self.edit("cluster: region", "cluster: state")
+        self.assertTrue(self.denied(out)); self.assertIn("unreadable", out)
+        self.assertFalse(self.denied(self.edit("Body text.", "New body.")))  # the rest of the paper stays editable
+        self.assertTrue(self.denied(self.bash(f"sed -i '' 's/a/b/' {self.ms.name}")))
+
+    def test_non_object_or_hashless_lock_still_blocks(self):
+        for body in ("[]", "{}", '{"status": "signed"}'):
+            (self.proj / db.LOCK_REL).write_text(body)
+            self.assertTrue(self.denied(self.edit("cluster: region", "cluster: state")), body)
+
+    def test_stray_byte_in_manuscript_still_blocks(self):
+        self.ms.write_bytes(BASE.encode() + b"\nstray byte \xe9 in body\n")
+        self.assertTrue(self.denied(self.edit("cluster: region", "cluster: state")))
+        self.assertFalse(self.denied(self.edit("Body text.", "New body.")))
+
 if __name__ == "__main__": unittest.main()

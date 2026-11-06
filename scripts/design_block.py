@@ -70,7 +70,9 @@ def _normalise(block: str) -> List[str]:
 
 def design_hash(text: str) -> Optional[str]:
     b = design_block(text)
-    return None if b is None else hashlib.sha256("\n".join(_normalise(b)).encode()).hexdigest()
+    # surrogateescape: a stray non-UTF-8 byte read with errors="surrogateescape" hashes instead of
+    # raising (design-guard would fail open); valid UTF-8 hashes exactly as before.
+    return None if b is None else hashlib.sha256("\n".join(_normalise(b)).encode("utf-8", "surrogateescape")).hexdigest()
 
 def _paths(block: str) -> List[Tuple[str, str]]:
     """(dotted key path, normalised line) per line; a list item takes its parent's path."""
